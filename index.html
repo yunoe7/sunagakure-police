@@ -57,7 +57,7 @@ body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:9997;
 .sidebar-nav::-webkit-scrollbar-thumb{background:rgba(180,140,20,0.2);border-radius:2px}
 .nav-section{padding:12px 16px 4px;font-size:8px;letter-spacing:3px;color:rgba(255,255,255,0.25);font-family:'Share Tech Mono',monospace;text-transform:uppercase}
 .nav-item{display:flex;align-items:center;gap:11px;padding:9px 18px;cursor:pointer;font-size:12.5px;font-weight:500;color:rgba(255,255,255,0.45);
-  border-left:2px solid transparent;transition:all 0.2s ease;letter-spacing:0.3px;position:relative;margin:1px 8px;border-radius:6px;border-left:none}
+  transition:all 0.2s ease;letter-spacing:0.3px;position:relative;margin:1px 8px;border-radius:6px;border-left:none}
 .nav-item:hover{color:rgba(255,255,255,0.85);background:rgba(255,255,255,0.06)}
 .nav-item.active{color:#fff;background:linear-gradient(90deg,rgba(192,65,14,0.25),rgba(192,65,14,0.08));border-left:none;
   box-shadow:inset 3px 0 0 var(--accent2)}
@@ -1829,20 +1829,29 @@ function initFirebaseSync(){
         if(!merged.hasOwnProperty(key))merged[key]=data[key];
       }
       DB=merged;
-      // Sauvegarder en localStorage comme cache
-      try{localStorage.setItem(STORE,JSON.stringify(DB))}catch(e){}
-      // Rafraîchir l'UI si l'utilisateur est connecté
-      if(currentUser){
-        // Vérifier que la session est toujours valide
-        const freshUser=DB.users.find(u=>u.id===currentUser.id&&u.statut!=="Désactivé");
-        if(freshUser){currentUser=freshUser;}
-        refreshAll();
-        // Rafraîchir la page active
-        const activePage=document.querySelector(".page-content.active");
-        if(activePage){
-          const name=activePage.id.replace("page-","");
-          renderPage(name);
+      // Migration des mots de passe en clair reçus depuis Firebase
+      const fbNeedsMigration=DB.users&&DB.users.some(u=>!isHashed(u.pass));
+      const afterFbMigration=()=>{
+        try{localStorage.setItem(STORE,JSON.stringify(DB))}catch(e){}
+        if(currentUser){
+          const freshUser=DB.users.find(u=>u.id===currentUser.id&&u.statut!=="Désactivé");
+          if(freshUser){currentUser=freshUser;}
+          refreshAll();
+          const activePage=document.querySelector(".page-content.active");
+          if(activePage){const name=activePage.id.replace("page-","");renderPage(name);}
         }
+      };
+      if(fbNeedsMigration){
+        (async()=>{
+          for(const u of DB.users){if(!isHashed(u.pass)){u.pass=await hashPass(u.pass||"aysenLM69001toz");}}
+          _fbIsSaving=true;
+          const wr=window._fbRef(window._fbDB,"sunagakure");
+          window._fbSet(wr,JSON.parse(JSON.stringify(DB))).then(()=>{setTimeout(()=>{_fbIsSaving=false;},1000);}).catch(()=>{_fbIsSaving=false;});
+          saveData();
+          afterFbMigration();
+        })();
+      } else {
+        afterFbMigration();
       }
     } else if(data===null){
       // Base Firebase vide : récupérer les données du localStorage d'abord
@@ -1871,11 +1880,27 @@ function initFirebaseSync(){
   });
 }
 
+// ========== HACHAGE ==========
+async function hashPass(plain){
+  const buf=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(plain));
+  return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,"0")).join("");
+}
+// Version synchrone approximative (pour les vérifications déjà hachées)
+function isHashed(s){return typeof s==="string"&&s.length===64&&/^[0-9a-f]+$/.test(s)}
+
+const _DEFAULT_PASS_HASH=(async()=>{
+  // Pré-calcul du hash du mot de passe par défaut
+  return await hashPass("aysenLM69001toz");
+})();
+
+async function getDefaultPassHash(){return await _DEFAULT_PASS_HASH;}
+
 function defaultData(){
+  // Le mot de passe sera remplacé par son hash à l'init (voir window.onload)
   return{commissaire:"Commissaire à définir",
     logo:"",
     grades:["Gérant","Co-Gérant","Sergent","Officier","Stagiaire"],
-    users:[{id:1,login:"admin",pass:"aysenLM69001toz",nom:"Développeur",grade:"Gérant",role:"admin",statut:"Actif",photo:"",created:now()}],
+    users:[{id:1,login:"admin",pass:"__PENDING_HASH__",nom:"Développeur",grade:"Gérant",role:"admin",statut:"Actif",photo:"",created:now()}],
     annonces:[{id:1,titre:"Bienvenue sur le portail Police de Sunagakure",cat:"Information",contenu:"Ce portail est le centre névralgique des communications internes.\n\nToutes les informations officielles y seront publiées.",auteur:"Administration",pin:true,date:now()}],
     recenses:[],candidatures:[],plaintes:[],dossiers:[],operations:[],sanctions:[],infractions:[],timeline:[]}
 }
@@ -1895,7 +1920,7 @@ function switchLoginTab(tab){
 }
 
 // REGISTER
-function doRegister(){
+async function doRegister(){
   const login=v('reg-login').trim(),nom=v('reg-nom').trim();
   const pass=el('reg-pass').value,pass2=el('reg-pass2').value;
   const ra=el('register-alert'),rs=el('register-success');
@@ -1904,7 +1929,8 @@ function doRegister(){
   if(pass.length<4)return(ra.textContent='Mot de passe trop court (4 caractères min).',ra.style.display='block');
   if(pass!==pass2)return(ra.textContent='Les mots de passe ne correspondent pas.',ra.style.display='block');
   if(DB.users.find(u=>u.login===login))return(ra.textContent='Cet identifiant est déjà utilisé.',ra.style.display='block');
-  const newUser={id:Date.now(),login,pass,nom,grade:'Visiteur',role:'visiteur',statut:'Actif',photo:'',created:now()};
+  const hashed=await hashPass(pass);
+  const newUser={id:Date.now(),login,pass:hashed,nom,grade:'Visiteur',role:'visiteur',statut:'Actif',photo:'',created:now()};
   DB.users.push(newUser);saveData();
   rs.textContent='✅ Compte créé ! Connexion en cours...';rs.style.display='block';
   setTimeout(()=>{currentUser=newUser;applyLogin();},1200);
@@ -1916,67 +1942,73 @@ function checkRememberMe(){
   if(!saved)return;
   try{
     const s=JSON.parse(saved);
-    const user=DB.users.find(u=>u.id===s.id&&u.pass===s.pass&&u.statut!=="Désactivé");
+    const user=DB.users.find(u=>u.id===s.id&&u._sessionToken&&u._sessionToken===s.token&&u.statut!=="Désactivé");
     if(user){currentUser=user;applyLogin();return true}
   }catch(e){}
+  localStorage.removeItem("suna_session");
   return false;
 }
 
 function doLogin(){
   const login=el("login-user").value.trim();
-  const pass=el("login-pass").value; // valeur brute sans trim pour éviter tout bug
-  const user=DB.users.find(u=>u.login===login&&u.pass===pass&&u.statut!=="Désactivé");
-  if(!user){
-    showLoginErr("Identifiants incorrects ou compte désactivé.");
-    // Afficher le lien de reset si l'admin essaie de se connecter
-    if(login==="admin"){
-      const ea=el("login-alert");
-      ea.innerHTML='Identifiants incorrects. <span onclick="emergencyReset()" style="color:#f87171;font-weight:700;text-decoration:underline;cursor:pointer">Réinitialiser les données (si mot de passe oublié)</span>';
+  const pass=el("login-pass").value;
+  hashPass(pass).then(hashed=>{
+    const user=DB.users.find(u=>u.login===login&&u.pass===hashed&&u.statut!=="Désactivé");
+    if(!user){
+      showLoginErr("Identifiants incorrects ou compte désactivé.");
+      if(login==="admin"){
+        const ea=el("login-alert");
+        ea.innerHTML='Identifiants incorrects. <span onclick="emergencyReset()" style="color:#f87171;font-weight:700;text-decoration:underline;cursor:pointer">Réinitialiser les données (si mot de passe oublié)</span>';
+      }
+      return;
     }
-    return;
-  }
-  currentUser=user;
-  if(el("remember-me").checked){
-    localStorage.setItem("suna_session",JSON.stringify({id:user.id,pass:user.pass}));
-  } else {
-    localStorage.removeItem("suna_session");
-  }
-  applyLogin();
+    currentUser=user;
+    if(el("remember-me").checked){
+      // Stocker uniquement l'ID + un token de session, jamais le mot de passe
+      const token=Math.random().toString(36).slice(2)+Date.now().toString(36);
+      user._sessionToken=token;
+      saveData();
+      localStorage.setItem("suna_session",JSON.stringify({id:user.id,token}));
+    } else {
+      localStorage.removeItem("suna_session");
+    }
+    applyLogin();
+  });
 }
 
 // Reset d'urgence : efface le localStorage et réinitialise sans rechargement
 function emergencyReset(){
-  const code=prompt("🔒 Accès restreint — Entrez le code de réinitialisation :");
+  const code=prompt("🔒 Accès restreint — Entrez le mot de passe administrateur pour réinitialiser :");
   if(code===null)return;
-  // Vérification via le compte admin actuel en DB (ou le mot de passe par défaut)
   const adminAcc=DB.users.find(u=>u.role==="admin");
-  const validCode=adminAcc?adminAcc.pass:atob("YXlzZW5MTTk5MDAxdG96").split("").reverse().join("").replace("zot100","69001");
-  if(code!==validCode){alert("❌ Code incorrect. Accès refusé.");return;}
-  askDelete(
-    "⚠️ Réinitialiser toutes les données ? Le compte admin (identifiant : admin) sera restauré avec son mot de passe par défaut. Cette action est irréversible.",
-    ()=>{
-      localStorage.removeItem(STORE);
-      localStorage.removeItem("suna_session");
-      // Réinitialiser DB en mémoire avec les données par défaut
-      DB = defaultData();
-      // S'assurer que l'admin a le bon mot de passe
-      const adminAcc = DB.users.find(u=>u.role==="admin");
-      if(adminAcc) adminAcc.pass = "aysenLM69001toz";
-      // Effacer aussi Firebase
-      if(window._fbDB&&window._fbRef&&window._fbSet){
-        const r=window._fbRef(window._fbDB,"sunagakure");
-        window._fbSet(r,JSON.parse(JSON.stringify(DB)));
+  if(!adminAcc){alert("❌ Aucun compte admin trouvé.");return;}
+  hashPass(code).then(hashed=>{
+    if(hashed!==adminAcc.pass){alert("❌ Mot de passe incorrect. Accès refusé.");return;}
+    askDelete(
+      "⚠️ Réinitialiser toutes les données ? Le compte admin (identifiant : admin) sera restauré avec son mot de passe par défaut. Cette action est irréversible.",
+      ()=>{
+        localStorage.removeItem(STORE);
+        localStorage.removeItem("suna_session");
+        DB = defaultData();
+        // Hacher le mot de passe par défaut avant de sauvegarder
+        hashPass("aysenLM69001toz").then(h=>{
+          const a=DB.users.find(u=>u.role==="admin");
+          if(a)a.pass=h;
+          if(window._fbDB&&window._fbRef&&window._fbSet){
+            const r=window._fbRef(window._fbDB,"sunagakure");
+            window._fbSet(r,JSON.parse(JSON.stringify(DB)));
+          }
+          saveData();
+          currentUser=null;
+          el("login-screen").style.display="flex";
+          el("login-user").value="admin";
+          el("login-pass").value="";
+          el("login-alert").style.display="none";
+          showToast("Données réinitialisées. Connectez-vous avec vos identifiants.","success");
+        });
       }
-      saveData();
-      // Réafficher l'écran de login proprement
-      currentUser = null;
-      el("login-screen").style.display = "flex";
-      el("login-user").value = "admin";
-      el("login-pass").value = "";
-      el("login-alert").style.display = "none";
-      showToast("Données réinitialisées. Connectez-vous avec vos identifiants.", "success");
-    }
-  );
+    );
+  });
 }
 
 function isVisiteur(){return currentUser&&currentUser.role==="visiteur"}
@@ -2008,11 +2040,16 @@ function showLoginErr(msg){const e=el("login-alert");e.textContent=msg;e.style.d
 
 function doLogout(){
   localStorage.removeItem("suna_session");
+  // Invalider le token de session côté DB
+  if(currentUser){currentUser._sessionToken=undefined;saveData();}
   currentUser=null;
+  // Vider la mémoire de la dernière page pour éviter qu'un visiteur atterrisse sur une page membre
+  try{sessionStorage.removeItem("suna_active_page");}catch(e){}
   el("login-screen").style.display="flex";
   el("nav-admin").style.display="none";
   const _ditAdmin=el("ditem-admin");if(_ditAdmin)_ditAdmin.style.display="none";
-  document.querySelectorAll('[data-member-only="true"]').forEach(e=>e.style.display='');
+  // Masquer explicitement les éléments membres-only (ils restaient visibles après logout)
+  document.querySelectorAll('[data-member-only="true"]').forEach(e=>e.style.display='none');
   ["btn-new-annonce","btn-new-dossier","btn-new-operation","btn-new-sanction"].forEach(id=>{const e=el(id);if(e)e.style.display="none"});
   el("comm-pencil").style.display="none";
   el("sanction-del-th").style.display="none";
@@ -2884,18 +2921,24 @@ function deleteSanction(id){askDelete("Supprimer cette entrée ?",()=>{DB.sancti
 function saveEditUser(){
   const id=parseInt(el("eu-id").value);
   const u=DB.users.find(x=>x.id===id);if(!u)return;
-  // Protect admin accounts from non-admins
   if(u.role==="admin"&&!isAdmin()){showToast("Permission refusée.","error");return;}
   const newRole=v("eu-role");
   if(newRole==="admin"&&!isAdmin()){showToast("Seul un Administrateur peut attribuer le rôle Admin.","error");return;}
   u.nom=v("eu-nom")||u.nom;
-  const newPass=el("eu-pass").value;if(newPass)u.pass=newPass;
-  u.grade=v("eu-grade");u.role=newRole;
-  const c=DB.candidatures.find(x=>x.authorId===id||x.nom===u.nom);if(c)c.grade=u.grade;
-  if(currentUser.id===id){currentUser=u;el("user-name-display").textContent=u.nom;el("user-rank-display").textContent=u.grade;el("user-avatar").textContent=u.nom.charAt(0).toUpperCase()}
-  addTimeline(`Compte de ${u.nom} modifié par ${currentUser.nom}`);
-  saveData();closeModal("modal-edituser");renderAdmin();renderEffectifs();renderRecrues();
-  showToast("Compte mis à jour.","success");
+  const newPass=el("eu-pass").value;
+  const finalize=()=>{
+    u.grade=v("eu-grade");u.role=newRole;
+    const c=DB.candidatures.find(x=>x.authorId===id||x.nom===u.nom);if(c)c.grade=u.grade;
+    if(currentUser.id===id){currentUser=u;el("user-name-display").textContent=u.nom;el("user-rank-display").textContent=u.grade;el("user-avatar").textContent=u.nom.charAt(0).toUpperCase()}
+    addTimeline(`Compte de ${u.nom} modifié par ${currentUser.nom}`);
+    saveData();closeModal("modal-edituser");renderAdmin();renderEffectifs();renderRecrues();
+    showToast("Compte mis à jour.","success");
+  };
+  if(newPass){
+    hashPass(newPass).then(h=>{u.pass=h;finalize();});
+  } else {
+    finalize();
+  }
 }
 function deleteUserById(){
   const id=parseInt(el("eu-id").value);
@@ -2917,10 +2960,12 @@ function saveUser(){
   if(DB.users.find(u=>u.login===login)){showToast("Identifiant déjà utilisé.","error");return}
   const role=v("u-role");
   if(role==="admin"&&!isAdmin()){showToast("Seul un Admin peut créer un compte Admin.","error");return;}
-  DB.users.push({id:Date.now(),login,pass,nom,grade:v("u-grade"),role,statut:"Actif",photo:"",created:now()});
-  addTimeline(`Nouveau membre : ${nom} ajouté`);
-  saveData();closeModal("modal-adduser");renderAdmin();renderEffectifs();syncDashboard();clearForm(["u-login","u-pass","u-nom"]);
-  showToast(`Compte de ${nom} créé.`,"success");
+  hashPass(pass).then(h=>{
+    DB.users.push({id:Date.now(),login,pass:h,nom,grade:v("u-grade"),role,statut:"Actif",photo:"",created:now()});
+    addTimeline(`Nouveau membre : ${nom} ajouté`);
+    saveData();closeModal("modal-adduser");renderAdmin();renderEffectifs();syncDashboard();clearForm(["u-login","u-pass","u-nom"]);
+    showToast(`Compte de ${nom} créé.`,"success");
+  });
 }
 function toggleUser(id){const u=DB.users.find(x=>x.id===id);if(!u)return;u.statut=u.statut==="Actif"?"Désactivé":"Actif";saveData();renderAdmin();syncDashboard()}
 
@@ -2984,7 +3029,7 @@ function v(id,raw){const e=el(id);if(!e)return"";return raw?e.value:e.value.trim
 function clearForm(ids){ids.forEach(id=>{const e=el(id);if(e)e.value=""})}
 function now(){return new Date().toISOString()}
 function fmtDate(iso){if(!iso)return"—";const d=new Date(iso);return d.toLocaleDateString("fr-FR",{day:"2-digit",month:"2-digit",year:"numeric"})}
-function esc(s){if(!s)return"";return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;")}
+function esc(s){if(!s)return"";return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;")}
 function catBadge(c){return{Information:"badge-blue",Opérationnel:"badge-green",Recrutement:"badge-gold",Alerte:"badge-red",Disciplinaire:"badge-gold"}[c]||"badge-gray"}
 function statutPlainte(s){return{ouverte:"badge-red",en_cours:"badge-gold",fermee:"badge-gray"}[s]||"badge-gray"}
 function fmtStatut(s){return{ouverte:"Ouverte",en_cours:"En cours",fermee:"Fermée"}[s]||s}
@@ -3121,53 +3166,69 @@ window.addEventListener("load",()=>{
   if(devAcc)devAcc.nom="Développeur";
   // S'assurer qu'il existe toujours un compte admin fonctionnel
   const adminExists=DB.users.find(u=>u.role==="admin"&&u.statut!=="Désactivé");
-  if(!adminExists){
-    DB.users.push({id:1,login:"admin",pass:"aysenLM69001toz",nom:"Développeur",grade:"Gérant",role:"admin",statut:"Actif",photo:"",created:now()});
-    saveData();
-  }
-  populateGradeSelects();
-  applyLogo();
-  loadNotifPrefs();
+  // Migration des mots de passe en clair + hash du mot de passe par défaut
+  const DEFAULT_PASS="aysenLM69001toz";
+  const migratePasswords=async()=>{
+    let changed=false;
+    for(const u of DB.users){
+      if(!isHashed(u.pass)){
+        // Mot de passe en clair → hacher
+        u.pass=await hashPass(u.pass||DEFAULT_PASS);
+        changed=true;
+      }
+    }
+    if(!adminExists){
+      const h=await hashPass(DEFAULT_PASS);
+      DB.users.push({id:1,login:"admin",pass:h,nom:"Développeur",grade:"Gérant",role:"admin",statut:"Actif",photo:"",created:now()});
+      changed=true;
+    }
+    if(changed)saveData();
+  };
+  migratePasswords().then(()=>{
+    populateGradeSelects();
+    applyLogo();
+    loadNotifPrefs();
 
-  // Afficher un écran de chargement Firebase
-  const loginScreen=el("login-screen");
-  loginScreen.style.display="flex";
-  const loadingMsg=document.createElement("div");
-  loadingMsg.id="firebase-loading";
-  loadingMsg.style.cssText="position:fixed;inset:0;background:rgba(10,12,30,0.92);z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px";
-  loadingMsg.innerHTML=`<div style="width:48px;height:48px;border:3px solid rgba(180,140,20,0.3);border-top:3px solid #d4b44a;border-radius:50%;animation:spin 0.9s linear infinite"></div>
-    <div style="color:#d4b44a;font-family:'Share Tech Mono',monospace;font-size:13px;letter-spacing:2px">CONNEXION AU SERVEUR...</div>
-    <style>@keyframes spin{to{transform:rotate(360deg)}}</style>`;
-  document.body.appendChild(loadingMsg);
+    // Afficher un écran de chargement Firebase
+    const loginScreen=el("login-screen");
+    loginScreen.style.display="flex";
+    const loadingMsg=document.createElement("div");
+    loadingMsg.id="firebase-loading";
+    loadingMsg.style.cssText="position:fixed;inset:0;background:rgba(10,12,30,0.92);z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px";
+    loadingMsg.innerHTML=`<div style="width:48px;height:48px;border:3px solid rgba(180,140,20,0.3);border-top:3px solid #d4b44a;border-radius:50%;animation:spin 0.9s linear infinite"></div>
+      <div style="color:#d4b44a;font-family:'Share Tech Mono',monospace;font-size:13px;letter-spacing:2px">CONNEXION AU SERVEUR...</div>
+      <style>@keyframes spin{to{transform:rotate(360deg)}}</style>`;
+    document.body.appendChild(loadingMsg);
 
-  // Attendre que Firebase soit prêt puis lancer la sync
-  let fbWait=0;
-  const fbInterval=setInterval(()=>{
-    fbWait++;
-    if(window._fbDB&&window._fbRef&&window._fbOnValue){
-      clearInterval(fbInterval);
-      // Marquer comme "sauvegarde en cours" pour éviter que le listener Firebase
-      // n'écrase la session restaurée depuis localStorage pendant le chargement initial
-      _fbIsSaving=true;
-      initFirebaseSync();
-      setTimeout(()=>{
+    // Attendre que Firebase soit prêt puis lancer la sync
+    let fbWait=0;
+    const fbInterval=setInterval(()=>{
+      fbWait++;
+      if(window._fbDB&&window._fbRef&&window._fbOnValue){
+        clearInterval(fbInterval);
+        // Marquer comme "sauvegarde en cours" pour éviter que le listener Firebase
+        // n'écrase la session restaurée depuis localStorage pendant le chargement initial
+        _fbIsSaving=true;
+        initFirebaseSync();
+        setTimeout(()=>{
+          loadingMsg.remove();
+          _fbIsSaving=false;
+          if(!checkRememberMe()){
+            el("login-screen").style.display="flex";
+          }
+        },1500);
+      } else if(fbWait>30){
+        // Timeout : utiliser les données locales
+        clearInterval(fbInterval);
         loadingMsg.remove();
-        _fbIsSaving=false;
         if(!checkRememberMe()){
           el("login-screen").style.display="flex";
         }
-      },1500);
-    } else if(fbWait>30){
-      // Timeout : utiliser les données locales
-      clearInterval(fbInterval);
-      loadingMsg.remove();
-      if(!checkRememberMe()){
-        el("login-screen").style.display="flex";
+        showToast("⚠️ Mode hors-ligne : Firebase non disponible.","error");
       }
-      showToast("⚠️ Mode hors-ligne : Firebase non disponible.","error");
-    }
-  },100);
-});
+    },100);
+  }); // fin migratePasswords().then()
+}); // fin window.onload
 </script>
 <!-- Custom Confirm Modal -->
 <div class="modal-overlay" id="modal-confirm">
