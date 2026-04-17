@@ -607,13 +607,10 @@ textarea.form-control{resize:vertical;min-height:80px}
     background:none !important;background-clip:unset !important;
     text-shadow:0 0 20px rgba(212,180,74,0.35);
     font-family:'Cinzel',serif !important;
-    position:absolute;left:50%;transform:translateX(-50%);
-    text-align:center;white-space:nowrap;
-    max-width:calc(100% - 120px);
-    overflow:hidden;text-overflow:ellipsis;
+    /* position gérée par le JS sur mobile */
   }
   /* Point de statut */
-  .status-dot{width:6px;height:6px;flex-shrink:0;margin-left:auto}
+  .status-dot{width:6px;height:6px;flex-shrink:0}
 
   /* Hamburger amélioré — 3 lignes custom SVG */
   #hamburger{
@@ -3814,20 +3811,12 @@ body.dark #btn-darkmode{background:rgba(255,255,255,0.05);border-color:rgba(180,
 @media(max-width:768px){.topbar-path{display:none !important}}
 @media(max-width:600px){.topbar-search-label{display:none} #btn-global-search kbd{display:none}}
 
-/* MOBILE : masquer sync + recherche dans la topbar, garder seulement darkmode */
+/* MOBILE : masquer sync dans la topbar, les boutons sont gérés en inline JS */
 @media(max-width:768px){
-  #btn-global-search{ display:none !important; }
   #sync-indicator{ display:none !important; }
-  #btn-darkmode{
-    margin-left:auto;
-    background:rgba(212,180,74,0.08) !important;
-    border:1px solid rgba(212,180,74,0.18) !important;
-    width:42px !important; height:42px !important;
-    border-radius:12px !important;
-  }
-  /* Titre centré sans être masqué par les boutons */
+  /* Titre centré — laisser la place pour hamburger (42px) + gap + 2 boutons (42px*2) + gap + dot */
   .topbar-title{
-    max-width:calc(100% - 160px) !important;
+    max-width:calc(100% - 200px) !important;
   }
 }
 
@@ -3889,35 +3878,98 @@ body.dark .dash-quick-chip{background:rgba(180,140,20,0.08);border-color:rgba(18
   var topbar = document.querySelector('.topbar');
   if (!topbar) return;
 
-  /* Sync indicator */
-  var sync = document.createElement('div');
-  sync.id = 'sync-indicator';
-  sync.innerHTML = '<span class="sync-dot"></span>&nbsp;SYNC';
+  var isMobile = window.innerWidth <= 768;
 
-  /* Bouton recherche */
-  var srch = document.createElement('button');
-  srch.id = 'btn-global-search';
-  srch.title = 'Recherche globale (Ctrl+K)';
-  srch.innerHTML = '<span>&#128269;</span><span class="topbar-search-label">Rechercher</span>';
-  srch.addEventListener('click', openGlobalSearch);
+  /* Style commun bouton compact */
+  var btnStyle = 'width:42px;height:42px;border-radius:12px;border:1px solid rgba(212,180,74,0.18);background:rgba(212,180,74,0.08);cursor:pointer;font-size:17px;display:flex;align-items:center;justify-content:center;flex-shrink:0;padding:0;color:#d4b44a;transition:all 0.15s;-webkit-tap-highlight-color:transparent;';
 
-  /* Bouton mode sombre */
-  var dm = document.createElement('button');
-  dm.id = 'btn-darkmode';
-  dm.title = 'Basculer le mode sombre';
-  dm.textContent = document.body.classList.contains('dark') ? '\u2600\uFE0F' : '\uD83C\uDF19';
-  dm.addEventListener('click', toggleDarkMode);
+  if (isMobile) {
+    /* ── MOBILE ──
+       Structure cible : [hamburger] [spacer] [titre centré] [spacer] [🔍] [🌙] [dot]
+       On retire le titre du flux normal et on le remet avec flexbox pur */
 
-  /* Injection avant le status dot */
-  var dot = topbar.querySelector('.status-dot');
-  if (dot) {
-    topbar.insertBefore(dm, dot);
-    topbar.insertBefore(srch, dm);
-    topbar.insertBefore(sync, srch);
+    var title = document.getElementById('topbar-title');
+    var dot   = topbar.querySelector('.status-dot');
+
+    /* Spacer gauche — pousse le titre vers le centre */
+    var spL = document.createElement('div');
+    spL.style.cssText = 'flex:1';
+
+    /* Spacer droit — même taille que les boutons droite */
+    var spR = document.createElement('div');
+    spR.style.cssText = 'flex:1;display:flex;justify-content:flex-end;align-items:center;gap:8px';
+
+    /* Bouton recherche */
+    var srch = document.createElement('button');
+    srch.id = 'btn-global-search';
+    srch.title = 'Rechercher';
+    srch.innerHTML = '&#128269;';
+    srch.style.cssText = btnStyle;
+    srch.addEventListener('click', openGlobalSearch);
+
+    /* Bouton mode sombre */
+    var dm = document.createElement('button');
+    dm.id = 'btn-darkmode';
+    dm.title = 'Mode sombre';
+    dm.textContent = document.body.classList.contains('dark') ? '\u2600\uFE0F' : '\uD83C\uDF19';
+    dm.style.cssText = btnStyle;
+    dm.addEventListener('click', toggleDarkMode);
+
+    /* Remettre le titre en position static pour flexbox */
+    if (title) {
+      title.style.position = 'static';
+      title.style.transform = 'none';
+      title.style.left = 'auto';
+      title.style.maxWidth = 'none';
+      title.style.flex = '0 1 auto';
+      title.style.textAlign = 'center';
+      title.style.overflow = 'hidden';
+      title.style.textOverflow = 'ellipsis';
+      title.style.whiteSpace = 'nowrap';
+      title.style.pointerEvents = 'none';
+    }
+
+    spR.appendChild(srch);
+    spR.appendChild(dm);
+    if (dot) spR.appendChild(dot);
+
+    /* Vider la topbar de tout sauf le hamburger et réinsérer dans le bon ordre */
+    var hamburger = document.getElementById('hamburger');
+    var path = topbar.querySelector('.topbar-path');
+    topbar.innerHTML = '';
+    if (hamburger) topbar.appendChild(hamburger);
+    topbar.appendChild(spL);
+    if (title) topbar.appendChild(title);
+    topbar.appendChild(spR);
+
   } else {
-    topbar.appendChild(sync);
-    topbar.appendChild(srch);
-    topbar.appendChild(dm);
+    /* ── DESKTOP ── comportement original */
+    var sync = document.createElement('div');
+    sync.id = 'sync-indicator';
+    sync.innerHTML = '<span class="sync-dot"></span>&nbsp;SYNC';
+
+    var srch = document.createElement('button');
+    srch.id = 'btn-global-search';
+    srch.title = 'Recherche globale (Ctrl+K)';
+    srch.innerHTML = '<span>&#128269;</span><span class="topbar-search-label">Rechercher</span>';
+    srch.addEventListener('click', openGlobalSearch);
+
+    var dm = document.createElement('button');
+    dm.id = 'btn-darkmode';
+    dm.title = 'Basculer le mode sombre';
+    dm.textContent = document.body.classList.contains('dark') ? '\u2600\uFE0F' : '\uD83C\uDF19';
+    dm.addEventListener('click', toggleDarkMode);
+
+    var dot = topbar.querySelector('.status-dot');
+    if (dot) {
+      topbar.insertBefore(dm, dot);
+      topbar.insertBefore(srch, dm);
+      topbar.insertBefore(sync, srch);
+    } else {
+      topbar.appendChild(sync);
+      topbar.appendChild(srch);
+      topbar.appendChild(dm);
+    }
   }
 })();
 
