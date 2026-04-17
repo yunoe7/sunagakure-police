@@ -3400,3 +3400,338 @@ input, select, textarea { transition: border-color 0.18s, box-shadow 0.18s, back
 </script>
 </body>
 </html>
+<!-- ===== AMELIORATIONS V2 ===== -->
+<style>
+@keyframes syncPulse{0%,100%{opacity:1}50%{opacity:0.45}}
+@keyframes syncDot{0%,100%{transform:scale(1)}50%{transform:scale(0.6)}}
+@keyframes gsIn{from{opacity:0;transform:translateY(-14px) scale(0.97)}to{opacity:1;transform:translateY(0) scale(1)}}
+
+/* ---- MODE SOMBRE ---- */
+body.dark{--bg:#0f1020;--bg2:#181a2e;--bg3:#1e2038;--text:#e2e8f0;--muted:#94a3b8;--stripe:rgba(180,140,20,0.02);--shadow:rgba(0,0,0,0.25);--card-shadow:0 2px 16px rgba(0,0,0,0.35),0 1px 4px rgba(0,0,0,0.25)}
+body.dark #main{background:linear-gradient(160deg,#0d0f1e 0%,#10132a 60%,#0d0f1e 100%) !important}
+body.dark .topbar{background:rgba(18,20,36,0.95) !important;border-bottom-color:rgba(180,140,20,0.18) !important}
+body.dark .card{background:var(--bg2) !important;border-color:rgba(180,140,20,0.12) !important}
+body.dark .stat-card{background:var(--bg2) !important;border-color:rgba(180,140,20,0.12) !important}
+body.dark .card-header{background:linear-gradient(90deg,rgba(180,140,20,0.06),transparent) !important}
+body.dark .modal{background:var(--bg2) !important;border-color:rgba(180,140,20,0.18) !important}
+body.dark .modal-header{background:var(--bg2) !important;border-bottom-color:rgba(180,140,20,0.12) !important}
+body.dark .modal-footer{background:var(--bg3) !important;border-top-color:rgba(180,140,20,0.1) !important}
+body.dark .form-control{background:rgba(255,255,255,0.06) !important;border-color:rgba(255,255,255,0.1) !important;color:var(--text) !important;-webkit-text-fill-color:var(--text) !important}
+body.dark .form-control:focus{background:rgba(255,255,255,0.09) !important;border-color:var(--gold2) !important}
+body.dark .form-control::placeholder{color:rgba(255,255,255,0.28) !important}
+body.dark .data-table th{background:rgba(180,140,20,0.05) !important}
+body.dark .data-table tr:hover td{background:rgba(180,140,20,0.04) !important}
+body.dark .data-table td{border-bottom-color:rgba(255,255,255,0.05) !important}
+body.dark .annonce-item{background:var(--bg2) !important;border-color:rgba(180,140,20,0.12) !important}
+body.dark .recense-card{background:var(--bg2) !important;border-color:rgba(180,140,20,0.12) !important}
+body.dark .recense-card-header{background:linear-gradient(90deg,rgba(180,140,20,0.06),transparent) !important}
+body.dark .tab-row{background:rgba(255,255,255,0.04) !important;border-color:rgba(255,255,255,0.06) !important}
+body.dark .tab-btn{color:var(--muted) !important}
+body.dark .commissaire-banner{background:linear-gradient(135deg,rgba(180,140,20,0.1),rgba(192,65,14,0.06)) !important;border-color:rgba(180,140,20,0.2) !important}
+body.dark .btn-outline{border-color:rgba(255,255,255,0.15) !important;color:var(--text) !important}
+body.dark .btn-outline:hover{border-color:var(--gold) !important;color:var(--gold2) !important}
+body.dark select.form-control option{background:var(--bg2);color:var(--text)}
+body.dark .timeline::before{background:linear-gradient(180deg,rgba(180,140,20,0.35),transparent)}
+body.dark .timeline-item::before{border-color:var(--bg2)}
+body.dark #more-drawer{background:#181a2e !important}
+body.dark .drawer-item{color:rgba(255,255,255,0.85) !important}
+body.dark .sep{background:rgba(255,255,255,0.07)}
+body.dark .table-scroll-wrapper{background:none !important}
+body.dark .plainte-item{border-color:rgba(255,255,255,0.06) !important}
+body.dark .login-card{background:rgba(255,255,255,0.04) !important}
+body.dark #gs-box{background:var(--bg2) !important;border-color:rgba(180,140,20,0.2) !important}
+body.dark #gs-input-wrap,body.dark #gs-hint{border-color:rgba(255,255,255,0.07) !important}
+body.dark #gs-input{color:var(--text)}
+body.dark .gs-item:hover,body.dark .gs-item.gs-selected{background:rgba(180,140,20,0.1) !important}
+body.dark .gs-item-title{color:var(--text)}
+
+/* ---- NOUVEAUX BOUTONS TOPBAR ---- */
+#btn-global-search{display:flex;align-items:center;gap:7px;padding:6px 12px;background:rgba(0,0,0,0.05);border:1px solid rgba(180,140,20,0.18);border-radius:8px;cursor:pointer;font-size:11px;font-family:'Share Tech Mono',monospace;color:var(--muted);transition:all 0.18s;white-space:nowrap;margin-left:auto;flex-shrink:0}
+#btn-global-search:hover{background:rgba(180,140,20,0.1);border-color:rgba(180,140,20,0.35);color:var(--text)}
+body.dark #btn-global-search{background:rgba(255,255,255,0.05);border-color:rgba(180,140,20,0.2);color:var(--muted)}
+body.dark #btn-global-search:hover{background:rgba(180,140,20,0.12) !important}
+#btn-darkmode{width:34px;height:34px;border-radius:8px;border:1px solid rgba(180,140,20,0.18);background:rgba(0,0,0,0.05);cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;transition:all 0.18s;flex-shrink:0}
+#btn-darkmode:hover{background:rgba(180,140,20,0.1);border-color:rgba(180,140,20,0.35)}
+body.dark #btn-darkmode{background:rgba(255,255,255,0.05);border-color:rgba(180,140,20,0.2)}
+
+/* ---- SYNC INDICATOR ---- */
+#sync-indicator{display:none;align-items:center;gap:5px;font-size:9.5px;color:var(--gold2);font-family:'Share Tech Mono',monospace;letter-spacing:1px;padding:4px 9px;background:rgba(180,140,20,0.08);border:1px solid rgba(180,140,20,0.2);border-radius:6px;flex-shrink:0;animation:syncPulse 1.5s ease-in-out infinite}
+.sync-dot{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--gold2);animation:syncDot 1.2s ease-in-out infinite}
+
+/* ---- TOPBAR LAYOUT ---- */
+.topbar{gap:10px !important}
+.topbar-path{margin-left:0 !important}
+@media(max-width:768px){.topbar-path{display:none !important}}
+@media(max-width:600px){.topbar-search-label{display:none} #btn-global-search kbd{display:none}}
+
+/* ---- RECHERCHE GLOBALE ---- */
+#gs-overlay{position:fixed;inset:0;z-index:9000;background:rgba(10,12,30,0.55);backdrop-filter:blur(10px);display:none;align-items:flex-start;justify-content:center;padding:80px 16px 16px}
+#gs-overlay.open{display:flex}
+#gs-box{width:640px;max-width:100%;background:#fff;border:1px solid rgba(180,140,20,0.25);border-radius:16px;overflow:hidden;box-shadow:0 30px 80px rgba(0,0,0,0.25);animation:gsIn 0.22s cubic-bezier(0.34,1.3,0.64,1) both}
+#gs-input-wrap{display:flex;align-items:center;gap:10px;padding:14px 18px;border-bottom:1px solid rgba(180,140,20,0.12)}
+#gs-icon{font-size:18px;opacity:0.5;flex-shrink:0}
+#gs-input{flex:1;border:none;outline:none;font-size:16px;background:transparent;color:var(--text);font-family:'Barlow',sans-serif}
+#gs-input::placeholder{color:var(--muted)}
+#gs-close{cursor:pointer;color:var(--muted);font-size:18px;line-height:1;background:none;border:none;transition:color 0.15s}
+#gs-close:hover{color:#dc2626}
+#gs-results{max-height:420px;overflow-y:auto;padding:6px}
+.gs-section-label{font-size:8.5px;letter-spacing:2px;color:var(--muted);font-family:'Share Tech Mono',monospace;text-transform:uppercase;padding:8px 12px 4px}
+.gs-item{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:9px;cursor:pointer;transition:background 0.12s}
+.gs-item:hover,.gs-item.gs-selected{background:rgba(180,140,20,0.08)}
+.gs-item-icon{font-size:16px;flex-shrink:0;width:28px;text-align:center}
+.gs-item-main{flex:1;min-width:0}
+.gs-item-title{font-size:13px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.gs-item-sub{font-size:10px;color:var(--muted);font-family:'Share Tech Mono',monospace;margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#gs-hint{padding:10px 18px 12px;border-top:1px solid rgba(180,140,20,0.08);display:flex;gap:16px;font-size:9.5px;color:var(--muted);font-family:'Share Tech Mono',monospace}
+
+/* ---- STAT CARDS HOVER AMELIORE ---- */
+@media(hover:hover){.stat-card:hover{transform:translateY(-6px) scale(1.018) !important;box-shadow:0 18px 44px rgba(0,0,0,0.13),0 2px 8px rgba(0,0,0,0.06) !important}}
+
+/* ---- BARRE ACTIONS RAPIDES DASHBOARD ---- */
+#dash-quick-bar{display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap}
+.dash-quick-chip{display:flex;align-items:center;gap:7px;padding:7px 14px;background:rgba(180,140,20,0.07);border:1px solid rgba(180,140,20,0.18);border-radius:8px;font-size:11px;font-family:'Share Tech Mono',monospace;color:var(--gold2);cursor:pointer;transition:all 0.15s;user-select:none}
+@media(hover:hover){.dash-quick-chip:hover{background:rgba(180,140,20,0.15);transform:translateY(-1px)}}
+body.dark .dash-quick-chip{background:rgba(180,140,20,0.08);border-color:rgba(180,140,20,0.2)}
+.dqc-num{font-size:15px;font-weight:700;font-family:'Barlow Condensed',sans-serif;color:var(--text)}
+</style>
+
+<!-- MODALE RECHERCHE GLOBALE -->
+<div id="gs-overlay" onclick="if(event.target===this)closeGlobalSearch()">
+  <div id="gs-box">
+    <div id="gs-input-wrap">
+      <span id="gs-icon">&#128269;</span>
+      <input id="gs-input" type="text" placeholder="Rechercher dans l'intranet..." autocomplete="off" oninput="gsSearch()" onkeydown="gsKeyNav(event)">
+      <button id="gs-close" onclick="closeGlobalSearch()">&#10005;</button>
+    </div>
+    <div id="gs-results">
+      <div style="padding:32px;text-align:center;color:var(--muted);font-size:13px">
+        <span style="font-size:30px;display:block;margin-bottom:8px;opacity:0.35">&#128269;</span>
+        Commencez a taper pour rechercher...
+      </div>
+    </div>
+    <div id="gs-hint">
+      <span>&#8593;&#8595; Naviguer</span>
+      <span>&#8629; Ouvrir</span>
+      <span>Esc Fermer</span>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ======== INJECTION BOUTONS TOPBAR ======== */
+(function(){
+  var topbar = document.querySelector('.topbar');
+  if (!topbar) return;
+
+  /* Sync indicator */
+  var sync = document.createElement('div');
+  sync.id = 'sync-indicator';
+  sync.innerHTML = '<span class="sync-dot"></span>&nbsp;SYNC';
+
+  /* Bouton recherche */
+  var srch = document.createElement('button');
+  srch.id = 'btn-global-search';
+  srch.title = 'Recherche globale (Ctrl+K)';
+  srch.innerHTML = '<span>&#128269;</span><span class="topbar-search-label">Rechercher</span><kbd style="background:rgba(0,0,0,0.07);border:1px solid rgba(0,0,0,0.12);border-radius:4px;padding:1px 5px;font-size:9px">&#8984;K</kbd>';
+  srch.addEventListener('click', openGlobalSearch);
+
+  /* Bouton mode sombre */
+  var dm = document.createElement('button');
+  dm.id = 'btn-darkmode';
+  dm.title = 'Basculer le mode sombre';
+  dm.textContent = document.body.classList.contains('dark') ? '\u2600\uFE0F' : '\uD83C\uDF19';
+  dm.addEventListener('click', toggleDarkMode);
+
+  /* Injection avant le status dot */
+  var dot = topbar.querySelector('.status-dot');
+  if (dot) {
+    topbar.insertBefore(dm, dot);
+    topbar.insertBefore(srch, dm);
+    topbar.insertBefore(sync, srch);
+  } else {
+    topbar.appendChild(sync);
+    topbar.appendChild(srch);
+    topbar.appendChild(dm);
+  }
+})();
+
+/* ======== MODE SOMBRE ======== */
+(function(){
+  if (localStorage.getItem('suna_darkmode') === '1') {
+    document.body.classList.add('dark');
+    var btn = document.getElementById('btn-darkmode');
+    if (btn) btn.textContent = '\u2600\uFE0F';
+  }
+})();
+
+function toggleDarkMode() {
+  var dark = document.body.classList.toggle('dark');
+  localStorage.setItem('suna_darkmode', dark ? '1' : '0');
+  var btn = document.getElementById('btn-darkmode');
+  if (btn) btn.textContent = dark ? '\u2600\uFE0F' : '\uD83C\uDF19';
+}
+
+/* ======== INDICATEUR SYNC FIREBASE ======== */
+(function patchSave(){
+  var attempts = 0;
+  var tid = setInterval(function(){
+    attempts++;
+    if (typeof window.saveData === 'function') {
+      clearInterval(tid);
+      var orig = window.saveData;
+      window.saveData = function(){
+        var ind = document.getElementById('sync-indicator');
+        if (ind) ind.style.display = 'flex';
+        orig.apply(this, arguments);
+        clearTimeout(window._syncHideTimer);
+        window._syncHideTimer = setTimeout(function(){
+          var ind = document.getElementById('sync-indicator');
+          if (ind) ind.style.display = 'none';
+        }, 2200);
+      };
+    }
+    if (attempts > 50) clearInterval(tid);
+  }, 200);
+})();
+
+/* ======== RECHERCHE GLOBALE ======== */
+var _gsItems = [];
+var _gsIdx = -1;
+
+function openGlobalSearch() {
+  document.getElementById('gs-overlay').classList.add('open');
+  setTimeout(function(){ document.getElementById('gs-input').focus(); }, 60);
+  _gsIdx = -1;
+  gsSearch();
+}
+function closeGlobalSearch() {
+  document.getElementById('gs-overlay').classList.remove('open');
+  document.getElementById('gs-input').value = '';
+}
+
+document.addEventListener('keydown', function(e){
+  if ((e.ctrlKey || e.metaKey) && e.key === 'k') { e.preventDefault(); openGlobalSearch(); }
+  if (e.key === 'Escape' && document.getElementById('gs-overlay').classList.contains('open')) { closeGlobalSearch(); }
+});
+
+function _gsDate(d) {
+  try { return new Date(d).toLocaleDateString('fr-FR',{day:'2-digit',month:'2-digit',year:'numeric'}); } catch(e){ return d || '?'; }
+}
+function _gsSt(s) {
+  return ({ouverte:'Ouverte',en_cours:'En cours',fermee:'Fermee',en_attente:'En attente',acceptee:'Acceptee',refusee:'Refusee'})[s] || (s || '');
+}
+function _gsEsc(t) {
+  return String(t || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function gsSearch() {
+  if (!window.DB) return;
+  var q = (document.getElementById('gs-input').value || '').trim().toLowerCase();
+  _gsItems = [];
+  var emptyMsg = '<div style="padding:32px;text-align:center;color:var(--muted);font-size:13px"><span style="font-size:30px;display:block;margin-bottom:8px;opacity:0.35">&#128269;</span>Commencez a taper pour rechercher...</div>';
+  if (!q) { document.getElementById('gs-results').innerHTML = emptyMsg; return; }
+
+  var R = { annonces:[], plaintes:[], dossiers:[], recenses:[], candidatures:[] };
+
+  (DB.annonces||[]).filter(function(a){ return ((a.titre||'')+(a.contenu||'')+(a.auteur||'')).toLowerCase().indexOf(q) >= 0; }).slice(0,4).forEach(function(a){
+    R.annonces.push({ icon:'&#128226;', title: a.titre||'', sub:'Annonce · '+_gsDate(a.date), page:'annonces' });
+  });
+  (DB.plaintes||[]).filter(function(p){ return ((p.plaignant||'')+(p.accuse||'')+(p.type||'')+(p.desc||'')).toLowerCase().indexOf(q) >= 0; }).slice(0,4).forEach(function(p){
+    R.plaintes.push({ icon:'&#128203;', title:(p.type||'')+' — '+(p.plaignant||'')+' vs '+(p.accuse||''), sub:'Plainte · '+_gsSt(p.statut)+' · '+_gsDate(p.date), page:'plaintes' });
+  });
+  (DB.dossiers||[]).filter(function(d){ return ((d.nom||'')+(d.infractions||'')).toLowerCase().indexOf(q) >= 0; }).slice(0,4).forEach(function(d){
+    R.dossiers.push({ icon:'&#128194;', title: d.nom||'', sub:'Dossier · '+(d.danger||''), page:'dossiers' });
+  });
+  (DB.recenses||[]).filter(function(r){ return ((r.nom||'')+(r.faction||'')+(r.description||'')).toLowerCase().indexOf(q) >= 0; }).slice(0,4).forEach(function(r){
+    R.recenses.push({ icon:'&#128221;', title: r.nom||'', sub:'Recensement · '+(r.faction||'—'), page:'recensement' });
+  });
+  (DB.candidatures||[]).filter(function(c){ return ((c.nom||'')+(c.motivation||'')).toLowerCase().indexOf(q) >= 0; }).slice(0,3).forEach(function(c){
+    R.candidatures.push({ icon:'&#127894;', title: c.nom||'', sub:'Candidature · '+_gsSt(c.statut), page:'recrutement' });
+  });
+
+  var html = '';
+  var sections = [['annonces','Annonces'],['plaintes','Plaintes'],['dossiers','Dossiers criminels'],['recenses','Recensement'],['candidatures','Recrutement']];
+  sections.forEach(function(pair){
+    if (!R[pair[0]].length) return;
+    html += '<div class="gs-section-label">'+pair[1]+'</div>';
+    R[pair[0]].forEach(function(item){
+      var idx = _gsItems.length;
+      _gsItems.push(item);
+      html += '<div class="gs-item" onclick="gsGo('+idx+')" onmouseover="gsHover('+idx+')">'
+            + '<div class="gs-item-icon">'+item.icon+'</div>'
+            + '<div class="gs-item-main"><div class="gs-item-title">'+_gsEsc(item.title)+'</div>'
+            + '<div class="gs-item-sub">'+_gsEsc(item.sub)+'</div></div></div>';
+    });
+  });
+
+  if (!html) html = '<div style="padding:32px;text-align:center;color:var(--muted);font-size:13px"><span style="font-size:30px;display:block;margin-bottom:8px;opacity:0.35">&#128512;</span>Aucun resultat pour <b>'+_gsEsc(q)+'</b></div>';
+  document.getElementById('gs-results').innerHTML = html;
+  _gsIdx = -1;
+}
+
+function gsHover(idx) {
+  _gsIdx = idx;
+  document.querySelectorAll('#gs-results .gs-item').forEach(function(el,i){ el.classList.toggle('gs-selected', i === idx); });
+}
+function gsGo(idx) {
+  var item = _gsItems[idx];
+  if (!item) return;
+  closeGlobalSearch();
+  showPage(item.page);
+  if (typeof updateBottomNav === 'function') updateBottomNav(item.page);
+}
+function gsKeyNav(e) {
+  if (e.key === 'ArrowDown') { e.preventDefault(); _gsIdx = Math.min(_gsIdx+1, _gsItems.length-1); gsUpdateSel(); }
+  else if (e.key === 'ArrowUp') { e.preventDefault(); _gsIdx = Math.max(_gsIdx-1, 0); gsUpdateSel(); }
+  else if (e.key === 'Enter' && _gsIdx >= 0) { gsGo(_gsIdx); }
+}
+function gsUpdateSel() {
+  document.querySelectorAll('#gs-results .gs-item').forEach(function(el,i){
+    el.classList.toggle('gs-selected', i === _gsIdx);
+    if (i === _gsIdx) el.scrollIntoView({ block:'nearest' });
+  });
+}
+
+/* ======== BARRE ACTIONS RAPIDES DASHBOARD ======== */
+(function patchDash(){
+  var attempts = 0;
+  var tid = setInterval(function(){
+    attempts++;
+    if (typeof window.renderDashboard === 'function') {
+      clearInterval(tid);
+      var orig = window.renderDashboard;
+      window.renderDashboard = function(){
+        orig.apply(this, arguments);
+        _renderQuickBar();
+      };
+    }
+    if (attempts > 50) clearInterval(tid);
+  }, 300);
+})();
+
+function _renderQuickBar() {
+  if (!window.DB) return;
+  var bar = document.getElementById('dash-quick-bar');
+  if (!bar) {
+    var dash = document.getElementById('page-dashboard');
+    if (!dash) return;
+    var grid = dash.querySelector('.grid.grid-4');
+    if (!grid) return;
+    bar = document.createElement('div');
+    bar.id = 'dash-quick-bar';
+    if (grid.nextSibling) dash.insertBefore(bar, grid.nextSibling);
+    else dash.appendChild(bar);
+  }
+  var pc = (DB.plaintes||[]).filter(function(p){ return p.statut === 'en_cours'; }).length;
+  var dc = (DB.dossiers||[]).filter(function(d){ return (d.statut||'').toLowerCase() === 'ouvert'; }).length;
+  var ca = (DB.candidatures||[]).filter(function(c){ return c.statut === 'en_attente'; }).length;
+  var chips = [];
+  if (pc) chips.push({ n:pc, l:'plainte(s) en cours', i:'&#9878;&#65039;', p:'plaintes' });
+  if (dc) chips.push({ n:dc, l:'dossier(s) ouvert(s)', i:'&#128194;', p:'dossiers' });
+  if (ca) chips.push({ n:ca, l:'candidature(s) en attente', i:'&#127894;', p:'recrutement' });
+  bar.innerHTML = chips.map(function(c){
+    return '<div class="dash-quick-chip" onclick="showPage(\''+c.p+'\');if(typeof updateBottomNav===\'function\')updateBottomNav(\''+c.p+'\')">'
+         + '<span>'+c.i+'</span><span class="dqc-num">'+c.n+'</span><span>'+c.l+'</span></div>';
+  }).join('');
+}
+</script>
