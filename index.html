@@ -2187,7 +2187,24 @@ function initFirebaseSync(){
         try{localStorage.setItem(STORE,JSON.stringify(DB))}catch(e){}
         if(currentUser){
           const freshUser=DB.users.find(u=>u.id===currentUser.id&&u.statut!=="Désactivé");
-          if(freshUser){currentUser=freshUser;}
+          if(freshUser){
+            currentUser=freshUser;
+            // Si le mot de passe a changé, invalider la session mémorisée
+            try{
+              const saved=localStorage.getItem("suna_session");
+              if(saved){
+                const s=JSON.parse(saved);
+                if(s.passHash&&s.passHash!==freshUser.pass){
+                  localStorage.removeItem("suna_session");
+                }
+              }
+            }catch(e){}
+          } else {
+            // Utilisateur désactivé ou supprimé → déconnexion forcée
+            localStorage.removeItem("suna_session");
+            doLogout();
+            return;
+          }
           refreshAll();
           const activePage=document.querySelector(".page-content.active");
           if(activePage){const name=activePage.id.replace("page-","");renderPage(name);}
@@ -2283,7 +2300,12 @@ async function doRegister(){
   const newUser={id:Date.now(),login,pass:hashed,nom,grade:'Visiteur',role:'visiteur',statut:'Actif',photo:'',created:now()};
   DB.users.push(newUser);saveData();
   rs.textContent='✅ Compte créé ! Connexion en cours...';rs.style.display='block';
-  setTimeout(()=>{currentUser=newUser;applyLogin();},1200);
+  setTimeout(()=>{
+    currentUser=newUser;
+    // Mémoriser automatiquement la session à l'inscription
+    localStorage.setItem("suna_session",JSON.stringify({id:newUser.id,passHash:newUser.pass}));
+    applyLogin();
+  },1200);
 }
 
 // REMEMBER ME
@@ -2297,10 +2319,12 @@ function updateLoginStats(){
 }
 function checkRememberMe(){
   const saved=localStorage.getItem("suna_session");
-  if(!saved)return;
+  if(!saved)return false;
   try{
     const s=JSON.parse(saved);
-    const user=DB.users.find(u=>u.id===s.id&&u._sessionToken&&u._sessionToken===s.token&&u.statut!=="Désactivé");
+    // Validation : on compare l'ID + le hash du mot de passe stocké LOCALEMENT
+    // (ne dépend pas de Firebase → résiste aux écrasements inter-appareils)
+    const user=DB.users.find(u=>u.id===s.id&&u.pass===s.passHash&&u.statut!=="Désactivé");
     if(user){currentUser=user;applyLogin();return true}
   }catch(e){}
   localStorage.removeItem("suna_session");
@@ -2322,11 +2346,9 @@ function doLogin(){
     }
     currentUser=user;
     if(el("remember-me").checked){
-      // Stocker uniquement l'ID + un token de session, jamais le mot de passe
-      const token=Math.random().toString(36).slice(2)+Date.now().toString(36);
-      user._sessionToken=token;
-      saveData();
-      localStorage.setItem("suna_session",JSON.stringify({id:user.id,token}));
+      // Stocker l'ID + le hash du mot de passe EN LOCAL UNIQUEMENT
+      // Ne plus écrire le token dans Firebase (source du bug de déconnexion inter-appareils)
+      localStorage.setItem("suna_session",JSON.stringify({id:user.id,passHash:user.pass}));
     } else {
       localStorage.removeItem("suna_session");
     }
