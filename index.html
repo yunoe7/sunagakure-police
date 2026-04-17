@@ -955,8 +955,8 @@ textarea.form-control{resize:vertical;min-height:80px}
         ℹ️ Accès visiteur : <b style="color:rgba(255,255,255,0.8)">Annonces, Recensement, Recrutement, Plaintes, Code Pénal</b>. Vous pouvez déposer et modifier votre candidature.
       </div>
       <div class="grid grid-2" style="gap:10px">
-        <div class="form-group"><label class="form-label">Identifiant</label><input type="text" id="reg-login" class="form-control" placeholder="Ex : naruto_uzumaki"></div>
-        <div class="form-group"><label class="form-label">Nom IC</label><input type="text" id="reg-nom" class="form-control" placeholder="Prénom Nom"></div>
+        <div class="form-group"><label class="form-label">Identifiant</label><input type="text" id="reg-login" class="form-control" placeholder="Ex : pseudo"></div>
+        <div class="form-group"><label class="form-label">Nom RP</label><input type="text" id="reg-nom" class="form-control" placeholder="Prénom Nom"></div>
       </div>
       <div class="grid grid-2" style="gap:10px">
         <div class="form-group"><label class="form-label">Mot de passe</label><div style="position:relative"><input type="password" id="reg-pass" class="form-control" placeholder="••••••••" style="padding-right:40px"><span onclick="togglePass('reg-pass',this)" style="position:absolute;right:11px;top:50%;transform:translateY(-50%);cursor:pointer;font-size:18px;opacity:0.75;transition:opacity 0.2s;user-select:none" title="Afficher/masquer">👁</span></div></div>
@@ -1089,7 +1089,7 @@ textarea.form-control{resize:vertical;min-height:80px}
     <div class="card" style="overflow:visible">
       <div class="table-scroll-wrapper">
         <table class="data-table">
-          <thead><tr><th>ID</th><th>Nom IC</th><th>Âge</th><th>Motivation</th><th>Statut</th><th>Date</th><th>Actions</th></tr></thead>
+          <thead><tr><th>ID</th><th>Nom RP</th><th>Âge</th><th>Motivation</th><th>Statut</th><th>Date</th><th>Actions</th></tr></thead>
           <tbody id="candidatures-tbody"></tbody>
         </table>
       </div>
@@ -1137,7 +1137,7 @@ textarea.form-control{resize:vertical;min-height:80px}
     <div class="card" style="overflow:visible">
       <div class="table-scroll-wrapper">
         <table class="data-table">
-          <thead><tr><th>Photo</th><th>Nom IC</th><th>Infractions</th><th>Dangerosité</th><th>Statut</th><th>💰 Amendes</th><th>Agent</th><th>Actions</th></tr></thead>
+          <thead><tr><th>Photo</th><th>Nom RP</th><th>Infractions</th><th>Dangerosité</th><th>Statut</th><th>💰 Amendes</th><th>Agent</th><th>Actions</th></tr></thead>
           <tbody id="dossiers-tbody"></tbody>
         </table>
       </div>
@@ -1240,7 +1240,7 @@ textarea.form-control{resize:vertical;min-height:80px}
       <div class="card-header"><span>🏛️</span><h3>Commissaire en chef</h3></div>
       <div class="card-body">
         <div class="flex gap-3 items-center flex-wrap">
-          <input type="text" id="admin-comm-input" class="form-control" placeholder="Nom Prénom IC" style="max-width:300px">
+          <input type="text" id="admin-comm-input" class="form-control" placeholder="Nom Prénom RP" style="max-width:300px">
           <button class="btn btn-gold" onclick="saveCommNameAdmin()">💾 Enregistrer</button>
         </div>
         <div id="admin-comm-ok" class="alert alert-success" style="display:none;margin-top:10px;margin-bottom:0">✅ Commissaire mis à jour.</div>
@@ -1308,7 +1308,7 @@ textarea.form-control{resize:vertical;min-height:80px}
       </div>
       <div class="table-scroll-wrapper">
         <table class="data-table">
-          <thead><tr><th>Identifiant</th><th>Nom IC</th><th>Grade</th><th>Rôle</th><th>Statut</th><th>Actions</th></tr></thead>
+          <thead><tr><th>Identifiant</th><th>Nom RP</th><th>Grade</th><th>Rôle</th><th>Statut</th><th>Actions</th></tr></thead>
           <tbody id="admin-users-tbody"></tbody>
         </table>
       </div>
@@ -1354,11 +1354,11 @@ textarea.form-control{resize:vertical;min-height:80px}
     <div class="modal-header"><h3>📝 Recenser un joueur</h3><span class="modal-close" onclick="closeModal('modal-recense')">✕</span></div>
     <div class="modal-body">
       <div class="grid grid-2">
-        <div class="form-group"><label class="form-label">Prénom IC</label><input type="text" id="r-prenom" class="form-control" placeholder="Prénom"></div>
-        <div class="form-group"><label class="form-label">Nom IC</label><input type="text" id="r-nom" class="form-control" placeholder="Nom"></div>
+        <div class="form-group"><label class="form-label">Prénom RP</label><input type="text" id="r-prenom" class="form-control" placeholder="Prénom"></div>
+        <div class="form-group"><label class="form-label">Nom RP</label><input type="text" id="r-nom" class="form-control" placeholder="Nom"></div>
       </div>
       <div class="grid grid-2">
-        <div class="form-group"><label class="form-label">Âge IC</label><input type="number" id="r-age" class="form-control" placeholder="Ex: 19"></div>
+        <div class="form-group"><label class="form-label">Âge RP</label><input type="number" id="r-age" class="form-control" placeholder="Ex: 19"></div>
         <div class="form-group"><label class="form-label">Sexe</label>
           <select id="r-sexe" class="form-control"><option>Masculin</option><option>Féminin</option><option>Autre</option></select></div>
       </div>
@@ -1403,8 +1403,8 @@ textarea.form-control{resize:vertical;min-height:80px}
     <div class="modal-header"><h3>🎖️ Déposer une candidature</h3><span class="modal-close" onclick="closeModal('modal-candidature')">✕</span></div>
     <div class="modal-body">
       <div class="grid grid-2">
-        <div class="form-group"><label class="form-label">Nom IC</label><input type="text" id="c-nom" class="form-control" placeholder="Prénom Nom"></div>
-        <div class="form-group"><label class="form-label">Âge IC</label><input type="number" id="c-age" class="form-control" placeholder="Ex: 24"></div>
+        <div class="form-group"><label class="form-label">Nom RP</label><input type="text" id="c-nom" class="form-control" placeholder="Prénom Nom"></div>
+        <div class="form-group"><label class="form-label">Âge RP</label><input type="number" id="c-age" class="form-control" placeholder="Ex: 24"></div>
       </div>
       <div class="form-group"><label class="form-label">Pseudo Discord (OOC)</label><input type="text" id="c-discord" class="form-control" placeholder="pseudo#0000"></div>
       <div class="form-group"><label class="form-label">Motivation</label><textarea id="c-motif" class="form-control" placeholder="Pourquoi rejoindre la Police ?"></textarea></div>
@@ -1421,8 +1421,8 @@ textarea.form-control{resize:vertical;min-height:80px}
     <div class="modal-body">
       <input type="hidden" id="ec-id">
       <div class="grid grid-2">
-        <div class="form-group"><label class="form-label">Nom IC</label><input type="text" id="ec-nom" class="form-control"></div>
-        <div class="form-group"><label class="form-label">Âge IC</label><input type="number" id="ec-age" class="form-control"></div>
+        <div class="form-group"><label class="form-label">Nom RP</label><input type="text" id="ec-nom" class="form-control"></div>
+        <div class="form-group"><label class="form-label">Âge RP</label><input type="number" id="ec-age" class="form-control"></div>
       </div>
       <div class="form-group"><label class="form-label">Pseudo Discord (OOC)</label><input type="text" id="ec-discord" class="form-control"></div>
       <div class="form-group"><label class="form-label">Motivation</label><textarea id="ec-motif" class="form-control"></textarea></div>
@@ -1460,7 +1460,7 @@ textarea.form-control{resize:vertical;min-height:80px}
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">
         <div class="form-group" style="margin:0">
           <label class="form-label">Votre nom (plaignant)</label>
-          <input type="text" id="p-plaignant" class="form-control" placeholder="Prénom Nom IC">
+          <input type="text" id="p-plaignant" class="form-control" placeholder="Prénom Nom RP">
         </div>
         <div class="form-group" style="margin:0">
           <label class="form-label">Accusé</label>
@@ -1503,7 +1503,7 @@ textarea.form-control{resize:vertical;min-height:80px}
   <div class="modal">
     <div class="modal-header"><h3>🗂️ Nouveau dossier criminel</h3><span class="modal-close" onclick="closeModal('modal-dossier')">✕</span></div>
     <div class="modal-body">
-      <div class="form-group"><label class="form-label">Nom IC du suspect</label><input type="text" id="d-nom" class="form-control" placeholder="Prénom Nom"></div>
+      <div class="form-group"><label class="form-label">Nom RP du suspect</label><input type="text" id="d-nom" class="form-control" placeholder="Prénom Nom"></div>
       <div class="form-group"><label class="form-label">Infractions reprochées</label><input type="text" id="d-infractions" class="form-control" placeholder="Vol, agression..."></div>
       <div class="grid grid-2">
         <div class="form-group"><label class="form-label">Dangerosité</label>
@@ -1565,7 +1565,7 @@ textarea.form-control{resize:vertical;min-height:80px}
     <div class="modal-header"><h3>✏️ Modifier le dossier</h3><span class="modal-close" onclick="closeModal('modal-edit-dossier')">✕</span></div>
     <div class="modal-body">
       <input type="hidden" id="ed-id">
-      <div class="form-group"><label class="form-label">Nom IC du suspect</label><input type="text" id="ed-nom" class="form-control" placeholder="Prénom Nom"></div>
+      <div class="form-group"><label class="form-label">Nom RP du suspect</label><input type="text" id="ed-nom" class="form-control" placeholder="Prénom Nom"></div>
       <div class="form-group"><label class="form-label">Infractions reprochées</label><input type="text" id="ed-infractions" class="form-control" placeholder="Vol, agression..."></div>
       <div class="grid grid-2">
         <div class="form-group"><label class="form-label">Dangerosité</label>
@@ -1633,6 +1633,7 @@ textarea.form-control{resize:vertical;min-height:80px}
           <select id="op-statut" class="form-control"><option value="Active">Active</option><option value="Planifiée">Planifiée</option><option value="Terminée">Terminée</option></select></div>
       </div>
       <div class="form-group"><label class="form-label">Responsable</label><input type="text" id="op-resp" class="form-control" placeholder="Nom de l'agent"></div>
+      <div class="form-group"><label class="form-label">Date de l'opération</label><input type="date" id="op-date" class="form-control"></div>
       <div class="form-group"><label class="form-label">Description</label><textarea id="op-desc" class="form-control"></textarea></div>
     </div>
     <div class="modal-footer"><button class="btn btn-outline" onclick="closeModal('modal-operation')">Annuler</button><button class="btn btn-primary" onclick="saveOperation()">Créer</button></div>
@@ -1646,7 +1647,7 @@ textarea.form-control{resize:vertical;min-height:80px}
     <div class="modal-body">
       <div class="form-group"><label class="form-label">Type</label>
         <select id="s-type" class="form-control"><option>Promotion</option><option>Félicitation</option><option>Avertissement</option><option>Suspension</option><option>Rétrogradation</option><option>Exclusion</option></select></div>
-      <div class="form-group"><label class="form-label">Concerné (nom IC)</label><input type="text" id="s-cible" class="form-control" placeholder="Nom de l'agent"></div>
+      <div class="form-group"><label class="form-label">Concerné (nom RP)</label><input type="text" id="s-cible" class="form-control" placeholder="Nom de l'agent"></div>
       <div class="form-group"><label class="form-label">Motif</label><textarea id="s-motif" class="form-control" placeholder="Motif de la décision..."></textarea></div>
     </div>
     <div class="modal-footer"><button class="btn btn-outline" onclick="closeModal('modal-sanction')">Annuler</button><button class="btn btn-primary" onclick="saveSanction()">Valider</button></div>
@@ -1662,7 +1663,7 @@ textarea.form-control{resize:vertical;min-height:80px}
         <div class="form-group"><label class="form-label">Identifiant (login)</label><input type="text" id="u-login" class="form-control" placeholder="badge123"></div>
         <div class="form-group"><label class="form-label">Mot de passe</label><div style="position:relative"><input type="password" id="u-pass" class="form-control" placeholder="••••••••" style="padding-right:40px"><span onclick="togglePass('u-pass',this)" style="position:absolute;right:11px;top:50%;transform:translateY(-50%);cursor:pointer;font-size:18px;opacity:0.75;transition:opacity 0.2s;user-select:none" title="Afficher/masquer">👁</span></div></div>
       </div>
-      <div class="form-group"><label class="form-label">Nom IC</label><input type="text" id="u-nom" class="form-control" placeholder="Prénom Nom"></div>
+      <div class="form-group"><label class="form-label">Nom RP</label><input type="text" id="u-nom" class="form-control" placeholder="Prénom Nom"></div>
       <div class="grid grid-2">
         <div class="form-group"><label class="form-label">Grade</label>
           <select id="u-grade" class="form-control"></select></div>
@@ -1687,7 +1688,7 @@ textarea.form-control{resize:vertical;min-height:80px}
     <div class="modal-header"><h3>✏️ Modifier le compte</h3><span class="modal-close" onclick="closeModal('modal-edituser')">✕</span></div>
     <div class="modal-body">
       <input type="hidden" id="eu-id">
-      <div class="form-group"><label class="form-label">Nom IC</label><input type="text" id="eu-nom" class="form-control"></div>
+      <div class="form-group"><label class="form-label">Nom RP</label><input type="text" id="eu-nom" class="form-control"></div>
       <div class="form-group"><label class="form-label">Nouveau mot de passe <span style="color:var(--muted)">(laisser vide = inchangé)</span></label>
         <div style="position:relative"><input type="password" id="eu-pass" class="form-control" placeholder="Nouveau mot de passe" style="padding-right:40px"><span onclick="togglePass('eu-pass',this)" style="position:absolute;right:11px;top:50%;transform:translateY(-50%);cursor:pointer;font-size:18px;opacity:0.75;transition:opacity 0.2s;user-select:none" title="Afficher/masquer">👁</span></div></div>
       <div class="grid grid-2">
@@ -2313,6 +2314,7 @@ function deleteRecense(id){askDelete("Supprimer cette fiche de recensement ?",()
 
 // CANDIDATURES
 function filterCandidatures(f,e){candFilter=f;document.querySelectorAll("#page-recrutement .tab-btn").forEach(b=>b.classList.remove("active"));e.classList.add("active");renderCandidatures()}
+function candNumero(id){const sorted=[...DB.candidatures].sort((a,b)=>a.id-b.id);const idx=sorted.findIndex(c=>c.id===id);return idx>=0?idx+1:'?';}
 function renderCandidatures(){
   let list=DB.candidatures;if(candFilter!=="all")list=list.filter(c=>c.statut===candFilter);
   el("candidatures-tbody").innerHTML=list.map(c=>{
@@ -2328,7 +2330,7 @@ function renderCandidatures(){
       const modifyBtn=`<button class="btn btn-gold btn-sm" onclick="openEditCandidature(${c.id})" title="Modifier">✏️ Modifier</button>`;
       actions=canModify()?actions+' '+modifyBtn:modifyBtn;
     }
-    return `<tr><td class="mono">#${c.id}</td><td><b>${esc(c.nom)}</b></td><td>${c.age} ans</td><td style="font-size:11px;max-width:150px">${esc((c.motif||"").substring(0,50))}…</td><td><span class="badge ${statutCand(c.statut)}">${fmtCand(c.statut)}</span></td><td class="mono">${fmtDate(c.date)}</td><td style="white-space:nowrap"><button class="btn btn-outline btn-sm" onclick="viewCandidature(${c.id})" title="Voir les détails">👁</button> ${actions}</td></tr>`;
+    return `<tr><td class="mono">#${candNumero(c.id)}</td><td><b>${esc(c.nom)}</b></td><td>${c.age} ans</td><td style="font-size:11px;max-width:150px">${esc((c.motif||"").substring(0,50))}…</td><td><span class="badge ${statutCand(c.statut)}">${fmtCand(c.statut)}</span></td><td class="mono">${fmtDate(c.date)}</td><td style="white-space:nowrap"><button class="btn btn-outline btn-sm" onclick="viewCandidature(${c.id})" title="Voir les détails">👁</button> ${actions}</td></tr>`;
   }).join("")||`<tr><td colspan="7" style="text-align:center;color:var(--muted);padding:18px">Aucune candidature</td></tr>`;
 }
 
@@ -2354,13 +2356,13 @@ function viewCandidature(id){
       <div style="width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,rgba(192,65,14,0.2),rgba(180,140,20,0.15));border:2px solid rgba(180,140,20,0.3);display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:700;flex-shrink:0;color:var(--text)">${esc(c.nom).charAt(0).toUpperCase()}</div>
       <div style="flex:1;min-width:0">
         <div style="font-family:'Cinzel',serif;font-size:18px;font-weight:700;color:var(--text)">${esc(c.nom)}</div>
-        <div style="font-size:10px;color:var(--muted);font-family:'Share Tech Mono',monospace;margin-top:2px">CANDIDATURE #${c.id} — ${fmtDate(c.date)}</div>
+        <div style="font-size:10px;color:var(--muted);font-family:'Share Tech Mono',monospace;margin-top:2px">CANDIDATURE #${candNumero(c.id)} — ${fmtDate(c.date)}</div>
       </div>
       <span class="badge ${statutColor}" style="font-size:11px;padding:4px 12px">${statutLabel}</span>
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">
       <div style="background:rgba(180,140,20,0.04);border:1px solid rgba(180,140,20,0.12);border-radius:9px;padding:13px 15px">
-        <div style="font-size:9px;letter-spacing:2px;color:var(--gold2);font-family:'Share Tech Mono',monospace;text-transform:uppercase;margin-bottom:5px">Age IC</div>
+        <div style="font-size:9px;letter-spacing:2px;color:var(--gold2);font-family:'Share Tech Mono',monospace;text-transform:uppercase;margin-bottom:5px">Âge RP</div>
         <div style="font-size:15px;font-weight:600;color:var(--text)">${esc(c.age)} ans</div>
       </div>
       <div style="background:rgba(180,140,20,0.04);border:1px solid rgba(180,140,20,0.12);border-radius:9px;padding:13px 15px">
@@ -2644,13 +2646,13 @@ function clearEditDossierPhoto(){
 
 // OPÉRATIONS
 function renderOperations(){
-  el("operations-grid").innerHTML=DB.operations.map(op=>`<div class="card"><div class="card-header"><span>${op.type==="Arrestation"?"🚔":op.type==="Perquisition"?"🏠":op.type==="Surveillance"?"👁":"🚨"}</span><h3 style="font-size:13px">${esc(op.nom)}</h3><span class="badge ${op.statut==="Active"?"badge-green":op.statut==="Planifiée"?"badge-blue":"badge-gray"}" style="margin-left:auto">${op.statut}</span></div><div class="card-body"><span class="badge badge-orange" style="margin-bottom:9px;display:inline-flex">${op.type}</span><p style="font-size:11.5px;color:#555;line-height:1.6">${esc(op.desc)}</p><div class="divider"></div><div class="text-muted">Responsable : <b>${esc(op.resp)}</b></div>${canModify()?`<div class="flex gap-2 mt-4"><button class="btn btn-danger btn-sm" onclick="deleteOperation(${op.id})">🗑 Supprimer</button></div>`:""}</div></div>`).join("")||'<div style="grid-column:1/-1;color:var(--muted)">Aucune opération.</div>';
+  el("operations-grid").innerHTML=DB.operations.map(op=>`<div class="card"><div class="card-header"><span>${op.type==="Arrestation"?"🚔":op.type==="Perquisition"?"🏠":op.type==="Surveillance"?"👁":"🚨"}</span><h3 style="font-size:13px">${esc(op.nom)}</h3><span class="badge ${op.statut==="Active"?"badge-green":op.statut==="Planifiée"?"badge-blue":"badge-gray"}" style="margin-left:auto">${op.statut}</span></div><div class="card-body"><span class="badge badge-orange" style="margin-bottom:9px;display:inline-flex">${op.type}</span><p style="font-size:11.5px;color:#555;line-height:1.6">${esc(op.desc)}</p><div class="divider"></div><div class="text-muted">Responsable : <b>${esc(op.resp)}</b></div>${op.dateOp?`<div class="text-muted" style="font-size:11px;margin-top:4px">📅 ${op.dateOp}</div>`:""}${canModify()?`<div class="flex gap-2 mt-4"><button class="btn btn-danger btn-sm" onclick="deleteOperation(${op.id})">🗑 Supprimer</button></div>`:""}</div></div>`).join("")||'<div style="grid-column:1/-1;color:var(--muted)">Aucune opération.</div>';
 }
 function saveOperation(){
   const nom=v("op-nom");if(!nom)return;
-  DB.operations.push({id:Date.now(),nom,type:v("op-type"),statut:v("op-statut"),resp:v("op-resp"),desc:v("op-desc"),date:now()});
+  DB.operations.push({id:Date.now(),nom,type:v("op-type"),statut:v("op-statut"),resp:v("op-resp"),dateOp:v("op-date"),desc:v("op-desc"),date:now()});
   addTimeline(`Opération "${nom}" créée`);
-  saveData();closeModal("modal-operation");renderOperations();syncDashboard();clearForm(["op-nom","op-resp","op-desc"]);
+  saveData();closeModal("modal-operation");renderOperations();syncDashboard();clearForm(["op-nom","op-resp","op-desc","op-date"]);
 }
 function deleteOperation(id){askDelete("Supprimer cette opération ?",()=>{DB.operations=DB.operations.filter(o=>o.id!==id);saveData();renderOperations();syncDashboard()})}
 
