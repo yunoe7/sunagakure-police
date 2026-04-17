@@ -2019,8 +2019,8 @@ function applyLogin(){
   el("user-rank-display").textContent=roleLabel(currentUser.role)+" · "+currentUser.grade;
   el("user-avatar").textContent=currentUser.nom.charAt(0).toUpperCase();
   // Sidebar : masquer les rubriques membres-only pour visiteurs
-  document.querySelectorAll('[data-member-only="true"]').forEach(el=>{
-    el.style.display=isVisiteur()?'none':'';
+  document.querySelectorAll('[data-member-only="true"]').forEach(item=>{
+    item.style.display=isVisiteur()?'none':'';
   });
   if(canModify()){
     el("nav-admin").style.display="flex";
@@ -2322,7 +2322,7 @@ function renderCandidatures(){
       actions=`<button class="btn btn-success btn-sm" onclick="setCandidature(${c.id},'acceptee')">✓</button> <button class="btn btn-danger btn-sm" onclick="setCandidature(${c.id},'refusee')">✕</button> `;
     }
     if(canModify()){
-      actions+=(actions==='—'?'':'') + `<button class="btn btn-danger btn-sm" onclick="deleteCandidature(${c.id})" title="Supprimer">🗑</button>`;
+      actions=(actions==='—'?'':actions) + `<button class="btn btn-danger btn-sm" onclick="deleteCandidature(${c.id})" title="Supprimer">🗑</button>`;
     }
     if(isOwn){
       const modifyBtn=`<button class="btn btn-gold btn-sm" onclick="openEditCandidature(${c.id})" title="Modifier">✏️ Modifier</button>`;
@@ -2924,11 +2924,12 @@ function saveEditUser(){
   if(u.role==="admin"&&!isAdmin()){showToast("Permission refusée.","error");return;}
   const newRole=v("eu-role");
   if(newRole==="admin"&&!isAdmin()){showToast("Seul un Administrateur peut attribuer le rôle Admin.","error");return;}
+  const oldNom=u.nom;
   u.nom=v("eu-nom")||u.nom;
   const newPass=el("eu-pass").value;
   const finalize=()=>{
     u.grade=v("eu-grade");u.role=newRole;
-    const c=DB.candidatures.find(x=>x.authorId===id||x.nom===u.nom);if(c)c.grade=u.grade;
+    const c=DB.candidatures.find(x=>x.authorId===id||x.nom===oldNom);if(c)c.grade=u.grade;
     if(currentUser.id===id){currentUser=u;el("user-name-display").textContent=u.nom;el("user-rank-display").textContent=u.grade;el("user-avatar").textContent=u.nom.charAt(0).toUpperCase()}
     addTimeline(`Compte de ${u.nom} modifié par ${currentUser.nom}`);
     saveData();closeModal("modal-edituser");renderAdmin();renderEffectifs();renderRecrues();
