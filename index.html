@@ -408,6 +408,12 @@ textarea.form-control{resize:vertical;min-height:80px}
   .login-emblem img{width:54px;height:54px}
 }
 
+/* Tablettes portrait & grands smartphones (521-768px) */
+@media(min-width:521px) and (max-width:768px){
+  .login-brand-title{font-size:26px;letter-spacing:5px}
+  .login-brand-sub{font-size:11px;letter-spacing:4px}
+}
+
 /* SEPARATOR */
 .sep{height:1px;background:linear-gradient(90deg,transparent,rgba(180,140,20,0.2),transparent);margin:10px 0}
 
@@ -567,6 +573,7 @@ textarea.form-control{resize:vertical;min-height:80px}
     flex-shrink:0;
     position:relative !important;
     top:auto !important;
+    overflow:hidden;
   }
 
   /* Le contenu scrolle entre topbar et bottom-nav */
@@ -601,13 +608,13 @@ textarea.form-control{resize:vertical;min-height:80px}
   }
   .topbar-path{display:none}
   .topbar-title{
-    font-size:14px;letter-spacing:2px;
+    font-size:14px;letter-spacing:1.5px;
     color:#d4b44a !important;
     -webkit-text-fill-color:#d4b44a !important;
     background:none !important;background-clip:unset !important;
     text-shadow:0 0 20px rgba(212,180,74,0.35);
     font-family:'Cinzel',serif !important;
-    /* position gérée par le JS sur mobile */
+    /* centrage géré par le JS en position absolue */
   }
   /* Point de statut */
   .status-dot{width:6px;height:6px;flex-shrink:0}
@@ -656,7 +663,7 @@ textarea.form-control{resize:vertical;min-height:80px}
      ============================================ */
   .section-header{flex-direction:column;align-items:stretch;gap:10px}
   .section-header .btn{width:100%;justify-content:center}
-  .section-title{font-size:20px !important;letter-spacing:0.3px;text-align:left}
+  .section-title{font-size:20px !important;letter-spacing:0.3px;text-align:left;word-break:break-word;overflow-wrap:break-word;hyphens:auto}
   .section-sub{font-size:9px;letter-spacing:1.5px;text-align:left}
 
   /* ============================================
@@ -925,7 +932,7 @@ textarea.form-control{resize:vertical;min-height:80px}
 /* Très petits écrans (iPhone SE ≤ 390px) */
 @media(max-width:390px){
   .page-content{padding:10px 10px calc(80px + env(safe-area-inset-bottom,8px)) !important}
-  .topbar-title{font-size:12.5px;letter-spacing:1px;max-width:calc(100% - 110px)}
+  .topbar-title{font-size:11.5px !important;letter-spacing:0.5px !important}
   .stat-value{font-size:28px !important}
   .tab-btn{padding:9px 10px;font-size:8px}
   .modal-footer .btn{width:100%}
@@ -933,6 +940,9 @@ textarea.form-control{resize:vertical;min-height:80px}
   .grid-4{grid-template-columns:repeat(2,1fr)}
   #effectifs-grid{grid-template-columns:1fr !important}
   #page-recensement .grid-3{grid-template-columns:1fr !important}
+  .section-title{font-size:17px !important}
+  .commissaire-banner .cb-name{font-size:15px !important}
+  .cb-name input{font-size:15px !important;min-width:110px !important}
 }
 ::-webkit-scrollbar{width:5px}
 ::-webkit-scrollbar-track{background:transparent}
@@ -3814,10 +3824,6 @@ body.dark #btn-darkmode{background:rgba(255,255,255,0.05);border-color:rgba(180,
 /* MOBILE : masquer sync dans la topbar, les boutons sont gérés en inline JS */
 @media(max-width:768px){
   #sync-indicator{ display:none !important; }
-  /* Titre centré — laisser la place pour hamburger (42px) + gap + 2 boutons (42px*2) + gap + dot */
-  .topbar-title{
-    max-width:calc(100% - 200px) !important;
-  }
 }
 
 /* ---- RECHERCHE GLOBALE ---- */
@@ -3891,13 +3897,9 @@ body.dark .dash-quick-chip{background:rgba(180,140,20,0.08);border-color:rgba(18
     var title = document.getElementById('topbar-title');
     var dot   = topbar.querySelector('.status-dot');
 
-    /* Spacer gauche — pousse le titre vers le centre */
-    var spL = document.createElement('div');
-    spL.style.cssText = 'flex:1';
-
-    /* Spacer droit — même taille que les boutons droite */
+    /* Spacer droit — pousse les boutons vers la droite */
     var spR = document.createElement('div');
-    spR.style.cssText = 'flex:1;display:flex;justify-content:flex-end;align-items:center;gap:8px';
+    spR.style.cssText = 'margin-left:auto;display:flex;justify-content:flex-end;align-items:center;gap:8px;flex-shrink:0';
 
     /* Bouton recherche */
     var srch = document.createElement('button');
@@ -3915,18 +3917,21 @@ body.dark .dash-quick-chip{background:rgba(180,140,20,0.08);border-color:rgba(18
     dm.style.cssText = btnStyle;
     dm.addEventListener('click', toggleDarkMode);
 
-    /* Remettre le titre en position static pour flexbox */
+    /* Titre centré en absolu : garantit un centrage parfait quel que soit le contenu */
     if (title) {
-      title.style.position = 'static';
-      title.style.transform = 'none';
-      title.style.left = 'auto';
+      title.style.position = 'absolute';
+      title.style.left = '60px';
+      title.style.right = '60px';
+      title.style.top = '50%';
+      title.style.transform = 'translateY(-50%)';
       title.style.maxWidth = 'none';
-      title.style.flex = '0 1 auto';
+      title.style.flex = 'none';
       title.style.textAlign = 'center';
       title.style.overflow = 'hidden';
       title.style.textOverflow = 'ellipsis';
       title.style.whiteSpace = 'nowrap';
       title.style.pointerEvents = 'none';
+      title.style.zIndex = '0';
     }
 
     spR.appendChild(srch);
@@ -3938,7 +3943,6 @@ body.dark .dash-quick-chip{background:rgba(180,140,20,0.08);border-color:rgba(18
     var path = topbar.querySelector('.topbar-path');
     topbar.innerHTML = '';
     if (hamburger) topbar.appendChild(hamburger);
-    topbar.appendChild(spL);
     if (title) topbar.appendChild(title);
     topbar.appendChild(spR);
 
