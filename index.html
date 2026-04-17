@@ -1243,6 +1243,27 @@ textarea.form-control{resize:vertical;min-height:80px}
       <div class="login-brand-title">POLICE</div>
       <div class="login-brand-sub">SUNAGAKURE</div>
       <div class="login-brand-desc">PORTAIL INTRANET — ACCÈS RESTREINT</div>
+      <!-- Stats live -->
+      <div id="login-live-stats" style="
+        display:flex;gap:0;margin-top:18px;margin-bottom:4px;
+        background:rgba(255,255,255,0.04);
+        border:1px solid rgba(180,140,20,0.18);
+        border-radius:14px;overflow:hidden;width:100%;
+      ">
+        <div style="flex:1;text-align:center;padding:12px 8px;border-right:1px solid rgba(180,140,20,0.12)">
+          <div style="font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:900;color:#d4b44a;line-height:1">24/7</div>
+          <div style="font-size:8px;letter-spacing:1.5px;color:rgba(255,255,255,0.28);font-family:'Share Tech Mono',monospace;margin-top:4px;text-transform:uppercase">En service</div>
+          <div style="width:6px;height:6px;border-radius:50%;background:#15803d;margin:5px auto 0;box-shadow:0 0 6px rgba(22,163,74,0.7);animation:blink 2s infinite"></div>
+        </div>
+        <div style="flex:1;text-align:center;padding:12px 8px;border-right:1px solid rgba(180,140,20,0.12)">
+          <div id="ls-effectifs" style="font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:900;color:#d4b44a;line-height:1">—</div>
+          <div style="font-size:8px;letter-spacing:1.5px;color:rgba(255,255,255,0.28);font-family:'Share Tech Mono',monospace;margin-top:4px;text-transform:uppercase">Effectifs</div>
+        </div>
+        <div style="flex:1;text-align:center;padding:12px 8px">
+          <div id="ls-dossiers" style="font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:900;color:#d4b44a;line-height:1">—</div>
+          <div style="font-size:8px;letter-spacing:1.5px;color:rgba(255,255,255,0.28);font-family:'Share Tech Mono',monospace;margin-top:4px;text-transform:uppercase">Dossiers & plaintes</div>
+        </div>
+      </div>
     </div>
 
     <!-- Onglets -->
@@ -2261,9 +2282,10 @@ async function doRegister(){
 // REMEMBER ME
 function updateLoginStats(){
   try{
-    const m=el('ls-members');const c=el('ls-cases');
-    if(m)m.textContent=(DB.users||[]).filter(u=>u.statut==='Actif').length||'—';
-    if(c)c.textContent=(DB.dossiers||[]).length||'—';
+    const effectifs=el('ls-effectifs');
+    const dossiers=el('ls-dossiers');
+    if(effectifs) effectifs.textContent=(DB.users||[]).filter(u=>u.statut==='Actif').length||'0';
+    if(dossiers) dossiers.textContent=((DB.dossiers||[]).length+(DB.plaintes||[]).length)||'0';
   }catch(e){}
 }
 function checkRememberMe(){
@@ -3791,6 +3813,23 @@ body.dark #btn-darkmode{background:rgba(255,255,255,0.05);border-color:rgba(180,
 .topbar-path{margin-left:0 !important}
 @media(max-width:768px){.topbar-path{display:none !important}}
 @media(max-width:600px){.topbar-search-label{display:none} #btn-global-search kbd{display:none}}
+
+/* MOBILE : masquer sync + recherche dans la topbar, garder seulement darkmode */
+@media(max-width:768px){
+  #btn-global-search{ display:none !important; }
+  #sync-indicator{ display:none !important; }
+  #btn-darkmode{
+    margin-left:auto;
+    background:rgba(212,180,74,0.08) !important;
+    border:1px solid rgba(212,180,74,0.18) !important;
+    width:42px !important; height:42px !important;
+    border-radius:12px !important;
+  }
+  /* Titre centré sans être masqué par les boutons */
+  .topbar-title{
+    max-width:calc(100% - 160px) !important;
+  }
+}
 
 /* ---- RECHERCHE GLOBALE ---- */
 #gs-overlay{position:fixed;inset:0;z-index:9000;background:rgba(10,12,30,0.55);backdrop-filter:blur(10px);display:none;align-items:flex-start;justify-content:center;padding:80px 16px 16px}
