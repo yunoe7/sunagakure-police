@@ -2370,11 +2370,11 @@ function viewCandidature(id){
     </div>
     <div style="background:rgba(180,140,20,0.04);border:1px solid rgba(180,140,20,0.12);border-radius:9px;padding:15px;margin-bottom:12px">
       <div style="font-size:9px;letter-spacing:2px;color:var(--gold2);font-family:'Share Tech Mono',monospace;text-transform:uppercase;margin-bottom:8px">Motivation</div>
-      <div style="font-size:13px;line-height:1.75;color:var(--text);white-space:pre-wrap">${esc(c.motif)||"<span style='color:var(--muted);font-style:italic'>Aucune motivation renseignee.</span>"}</div>
+      <div style="font-size:13px;line-height:1.75;color:var(--text);white-space:pre-wrap;word-break:break-word;overflow-wrap:anywhere">${esc(c.motif)||"<span style='color:var(--muted);font-style:italic'>Aucune motivation renseignee.</span>"}</div>
     </div>
     <div style="background:rgba(180,140,20,0.04);border:1px solid rgba(180,140,20,0.12);border-radius:9px;padding:15px">
       <div style="font-size:9px;letter-spacing:2px;color:var(--gold2);font-family:'Share Tech Mono',monospace;text-transform:uppercase;margin-bottom:8px">Experience RP</div>
-      <div style="font-size:13px;line-height:1.75;color:var(--text);white-space:pre-wrap">${esc(c.exp)||"<span style='color:var(--muted);font-style:italic'>Aucune experience renseignee.</span>"}</div>
+      <div style="font-size:13px;line-height:1.75;color:var(--text);white-space:pre-wrap;word-break:break-word;overflow-wrap:anywhere">${esc(c.exp)||"<span style='color:var(--muted);font-style:italic'>Aucune experience renseignee.</span>"}</div>
     </div>
     ${modif}
   `;
