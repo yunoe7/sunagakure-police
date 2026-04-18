@@ -1346,12 +1346,12 @@ textarea.form-control{resize:vertical;min-height:80px}
     <div class="nav-item" onclick="showPage('annonces')" data-page="annonces"><span class="icon">📢</span> Annonces <span class="nav-badge" id="badge-annonces">0</span></div>
     <div class="nav-section">Registres</div>
     <div class="nav-item" onclick="showPage('recensement')" data-page="recensement"><span class="icon">📝</span> Recensement <span class="nav-badge" id="badge-recenses" style="background:var(--purple)">0</span></div>
-    <div class="nav-item" onclick="showPage('recrutement')" data-page="recrutement"><span class="icon">🎖️</span> Recrutement</div>
+    <div class="nav-item" onclick="showPage('recrutement')" data-page="recrutement"><span class="icon">🎖️</span> Recrutement <span class="nav-badge" id="badge-recrutement" style="background:var(--cyan);display:none">0</span></div>
     <div class="nav-item" onclick="showPage('plaintes')" data-page="plaintes"><span class="icon">📋</span> Plaintes <span class="nav-badge" id="badge-plaintes">0</span></div>
-    <div class="nav-item" onclick="showPage('dossiers')" data-page="dossiers" data-member-only="true"><span class="icon">🗂️</span> Dossiers criminels</div>
+    <div class="nav-item" onclick="showPage('dossiers')" data-page="dossiers" data-member-only="true"><span class="icon">🗂️</span> Dossiers criminels <span class="nav-badge" id="badge-dossiers" style="background:var(--purple);display:none">0</span></div>
     <div class="nav-item" onclick="showPage('codepenal')" data-page="codepenal"><span class="icon">📜</span> Code Pénal</div>
     <div class="nav-section" data-member-only="true">Opérations</div>
-    <div class="nav-item" onclick="showPage('operations')" data-page="operations" data-member-only="true"><span class="icon">🚨</span> Opérations</div>
+    <div class="nav-item" onclick="showPage('operations')" data-page="operations" data-member-only="true"><span class="icon">🚨</span> Opérations <span class="nav-badge" id="badge-operations" style="background:var(--accent);display:none">0</span></div>
     <div class="nav-item" onclick="showPage('effectifs')" data-page="effectifs" data-member-only="true"><span class="icon">👮</span> Effectifs</div>
     <div class="nav-item" onclick="showPage('sanctions')" data-page="sanctions" data-member-only="true"><span class="icon">⚖️</span> Sanctions / Promo</div>
     <div class="nav-section" data-member-only="true">Administration</div>
@@ -1417,6 +1417,43 @@ textarea.form-control{resize:vertical;min-height:80px}
     <div class="section-header">
       <div><div class="section-title">Annonces officielles</div><div class="section-sub">COMMUNICATIONS INTERNES — POLICE SUNAGAKURE</div></div>
       <button class="btn btn-primary" id="btn-new-annonce" onclick="openModal('modal-annonce')" style="display:none">+ Nouvelle annonce</button>
+    </div>
+    <!-- Stats rapides annonces -->
+    <div class="grid grid-4" style="margin-bottom:16px" id="annonces-stats-row">
+      <div class="stat-card" style="--card-accent:var(--blue);padding:13px 15px">
+        <div class="stat-icon" style="font-size:18px;top:9px;right:9px">📢</div>
+        <div class="stat-value" id="ann-stat-total" style="font-size:26px">0</div>
+        <div class="stat-label">Total</div>
+      </div>
+      <div class="stat-card" style="--card-accent:var(--gold);padding:13px 15px">
+        <div class="stat-icon" style="font-size:18px;top:9px;right:9px">📌</div>
+        <div class="stat-value" id="ann-stat-pin" style="font-size:26px;color:var(--gold2)">0</div>
+        <div class="stat-label">Épinglées</div>
+      </div>
+      <div class="stat-card" style="--card-accent:var(--red);padding:13px 15px">
+        <div class="stat-icon" style="font-size:18px;top:9px;right:9px">🚨</div>
+        <div class="stat-value" id="ann-stat-alerte" style="font-size:26px;color:var(--red)">0</div>
+        <div class="stat-label">Alertes</div>
+      </div>
+      <div class="stat-card" style="--card-accent:var(--green);padding:13px 15px">
+        <div class="stat-icon" style="font-size:18px;top:9px;right:9px">📅</div>
+        <div class="stat-value" id="ann-stat-recent" style="font-size:26px;color:var(--green)">0</div>
+        <div class="stat-label">Cette semaine</div>
+      </div>
+    </div>
+    <!-- Filtres -->
+    <div class="card mb-4" style="margin-bottom:14px">
+      <div class="card-body" style="padding:12px 16px;display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+        <input type="text" id="search-annonces" class="form-control" placeholder="🔍 Rechercher une annonce..." oninput="renderAnnonces()" style="max-width:260px;margin:0">
+        <div class="tab-row" style="margin-bottom:0;flex:1;min-width:280px">
+          <div class="tab-btn active" onclick="filterAnnonces('all',this)">Toutes</div>
+          <div class="tab-btn" onclick="filterAnnonces('Information',this)">Info</div>
+          <div class="tab-btn" onclick="filterAnnonces('Opérationnel',this)">Opéra.</div>
+          <div class="tab-btn" onclick="filterAnnonces('Alerte',this)">Alerte</div>
+          <div class="tab-btn" onclick="filterAnnonces('Disciplinaire',this)">Disci.</div>
+        </div>
+        <span id="annonces-count" style="font-size:10px;color:var(--muted);font-family:'Share Tech Mono',monospace;white-space:nowrap"></span>
+      </div>
     </div>
     <div id="annonces-list"></div>
   </div>
@@ -1570,6 +1607,41 @@ textarea.form-control{resize:vertical;min-height:80px}
       <div><div class="section-title">Opérations</div><div class="section-sub">MISSIONS & DÉPLOIEMENTS</div></div>
       <button class="btn btn-primary" id="btn-new-operation" onclick="openModal('modal-operation')" style="display:none">+ Nouvelle opération</button>
     </div>
+    <!-- Stats opérations -->
+    <div class="grid grid-4" style="margin-bottom:16px">
+      <div class="stat-card" style="--card-accent:var(--green);padding:13px 15px">
+        <div class="stat-icon" style="font-size:18px;top:9px;right:9px">🟢</div>
+        <div class="stat-value" id="op-stat-active" style="font-size:26px;color:var(--green)">0</div>
+        <div class="stat-label">Actives</div>
+      </div>
+      <div class="stat-card" style="--card-accent:var(--blue);padding:13px 15px">
+        <div class="stat-icon" style="font-size:18px;top:9px;right:9px">🔵</div>
+        <div class="stat-value" id="op-stat-plan" style="font-size:26px;color:var(--blue)">0</div>
+        <div class="stat-label">Planifiées</div>
+      </div>
+      <div class="stat-card" style="--card-accent:var(--muted);padding:13px 15px">
+        <div class="stat-icon" style="font-size:18px;top:9px;right:9px">✅</div>
+        <div class="stat-value" id="op-stat-done" style="font-size:26px;color:var(--muted)">0</div>
+        <div class="stat-label">Terminées</div>
+      </div>
+      <div class="stat-card" style="--card-accent:var(--accent);padding:13px 15px">
+        <div class="stat-icon" style="font-size:18px;top:9px;right:9px">🚔</div>
+        <div class="stat-value" id="op-stat-arrest" style="font-size:26px;color:var(--accent)">0</div>
+        <div class="stat-label">Arrestations</div>
+      </div>
+    </div>
+    <!-- Filtres opérations -->
+    <div class="card mb-4" style="margin-bottom:14px">
+      <div class="card-body" style="padding:12px 16px;display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+        <input type="text" id="search-operations" class="form-control" placeholder="🔍 Rechercher une opération..." oninput="renderOperations()" style="max-width:260px;margin:0">
+        <div class="tab-row" style="margin-bottom:0;flex:1;min-width:260px">
+          <div class="tab-btn active" onclick="filterOperations('all',this)">Toutes</div>
+          <div class="tab-btn" onclick="filterOperations('Active',this)">🟢 Actives</div>
+          <div class="tab-btn" onclick="filterOperations('Planifiée',this)">🔵 Planif.</div>
+          <div class="tab-btn" onclick="filterOperations('Terminée',this)">✅ Terminées</div>
+        </div>
+      </div>
+    </div>
     <div class="grid grid-3" id="operations-grid"></div>
   </div>
 
@@ -1584,6 +1656,42 @@ textarea.form-control{resize:vertical;min-height:80px}
     <div class="section-header">
       <div><div class="section-title">Sanctions & Promotions</div><div class="section-sub">GESTION DISCIPLINAIRE ET AVANCEMENT</div></div>
       <button class="btn btn-primary" id="btn-new-sanction" onclick="openModal('modal-sanction')" style="display:none">+ Ajouter</button>
+    </div>
+    <!-- Stats sanctions -->
+    <div class="grid grid-4" style="margin-bottom:16px">
+      <div class="stat-card" style="--card-accent:var(--green);padding:13px 15px">
+        <div class="stat-icon" style="font-size:18px;top:9px;right:9px">⬆️</div>
+        <div class="stat-value" id="s-stat-promo" style="font-size:26px;color:var(--green)">0</div>
+        <div class="stat-label">Promotions</div>
+      </div>
+      <div class="stat-card" style="--card-accent:var(--gold);padding:13px 15px">
+        <div class="stat-icon" style="font-size:18px;top:9px;right:9px">🏅</div>
+        <div class="stat-value" id="s-stat-fel" style="font-size:26px;color:var(--gold2)">0</div>
+        <div class="stat-label">Félicitations</div>
+      </div>
+      <div class="stat-card" style="--card-accent:var(--accent);padding:13px 15px">
+        <div class="stat-icon" style="font-size:18px;top:9px;right:9px">⚠️</div>
+        <div class="stat-value" id="s-stat-avert" style="font-size:26px;color:var(--accent)">0</div>
+        <div class="stat-label">Avertissements</div>
+      </div>
+      <div class="stat-card" style="--card-accent:var(--red);padding:13px 15px">
+        <div class="stat-icon" style="font-size:18px;top:9px;right:9px">🚫</div>
+        <div class="stat-value" id="s-stat-excl" style="font-size:26px;color:var(--red)">0</div>
+        <div class="stat-label">Exclusions</div>
+      </div>
+    </div>
+    <!-- Filtre sanctions -->
+    <div class="card mb-4" style="margin-bottom:14px">
+      <div class="card-body" style="padding:12px 16px;display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+        <input type="text" id="search-sanctions" class="form-control" placeholder="🔍 Rechercher..." oninput="renderSanctions()" style="max-width:220px;margin:0">
+        <div class="tab-row" style="margin-bottom:0;flex:1;min-width:300px">
+          <div class="tab-btn active" onclick="filterSanctions('all',this)">Toutes</div>
+          <div class="tab-btn" onclick="filterSanctions('Promotion',this)">Promos</div>
+          <div class="tab-btn" onclick="filterSanctions('Félicitation',this)">Félicitations</div>
+          <div class="tab-btn" onclick="filterSanctions('Avertissement',this)">Avert.</div>
+          <div class="tab-btn" onclick="filterSanctions('Exclusion',this)">Exclusions</div>
+        </div>
+      </div>
     </div>
     <div class="card" style="overflow:visible">
       <div class="table-scroll-wrapper">
@@ -1733,6 +1841,35 @@ textarea.form-control{resize:vertical;min-height:80px}
             </div>
             <label class="notif-switch">
               <input type="checkbox" id="notif-recenses" checked onchange="saveNotifPrefs()">
+              <span class="notif-slider"></span>
+            </label>
+          </div>
+        </div>
+          <!-- Recrutement -->
+          <div class="notif-toggle-row" id="ntr-recrutement">
+            <div style="display:flex;align-items:center;gap:12px;flex:1">
+              <div class="notif-toggle-icon" style="background:rgba(14,116,144,0.08);border:1px solid rgba(14,116,144,0.2)">🎖️</div>
+              <div>
+                <div style="font-size:13px;font-weight:600;color:var(--text)">Recrutement</div>
+                <div style="font-size:10px;color:var(--muted);font-family:'Share Tech Mono',monospace" id="notif-recrutement-count">Chargement...</div>
+              </div>
+            </div>
+            <label class="notif-switch">
+              <input type="checkbox" id="notif-recrutement" checked onchange="saveNotifPrefs()">
+              <span class="notif-slider"></span>
+            </label>
+          </div>
+          <!-- Opérations -->
+          <div class="notif-toggle-row" id="ntr-operations">
+            <div style="display:flex;align-items:center;gap:12px;flex:1">
+              <div class="notif-toggle-icon" style="background:rgba(192,65,14,0.08);border:1px solid rgba(192,65,14,0.2)">🚨</div>
+              <div>
+                <div style="font-size:13px;font-weight:600;color:var(--text)">Opérations actives</div>
+                <div style="font-size:10px;color:var(--muted);font-family:'Share Tech Mono',monospace" id="notif-operations-count">Chargement...</div>
+              </div>
+            </div>
+            <label class="notif-switch">
+              <input type="checkbox" id="notif-operations" checked onchange="saveNotifPrefs()">
               <span class="notif-slider"></span>
             </label>
           </div>
@@ -2629,8 +2766,11 @@ function showPage(name){
   document.querySelectorAll(".nav-item").forEach(n=>{if(n.getAttribute("onclick")&&n.getAttribute("onclick").includes("'"+name+"'"))n.classList.add("active")});
   // Mémoriser l'onglet actif pour le restaurer au refresh
   try{sessionStorage.setItem("suna_active_page",name)}catch(e){}
+  markPageRead(name);
   renderPage(name);
   if(typeof updateBottomNav==="function")updateBottomNav(name);
+  updateBadges();
+  syncBottomNavBadges();
 }
 function renderPage(name){
   if(name==="dashboard")renderDashboard();
@@ -2699,10 +2839,73 @@ function updateStats(){
   el("stat-plaintes").textContent=DB.plaintes.filter(p=>p.statut==="ouverte").length;
   el("stat-operations").textContent=DB.operations.filter(o=>o.statut==="Active").length;
 }
+// ─── SYSTÈME BADGES "NON LUS" ───────────────────────────────────────────
+// Chaque badge compte les éléments créés APRÈS la date de dernière lecture
+// stockée dans localStorage sous "suna_read_<section>"
+function _getRead(section){return parseInt(localStorage.getItem("suna_read_"+section)||"0");}
+function _setRead(section){localStorage.setItem("suna_read_"+section,Date.now().toString());}
+function _countNew(arr,section){
+  const t=_getRead(section);
+  return arr.filter(x=>{
+    const d=x.date||x.created||"";
+    if(!d)return false;
+    // date peut être "DD/MM/YYYY HH:mm" ou ISO
+    let ts;
+    if(d.includes("/")){
+      const [dt,tm]=(d+" ").split(" ");
+      const [dd,mm,yyyy]=dt.split("/");
+      ts=new Date(yyyy+"-"+mm+"-"+dd+(tm?" "+tm:"")).getTime();
+    } else { ts=new Date(d).getTime(); }
+    return !isNaN(ts)&&ts>t;
+  }).length;
+}
+function _setBadge(id,n,hidden){
+  const e=el(id);if(!e)return;
+  if(hidden&&n===0){e.style.display="none";e.textContent="0";return;}
+  e.textContent=n;
+  e.style.display=n>0?"":"none";
+}
 function updateBadges(){
-  el("badge-annonces").textContent=DB.annonces.length;
-  el("badge-plaintes").textContent=DB.plaintes.filter(p=>p.statut==="ouverte").length;
-  el("badge-recenses").textContent=DB.recenses.length;
+  const nA=_countNew(DB.annonces,"annonces");
+  const nP=DB.plaintes.filter(p=>p.statut==="ouverte"||p.statut==="en_cours").length;
+  const nR=_countNew(DB.recenses,"recenses");
+  const nRec=(DB.candidatures||[]).filter(c=>c.statut==="en_attente").length;
+  const nOp=(DB.operations||[]).filter(o=>o.statut==="Active").length;
+  const nD=(DB.dossiers||[]).filter(d=>(d.statut||"").toLowerCase()==="ouvert").length;
+
+  // Sidebar badges (annonces/recenses/plaintes toujours visibles si >0)
+  const ba=el("badge-annonces");
+  if(ba){ba.textContent=nA;ba.style.display=nA>0?"":"none";}
+  const bp=el("badge-plaintes");
+  if(bp){bp.textContent=nP;bp.style.display=nP>0?"":"none";}
+  const br=el("badge-recenses");
+  if(br){br.textContent=nR;br.style.display=nR>0?"":"none";}
+  _setBadge("badge-recrutement",nRec,true);
+  _setBadge("badge-operations",nOp,true);
+  _setBadge("badge-dossiers",nD,true);
+  // Drawer badges
+  _setBadge("dbadge-recrutement",nRec,true);
+  _setBadge("dbadge-operations",nOp,true);
+  _setBadge("dbadge-dossiers",nD,true);
+  // Prefs masquage
+  const pref=JSON.parse(localStorage.getItem("suna_notifs")||"{}");
+  if(ba&&pref.annonces===false)ba.style.display="none";
+  if(bp&&pref.plaintes===false)bp.style.display="none";
+  if(br&&pref.recenses===false)br.style.display="none";
+  if(pref.recrutement===false){const er=el("badge-recrutement");if(er)er.style.display="none";const dr=el("dbadge-recrutement");if(dr)dr.style.display="none";}
+  if(pref.operations===false){const eo=el("badge-operations");if(eo)eo.style.display="none";const dop=el("dbadge-operations");if(dop)dop.style.display="none";}
+}
+function markAllNotifsRead(){
+  ["annonces","recenses"].forEach(s=>_setRead(s));
+  updateBadges();
+  syncBottomNavBadges();
+  refreshNotifCounts();
+  showToast("Tout marqué comme lu","success");
+}
+// Marquer comme lu quand on ouvre la page
+function markPageRead(page){
+  const map={annonces:"annonces",recensement:"recenses"};
+  if(map[page])_setRead(map[page]);
 }
 function renderDashboard(){
   updateStats();renderCommissaire();
@@ -2725,16 +2928,56 @@ function renderAdminTimeline(){
 function resetAllData(){emergencyReset();}
 
 // ANNONCES
+let _annFilter="all";
+function filterAnnonces(f,e){_annFilter=f;document.querySelectorAll("#page-annonces .tab-btn").forEach(b=>b.classList.remove("active"));e.classList.add("active");renderAnnonces();}
 function renderAnnonces(){
-  const sorted=[...DB.annonces].sort((a,b)=>(b.pin?1:0)-(a.pin?1:0)||new Date(b.date)-new Date(a.date));
-  el("annonces-list").innerHTML=sorted.map(a=>`<div class="annonce-item">${a.pin?'<span class="badge badge-gold pinned-badge">📌 Épinglé</span>':""}<div class="flex items-center gap-2" style="margin-bottom:7px"><span class="badge ${catBadge(a.cat)}">${a.cat}</span></div><h4>${esc(a.titre)}</h4><div class="meta">Par ${esc(a.auteur)} — ${fmtDate(a.date)}</div><p>${esc(a.contenu)}</p>${a.photo?`<img src="${a.photo}" alt="Image" style="display:block;max-width:100%;max-height:320px;border-radius:9px;margin-top:12px;object-fit:contain;border:1px solid rgba(180,140,20,0.15)">`:""} ${canModify()?`<div class="flex gap-2 mt-4"><button class="btn btn-danger btn-sm" onclick="deleteAnnonce(${a.id})">🗑 Supprimer</button></div>`:""}</div>`).join("")||'<p class="text-muted">Aucune annonce.</p>';
+  // Stats
+  const all=DB.annonces;
+  const weekAgo=Date.now()-7*24*60*60*1000;
+  if(el("ann-stat-total"))el("ann-stat-total").textContent=all.length;
+  if(el("ann-stat-pin"))el("ann-stat-pin").textContent=all.filter(a=>a.pin).length;
+  if(el("ann-stat-alerte"))el("ann-stat-alerte").textContent=all.filter(a=>a.cat==="Alerte").length;
+  if(el("ann-stat-recent"))el("ann-stat-recent").textContent=all.filter(a=>{
+    const d=a.date||"";let ts=0;
+    if(d.includes("/")){const[dt,tm]=(d+" ").split(" ");const[dd,mm,yyyy]=dt.split("/");ts=new Date(yyyy+"-"+mm+"-"+dd+(tm?" "+tm:"")).getTime();}else{ts=new Date(d).getTime();}
+    return !isNaN(ts)&&ts>weekAgo;
+  }).length;
+  // Filter
+  const q=(el("search-annonces")?.value||"").toLowerCase();
+  let sorted=[...all].sort((a,b)=>(b.pin?1:0)-(a.pin?1:0)||new Date(b.date)-new Date(a.date));
+  if(_annFilter!=="all")sorted=sorted.filter(a=>a.cat===_annFilter);
+  if(q)sorted=sorted.filter(a=>(a.titre+a.contenu+a.auteur+a.cat).toLowerCase().includes(q));
+  if(el("annonces-count"))el("annonces-count").textContent=sorted.length+" annonce"+(sorted.length!==1?"s":"");
+  // Marquer lu en ouvrant
+  _setRead("annonces");
+  updateBadges();
+  // Read threshold
+  const readTs=parseInt(localStorage.getItem("suna_read_annonces_prev")||"0");
+  el("annonces-list").innerHTML=sorted.map(a=>{
+    // Détecter si nouvelle (créée après la lecture précédente)
+    let ats=0;const d=a.date||"";
+    if(d.includes("/")){const[dt,tm]=(d+" ").split(" ");const[dd,mm,yyyy]=dt.split("/");ats=new Date(yyyy+"-"+mm+"-"+dd+(tm?" "+tm:"")).getTime();}else{ats=new Date(d).getTime();}
+    const isNew=ats>readTs&&!isNaN(ats);
+    return `<div class="annonce-item" style="${isNew?"border-left:3px solid var(--gold2)":""}">
+      ${isNew?'<span class="badge badge-gold" style="margin-bottom:8px;display:inline-flex">✨ Nouveau</span>':""}
+      ${a.pin?'<span class="badge badge-gold pinned-badge">📌 Épinglé</span>':""}
+      <div class="flex items-center gap-2" style="margin-bottom:7px"><span class="badge ${catBadge(a.cat)}">${a.cat}</span></div>
+      <h4>${esc(a.titre)}</h4>
+      <div class="meta">Par ${esc(a.auteur)} — ${fmtDate(a.date)}</div>
+      <p>${esc(a.contenu)}</p>
+      ${a.photo?`<img src="${a.photo}" alt="Image" style="display:block;max-width:100%;max-height:320px;border-radius:9px;margin-top:12px;object-fit:contain;border:1px solid rgba(180,140,20,0.15)">`:""} 
+      ${canModify()?`<div class="flex gap-2 mt-4"><button class="btn btn-danger btn-sm" onclick="deleteAnnonce(${a.id})">🗑 Supprimer</button></div>`:""}
+    </div>`;
+  }).join("")||'<div class="alert alert-info">Aucune annonce trouvée.</div>';
 }
 function saveAnnonce(){
   const titre=v("a-titre"),contenu=v("a-contenu");if(!titre||!contenu)return;
   const photo=_annoncePhoto||"";
   DB.annonces.push({id:Date.now(),titre,cat:v("a-cat"),contenu,photo,auteur:currentUser.nom,pin:v("a-pin")==="true",date:now()});
   addTimeline(`Annonce publiée : "${titre}"`);
-  saveData();closeModal("modal-annonce");renderAnnonces();syncDashboard();clearForm(["a-titre","a-contenu"]);
+  // Store old read time before saving so we can show "Nouveau" badge
+  localStorage.setItem("suna_read_annonces_prev", localStorage.getItem("suna_read_annonces")||"0");
+  saveData();closeModal("modal-annonce");renderAnnonces();syncDashboard();updateBadges();clearForm(["a-titre","a-contenu"]);
   removeAnnoncePhoto();
 }
 let _annoncePhoto="";
@@ -3181,8 +3424,49 @@ function clearEditDossierPhoto(){
 }
 
 // OPÉRATIONS
+let _opFilter="all";
+function filterOperations(f,e){_opFilter=f;document.querySelectorAll("#page-operations .tab-btn").forEach(b=>b.classList.remove("active"));e.classList.add("active");renderOperations();}
 function renderOperations(){
-  el("operations-grid").innerHTML=DB.operations.map(op=>`<div class="card"><div class="card-header"><span>${op.type==="Arrestation"?"🚔":op.type==="Perquisition"?"🏠":op.type==="Surveillance"?"👁":"🚨"}</span><h3 style="font-size:13px">${esc(op.nom)}</h3><span class="badge ${op.statut==="Active"?"badge-green":op.statut==="Planifiée"?"badge-blue":"badge-gray"}" style="margin-left:auto">${op.statut}</span></div><div class="card-body"><span class="badge badge-orange" style="margin-bottom:9px;display:inline-flex">${op.type}</span><p style="font-size:11.5px;color:#555;line-height:1.6">${esc(op.desc)}</p><div class="divider"></div><div class="text-muted">Responsable : <b>${esc(op.resp)}</b></div>${op.dateOp?`<div class="text-muted" style="font-size:11px;margin-top:4px">📅 ${op.dateOp}</div>`:""}${canModify()?`<div class="flex gap-2 mt-4"><button class="btn btn-danger btn-sm" onclick="deleteOperation(${op.id})">🗑 Supprimer</button></div>`:""}</div></div>`).join("")||'<div style="grid-column:1/-1;color:var(--muted)">Aucune opération.</div>';
+  const all=DB.operations||[];
+  if(el("op-stat-active"))el("op-stat-active").textContent=all.filter(o=>o.statut==="Active").length;
+  if(el("op-stat-plan"))el("op-stat-plan").textContent=all.filter(o=>o.statut==="Planifiée").length;
+  if(el("op-stat-done"))el("op-stat-done").textContent=all.filter(o=>o.statut==="Terminée").length;
+  if(el("op-stat-arrest"))el("op-stat-arrest").textContent=all.filter(o=>o.type==="Arrestation").length;
+  const q=(el("search-operations")?.value||"").toLowerCase();
+  let ops=[...all];
+  if(_opFilter!=="all")ops=ops.filter(o=>o.statut===_opFilter);
+  if(q)ops=ops.filter(o=>(o.nom+o.type+o.desc+o.resp).toLowerCase().includes(q));
+  const typeIcon=t=>t==="Arrestation"?"🚔":t==="Perquisition"?"🏠":t==="Surveillance"?"👁":"🚨";
+  const urgentBanner=op=>op.statut==="Active"?'<div style="height:3px;background:linear-gradient(90deg,var(--green),transparent);margin:-16px -18px 14px;border-radius:0"></div>':'';
+  el("operations-grid").innerHTML=ops.map(op=>`
+    <div class="card" style="${op.statut==="Active"?"border-color:rgba(21,128,61,0.3)":""}">
+      <div class="card-header">
+        <span>${typeIcon(op.type)}</span>
+        <h3 style="font-size:13px">${esc(op.nom)}</h3>
+        <span class="badge ${op.statut==="Active"?"badge-green":op.statut==="Planifiée"?"badge-blue":"badge-gray"}" style="margin-left:auto">${op.statut}</span>
+      </div>
+      <div class="card-body">
+        ${urgentBanner(op)}
+        <span class="badge badge-orange" style="margin-bottom:9px;display:inline-flex">${esc(op.type)}</span>
+        <p style="font-size:11.5px;color:#555;line-height:1.6">${esc(op.desc)}</p>
+        <div class="divider"></div>
+        <div class="text-muted">Responsable : <b>${esc(op.resp)}</b></div>
+        ${op.dateOp?`<div class="text-muted" style="font-size:11px;margin-top:4px">📅 ${op.dateOp}</div>`:""}
+        ${canModify()?`<div class="flex gap-2 mt-4">
+          <button class="btn btn-outline btn-sm" onclick="cycleOpStatut(${op.id})">🔄 Statut</button>
+          <button class="btn btn-danger btn-sm" onclick="deleteOperation(${op.id})">🗑</button>
+        </div>`:""}
+      </div>
+    </div>`).join("")||'<div style="grid-column:1/-1;padding:32px;text-align:center;color:var(--muted)">Aucune opération.</div>';
+}
+function cycleOpStatut(id){
+  const op=DB.operations.find(o=>o.id===id);if(!op)return;
+  const cycle=["Planifiée","Active","Terminée"];
+  const next=cycle[(cycle.indexOf(op.statut)+1)%cycle.length];
+  op.statut=next;
+  addTimeline(`Opération "${op.nom}" → ${next}`);
+  saveData();renderOperations();updateBadges();
+  showToast(`Statut mis à jour : ${next}`,"success");
 }
 function saveOperation(){
   const nom=v("op-nom");if(!nom)return;
@@ -3284,45 +3568,50 @@ function applyLogo(){
 }
 
 // NOTIFICATIONS PREFS
+const NOTIF_KEYS=["annonces","plaintes","recenses","recrutement","operations"];
 function loadNotifPrefs(){
   const p=JSON.parse(localStorage.getItem("suna_notifs")||"{}");
-  if(el("notif-annonces"))el("notif-annonces").checked=p.annonces!==false;
-  if(el("notif-plaintes"))el("notif-plaintes").checked=p.plaintes!==false;
-  if(el("notif-recenses"))el("notif-recenses").checked=p.recenses!==false;
+  NOTIF_KEYS.forEach(k=>{const cb=el("notif-"+k);if(cb)cb.checked=p[k]!==false;});
   applyNotifPrefs(p);
   refreshNotifCounts();
   renderNotifHistory();
 }
 function saveNotifPrefs(){
-  const p={annonces:el("notif-annonces")?.checked!==false,plaintes:el("notif-plaintes")?.checked!==false,recenses:el("notif-recenses")?.checked!==false};
-  localStorage.setItem("suna_notifs",JSON.stringify(p));applyNotifPrefs(p);
+  const p={};
+  NOTIF_KEYS.forEach(k=>{const cb=el("notif-"+k);if(cb)p[k]=cb.checked!==false;else p[k]=true;});
+  localStorage.setItem("suna_notifs",JSON.stringify(p));
+  applyNotifPrefs(p);
+  updateBadges();
 }
 function applyNotifPrefs(p){
-  const ba=el("badge-annonces"),bp=el("badge-plaintes"),br=el("badge-recenses");
-  if(ba)ba.style.display=p.annonces!==false?"":"none";
-  if(bp)bp.style.display=p.plaintes!==false?"":"none";
-  if(br)br.style.display=p.recenses!==false?"":"none";
-  ["annonces","plaintes","recenses"].forEach(k=>{
+  // Hide/show sidebar badges per prefs
+  const map={annonces:"badge-annonces",plaintes:"badge-plaintes",recenses:"badge-recenses",
+             recrutement:"badge-recrutement",operations:"badge-operations"};
+  // We just re-run updateBadges which already applies prefs
+  NOTIF_KEYS.forEach(k=>{
     const row=el("ntr-"+k);
     if(row)row.style.opacity=p[k]!==false?"1":"0.5";
   });
 }
 function resetNotifs(){
   localStorage.removeItem("suna_notifs");
-  if(el("notif-annonces"))el("notif-annonces").checked=true;
-  if(el("notif-plaintes"))el("notif-plaintes").checked=true;
-  if(el("notif-recenses"))el("notif-recenses").checked=true;
-  applyNotifPrefs({annonces:true,plaintes:true,recenses:true});
+  NOTIF_KEYS.forEach(k=>{const cb=el("notif-"+k);if(cb)cb.checked=true;});
+  applyNotifPrefs({});
+  updateBadges();
   showToast("Notifications réinitialisées","success");
 }
 function refreshNotifCounts(){
   if(typeof DB==="undefined")return;
-  const na=(DB.annonces||[]).length;
-  const np=(DB.plaintes||[]).filter(p=>p.statut==="en_cours").length;
-  const nr=(DB.recenses||[]).length;
-  if(el("notif-annonces-count"))el("notif-annonces-count").textContent=na+" annonce"+(na!==1?"s":"")+" au total";
-  if(el("notif-plaintes-count"))el("notif-plaintes-count").textContent=np+" plainte"+(np!==1?"s":"")+" en cours";
-  if(el("notif-recenses-count"))el("notif-recenses-count").textContent=nr+" recensé"+(nr!==1?"s":"");
+  const na=_countNew(DB.annonces,"annonces");
+  const np=(DB.plaintes||[]).filter(p=>p.statut==="ouverte"||p.statut==="en_cours").length;
+  const nr=_countNew(DB.recenses||[],"recenses");
+  const nrec=(DB.candidatures||[]).filter(c=>c.statut==="en_attente").length;
+  const nop=(DB.operations||[]).filter(o=>o.statut==="Active").length;
+  if(el("notif-annonces-count"))el("notif-annonces-count").textContent=na>0?na+" non lue"+(na>1?"s":""):"Aucune nouvelle annonce";
+  if(el("notif-plaintes-count"))el("notif-plaintes-count").textContent=np>0?np+" plainte"+(np>1?"s":"")+" active"+(np>1?"s":""):"Aucune plainte active";
+  if(el("notif-recenses-count"))el("notif-recenses-count").textContent=nr>0?nr+" nouveau"+(nr>1?"x":""):"À jour";
+  if(el("notif-recrutement-count"))el("notif-recrutement-count").textContent=nrec>0?nrec+" candidature"+(nrec>1?"s":"")+" en attente":"Aucune candidature en attente";
+  if(el("notif-operations-count"))el("notif-operations-count").textContent=nop>0?nop+" opération"+(nop>1?"s":"")+" active"+(nop>1?"s":""):"Aucune opération active";
 }
 function renderNotifHistory(){
   const cont=el("notif-history-list");if(!cont||typeof DB==="undefined")return;
@@ -3489,10 +3778,29 @@ function openEditUser(id){
 }
 
 // SANCTIONS (kept below)
+let _sancFilter="all";
+function filterSanctions(f,e){_sancFilter=f;document.querySelectorAll("#page-sanctions .tab-btn").forEach(b=>b.classList.remove("active"));e.classList.add("active");renderSanctions();}
 function renderSanctions(){
+  const all=DB.sanctions||[];
+  if(el("s-stat-promo"))el("s-stat-promo").textContent=all.filter(s=>s.type==="Promotion").length;
+  if(el("s-stat-fel"))el("s-stat-fel").textContent=all.filter(s=>s.type==="Félicitation").length;
+  if(el("s-stat-avert"))el("s-stat-avert").textContent=all.filter(s=>s.type==="Avertissement").length;
+  if(el("s-stat-excl"))el("s-stat-excl").textContent=all.filter(s=>s.type==="Exclusion").length;
+  const q=(el("search-sanctions")?.value||"").toLowerCase();
   const showDel=canModify();
   if(el("sanction-del-th"))el("sanction-del-th").style.display=showDel?"":"none";
-  el("sanctions-tbody").innerHTML=[...DB.sanctions].reverse().map(s=>`<tr><td><span class="badge ${s.type==="Promotion"||s.type==="Félicitation"?"badge-green":s.type==="Exclusion"?"badge-red":"badge-gold"}">${s.type}</span></td><td><b>${esc(s.cible)}</b></td><td style="font-size:11.5px;max-width:180px">${esc(s.motif)}</td><td style="font-size:11.5px">${esc(s.auteur)}</td><td class="mono">${fmtDate(s.date)}</td>${showDel?`<td><button class="btn btn-danger btn-sm" onclick="deleteSanction(${s.id})">🗑</button></td>`:""}</tr>`).join("")||`<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:18px">Aucune entrée</td></tr>`;
+  let list=[...all].reverse();
+  if(_sancFilter!=="all")list=list.filter(s=>s.type===_sancFilter);
+  if(q)list=list.filter(s=>(s.cible+s.motif+s.auteur+s.type).toLowerCase().includes(q));
+  const sTypeBadge=t=>t==="Promotion"||t==="Félicitation"?"badge-green":t==="Exclusion"?"badge-red":t==="Avertissement"?"badge-orange":"badge-gold";
+  el("sanctions-tbody").innerHTML=list.map(s=>`<tr>
+    <td><span class="badge ${sTypeBadge(s.type)}">${esc(s.type)}</span></td>
+    <td><b>${esc(s.cible)}</b></td>
+    <td style="font-size:11.5px;max-width:180px">${esc(s.motif)}</td>
+    <td style="font-size:11.5px">${esc(s.auteur)}</td>
+    <td class="mono">${fmtDate(s.date)}</td>
+    ${showDel?`<td><button class="btn btn-danger btn-sm" onclick="deleteSanction(${s.id})">🗑</button></td>`:""}
+  </tr>`).join("")||`<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:18px">Aucune entrée</td></tr>`;
 }
 function saveSanction(){
   const cible=v("s-cible"),motif=v("s-motif");if(!cible||!motif)return;
@@ -3688,8 +3996,8 @@ function updateBottomNav(name){
 }
 function syncBottomNavBadges(){
   const bAn=el("bnav-badge-annonces");const bPl=el("bnav-badge-plaintes");
-  if(bAn){const n=DB.annonces.length;bAn.textContent=n;bAn.style.display=n>0?"block":"none"}
-  if(bPl){const n=DB.plaintes.filter(p=>p.statut==="ouverte").length;bPl.textContent=n;bPl.style.display=n>0?"block":"none"}
+  if(bAn){const n=_countNew(DB.annonces,"annonces");bAn.textContent=n;bAn.style.display=n>0?"block":"none";}
+  if(bPl){const n=DB.plaintes.filter(p=>p.statut==="ouverte"||p.statut==="en_cours").length;bPl.textContent=n;bPl.style.display=n>0?"block":"none";}
 }
 function toggleMoreDrawer(){
   const d=el("more-drawer"),o=el("sidebar-overlay");
@@ -3875,17 +4183,17 @@ window.addEventListener("load",()=>{
   <div id="more-drawer-handle" onclick="closeMoreDrawer()"></div>
   <div class="drawer-section-label">Registres</div>
   <div class="drawer-item" id="ditem-recrutement" onclick="showPage('recrutement');updateBottomNav('recrutement');closeMoreDrawer()">
-    <span class="d-icon">🎖️</span> Recrutement
+    <span class="d-icon">🎖️</span> Recrutement <span class="d-badge" id="dbadge-recrutement" style="display:none">0</span>
   </div>
   <div class="drawer-item" id="ditem-dossiers" onclick="showPage('dossiers');updateBottomNav('dossiers');closeMoreDrawer()">
-    <span class="d-icon">🗂️</span> Dossiers criminels
+    <span class="d-icon">🗂️</span> Dossiers criminels <span class="d-badge" id="dbadge-dossiers" style="display:none;background:var(--purple)">0</span>
   </div>
   <div class="drawer-item" id="ditem-codepenal" onclick="showPage('codepenal');updateBottomNav('codepenal');closeMoreDrawer()">
     <span class="d-icon">📜</span> Code Pénal
   </div>
   <div class="drawer-section-label" id="dsec-ops">Opérations</div>
   <div class="drawer-item" id="ditem-operations" data-member-only="true" onclick="showPage('operations');updateBottomNav('operations');closeMoreDrawer()">
-    <span class="d-icon">🚨</span> Opérations
+    <span class="d-icon">🚨</span> Opérations <span class="d-badge" id="dbadge-operations" style="display:none;background:var(--accent)">0</span>
   </div>
   <div class="drawer-item" id="ditem-effectifs" data-member-only="true" onclick="showPage('effectifs');updateBottomNav('effectifs');closeMoreDrawer()">
     <span class="d-icon">👮</span> Effectifs
