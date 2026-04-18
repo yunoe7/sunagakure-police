@@ -4045,6 +4045,8 @@ function closeMoreDrawer(){
   d.classList.remove("open");
   document.body.style.overflow="";
   const o=el("sidebar-overlay");if(o&&!el("sidebar").classList.contains("open"))o.classList.remove("open");
+  // Retirer l'état actif du bouton "Plus"
+  const more=el("bnav-more");if(more)more.classList.remove("active");
   // Fermeture immédiate sur mobile pour éviter le blocage tactile
   if(window.innerWidth<=768){
     d.style.display="none";
@@ -4210,7 +4212,7 @@ window.addEventListener("load",()=>{
   </div>
 </div>
 <script>
-// Bottom nav — navigation tactile fiable
+// Bottom nav — utilise uniquement click (évite le double déclenchement touchstart+click)
 (function(){
   var bnavPages = [
     {id:'bnav-dashboard',   page:'dashboard'},
@@ -4222,21 +4224,14 @@ window.addEventListener("load",()=>{
     var btn = document.getElementById(item.id);
     if(!btn) return;
     var page = item.page;
-    btn.addEventListener('touchstart', function(e){
-      showPage(page);
-      updateBottomNav(page);
-    }, {passive:true});
     btn.addEventListener('click', function(){
       showPage(page);
       updateBottomNav(page);
     });
   });
-  // Bouton "Plus"
+  // Bouton "Plus" — click uniquement
   var moreBtn = document.getElementById('bnav-more');
   if(moreBtn){
-    moreBtn.addEventListener('touchstart', function(e){
-      toggleMoreDrawer();
-    }, {passive:true});
     moreBtn.addEventListener('click', function(){
       toggleMoreDrawer();
     });
@@ -4273,7 +4268,7 @@ window.addEventListener("load",()=>{
   </div>
 </div>
 <script>
-// Drawer items — navigation tactile fiable (évite les problèmes iOS onclick dans un drawer)
+// Drawer items — touchend + preventDefault pour bloquer le click fantôme iOS
 (function(){
   var drawerPages = [
     {id:'ditem-recrutement', page:'recrutement'},
@@ -4288,16 +4283,18 @@ window.addEventListener("load",()=>{
     var el = document.getElementById(item.id);
     if(!el) return;
     var page = item.page;
-    // Fermer le drawer IMMÉDIATEMENT au touchstart, puis naviguer
-    el.addEventListener('touchstart', function(e){
+    var touched = false;
+    el.addEventListener('touchend', function(e){
+      e.preventDefault(); // bloque le click fantôme qui suivrait
+      touched = true;
       closeMoreDrawer();
-      setTimeout(function(){
-        showPage(page);
-        updateBottomNav(page);
-      }, 30);
-    }, {passive:true});
-    // Fallback click pour desktop
+      showPage(page);
+      updateBottomNav(page);
+      setTimeout(function(){ touched = false; }, 300);
+    }, {passive:false});
+    // Fallback click pour desktop uniquement
     el.addEventListener('click', function(e){
+      if(touched) return; // déjà géré par touchend
       closeMoreDrawer();
       showPage(page);
       updateBottomNav(page);
