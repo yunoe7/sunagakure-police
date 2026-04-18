@@ -560,46 +560,51 @@ textarea.form-control{resize:vertical;min-height:80px}
 @media(max-width:768px){
 
   /* ============================================
-     LAYOUT PRINCIPAL — scroll confiné dans #main
+     LAYOUT PRINCIPAL
      ============================================ */
-  body{overflow:hidden;height:100vh;height:100dvh;position:fixed;width:100%}
+  body{overflow:hidden;height:100vh;height:100dvh;position:fixed;width:100%;
+    /* Désactiver la sélection de texte accidentelle au toucher */
+    -webkit-user-select:none;user-select:none}
+  /* Réactiver la sélection dans les champs */
+  input,textarea{-webkit-user-select:text;user-select:text}
 
   #hamburger{display:flex}
 
   #sidebar{
     transform:translateX(-100%);
-    transition:transform 0.32s cubic-bezier(0.32,0.72,0,1);
+    transition:transform 0.3s cubic-bezier(0.32,0.72,0,1);
     z-index:200;width:82%;max-width:300px;
     box-shadow:none;
+    /* GPU compositing pour animation fluide */
+    will-change:transform;
+    -webkit-backface-visibility:hidden;backface-visibility:hidden;
   }
   #sidebar.open{transform:translateX(0);box-shadow:12px 0 60px rgba(0,0,0,0.55)}
 
   #main{
     margin-left:0;
-    height:100vh;
-    height:100dvh;
-    display:flex;
-    flex-direction:column;
+    height:100vh;height:100dvh;
+    display:flex;flex-direction:column;
     overflow:hidden;
   }
 
-  /* La topbar prend sa hauteur fixe */
   .topbar{
     flex-shrink:0;
-    position:relative !important;
-    top:auto !important;
+    position:relative !important;top:auto !important;
     overflow:hidden;
   }
 
-  /* Le contenu scrolle entre topbar et bottom-nav */
+  /* Scroll natif fluide entre topbar et bottom-nav */
   #main > .page-content,
   #main > [id^="page-"]{
     flex:1;
-    overflow-y:auto;
-    overflow-x:hidden;
+    overflow-y:auto;overflow-x:hidden;
     -webkit-overflow-scrolling:touch;
     overscroll-behavior-y:contain;
     scroll-behavior:smooth;
+    /* GPU layer pour le scroll */
+    will-change:scroll-position;
+    transform:translateZ(0);
   }
 
   /* Padding bas pour ne pas être sous la bottom nav */
@@ -610,13 +615,13 @@ textarea.form-control{resize:vertical;min-height:80px}
   #bottom-nav{display:block !important;}
 
   /* ============================================
-     TOPBAR MOBILE — look app native
+     TOPBAR MOBILE
      ============================================ */
   .topbar{
     padding:0 14px 0 10px;gap:10px;height:56px;
     background:rgba(10,12,24,0.96) !important;
-    backdrop-filter:blur(30px) saturate(1.4) !important;
-    -webkit-backdrop-filter:blur(30px) saturate(1.4) !important;
+    backdrop-filter:blur(20px) saturate(1.4) !important;
+    -webkit-backdrop-filter:blur(20px) saturate(1.4) !important;
     border-bottom:1px solid rgba(180,140,20,0.18) !important;
     box-shadow:0 1px 0 rgba(180,140,20,0.1),0 4px 24px rgba(0,0,0,0.4) !important;
     position:relative;
@@ -629,18 +634,14 @@ textarea.form-control{resize:vertical;min-height:80px}
     background:none !important;background-clip:unset !important;
     text-shadow:0 0 20px rgba(212,180,74,0.35);
     font-family:'Cinzel',serif !important;
-    /* centrage géré par le JS en position absolue */
   }
-  /* Point de statut */
   .status-dot{width:6px;height:6px;flex-shrink:0}
 
-  /* Hamburger amélioré — 3 lignes custom SVG */
   #hamburger{
     width:42px;height:42px;border-radius:12px;flex-shrink:0;
     background:rgba(212,180,74,0.08);
     border:1px solid rgba(212,180,74,0.18);
-    font-size:0;
-    position:relative;
+    font-size:0;position:relative;
   }
   #hamburger::before{
     content:'';position:absolute;
@@ -650,22 +651,18 @@ textarea.form-control{resize:vertical;min-height:80px}
       linear-gradient(#d4b44a,#d4b44a) 0 0/18px 2px,
       linear-gradient(#d4b44a,#d4b44a) 0 5px/14px 2px,
       linear-gradient(#d4b44a,#d4b44a) 0 10px/18px 2px;
-    background-repeat:no-repeat;
-    border-radius:2px;
+    background-repeat:no-repeat;border-radius:2px;
   }
-  #hamburger:active{
-    transform:scale(0.88);
-    background:rgba(212,180,74,0.2);
-  }
+  #hamburger:active{transform:scale(0.88);background:rgba(212,180,74,0.2);}
 
   /* ============================================
-     PAGE CONTENT
+     PAGE CONTENT — transition rapide
      ============================================ */
   @keyframes fadeIn{
-    from{opacity:0;transform:translateY(6px)}
+    from{opacity:0;transform:translateY(5px)}
     to{opacity:1;transform:translateY(0)}
   }
-  .page-content.active{animation:fadeIn 0.22s ease both}
+  .page-content.active{animation:fadeIn 0.18s ease both}
 
   /* ============================================
      GRILLES
@@ -682,7 +679,7 @@ textarea.form-control{resize:vertical;min-height:80px}
   .section-sub{font-size:9px;letter-spacing:1.5px;text-align:left}
 
   /* ============================================
-     STAT CARDS — plus compactes, lisibles
+     STAT CARDS
      ============================================ */
   .stat-value{font-size:34px !important;letter-spacing:-0.5px}
   .stat-card{padding:16px 13px 14px;border-radius:16px !important}
@@ -706,26 +703,14 @@ textarea.form-control{resize:vertical;min-height:80px}
     overflow-x:auto;
     -webkit-overflow-scrolling:touch;
     overscroll-behavior-x:contain;
-    scrollbar-width:thin;
-    scrollbar-color:rgba(180,140,20,0.3) transparent;
+    scrollbar-width:none;
     border-radius:0 0 16px 16px;
-    /* Ombre droite pour indiquer qu'on peut scroller */
-    background:
-      linear-gradient(to right, white 20%, transparent) left / 20px 100% no-repeat,
-      linear-gradient(to left, rgba(180,140,20,0.08) 0%, transparent 100%) right / 30px 100% no-repeat;
-    background-attachment: local, local;
   }
-  .table-scroll-wrapper::-webkit-scrollbar{height:4px}
-  .table-scroll-wrapper::-webkit-scrollbar-track{background:rgba(0,0,0,0.03)}
-  .table-scroll-wrapper::-webkit-scrollbar-thumb{background:rgba(180,140,20,0.35);border-radius:2px}
+  .table-scroll-wrapper::-webkit-scrollbar{display:none}
   .data-table{
-    display:table;
-    white-space:nowrap;
-    min-width:560px;
-    max-width:none;
-    width:100%;
+    display:table;white-space:nowrap;
+    min-width:560px;max-width:none;width:100%;
   }
-  /* Boutons dans les tables : taille tactile minimale */
   .data-table .btn-sm{
     min-height:36px !important;
     padding:6px 11px !important;
@@ -741,25 +726,24 @@ textarea.form-control{resize:vertical;min-height:80px}
     width:100%;max-width:100%;
     border-radius:22px 22px 0 0 !important;
     position:relative;
-    max-height:92dvh;
-    margin:0;
+    max-height:92dvh;margin:0;
     padding-bottom:calc(env(safe-area-inset-bottom,0px) + 10px);
-    animation:sheetUp 0.3s cubic-bezier(0.32,0.72,0,1) both;
+    animation:sheetUp 0.28s cubic-bezier(0.32,0.72,0,1) both;
     box-shadow:0 -20px 80px rgba(0,0,0,0.5) !important;
     z-index:510;
+    /* GPU layer */
+    will-change:transform;
+    -webkit-backface-visibility:hidden;backface-visibility:hidden;
   }
   @keyframes sheetUp{
     from{transform:translateY(40px);opacity:0.6}
     to{transform:translateY(0);opacity:1}
   }
-  /* Handle drag indicator */
   .modal::before{
     content:'';display:block;
     width:40px;height:4px;
-    background:rgba(0,0,0,0.12);
-    border-radius:3px;
-    margin:14px auto -2px;
-    flex-shrink:0;
+    background:rgba(0,0,0,0.12);border-radius:3px;
+    margin:14px auto -2px;flex-shrink:0;
   }
   .modal-header{border-radius:22px 22px 0 0;padding:14px 18px}
   .modal-footer{
@@ -767,15 +751,17 @@ textarea.form-control{resize:vertical;min-height:80px}
     padding:14px 16px calc(env(safe-area-inset-bottom,0px) + 14px);
   }
   .modal-footer .btn{flex:1;min-width:120px;justify-content:center}
-  .modal-body{-webkit-overflow-scrolling:touch}
+  .modal-body{-webkit-overflow-scrolling:touch;overflow-y:auto}
   .modal .grid-2,.modal .grid-3{grid-template-columns:1fr !important}
 
   /* ============================================
-     TABS — scroll horizontal si trop d'onglets
+     TABS — scroll horizontal
      ============================================ */
   .tab-row{gap:5px;padding:4px;overflow-x:auto;flex-wrap:nowrap;scrollbar-width:none}
   .tab-row::-webkit-scrollbar{display:none}
-  .tab-btn{flex:0 0 auto;padding:10px 14px;font-size:9px;border-radius:8px;white-space:nowrap}
+  .tab-btn{flex:0 0 auto;padding:10px 14px;font-size:9px;border-radius:8px;white-space:nowrap;
+    /* Zone tactile confortable */
+    min-height:40px;display:flex;align-items:center;justify-content:center}
 
   /* ============================================
      FORMULAIRES — anti-zoom iOS (font-size ≥ 16px)
@@ -795,15 +781,15 @@ textarea.form-control{resize:vertical;min-height:80px}
   .form-group{margin-bottom:15px}
 
   /* ============================================
-     BOUTONS — zone tactile min 48px
+     BOUTONS — zone tactile min 44px
      ============================================ */
-  .btn{min-height:48px;padding:12px 18px;font-size:13px;border-radius:12px}
-  .btn-sm{min-height:40px;padding:8px 14px;font-size:12px;border-radius:10px}
+  .btn{min-height:44px;padding:11px 18px;font-size:13px;border-radius:12px}
+  .btn-sm{min-height:38px;padding:7px 13px;font-size:12px;border-radius:10px}
 
   /* ============================================
      SIDEBAR NAV
      ============================================ */
-  .nav-item{padding:13px 18px;font-size:14px;border-radius:10px;gap:12px}
+  .nav-item{padding:13px 18px;font-size:14px;border-radius:10px;gap:12px;min-height:48px}
   .nav-section{padding:16px 16px 6px;font-size:8px}
 
   /* ============================================
@@ -863,7 +849,7 @@ textarea.form-control{resize:vertical;min-height:80px}
   }
 
   /* ============================================
-     CODE PÉNAL — tabs scrollables
+     CODE PÉNAL
      ============================================ */
   #codepenal-tabs{overflow-x:auto;flex-wrap:nowrap;scrollbar-width:none;padding-bottom:2px}
   #codepenal-tabs::-webkit-scrollbar{display:none}
@@ -882,6 +868,8 @@ textarea.form-control{resize:vertical;min-height:80px}
      ============================================ */
   .card-header:has(#admin-search){flex-wrap:wrap;gap:10px}
   #admin-search{max-width:100% !important;width:100% !important;margin-top:4px !important}
+  /* Stats admin en 2x2 sur mobile */
+  #admin-stats-row{grid-template-columns:repeat(2,1fr) !important}
 
   /* ============================================
      RECHERCHE — pleine largeur
@@ -892,37 +880,29 @@ textarea.form-control{resize:vertical;min-height:80px}
   #page-recensement .card .card-body input{max-width:100% !important}
 
   /* ============================================
-     DÉSACTIVER HOVER SUR TOUCH
+     DÉSACTIVER HOVER SUR TOUCH (évite états collés)
      ============================================ */
   .card:hover,.stat-card:hover,.recense-card:hover,
   .annonce-item:hover,.nav-item:hover,
-  .btn-primary:hover,.btn-gold:hover{transform:none !important}
+  .btn-primary:hover,.btn-gold:hover,
+  .btn:hover{transform:none !important;box-shadow:none !important}
+  @media(hover:none){
+    .card:hover,.stat-card:hover{transform:none !important}
+  }
 
   /* ============================================
-     FEEDBACK TACTILE — press states nets
+     FEEDBACK TACTILE — press states
      ============================================ */
-  .card:active{
-    opacity:0.88;transform:scale(0.984) !important;
-    transition:transform 0.08s ease,opacity 0.08s ease !important;
-  }
-  .stat-card:active{
-    opacity:0.88;transform:scale(0.96) !important;
-    transition:transform 0.08s ease,opacity 0.08s ease !important;
-  }
-  .annonce-item:active,.recense-card:active{
-    opacity:0.85;transform:scale(0.984) !important;
-    transition:transform 0.08s ease,opacity 0.08s ease !important;
-  }
-  .btn:active{
-    transform:scale(0.94) !important;opacity:0.85;
-    transition:transform 0.07s ease,opacity 0.07s ease !important;
-  }
-  .bnav-item:active{opacity:0.7;transition:opacity 0.06s}
+  .card:active{opacity:0.88;transform:scale(0.984) !important;transition:transform 0.08s,opacity 0.08s !important}
+  .stat-card:active{opacity:0.88;transform:scale(0.96) !important;transition:transform 0.08s,opacity 0.08s !important}
+  .annonce-item:active,.recense-card:active{opacity:0.85;transform:scale(0.984) !important;transition:transform 0.08s,opacity 0.08s !important}
+  .btn:active{transform:scale(0.94) !important;opacity:0.85;transition:transform 0.07s,opacity 0.07s !important}
+  .bnav-item:active{opacity:0.65;transition:opacity 0.05s}
   .nav-item:active{background:rgba(255,255,255,0.14) !important;transition:background 0.07s !important}
   .drawer-item:active{background:rgba(255,255,255,0.08) !important;transform:scale(0.97) !important}
 
   /* ============================================
-     TOASTS — en haut sur mobile
+     TOASTS — en haut sur mobile (sous la topbar)
      ============================================ */
   #toast-container{
     bottom:auto !important;top:64px !important;
@@ -937,12 +917,25 @@ textarea.form-control{resize:vertical;min-height:80px}
   }
 
   /* ============================================
-     LOGIN SCREEN MOBILE — géré par les nouveaux styles #login-left/#login-right
+     LOGIN SCREEN
      ============================================ */
   .login-box{width:100%;max-width:100%;padding:0;margin:auto}
-}
 
-/* Très petits écrans (≤ 390px) */
+  /* ============================================
+     BOTTOM NAV — GPU layer pour fluidité
+     ============================================ */
+  #bottom-nav{
+    will-change:transform;
+    -webkit-backface-visibility:hidden;backface-visibility:hidden;
+    transform:translateZ(0);
+  }
+
+  /* ============================================
+     SCROLL BARS — masquées sur mobile
+     ============================================ */
+  *{scrollbar-width:none}
+  *::-webkit-scrollbar{display:none}
+}
 
 /* Très petits écrans (iPhone SE ≤ 390px) */
 @media(max-width:390px){
@@ -958,6 +951,7 @@ textarea.form-control{resize:vertical;min-height:80px}
   .section-title{font-size:17px !important}
   .commissaire-banner .cb-name{font-size:15px !important}
   .cb-name input{font-size:15px !important;min-width:110px !important}
+  #admin-stats-row{grid-template-columns:repeat(2,1fr) !important}
 }
 ::-webkit-scrollbar{width:5px}
 ::-webkit-scrollbar-track{background:transparent}
@@ -4386,12 +4380,82 @@ input, select, textarea { transition: border-color 0.18s, box-shadow 0.18s, back
     el.addEventListener('touchstart',function(){navigator.vibrate(6);},{passive:true});
   });
 })();
+
+// ===== OPTIMISATIONS PERFORMANCE MOBILE =====
+(function(){
+  if(window.innerWidth > 768) return;
+
+  // 1. Désactiver les transitions lourdes pendant le scroll (évite les janks)
+  var scrollTimer;
+  var scrollArea = document.querySelector('#main');
+  if(scrollArea){
+    scrollArea.addEventListener('scroll', function(){
+      document.body.classList.add('is-scrolling');
+      clearTimeout(scrollTimer);
+      scrollTimer = setTimeout(function(){
+        document.body.classList.remove('is-scrolling');
+      }, 150);
+    }, {passive:true});
+  }
+
+  // 2. Précharger les GPU layers sur les éléments animés
+  var gpuEls = document.querySelectorAll('#sidebar, #bottom-nav, #more-drawer, .modal');
+  gpuEls.forEach(function(el){
+    el.style.webkitBackfaceVisibility = 'hidden';
+    el.style.backfaceVisibility = 'hidden';
+  });
+
+  // 3. Supprimer le délai 300ms sur iOS pour tous les clics
+  // (déjà géré par touch-action mais on s'assure que la meta viewport est correcte)
+  var meta = document.querySelector('meta[name=viewport]');
+  if(meta && !meta.content.includes('touch-action')){
+    // Déjà OK via CSS touch-action:manipulation sur .btn et .bnav-item
+  }
+
+  // 4. Fermer sidebar si on appuie sur le contenu principal
+  var mainContent = document.getElementById('main');
+  if(mainContent){
+    mainContent.addEventListener('touchstart', function(){
+      var sidebar = document.getElementById('sidebar');
+      if(sidebar && sidebar.classList.contains('open')){
+        if(typeof closeSidebar === 'function') closeSidebar();
+      }
+    }, {passive:true});
+  }
+
+  // 5. Empêcher le rebond iOS sur les éléments fixes (topbar, bottom-nav)
+  var fixedEls = document.querySelectorAll('.topbar, #bottom-nav');
+  fixedEls.forEach(function(el){
+    el.addEventListener('touchmove', function(e){ e.preventDefault(); }, {passive:false});
+  });
+})();
 </script>
 
 <style>
 @keyframes syncPulse{0%,100%{opacity:1}50%{opacity:0.45}}
 @keyframes syncDot{0%,100%{transform:scale(1)}50%{transform:scale(0.6)}}
 @keyframes gsIn{from{opacity:0;transform:translateY(-14px) scale(0.97)}to{opacity:1;transform:translateY(0) scale(1)}}
+
+/* ---- TOUCH-ACTION — supprime le délai 300ms iOS sur tous les éléments cliquables ---- */
+.btn, .bnav-item, .drawer-item, .nav-item, .tab-btn,
+.annonce-item, .recense-card, .stat-card, .card,
+.modal-close, .logout-btn, .edit-pencil, [onclick]{
+  touch-action: manipulation;
+}
+
+/* ---- PENDANT LE SCROLL — suspendre les transitions lourdes ---- */
+body.is-scrolling .card,
+body.is-scrolling .stat-card,
+body.is-scrolling .annonce-item,
+body.is-scrolling .recense-card{
+  transition:none !important;
+  will-change:auto;
+}
+
+/* ---- CONTENU DE PAGE — isolation pour limiter les repaints ---- */
+@media(max-width:768px){
+  .page-content{contain:layout style;}
+}
 
 /* ---- MODE SOMBRE ---- */
 body.dark{--bg:#0f1020;--bg2:#181a2e;--bg3:#1e2038;--text:#e2e8f0;--muted:#94a3b8;--stripe:rgba(180,140,20,0.02);--shadow:rgba(0,0,0,0.25);--card-shadow:0 2px 16px rgba(0,0,0,0.35),0 1px 4px rgba(0,0,0,0.25)}
