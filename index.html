@@ -5082,5 +5082,339 @@ function _renderQuickBar() {
   }).join('');
 }
 </script>
+
+<!-- =====================================================
+     FILTRE PAR CARTE STAT — clic pour filtrer la liste
+     Fonctionne sur : Sanctions, Annonces, Opérations
+     ===================================================== -->
+<style>
+/* Carte filtrable — curseur + indicateur visuel */
+.stat-card[data-filter-card]{
+  cursor:pointer !important;
+  user-select:none;
+  position:relative;
+}
+/* Badge "filtrer" affiché au survol */
+.stat-card[data-filter-card]::after{
+  content:'▼ FILTRER';
+  position:absolute;
+  bottom:7px;right:9px;
+  font-size:7px;letter-spacing:1.5px;
+  color:var(--card-accent,var(--gold2));
+  font-family:'Share Tech Mono',monospace;
+  opacity:0;
+  transition:opacity 0.2s;
+  pointer-events:none;
+  text-transform:uppercase;
+}
+@media(hover:hover){
+  .stat-card[data-filter-card]:hover::after{opacity:0.7}
+}
+/* État actif : anneau coloré + légère élévation */
+.stat-card.sfc-active{
+  outline:2.5px solid var(--card-accent,var(--gold2)) !important;
+  outline-offset:3px;
+  transform:translateY(-5px) scale(1.025) !important;
+  box-shadow:
+    0 0 0 6px color-mix(in srgb,var(--card-accent,var(--gold2)) 14%,transparent),
+    0 12px 32px rgba(0,0,0,0.14) !important;
+  z-index:2;
+}
+/* Libellé de la carte au repos → légère indication */
+.stat-card[data-filter-card] .stat-label{
+  transition:color 0.2s;
+}
+.stat-card.sfc-active .stat-label{
+  color:var(--text) !important;
+  font-weight:700 !important;
+}
+/* Désactiver hover CSS quand une carte est active (évite conflit) */
+.stat-card.sfc-active:hover{
+  transform:translateY(-5px) scale(1.025) !important;
+}
+/* Sur mobile : pas de ::after (espace trop réduit) */
+@media(max-width:768px){
+  .stat-card[data-filter-card]::after{display:none}
+  .stat-card.sfc-active{
+    outline-width:2px !important;
+    transform:translateY(-2px) scale(1.015) !important;
+  }
+}
+</style>
+
+<script>
+/* ======================================================
+   STAT CARD FILTER ENGINE
+   ====================================================== */
+(function(){
+
+  /* ── Helpers ── */
+  function pg(id){ return document.getElementById('page-'+id); }
+
+  /* Retire l'état actif de toutes les cartes d'une section */
+  function clearCards(pageId){
+    var p=pg(pageId);if(!p)return;
+    p.querySelectorAll('.stat-card.sfc-active').forEach(function(c){ c.classList.remove('sfc-active'); });
+  }
+
+  /* Retire l'état actif sur TOUS les tab-btn d'une section */
+  function clearTabs(pageId){
+    var p=pg(pageId);if(!p)return;
+    p.querySelectorAll('.tab-btn').forEach(function(b){ b.classList.remove('active'); });
+  }
+
+  /* Active le tab-btn dont l'onclick contient la valeur */
+  function activateTab(pageId, value){
+    var p=pg(pageId);if(!p)return;
+    p.querySelectorAll('.tab-btn').forEach(function(b){
+      var oc=b.getAttribute('onclick')||'';
+      if(oc.indexOf("'"+value+"'")>=0) b.classList.add('active');
+    });
+  }
+
+  /* Active le tab "all" d'une section */
+  function activateAllTab(pageId){
+    var p=pg(pageId);if(!p)return;
+    p.querySelectorAll('.tab-btn').forEach(function(b){
+      var oc=b.getAttribute('onclick')||'';
+      if(oc.indexOf("'all'")>=0) b.classList.add('active');
+    });
+  }
+
+  /* Enregistre le clic sur un tab-btn pour désactiver les cartes */
+  function syncTabsToCards(pageId){
+    var p=pg(pageId);if(!p)return;
+    p.querySelectorAll('.tab-btn').forEach(function(btn){
+      btn.addEventListener('click', function(){ clearCards(pageId); });
+    });
+    /* Champ de recherche → reset cartes aussi */
+    var searchMap={sanctions:'search-sanctions',annonces:'search-annonces',operations:'search-operations'};
+    var inp=document.getElementById(searchMap[pageId]);
+    if(inp) inp.addEventListener('input', function(){ clearCards(pageId); });
+  }
+
+  /* Attache le comportement filtre à une carte */
+  function attachCard(card, pageId, filterValue, applyFn, resetFn){
+    card.setAttribute('data-filter-card', filterValue);
+    card.addEventListener('click', function(){
+      var wasActive = card.classList.contains('sfc-active');
+      clearCards(pageId);
+      clearTabs(pageId);
+      if(wasActive){
+        activateAllTab(pageId);
+        resetFn();
+      } else {
+        card.classList.add('sfc-active');
+        applyFn(filterValue);
+      }
+    });
+  }
+
+  /* ================================================
+     Initialisation après chargement complet de la page
+     ================================================ */
+  window.addEventListener('load', function(){
+
+    /* ────────────────────────────────────────────
+       SANCTIONS
+       Promo | Félicitation | Avertissement | Exclusion
+       ──────────────────────────────────────────── */
+    (function(){
+      var p = pg('sanctions'); if(!p) return;
+      var statCards = p.querySelectorAll('.grid.grid-4 .stat-card');
+      var mapping = ['Promotion','Félicitation','Avertissement','Exclusion'];
+
+      statCards.forEach(function(card, i){
+        if(!mapping[i]) return;
+        var val = mapping[i];
+        attachCard(card, 'sanctions', val,
+          function(v){
+            activateTab('sanctions', v);
+            _sancFilter = v;
+            if(typeof renderSanctions==='function') renderSanctions();
+          },
+          function(){
+            _sancFilter = 'all';
+            if(typeof renderSanctions==='function') renderSanctions();
+          }
+        );
+      });
+      syncTabsToCards('sanctions');
+    })();
+
+    /* ────────────────────────────────────────────
+       ANNONCES
+       Total → all | Épinglées → pin | Alertes → Alerte | Cette semaine → recent
+       ──────────────────────────────────────────── */
+    (function(){
+      var p = pg('annonces'); if(!p) return;
+      var statCards = p.querySelectorAll('#annonces-stats-row .stat-card');
+      var mapping = ['all', 'pin', 'Alerte', 'recent'];
+
+      /* Étendre renderAnnonces pour supporter 'pin' et 'recent' */
+      var _origRenderAnnonces = window.renderAnnonces;
+      window.renderAnnonces = function(){
+        if(_annFilter === 'pin' || _annFilter === 'recent'){
+          /* Forcer _annFilter à 'all' le temps du render de stats, puis re-filter */
+          var savedFilter = _annFilter;
+          _annFilter = 'all';
+          if(_origRenderAnnonces) _origRenderAnnonces();
+          _annFilter = savedFilter;
+
+          /* Appliquer le filtre custom sur la liste déjà rendue */
+          var weekAgo = Date.now() - 7*24*60*60*1000;
+          var all = DB.annonces || [];
+          var qEl = document.getElementById('search-annonces');
+          var q = (qEl ? qEl.value : '').toLowerCase();
+          var sorted = all.slice().sort(function(a,b){
+            return ((b.pin?1:0)-(a.pin?1:0)) || (new Date(b.date) - new Date(a.date));
+          });
+          if(savedFilter === 'pin'){
+            sorted = sorted.filter(function(a){ return a.pin; });
+          } else {
+            sorted = sorted.filter(function(a){
+              var d=a.date||'', ts=0;
+              try{
+                if(d.indexOf('/')>=0){
+                  var parts=d.split(' '),dp=parts[0].split('/');
+                  ts=new Date(dp[2]+'-'+dp[1]+'-'+dp[0]+(parts[1]?' '+parts[1]:'')).getTime();
+                } else { ts=new Date(d).getTime(); }
+              }catch(e){}
+              return !isNaN(ts) && ts > weekAgo;
+            });
+          }
+          if(q) sorted = sorted.filter(function(a){
+            return (a.titre+a.contenu+a.auteur+a.cat).toLowerCase().indexOf(q) >= 0;
+          });
+          var countEl = document.getElementById('annonces-count');
+          if(countEl) countEl.textContent = sorted.length+' annonce'+(sorted.length!==1?'s':'');
+          var listEl = document.getElementById('annonces-list');
+          if(listEl){
+            listEl.innerHTML = sorted.map(function(a){
+              var cb = typeof catBadge==='function' ? catBadge(a.cat) : 'badge-gray';
+              var escA = typeof esc==='function' ? esc : function(x){return x;};
+              var fmt = typeof fmtDate==='function' ? fmtDate : function(x){return x;};
+              var mod = typeof canModify==='function' ? canModify() : false;
+              return '<div class="annonce-item">'
+                +(a.pin?'<span class="badge badge-gold pinned-badge">📌 Épinglé</span>':'')
+                +'<div class="flex items-center gap-2" style="margin-bottom:7px"><span class="badge '+cb+'">'+a.cat+'</span></div>'
+                +'<h4>'+escA(a.titre)+'</h4>'
+                +'<div class="meta">Par '+escA(a.auteur)+' — '+fmt(a.date)+'</div>'
+                +'<p>'+escA(a.contenu)+'</p>'
+                +(a.photo?'<img src="'+a.photo+'" alt="Image" style="display:block;max-width:100%;max-height:320px;border-radius:9px;margin-top:12px;object-fit:contain;border:1px solid rgba(180,140,20,0.15)">':'')
+                +(mod?'<div class="flex gap-2 mt-4"><button class="btn btn-danger btn-sm" onclick="deleteAnnonce('+a.id+')">🗑 Supprimer</button></div>':'')
+                +'</div>';
+            }).join('') || '<div class="alert alert-info">Aucune annonce trouvée.</div>';
+          }
+        } else {
+          if(_origRenderAnnonces) _origRenderAnnonces();
+        }
+      };
+
+      statCards.forEach(function(card, i){
+        if(i >= mapping.length) return;
+        var val = mapping[i];
+        attachCard(card, 'annonces', val,
+          function(v){
+            if(v === 'all'){
+              activateAllTab('annonces');
+              _annFilter = 'all';
+            } else if(v === 'pin' || v === 'recent'){
+              /* Pas de tab correspondant — on laisse tous les tabs inactifs */
+              _annFilter = v;
+            } else {
+              activateTab('annonces', v);
+              _annFilter = v;
+            }
+            if(typeof renderAnnonces==='function') renderAnnonces();
+          },
+          function(){
+            _annFilter = 'all';
+            if(typeof renderAnnonces==='function') renderAnnonces();
+          }
+        );
+      });
+      syncTabsToCards('annonces');
+    })();
+
+    /* ────────────────────────────────────────────
+       OPÉRATIONS
+       Actives → Active | Planifiées → Planifiée | Terminées → Terminée | Arrestations → type:Arrestation
+       ──────────────────────────────────────────── */
+    (function(){
+      var p = pg('operations'); if(!p) return;
+      var statCards = p.querySelectorAll('.grid.grid-4 .stat-card');
+      var mapping = ['Active','Planifiée','Terminée','__arrest__'];
+
+      /* Étendre renderOperations pour supporter le filtre par type Arrestation */
+      var _origRenderOps = window.renderOperations;
+      window.renderOperations = function(){
+        if(_opFilter === '__arrest__'){
+          /* Calculer stats normalement */
+          var allOps = DB.operations || [];
+          var opSA=document.getElementById('op-stat-active'),opSP=document.getElementById('op-stat-plan'),opSD=document.getElementById('op-stat-done'),opSAr=document.getElementById('op-stat-arrest');
+          if(opSA) opSA.textContent=allOps.filter(function(o){return o.statut==='Active';}).length;
+          if(opSP) opSP.textContent=allOps.filter(function(o){return o.statut==='Planifiée';}).length;
+          if(opSD) opSD.textContent=allOps.filter(function(o){return o.statut==='Terminée';}).length;
+          if(opSAr) opSAr.textContent=allOps.filter(function(o){return o.type==='Arrestation';}).length;
+          /* Filtrer par type Arrestation */
+          var qEl=document.getElementById('search-operations');
+          var q=(qEl?qEl.value:'').toLowerCase();
+          var ops=allOps.filter(function(o){return o.type==='Arrestation';});
+          if(q) ops=ops.filter(function(o){return (o.nom+o.type+o.desc+o.resp).toLowerCase().indexOf(q)>=0;});
+          var grid=document.getElementById('operations-grid');
+          if(grid){
+            var typeIcon=function(t){return t==='Arrestation'?'🚔':t==='Perquisition'?'🏠':t==='Surveillance'?'👁':'🚨';};
+            var mod=typeof canModify==='function'?canModify():false;
+            var escF=typeof esc==='function'?esc:function(x){return x;};
+            var fmtF=typeof fmtDate==='function'?fmtDate:function(x){return x;};
+            grid.innerHTML=ops.map(function(op){
+              var bc=op.statut==='Active'?'badge-green':op.statut==='Planifiée'?'badge-blue':'badge-gray';
+              var brd=op.statut==='Active'?'border-color:rgba(21,128,61,0.3)':'';
+              var bar=op.statut==='Active'?'<div style="height:3px;background:linear-gradient(90deg,var(--green),transparent);margin:-16px -18px 14px;border-radius:0"></div>':'';
+              return '<div class="card" style="'+brd+'">'
+                +'<div class="card-header"><span>'+typeIcon(op.type)+'</span><h3 style="font-size:13px">'+escF(op.nom)+'</h3>'
+                +'<span class="badge '+bc+'" style="margin-left:auto">'+escF(op.statut)+'</span></div>'
+                +'<div class="card-body">'+bar
+                +'<span class="badge badge-orange" style="margin-bottom:9px;display:inline-flex">'+escF(op.type)+'</span>'
+                +'<p style="font-size:11.5px;color:#555;line-height:1.6">'+escF(op.desc)+'</p>'
+                +'<div class="divider"></div>'
+                +'<div class="text-muted">Responsable : <b>'+escF(op.resp)+'</b></div>'
+                +(op.dateOp?'<div class="text-muted" style="font-size:11px;margin-top:4px">📅 '+escF(op.dateOp)+'</div>':'')
+                +(mod?'<div class="flex gap-2 mt-4"><button class="btn btn-outline btn-sm" onclick="cycleOpStatut('+op.id+')">🔄 Statut</button><button class="btn btn-danger btn-sm" onclick="deleteOperation('+op.id+')">🗑</button></div>':'')
+                +'</div></div>';
+            }).join('')||'<div style="grid-column:1/-1;padding:32px;text-align:center;color:var(--muted)">Aucune arrestation enregistrée.</div>';
+          }
+        } else {
+          if(_origRenderOps) _origRenderOps();
+        }
+      };
+
+      statCards.forEach(function(card, i){
+        if(i >= mapping.length) return;
+        var val = mapping[i];
+        attachCard(card, 'operations', val,
+          function(v){
+            if(v === '__arrest__'){
+              /* Pas de tab correspondant */
+              _opFilter = '__arrest__';
+            } else {
+              activateTab('operations', v);
+              _opFilter = v;
+            }
+            if(typeof renderOperations==='function') renderOperations();
+          },
+          function(){
+            _opFilter = 'all';
+            if(typeof renderOperations==='function') renderOperations();
+          }
+        );
+      });
+      syncTabsToCards('operations');
+    })();
+
+  }); /* fin window.load */
+})();
+</script>
 </body>
 </html>
