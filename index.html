@@ -2757,24 +2757,6 @@ const VISITOR_PAGES=["dashboard","annonces","recensement","recrutement","plainte
 
 // Mapping page → bnav-item id (pour les 4 onglets directs de la barre)
 const BNAV_MAP={dashboard:"bnav-dashboard",annonces:"bnav-annonces",recensement:"bnav-recensement",plaintes:"bnav-plaintes"};
-
-function updateBottomNav(page){
-  // Retirer active de tous les items bnav
-  document.querySelectorAll('.bnav-item').forEach(function(it){ it.classList.remove('active'); });
-  // Si la page est directement dans la barre, activer son item
-  if(BNAV_MAP[page]){
-    var item=document.getElementById(BNAV_MAP[page]);
-    if(item) item.classList.add('active');
-  } else {
-    // Page dans le drawer "Plus" : activer le bouton "Plus"
-    var more=document.getElementById('bnav-more');
-    if(more) more.classList.add('active');
-  }
-  // Mettre à jour les items actifs dans le drawer
-  document.querySelectorAll('.drawer-item').forEach(function(it){ it.classList.remove('active'); });
-  var drawerItem=document.getElementById('ditem-'+page);
-  if(drawerItem) drawerItem.classList.add('active');
-}
 function showPage(name){
   // Visiteurs : bloquer les pages non autorisées
   if(isVisiteur()&&!VISITOR_PAGES.includes(name)){
@@ -4043,12 +4025,19 @@ function toggleMoreDrawer(){
     d.classList.remove("open");
     o.classList.remove("open");
     document.body.style.overflow="";
-    setTimeout(()=>{if(!d.classList.contains("open"))d.style.display="none"},350);
+    if(window.innerWidth<=768){
+      d.style.display="none";
+    } else {
+      setTimeout(()=>{if(!d.classList.contains("open"))d.style.display="none"},350);
+    }
   } else {
     d.style.display="block";
     requestAnimationFrame(()=>{d.classList.add("open")});
     o.classList.add("open");
     document.body.style.overflow="hidden";
+    // Activer visuellement le bouton "Plus" quand le drawer est ouvert
+    document.querySelectorAll(".bnav-item").forEach(b=>b.classList.remove("active"));
+    const more=el("bnav-more");if(more)more.classList.add("active");
   }
 }
 function closeMoreDrawer(){
@@ -4056,7 +4045,12 @@ function closeMoreDrawer(){
   d.classList.remove("open");
   document.body.style.overflow="";
   const o=el("sidebar-overlay");if(o&&!el("sidebar").classList.contains("open"))o.classList.remove("open");
-  setTimeout(()=>{if(!d.classList.contains("open"))d.style.display="none"},300);
+  // Fermeture immédiate sur mobile pour éviter le blocage tactile
+  if(window.innerWidth<=768){
+    d.style.display="none";
+  } else {
+    setTimeout(()=>{if(!d.classList.contains("open"))d.style.display="none"},300);
+  }
 }
 
 // Auto-close sidebar on nav click (mobile)
@@ -4186,64 +4180,131 @@ window.addEventListener("load",()=>{
 <!-- BOTTOM NAV (mobile) -->
 <div id="bottom-nav">
   <div id="bottom-nav-inner">
-    <div class="bnav-item active" id="bnav-dashboard" onclick="showPage('dashboard');updateBottomNav('dashboard')">
+    <div class="bnav-item" id="bnav-dashboard">
       <span class="bnav-pip"></span>
       <span class="bnav-icon">📊</span>
       <span class="bnav-label">Accueil</span>
     </div>
-    <div class="bnav-item" id="bnav-annonces" onclick="showPage('annonces');updateBottomNav('annonces')">
+    <div class="bnav-item" id="bnav-annonces">
       <span class="bnav-pip"></span>
       <span class="bnav-icon">📢</span>
       <span class="bnav-label">Annonces</span>
       <span class="bnav-badge" id="bnav-badge-annonces" style="display:none">0</span>
     </div>
-    <div class="bnav-item" id="bnav-recensement" onclick="showPage('recensement');updateBottomNav('recensement')">
+    <div class="bnav-item" id="bnav-recensement">
       <span class="bnav-pip"></span>
       <span class="bnav-icon">📝</span>
       <span class="bnav-label">Recensement</span>
     </div>
-    <div class="bnav-item" id="bnav-plaintes" onclick="showPage('plaintes');updateBottomNav('plaintes')">
+    <div class="bnav-item" id="bnav-plaintes">
       <span class="bnav-pip"></span>
       <span class="bnav-icon">📋</span>
       <span class="bnav-label">Plaintes</span>
       <span class="bnav-badge" id="bnav-badge-plaintes" style="display:none">0</span>
     </div>
-    <div class="bnav-item" id="bnav-more" onclick="toggleMoreDrawer()">
+    <div class="bnav-item" id="bnav-more">
       <span class="bnav-pip"></span>
       <span class="bnav-icon" style="font-size:22px;letter-spacing:3px;line-height:1">···</span>
       <span class="bnav-label">Plus</span>
     </div>
   </div>
 </div>
+<script>
+// Bottom nav — navigation tactile fiable
+(function(){
+  var bnavPages = [
+    {id:'bnav-dashboard',   page:'dashboard'},
+    {id:'bnav-annonces',    page:'annonces'},
+    {id:'bnav-recensement', page:'recensement'},
+    {id:'bnav-plaintes',    page:'plaintes'}
+  ];
+  bnavPages.forEach(function(item){
+    var btn = document.getElementById(item.id);
+    if(!btn) return;
+    var page = item.page;
+    btn.addEventListener('touchstart', function(e){
+      showPage(page);
+      updateBottomNav(page);
+    }, {passive:true});
+    btn.addEventListener('click', function(){
+      showPage(page);
+      updateBottomNav(page);
+    });
+  });
+  // Bouton "Plus"
+  var moreBtn = document.getElementById('bnav-more');
+  if(moreBtn){
+    moreBtn.addEventListener('touchstart', function(e){
+      toggleMoreDrawer();
+    }, {passive:true});
+    moreBtn.addEventListener('click', function(){
+      toggleMoreDrawer();
+    });
+  }
+})();
+</script>
 
 <!-- MORE DRAWER (mobile) -->
 <div id="more-drawer">
   <div id="more-drawer-handle" onclick="closeMoreDrawer()"></div>
   <div class="drawer-section-label">Registres</div>
-  <div class="drawer-item" id="ditem-recrutement" onclick="showPage('recrutement');updateBottomNav('recrutement');closeMoreDrawer()">
+  <div class="drawer-item" id="ditem-recrutement">
     <span class="d-icon">🎖️</span> Recrutement <span class="d-badge" id="dbadge-recrutement" style="display:none">0</span>
   </div>
-  <div class="drawer-item" id="ditem-dossiers" onclick="showPage('dossiers');updateBottomNav('dossiers');closeMoreDrawer()">
+  <div class="drawer-item" id="ditem-dossiers">
     <span class="d-icon">🗂️</span> Dossiers criminels <span class="d-badge" id="dbadge-dossiers" style="display:none;background:var(--purple)">0</span>
   </div>
-  <div class="drawer-item" id="ditem-codepenal" onclick="showPage('codepenal');updateBottomNav('codepenal');closeMoreDrawer()">
+  <div class="drawer-item" id="ditem-codepenal">
     <span class="d-icon">📜</span> Code Pénal
   </div>
   <div class="drawer-section-label" id="dsec-ops">Opérations</div>
-  <div class="drawer-item" id="ditem-operations" data-member-only="true" onclick="showPage('operations');updateBottomNav('operations');closeMoreDrawer()">
+  <div class="drawer-item" id="ditem-operations" data-member-only="true">
     <span class="d-icon">🚨</span> Opérations <span class="d-badge" id="dbadge-operations" style="display:none;background:var(--accent)">0</span>
   </div>
-  <div class="drawer-item" id="ditem-effectifs" data-member-only="true" onclick="showPage('effectifs');updateBottomNav('effectifs');closeMoreDrawer()">
+  <div class="drawer-item" id="ditem-effectifs" data-member-only="true">
     <span class="d-icon">👮</span> Effectifs
   </div>
-  <div class="drawer-item" id="ditem-sanctions" data-member-only="true" onclick="showPage('sanctions');updateBottomNav('sanctions');closeMoreDrawer()">
+  <div class="drawer-item" id="ditem-sanctions" data-member-only="true">
     <span class="d-icon">⚖️</span> Sanctions / Promo
   </div>
   <div class="drawer-section-label" id="dsec-admin">Administration</div>
-  <div class="drawer-item" id="ditem-admin" style="display:none" onclick="showPage('admin');updateBottomNav('admin');closeMoreDrawer()">
+  <div class="drawer-item" id="ditem-admin" style="display:none">
     <span class="d-icon">⚙️</span> Panel Admin
   </div>
 </div>
+<script>
+// Drawer items — navigation tactile fiable (évite les problèmes iOS onclick dans un drawer)
+(function(){
+  var drawerPages = [
+    {id:'ditem-recrutement', page:'recrutement'},
+    {id:'ditem-dossiers',    page:'dossiers'},
+    {id:'ditem-codepenal',   page:'codepenal'},
+    {id:'ditem-operations',  page:'operations'},
+    {id:'ditem-effectifs',   page:'effectifs'},
+    {id:'ditem-sanctions',   page:'sanctions'},
+    {id:'ditem-admin',       page:'admin'}
+  ];
+  drawerPages.forEach(function(item){
+    var el = document.getElementById(item.id);
+    if(!el) return;
+    var page = item.page;
+    // Fermer le drawer IMMÉDIATEMENT au touchstart, puis naviguer
+    el.addEventListener('touchstart', function(e){
+      closeMoreDrawer();
+      setTimeout(function(){
+        showPage(page);
+        updateBottomNav(page);
+      }, 30);
+    }, {passive:true});
+    // Fallback click pour desktop
+    el.addEventListener('click', function(e){
+      closeMoreDrawer();
+      showPage(page);
+      updateBottomNav(page);
+    });
+  });
+})();
+</script>
 
 <style>
 @keyframes toastIn{from{opacity:0;transform:translateY(-10px) scale(0.95)}to{opacity:1;transform:translateY(0) scale(1)}}
