@@ -459,7 +459,7 @@ textarea.form-control{resize:vertical;min-height:80px}
   z-index:90;padding-bottom:env(safe-area-inset-bottom,0px);
   box-shadow:0 -8px 32px rgba(0,0,0,0.45),0 -1px 0 rgba(180,140,20,0.12);
 }
-#bottom-nav-inner{display:flex;align-items:stretch;height:64px}
+#bottom-nav-inner{display:flex;align-items:stretch;height:64px;justify-content:space-around;width:100%}
 
 .bnav-item{
   flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
@@ -2754,6 +2754,27 @@ function saveCommNameAdmin(){
 // NAV
 const PAGES={dashboard:"Tableau de bord",annonces:"Annonces",recensement:"Recensement",recrutement:"Recrutement",plaintes:"Plaintes",dossiers:"Dossiers criminels",codepenal:"Code Pénal",operations:"Opérations",effectifs:"Effectifs",sanctions:"Sanctions & Promotions",admin:"Panel Admin"};
 const VISITOR_PAGES=["dashboard","annonces","recensement","recrutement","plaintes","codepenal"];
+
+// Mapping page → bnav-item id (pour les 4 onglets directs de la barre)
+const BNAV_MAP={dashboard:"bnav-dashboard",annonces:"bnav-annonces",recensement:"bnav-recensement",plaintes:"bnav-plaintes"};
+
+function updateBottomNav(page){
+  // Retirer active de tous les items bnav
+  document.querySelectorAll('.bnav-item').forEach(function(it){ it.classList.remove('active'); });
+  // Si la page est directement dans la barre, activer son item
+  if(BNAV_MAP[page]){
+    var item=document.getElementById(BNAV_MAP[page]);
+    if(item) item.classList.add('active');
+  } else {
+    // Page dans le drawer "Plus" : activer le bouton "Plus"
+    var more=document.getElementById('bnav-more');
+    if(more) more.classList.add('active');
+  }
+  // Mettre à jour les items actifs dans le drawer
+  document.querySelectorAll('.drawer-item').forEach(function(it){ it.classList.remove('active'); });
+  var drawerItem=document.getElementById('ditem-'+page);
+  if(drawerItem) drawerItem.classList.add('active');
+}
 function showPage(name){
   // Visiteurs : bloquer les pages non autorisées
   if(isVisiteur()&&!VISITOR_PAGES.includes(name)){
@@ -2830,6 +2851,8 @@ function refreshAll(){
   const activePage=document.querySelector(".page-content.active");
   if(activePage&&activePage.id==="page-dashboard"){renderDashboard();}
   else{renderTimeline();}// Maintenir la timeline à jour même si une autre page est active
+  // Mettre à jour les stats admin si on est sur la page admin
+  if(activePage&&activePage.id==="page-admin"){renderAdmin();}
 }
 // Appelé après chaque modification de données pour mettre à jour le dashboard en temps réel
 function syncDashboard(){updateStats();updateBadges();const a=document.querySelector(".page-content.active");if(a&&a.id==="page-dashboard")renderDashboard();}
@@ -3754,8 +3777,21 @@ function renderAdmin(){
 function exportAdminData(){
   const rows=[["Identifiant","Nom RP","Grade","Rôle","Statut","Créé le"],...DB.users.map(u=>[u.login,u.nom,u.grade,u.role,u.statut||"Actif",u.created?fmtDate(u.created):""])];
   const csv=rows.map(r=>r.map(c=>'"'+String(c).replace(/"/g,'""')+'"').join(",")).join("\n");
-  const a=document.createElement("a");a.href="data:text/csv;charset=utf-8,\uFEFF"+encodeURIComponent(csv);a.download="membres_sunagakure.csv";a.click();
-  showToast("Export CSV téléchargé","success");
+  const blob=new Blob(["\uFEFF"+csv],{type:"text/csv;charset=utf-8;"});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement("a");
+  a.href=url;
+  a.download="membres_sunagakure.csv";
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(function(){document.body.removeChild(a);URL.revokeObjectURL(url);},500);
+  // Sur mobile, expliquer ce qui se passe
+  const isMobile=window.innerWidth<=768;
+  if(isMobile){
+    showToast("📤 CSV téléchargé — Ouvrez-le avec Excel, Numbers ou Google Sheets","success");
+  } else {
+    showToast("Export CSV téléchargé","success");
+  }
 }
 
 function openEditUser(id){
