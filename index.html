@@ -5088,53 +5088,48 @@ function _renderQuickBar() {
      Fonctionne sur : Sanctions, Annonces, Opérations
      ===================================================== -->
 <style>
-/* Carte filtrable — curseur + indicateur visuel */
+/* Carte filtrable */
 .stat-card[data-filter-card]{
   cursor:pointer !important;
   user-select:none;
-  position:relative;
+  /* NE PAS toucher ::before / ::after — déjà utilisés par la stripe et la barre colorée */
 }
-/* Badge "filtrer" affiché au survol */
-.stat-card[data-filter-card]::after{
-  content:'▼ FILTRER';
+/* Indicateur "▼ FILTRER" injecté via JS dans un <span class="sfc-hint"> */
+.sfc-hint{
   position:absolute;
-  bottom:7px;right:9px;
-  font-size:7px;letter-spacing:1.5px;
-  color:var(--card-accent,var(--gold2));
+  bottom:8px; right:9px;
+  font-size:7px; letter-spacing:1.5px;
+  color:var(--card-accent, var(--gold2));
   font-family:'Share Tech Mono',monospace;
   opacity:0;
   transition:opacity 0.2s;
   pointer-events:none;
   text-transform:uppercase;
+  z-index:3;
 }
 @media(hover:hover){
-  .stat-card[data-filter-card]:hover::after{opacity:0.7}
+  .stat-card[data-filter-card]:hover .sfc-hint{ opacity:0.7 }
 }
-/* État actif : anneau coloré + légère élévation */
+@media(max-width:768px){ .sfc-hint{ display:none } }
+
+/* État actif */
 .stat-card.sfc-active{
-  outline:2.5px solid var(--card-accent,var(--gold2)) !important;
+  outline:2.5px solid var(--card-accent, var(--gold2)) !important;
   outline-offset:3px;
   transform:translateY(-5px) scale(1.025) !important;
   box-shadow:
-    0 0 0 6px color-mix(in srgb,var(--card-accent,var(--gold2)) 14%,transparent),
+    0 0 0 6px color-mix(in srgb, var(--card-accent, var(--gold2)) 14%, transparent),
     0 12px 32px rgba(0,0,0,0.14) !important;
   z-index:2;
-}
-/* Libellé de la carte au repos → légère indication */
-.stat-card[data-filter-card] .stat-label{
-  transition:color 0.2s;
 }
 .stat-card.sfc-active .stat-label{
   color:var(--text) !important;
   font-weight:700 !important;
 }
-/* Désactiver hover CSS quand une carte est active (évite conflit) */
 .stat-card.sfc-active:hover{
   transform:translateY(-5px) scale(1.025) !important;
 }
-/* Sur mobile : pas de ::after (espace trop réduit) */
 @media(max-width:768px){
-  .stat-card[data-filter-card]::after{display:none}
   .stat-card.sfc-active{
     outline-width:2px !important;
     transform:translateY(-2px) scale(1.015) !important;
@@ -5196,6 +5191,13 @@ function _renderQuickBar() {
   /* Attache le comportement filtre à une carte */
   function attachCard(card, pageId, filterValue, applyFn, resetFn){
     card.setAttribute('data-filter-card', filterValue);
+    /* Injecter l'indicateur "▼ FILTRER" sans toucher aux pseudo-éléments existants */
+    if(!card.querySelector('.sfc-hint')){
+      var hint = document.createElement('span');
+      hint.className = 'sfc-hint';
+      hint.textContent = '▼ FILTRER';
+      card.appendChild(hint);
+    }
     card.addEventListener('click', function(){
       var wasActive = card.classList.contains('sfc-active');
       clearCards(pageId);
@@ -5411,6 +5413,110 @@ function _renderQuickBar() {
         );
       });
       syncTabsToCards('operations');
+    })();
+
+    /* ────────────────────────────────────────────
+       ADMIN
+       Total → reset | Actifs → statut Actif | Désactivés → statut Désactivé | Admins → role admin
+       ──────────────────────────────────────────── */
+    (function(){
+      var p = pg('admin'); if(!p) return;
+      var statCards = p.querySelectorAll('#admin-stats-row .stat-card');
+
+      function setAdminFilter(statutVal, roleVal){
+        var sFil = document.getElementById('admin-statut-filter');
+        var rFil = document.getElementById('admin-role-filter');
+        if(sFil) sFil.value = statutVal || '';
+        if(rFil) rFil.value = roleVal  || '';
+      }
+      function resetAdminFilters(){ setAdminFilter('',''); }
+
+      var mapping = [
+        { statut:'',          role:'',      label:'tout'    },
+        { statut:'Actif',     role:'',      label:'actif'   },
+        { statut:'Désactivé', role:'',      label:'inactif' },
+        { statut:'',          role:'admin', label:'admin'   }
+      ];
+
+      statCards.forEach(function(card, i){
+        if(!mapping[i]) return;
+        var cfg = mapping[i];
+        attachCard(card, 'admin', cfg.label,
+          function(){
+            setAdminFilter(cfg.statut, cfg.role);
+            if(typeof renderAdmin==='function') renderAdmin();
+          },
+          function(){
+            resetAdminFilters();
+            if(typeof renderAdmin==='function') renderAdmin();
+          }
+        );
+      });
+
+      ['admin-statut-filter','admin-role-filter','admin-search'].forEach(function(id){
+        var inp = document.getElementById(id);
+        if(inp) inp.addEventListener(id==='admin-search'?'input':'change', function(){
+          clearCards('admin');
+        });
+      });
+    })();
+
+    /* ────────────────────────────────────────────
+       DASHBOARD
+       Les cartes naviguent vers la section correspondante
+       ──────────────────────────────────────────── */
+    (function(){
+      var p = pg('dashboard'); if(!p) return;
+      var grid = p.querySelector('.grid.grid-4');
+      if(!grid) return;
+      var statCards = grid.querySelectorAll('.stat-card');
+
+      /* Indicateur "→ VOIR" spécifique au dashboard */
+      var dashStyle = document.createElement('style');
+      dashStyle.textContent =
+        '#page-dashboard .stat-card.sfc-active{outline:none!important;transform:none!important;box-shadow:none!important}';
+      document.head.appendChild(dashStyle);
+
+      var navMap = [
+        function(){
+          showPage('effectifs');
+          if(typeof updateBottomNav==='function') updateBottomNav('effectifs');
+        },
+        function(){
+          showPage('recensement');
+          if(typeof updateBottomNav==='function') updateBottomNav('recensement');
+        },
+        function(){
+          showPage('plaintes');
+          if(typeof updateBottomNav==='function') updateBottomNav('plaintes');
+          setTimeout(function(){
+            var btn = document.querySelector("#page-plaintes .tab-btn[onclick*=\"'ouverte'\"]");
+            if(btn) btn.click();
+          }, 80);
+        },
+        function(){
+          showPage('operations');
+          if(typeof updateBottomNav==='function') updateBottomNav('operations');
+          setTimeout(function(){
+            var btn = document.querySelector("#page-operations .tab-btn[onclick*=\"'Active'\"]");
+            if(btn) btn.click();
+          }, 80);
+        }
+      ];
+
+      statCards.forEach(function(card, i){
+        if(!navMap[i]) return;
+        card.setAttribute('data-filter-card', 'nav-'+i);
+        if(!card.querySelector('.sfc-hint')){
+          var hint = document.createElement('span');
+          hint.className = 'sfc-hint';
+          hint.textContent = '→ VOIR';
+          card.appendChild(hint);
+        }
+        card.style.cursor = 'pointer';
+        card.style.userSelect = 'none';
+        card.addEventListener('click', function(){ navMap[i](); });
+      });
     })();
 
   }); /* fin window.load */
