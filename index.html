@@ -35,6 +35,9 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:9998;
 body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:9997;
   background-image:url("data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23b88c14' fill-opacity='0.025' fill-rule='evenodd'%3E%3Ccircle cx='20' cy='20' r='1'/%3E%3C/g%3E%3C/svg%3E")}
 
+/* HAMBURGER — masqué sur desktop, affiché sur mobile via media query */
+#hamburger{display:none}
+
 /* SIDEBAR */
 #sidebar{position:fixed;left:0;top:0;bottom:0;width:248px;
   background:linear-gradient(180deg,#1a1c2e 0%,#111220 100%);
@@ -1251,6 +1254,11 @@ textarea.form-control{resize:vertical;min-height:80px}
 </style>
 </head>
 <body>
+<script>
+/* Appliquer le mode sombre IMMÉDIATEMENT pour éviter le flash de thème clair */
+if(localStorage.getItem('suna_darkmode')==='1'){document.documentElement.classList.add('dark-pending');document.body&&document.body.classList.add('dark');}
+document.addEventListener('DOMContentLoaded',function(){if(localStorage.getItem('suna_darkmode')==='1'){document.body.classList.add('dark');}});
+</script>
 
 <!-- LOGIN -->
 <div id="login-screen">
@@ -1883,6 +1891,7 @@ textarea.form-control{resize:vertical;min-height:80px}
           <button class="btn btn-gold btn-sm" onclick="markAllNotifsRead()">✓ Tout marquer comme lu</button>
         </div>
       </div>
+    </div><!-- /card notifications -->
     <!-- Membres -->
     <div class="card" style="overflow:visible">
       <div class="card-header" style="flex-wrap:wrap;gap:10px">
@@ -2879,7 +2888,7 @@ function updateBadges(){
   const nR=_countNew(DB.recenses,"recenses");
   const nRec=(DB.candidatures||[]).filter(c=>c.statut==="en_attente").length;
   const nOp=(DB.operations||[]).filter(o=>o.statut==="Active").length;
-  const nD=(DB.dossiers||[]).filter(d=>(d.statut||"").toLowerCase()==="ouvert").length;
+  const nD=(DB.dossiers||[]).filter(d=>(d.statut||"").toLowerCase()==="recherché"||(d.statut||"")==="En garde à vue").length;
 
   // Sidebar badges (annonces/recenses/plaintes toujours visibles si >0)
   const ba=el("badge-annonces");
@@ -4298,18 +4307,17 @@ window.addEventListener("load",()=>{
     var el = document.getElementById(item.id);
     if(!el) return;
     var page = item.page;
-    var touched = false;
+    var lastTouchEnd = 0;
     el.addEventListener('touchend', function(e){
       e.preventDefault(); // bloque le click fantôme qui suivrait
-      touched = true;
+      lastTouchEnd = Date.now();
       closeMoreDrawer();
       showPage(page);
       updateBottomNav(page);
-      setTimeout(function(){ touched = false; }, 300);
     }, {passive:false});
-    // Fallback click pour desktop uniquement
+    // Fallback click pour desktop uniquement (ignore si déclenché après un touch)
     el.addEventListener('click', function(e){
-      if(touched) return; // déjà géré par touchend
+      if(Date.now() - lastTouchEnd < 400) return; // déjà géré par touchend
       closeMoreDrawer();
       showPage(page);
       updateBottomNav(page);
@@ -5070,7 +5078,7 @@ function _renderQuickBar() {
     else dash.appendChild(bar);
   }
   var pc = (DB.plaintes||[]).filter(function(p){ return p.statut === 'en_cours'; }).length;
-  var dc = (DB.dossiers||[]).filter(function(d){ return (d.statut||'').toLowerCase() === 'ouvert'; }).length;
+  var dc = (DB.dossiers||[]).filter(function(d){ return (d.statut||'')==='Recherché'||(d.statut||'')==='En garde à vue'; }).length;
   var ca = (DB.candidatures||[]).filter(function(c){ return c.statut === 'en_attente'; }).length;
   var chips = [];
   if (pc) chips.push({ n:pc, l:'plainte(s) en cours', i:'&#9878;&#65039;', p:'plaintes' });
