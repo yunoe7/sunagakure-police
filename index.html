@@ -607,7 +607,7 @@ textarea.form-control{resize:vertical;min-height:80px}
     padding:14px 13px calc(84px + env(safe-area-inset-bottom,8px)) !important;
   }
 
-  #bottom-nav{display:block;flex-shrink:0;position:relative !important;bottom:auto !important}
+  #bottom-nav{display:block !important;}
 
   /* ============================================
      TOPBAR MOBILE — look app native
@@ -4233,7 +4233,7 @@ input, select, textarea { transition: border-color 0.18s, box-shadow 0.18s, back
     overflow:hidden !important;
   }
   .topbar{flex-shrink:0 !important;position:relative !important;top:auto !important;z-index:50}
-  #bottom-nav{flex-shrink:0 !important;position:relative !important;bottom:auto !important}
+  /* #bottom-nav reste position:fixed sur mobile */
   #main > .page-content{
     flex:1;
     overflow-y:auto;
