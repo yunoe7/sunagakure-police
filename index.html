@@ -1355,10 +1355,10 @@ document.addEventListener('DOMContentLoaded',function(){if(localStorage.getItem(
     <div class="nav-item" onclick="showPage('plaintes')" data-page="plaintes"><span class="icon">📋</span> Plaintes <span class="nav-badge" id="badge-plaintes">0</span></div>
     <div class="nav-item" onclick="showPage('dossiers')" data-page="dossiers" data-member-only="true"><span class="icon">🗂️</span> Dossiers criminels <span class="nav-badge" id="badge-dossiers" style="background:var(--purple);display:none">0</span></div>
     <div class="nav-item" onclick="showPage('codepenal')" data-page="codepenal"><span class="icon">📜</span> Code Pénal</div>
-    <div class="nav-section" data-member-only="true">Opérations</div>
-    <div class="nav-item" onclick="showPage('operations')" data-page="operations" data-member-only="true"><span class="icon">🚨</span> Opérations <span class="nav-badge" id="badge-operations" style="background:var(--accent);display:none">0</span></div>
-    <div class="nav-item" onclick="showPage('effectifs')" data-page="effectifs" data-member-only="true"><span class="icon">👮</span> Effectifs</div>
-    <div class="nav-item" onclick="showPage('sanctions')" data-page="sanctions" data-member-only="true"><span class="icon">⚖️</span> Sanctions / Promo</div>
+    <div class="nav-section" data-admin-only="true" style="display:none">Opérations</div>
+    <div class="nav-item" onclick="showPage('operations')" data-page="operations" data-admin-only="true" style="display:none"><span class="icon">🚨</span> Opérations <span class="nav-badge" id="badge-operations" style="background:var(--accent);display:none">0</span></div>
+    <div class="nav-item" onclick="showPage('effectifs')" data-page="effectifs" data-admin-only="true" style="display:none"><span class="icon">👮</span> Effectifs</div>
+    <div class="nav-item" onclick="showPage('sanctions')" data-page="sanctions" data-admin-only="true" style="display:none"><span class="icon">⚖️</span> Sanctions / Promo</div>
     <div class="nav-section" data-member-only="true">Administration</div>
     <div class="nav-item" id="nav-admin" onclick="showPage('admin')" style="display:none"><span class="icon">⚙️</span> Panel Admin</div>
   </nav>
@@ -2706,6 +2706,14 @@ function applyLogin(){
     el("comm-pencil").style.display="inline";
     el("sanction-del-th").style.display="";
   }
+  // Éléments admin-only (opérations, effectifs, sanctions)
+  const isAdminUser=currentUser&&currentUser.role==="admin";
+  const isMember=!isVisiteur();
+  document.querySelectorAll('[data-admin-only="true"]').forEach(item=>{
+    item.style.display=isMember?'':'none';
+  });
+  const dsecOps=document.getElementById('dsec-ops');
+  if(dsecOps)dsecOps.style.display=isMember?'':'none';
   renderCommissaire();applyLogo();loadNotifPrefs();populateGradeSelects();refreshAll();const btnRec=el("btn-recenser");if(btnRec)btnRec.style.display=isVisiteur()?"none":"";
   // Restaurer le dernier onglet visité, sinon afficher le tableau de bord
   let lastPage="dashboard";
@@ -2725,6 +2733,9 @@ function doLogout(){
   const _ditAdmin=el("ditem-admin");if(_ditAdmin)_ditAdmin.style.display="none";
   // Masquer explicitement les éléments membres-only (ils restaient visibles après logout)
   document.querySelectorAll('[data-member-only="true"]').forEach(e=>e.style.display='none');
+  // Masquer les éléments admin-only
+  document.querySelectorAll('[data-admin-only="true"]').forEach(e=>e.style.display='none');
+  const dsecOps=document.getElementById('dsec-ops');if(dsecOps)dsecOps.style.display='none';
   ["btn-new-annonce","btn-new-dossier","btn-new-operation","btn-new-sanction"].forEach(id=>{const e=el(id);if(e)e.style.display="none"});
   const btnRecLogout=el("btn-recenser");if(btnRecLogout)btnRecLogout.style.display="none";
   el("comm-pencil").style.display="none";
@@ -2775,6 +2786,12 @@ function showPage(name){
   // Panel Admin : réservé aux admins uniquement
   if(name==="admin"&&!(currentUser&&currentUser.role==="admin")){
     showToast("Accès réservé aux administrateurs.","error");
+    return;
+  }
+  // Pages membres (opérations, effectifs, sanctions) — interdites aux visiteurs
+  const MEMBER_ONLY_PAGES=["operations","effectifs","sanctions"];
+  if(MEMBER_ONLY_PAGES.includes(name)&&isVisiteur()){
+    showToast("Accès réservé aux membres de la Police.","error");
     return;
   }
   document.querySelectorAll(".page-content").forEach(p=>p.classList.remove("active"));
@@ -4293,14 +4310,14 @@ window.addEventListener("load",()=>{
   <div class="drawer-item" id="ditem-codepenal">
     <span class="d-icon">📜</span> Code Pénal
   </div>
-  <div class="drawer-section-label" id="dsec-ops">Opérations</div>
-  <div class="drawer-item" id="ditem-operations" data-member-only="true">
+  <div class="drawer-section-label" id="dsec-ops" style="display:none">Opérations</div>
+  <div class="drawer-item" id="ditem-operations" data-admin-only="true" style="display:none">
     <span class="d-icon">🚨</span> Opérations <span class="d-badge" id="dbadge-operations" style="display:none;background:var(--accent)">0</span>
   </div>
-  <div class="drawer-item" id="ditem-effectifs" data-member-only="true">
+  <div class="drawer-item" id="ditem-effectifs" data-admin-only="true" style="display:none">
     <span class="d-icon">👮</span> Effectifs
   </div>
-  <div class="drawer-item" id="ditem-sanctions" data-member-only="true">
+  <div class="drawer-item" id="ditem-sanctions" data-admin-only="true" style="display:none">
     <span class="d-icon">⚖️</span> Sanctions / Promo
   </div>
   <div class="drawer-section-label" id="dsec-admin">Administration</div>
