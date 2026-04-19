@@ -3768,7 +3768,8 @@ function renderAdmin(){
   if(statutF)users=users.filter(u=>(u.statut||"Actif")===statutF);
   el("admin-users-tbody").innerHTML=users.map(u=>{
     const isAdminAcc=u.role==="admin";
-    const canEdit=isAdmin()||!isAdminAcc;
+    const isSelf=u.id===currentUser.id;
+    const canEdit=true; // Un admin peut modifier n'importe quel compte
     const initials=u.nom?u.nom.charAt(0).toUpperCase():"?";
     return `<tr style="${isAdminAcc?"background:rgba(220,38,38,0.04)":""}">
       <td>
@@ -3783,8 +3784,8 @@ function renderAdmin(){
       <td><span class="badge ${(u.statut||"Actif")==="Actif"?"badge-green":"badge-red"}">${u.statut||"Actif"}</span></td>
       <td class="mono" style="font-size:10px;color:var(--muted)">${u.created?fmtDate(u.created):"—"}</td>
       <td style="white-space:nowrap">
-        ${canEdit?`<button class="btn btn-outline btn-sm" onclick="openEditUser(${u.id})">✏️ Modifier</button>`:`<span style="font-size:10px;color:var(--muted)">🔒 Protégé</span>`}
-        ${canEdit&&!isAdminAcc?` <button class="btn btn-${(u.statut||"Actif")==="Actif"?"danger":"success"} btn-sm" onclick="toggleUser(${u.id})">${(u.statut||"Actif")==="Actif"?"Désactiver":"Réactiver"}</button>`:""}
+        <button class="btn btn-outline btn-sm" onclick="openEditUser(${u.id})">✏️ Modifier</button>
+        ${!isSelf?` <button class="btn btn-${(u.statut||"Actif")==="Actif"?"danger":"success"} btn-sm" onclick="toggleUser(${u.id})">${(u.statut||"Actif")==="Actif"?"Désactiver":"Réactiver"}</button>`:""}
       </td>
     </tr>`;
   }).join("")||`<tr><td colspan="7" style="text-align:center;color:var(--muted);padding:18px">Aucun résultat</td></tr>`;
@@ -3824,9 +3825,9 @@ function openEditUser(id){
   // Hide admin option for non-admins
   const adminOpt=el("eu-role-admin-opt");
   if(adminOpt)adminOpt.style.display=isAdmin()?"":"none";
-  // Disable delete button for admin accounts
+  // Bloquer uniquement la suppression de son propre compte
   const delBtn=document.querySelector("#modal-edituser .btn-danger");
-  if(delBtn){delBtn.disabled=u.role==="admin";delBtn.style.opacity=u.role==="admin"?"0.4":"1";}
+  if(delBtn){const isSelf=u.id===currentUser.id;delBtn.disabled=isSelf;delBtn.style.opacity=isSelf?"0.4":"1";delBtn.title=isSelf?"Vous ne pouvez pas supprimer votre propre compte":""}
   openModal("modal-edituser");
 }
 
@@ -3870,6 +3871,11 @@ function saveEditUser(){
   if(u.role==="admin"&&!isAdmin()){showToast("Permission refusée.","error");return;}
   const newRole=v("eu-role");
   if(newRole==="admin"&&!isAdmin()){showToast("Seul un Administrateur peut attribuer le rôle Admin.","error");return;}
+  // Empêcher de retirer le rôle admin au dernier compte admin
+  const adminCount=DB.users.filter(x=>x.role==="admin").length;
+  if(u.role==="admin"&&newRole!=="admin"&&adminCount<=1){
+    showToast("Impossible : vous êtes le seul administrateur. Attribuez d'abord le rôle Admin à un autre compte.","error");return;
+  }
   const oldNom=u.nom;
   u.nom=v("eu-nom")||u.nom;
   const newPass=el("eu-pass").value;
@@ -3892,8 +3898,8 @@ function deleteUserById(){
   if(!id){closeModal("modal-edituser");return}
   const u=DB.users.find(x=>x.id===id);
   if(!u){closeModal("modal-edituser");return}
-  if(u.role==="admin"){
-    showToast("Impossible de supprimer un compte Administrateur.","error");return;
+  if(u.id===currentUser.id){
+    showToast("Impossible de supprimer votre propre compte.","error");return;
   }
   closeModal("modal-edituser");
   askDelete(`Supprimer définitivement le compte de ${u.nom} ?`,()=>{
