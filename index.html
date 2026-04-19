@@ -2630,8 +2630,10 @@ async function doRegister(){
   rs.textContent='✅ Compte créé ! Connexion en cours...';rs.style.display='block';
   setTimeout(()=>{
     currentUser=newUser;
-    // Mémoriser automatiquement la session à l'inscription
-    localStorage.setItem("suna_session",JSON.stringify({id:newUser.id,passHash:newUser.pass}));
+    // NE PAS sauvegarder la session automatiquement à l'inscription.
+    // Cela évite d'écraser la session admin si quelqu'un crée un compte
+    // visiteur sur le même appareil. L'utilisateur pourra cocher
+    // "Se souvenir de moi" lors de sa prochaine connexion manuelle.
     applyLogin();
   },1200);
 }
@@ -2653,7 +2655,9 @@ function checkRememberMe(){
     // Validation : on compare l'ID + le hash du mot de passe stocké LOCALEMENT
     // (ne dépend pas de Firebase → résiste aux écrasements inter-appareils)
     const user=DB.users.find(u=>u.id===s.id&&u.pass===s.passHash&&u.statut!=="Désactivé");
-    if(user){currentUser=user;applyLogin();return true}
+    // Sécurité supplémentaire : ne jamais auto-connecter un compte visiteur via "Se souvenir de moi".
+    // Les visiteurs doivent toujours se connecter manuellement.
+    if(user&&user.role!=="visiteur"){currentUser=user;applyLogin();return true}
   }catch(e){}
   localStorage.removeItem("suna_session");
   return false;
