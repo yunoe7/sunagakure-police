@@ -2737,11 +2737,8 @@ function emergencyReset(){
             window._fbSet(r,JSON.parse(JSON.stringify(DB)));
           }
           saveData();
-          currentUser=null;
-          el("login-screen").style.display="flex";
+          doLogout();
           el("login-user").value="admin";
-          el("login-pass").value="";
-          el("login-alert").style.display="none";
           showToast("Données réinitialisées. Connectez-vous avec vos identifiants.","success");
         });
       }
@@ -3021,8 +3018,8 @@ function markPageRead(page){
 }
 function renderDashboard(){
   updateStats();renderCommissaire();
-  el("dash-annonces").innerHTML=[...(DB.annonces||[])].reverse().slice(0,3).map(a=>`<div class="plainte-item"><div class="plainte-header"><span class="badge ${catBadge(a.cat)}">${a.cat}</span><span class="plainte-title">${esc(a.titre)}</span></div><div class="plainte-meta">${esc(a.auteur)} — ${fmtDate(a.date)}</div></div>`).join("")||'<p class="text-muted">Aucune annonce.</p>';
-  el("dash-plaintes").innerHTML=[...(DB.plaintes||[])].reverse().slice(0,4).map(p=>`<div class="plainte-item"><div class="plainte-header"><span class="badge ${statutPlainte(p.statut)}">${fmtStatut(p.statut)}</span><span class="plainte-title">${p.type}</span></div><div class="plainte-meta">${esc(p.plaignant)} vs ${esc(p.accuse)} — ${fmtDate(p.date)}</div></div>`).join("")||'<p class="text-muted">Aucune plainte.</p>';
+  el("dash-annonces").innerHTML=[...(DB.annonces||[])].reverse().slice(0,3).map(a=>`<div class="plainte-item"><div class="plainte-header"><span class="badge ${catBadge(a.cat)}">${esc(a.cat)}</span><span class="plainte-title">${esc(a.titre)}</span></div><div class="plainte-meta">${esc(a.auteur)} — ${fmtDate(a.date)}</div></div>`).join("")||'<p class="text-muted">Aucune annonce.</p>';
+  el("dash-plaintes").innerHTML=[...(DB.plaintes||[])].reverse().slice(0,4).map(p=>`<div class="plainte-item"><div class="plainte-header"><span class="badge ${statutPlainte(p.statut)}">${fmtStatut(p.statut)}</span><span class="plainte-title">${esc(p.type)}</span></div><div class="plainte-meta">${esc(p.plaignant)} vs ${esc(p.accuse)} — ${fmtDate(p.date)}</div></div>`).join("")||'<p class="text-muted">Aucune plainte.</p>';
   renderTimeline();
 }
 function renderTimeline(){
@@ -3030,7 +3027,7 @@ function renderTimeline(){
   const items=[...(DB.timeline||[])].reverse().slice(0,12);
   e.innerHTML=items.map(t=>`<div class="timeline-item"><div class="t-time">${fmtDate(t.date)}</div><div class="t-text">${esc(t.text)}</div></div>`).join("")||'<p class="text-muted">Aucune activité.</p>';
 }
-function addTimeline(text){if(!DB.timeline)DB.timeline=[];DB.timeline.push({text,date:now()});renderAdminTimeline();}
+function addTimeline(text){if(!DB.timeline)DB.timeline=[];DB.timeline.push({text,date:now()});if(DB.timeline.length>100)DB.timeline=DB.timeline.slice(-100);renderAdminTimeline();}
 function renderAdminTimeline(){
   const e=el("admin-timeline-list");if(!e)return;
   const items=[...(DB.timeline||[])].reverse().slice(0,15);
@@ -3073,7 +3070,7 @@ function renderAnnonces(){
     return `<div class="annonce-item" style="${isNew?"border-left:3px solid var(--gold2)":""}">
       ${isNew?'<span class="badge badge-gold" style="margin-bottom:8px;display:inline-flex">✨ Nouveau</span>':""}
       ${a.pin?'<span class="badge badge-gold pinned-badge">📌 Épinglé</span>':""}
-      <div class="flex items-center gap-2" style="margin-bottom:7px"><span class="badge ${catBadge(a.cat)}">${a.cat}</span></div>
+      <div class="flex items-center gap-2" style="margin-bottom:7px"><span class="badge ${catBadge(a.cat)}">${esc(a.cat)}</span></div>
       <h4>${esc(a.titre)}</h4>
       <div class="meta">Par ${esc(a.auteur)} — ${fmtDate(a.date)}</div>
       <p>${esc(a.contenu)}</p>
@@ -3152,7 +3149,7 @@ function renderRecensement(){
     const isCrim=r.rang==="Criminel recherché";
     const avatarStyle=isCrim?"background:rgba(220,38,38,0.25);border:2px solid var(--red)":r.rang==="Kage"?"background:rgba(180,140,20,0.15);border:2px solid var(--gold)":"background:linear-gradient(135deg,rgba(224,92,26,0.25),rgba(212,160,23,0.15));border:2px solid rgba(180,140,20,0.3)";
     const avatarContent=r.photo?`<img src="${r.photo}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`:`${initials}`;
-    return `<div class="recense-card"><div class="recense-card-header"><div class="recense-avatar" style="${avatarStyle}${r.photo?';padding:0;overflow:hidden':''}">${avatarContent}</div><div style="flex:1;min-width:0"><div style="font-weight:700;font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(r.prenom)} ${esc(r.nom)}</div><div style="font-size:9.5px;color:var(--muted);font-family:'Share Tech Mono',monospace">${esc(r.faction)||"—"}</div></div><span class="badge ${rangBadge(r.rang)}" style="flex-shrink:0">${r.rang}</span></div><div class="recense-card-body"><div class="recense-row"><span class="lbl">Âge / Sexe</span><span class="val">${r.age} ans · ${r.sexe}</span></div><div class="recense-row"><span class="lbl">Compétences</span><span class="val" style="font-size:10.5px;max-width:140px">${esc(r.competences)||"—"}</span></div>${r.natures&&r.natures.length?`<div style="margin-top:7px"><div class="nature-bar">${r.natures.map(n=>`<span class="badge ${NATURE_BADGE[n]||"badge-gray"}">${n}</span>`).join("")}</div></div>`:""}<div class="flex gap-2 mt-4"><button class="btn btn-outline btn-sm" onclick="viewRecense(${r.id})">👁 Fiche</button>${canModify()?`<button class="btn btn-danger btn-sm" onclick="deleteRecense(${r.id})">🗑</button>`:""}</div></div></div>`;
+    return `<div class="recense-card"><div class="recense-card-header"><div class="recense-avatar" style="${avatarStyle}${r.photo?';padding:0;overflow:hidden':''}">${avatarContent}</div><div style="flex:1;min-width:0"><div style="font-weight:700;font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(r.prenom)} ${esc(r.nom)}</div><div style="font-size:9.5px;color:var(--muted);font-family:'Share Tech Mono',monospace">${esc(r.faction)||"—"}</div></div><span class="badge ${rangBadge(r.rang)}" style="flex-shrink:0">${esc(r.rang)}</span></div><div class="recense-card-body"><div class="recense-row"><span class="lbl">Âge / Sexe</span><span class="val">${esc(r.age)} ans · ${esc(r.sexe)}</span></div><div class="recense-row"><span class="lbl">Compétences</span><span class="val" style="font-size:10.5px;max-width:140px">${esc(r.competences)||"—"}</span></div>${r.natures&&r.natures.length?`<div style="margin-top:7px"><div class="nature-bar">${r.natures.map(n=>`<span class="badge ${NATURE_BADGE[n]||"badge-gray"}">${esc(n)}</span>`).join("")}</div></div>`:""}<div class="flex gap-2 mt-4"><button class="btn btn-outline btn-sm" onclick="viewRecense(${r.id})">👁 Fiche</button>${canModify()?`<button class="btn btn-danger btn-sm" onclick="deleteRecense(${r.id})">🗑</button>`:""}</div></div></div>`;
   }).join("")||'<div style="grid-column:1/-1;text-align:center;color:var(--muted);padding:40px">Aucun joueur recensé.</div>';
 }
 function saveRecense(){
@@ -3201,7 +3198,7 @@ function viewRecense(id){
   const isCrim=r.rang==="Criminel recherché";
   const avatarStyle=isCrim?"background:rgba(220,38,38,0.25);border:2px solid var(--red)":r.rang==="Kage"?"background:rgba(180,140,20,0.15);border:2px solid var(--gold)":"background:linear-gradient(135deg,rgba(224,92,26,0.25),rgba(212,160,23,0.15));border:2px solid rgba(180,140,20,0.3)";
   const photoBlock=r.photo?`<div style="display:flex;justify-content:center;margin-bottom:16px"><div style="width:90px;height:90px;border-radius:50%;overflow:hidden;border:3px solid rgba(180,140,20,0.4);box-shadow:0 4px 16px rgba(0,0,0,0.12)"><img src="${r.photo}" style="width:100%;height:100%;object-fit:cover"></div></div>`:'';
-  el("vr-body").innerHTML=`${photoBlock}<div class="grid grid-2"><div class="form-group"><label class="form-label">Prénom</label><div style="font-size:14px;font-weight:600">${esc(r.prenom)}</div></div><div class="form-group"><label class="form-label">Nom</label><div style="font-size:14px;font-weight:600">${esc(r.nom)}</div></div><div class="form-group"><label class="form-label">Âge</label><div>${r.age} ans</div></div><div class="form-group"><label class="form-label">Sexe</label><div>${r.sexe}</div></div></div><div class="form-group"><label class="form-label">Faction / Village</label><div style="font-size:13.5px">${esc(r.faction)||"—"}</div></div><div class="form-group"><label class="form-label">Rang</label><span class="badge badge-orange">${r.rang}</span></div><div class="form-group"><label class="form-label">Compétences</label><div style="font-size:12.5px;color:#555">${esc(r.competences)||"—"}</div></div>${r.natures&&r.natures.length?`<div class="form-group"><label class="form-label">Natures & Maîtrises</label><div class="nature-bar">${r.natures.map(n=>`<span class="badge ${NATURE_BADGE[n]||"badge-gray"}">${n}</span>`).join("")}</div></div>`:""}<div class="form-group"><label class="form-label">Notes</label><div style="font-size:12.5px;color:#555;line-height:1.65;white-space:pre-wrap">${esc(r.notes)||"—"}</div></div><div class="form-group"><label class="form-label">Recensé par</label><div style="font-size:11px;color:var(--muted)">${esc(r.auteur)} — ${fmtDate(r.date)}</div></div>`;
+  el("vr-body").innerHTML=`${photoBlock}<div class="grid grid-2"><div class="form-group"><label class="form-label">Prénom</label><div style="font-size:14px;font-weight:600">${esc(r.prenom)}</div></div><div class="form-group"><label class="form-label">Nom</label><div style="font-size:14px;font-weight:600">${esc(r.nom)}</div></div><div class="form-group"><label class="form-label">Âge</label><div>${esc(r.age)} ans</div></div><div class="form-group"><label class="form-label">Sexe</label><div>${esc(r.sexe)}</div></div></div><div class="form-group"><label class="form-label">Faction / Village</label><div style="font-size:13.5px">${esc(r.faction)||"—"}</div></div><div class="form-group"><label class="form-label">Rang</label><span class="badge badge-orange">${esc(r.rang)}</span></div><div class="form-group"><label class="form-label">Compétences</label><div style="font-size:12.5px;color:#555">${esc(r.competences)||"—"}</div></div>${r.natures&&r.natures.length?`<div class="form-group"><label class="form-label">Natures & Maîtrises</label><div class="nature-bar">${r.natures.map(n=>`<span class="badge ${NATURE_BADGE[n]||"badge-gray"}">${esc(n)}</span>`).join("")}</div></div>`:""}<div class="form-group"><label class="form-label">Notes</label><div style="font-size:12.5px;color:#555;line-height:1.65;white-space:pre-wrap">${esc(r.notes)||"—"}</div></div><div class="form-group"><label class="form-label">Recensé par</label><div style="font-size:11px;color:var(--muted)">${esc(r.auteur)} — ${fmtDate(r.date)}</div></div>`;
   openModal("modal-view-recense");
 }
 function deleteRecense(id){askDelete("Supprimer cette fiche de recensement ?",()=>{DB.recenses=DB.recenses.filter(r=>r.id!==id);saveData();renderRecensement();syncDashboard()})}
@@ -3224,7 +3221,7 @@ function renderCandidatures(){
       const modifyBtn=`<button class="btn btn-gold btn-sm" onclick="openEditCandidature(${c.id})" title="Modifier">✏️ Modifier</button>`;
       actions=canModify()?actions+' '+modifyBtn:modifyBtn;
     }
-    return `<tr><td class="mono">#${candNumero(c.id)}</td><td><b>${esc(c.nom)}</b></td><td>${c.age} ans</td><td style="font-size:11px;max-width:150px">${esc((c.motif||"").substring(0,50))}…</td><td><span class="badge ${statutCand(c.statut)}">${fmtCand(c.statut)}</span></td><td class="mono">${fmtDate(c.date)}</td><td style="white-space:nowrap"><button class="btn btn-outline btn-sm" onclick="viewCandidature(${c.id})" title="Voir les détails">👁</button> ${actions}</td></tr>`;
+    return `<tr><td class="mono">#${candNumero(c.id)}</td><td><b>${esc(c.nom)}</b></td><td>${esc(c.age)} ans</td><td style="font-size:11px;max-width:150px">${esc((c.motif||"").substring(0,50))}…</td><td><span class="badge ${statutCand(c.statut)}">${fmtCand(c.statut)}</span></td><td class="mono">${fmtDate(c.date)}</td><td style="white-space:nowrap"><button class="btn btn-outline btn-sm" onclick="viewCandidature(${c.id})" title="Voir les détails">👁</button> ${actions}</td></tr>`;
   }).join("")||`<tr><td colspan="7" style="text-align:center;color:var(--muted);padding:18px">Aucune candidature</td></tr>`;
 }
 
@@ -3276,8 +3273,8 @@ function viewCandidature(id){
   `;
   const footer=el("vc-footer");footer.innerHTML="";
   if(canModify()&&c.statut==="en_attente"){
-    footer.innerHTML+=`<button class="btn btn-success" onclick="setCandidature(${c.id},'acceptee');closeModal('modal-view-candidature');renderCandidatures()">✓ Accepter</button>`;
-    footer.innerHTML+=`<button class="btn btn-danger" onclick="setCandidature(${c.id},'refusee');closeModal('modal-view-candidature');renderCandidatures()">✕ Refuser</button>`;
+    footer.innerHTML+=`<button class="btn btn-success" onclick="setCandidature(${c.id},'acceptee');closeModal('modal-view-candidature')">✓ Accepter</button>`;
+    footer.innerHTML+=`<button class="btn btn-danger" onclick="setCandidature(${c.id},'refusee');closeModal('modal-view-candidature')">✕ Refuser</button>`;
   }
   footer.innerHTML+=`<button class="btn btn-outline" onclick="closeModal('modal-view-candidature')">Fermer</button>`;
   openModal("modal-view-candidature");
@@ -3340,14 +3337,14 @@ function saveCandidature(){
   showToast(`✅ Candidature de ${nom} envoyée avec succès !`,"success");
 }
 function setCandidature(id,statut){
-  const c=DB.candidatures.find(x=>x.id===id);if(!c)return;c.statut=statut;
+  const c=DB.candidatures.find(x=>x.id===id);if(!c)return;c.statut=statut;c.modifiedAt=now();
   if(statut==="acceptee"){c.grade=c.grade||"Stagiaire";c.actif=true;
     // Auto-create a user account for the recruit if none exists (password hashed)
     if(!DB.users.find(u=>u.nom===c.nom)){
       const userId=Date.now();
       const userLogin="recrue_"+userId;
       hashPass("recrue123").then(h=>{
-        DB.users.push({id:userId,login:userLogin,pass:h,nom:c.nom,grade:c.grade||"Stagiaire",role:"membre",statut:"Actif",created:now()});
+        DB.users.push({id:userId,login:userLogin,pass:h,nom:c.nom,grade:c.grade||"Stagiaire",role:"membre",statut:"Actif",photo:"",created:now()});
         addTimeline(`Candidature de ${c.nom} : acceptée ✅ par ${currentUser.nom}`);
         saveData();renderCandidatures();renderRecrues();renderEffectifs();syncDashboard();
       });
@@ -3362,7 +3359,7 @@ function setCandidature(id,statut){
 function filterPlaintes(f,e){plaintesFilter=f;document.querySelectorAll("#page-plaintes .tab-btn").forEach(b=>b.classList.remove("active"));e.classList.add("active");renderPlaintes()}
 function renderPlaintes(){
   let list=DB.plaintes;if(plaintesFilter!=="all")list=list.filter(p=>p.statut===plaintesFilter);
-  el("plaintes-tbody").innerHTML=list.map(p=>`<tr><td class="mono">#${p.id}</td><td>${esc(p.plaignant)}</td><td>${esc(p.accuse)}</td><td>${p.type}</td><td><span class="badge ${statutPlainte(p.statut)}">${fmtStatut(p.statut)}</span></td><td class="mono">${fmtDate(p.date)}</td><td><button class="btn btn-outline btn-sm" onclick="viewPlainte(${p.id})">👁</button>${canModify()?` <button class="btn btn-danger btn-sm" onclick="deletePlainte(${p.id})">🗑</button>`:""}</td></tr>`).join("")||`<tr><td colspan="7" style="text-align:center;color:var(--muted);padding:18px">Aucune plainte</td></tr>`;
+  el("plaintes-tbody").innerHTML=list.map(p=>`<tr><td class="mono">#${p.id}</td><td>${esc(p.plaignant)}</td><td>${esc(p.accuse)}</td><td>${esc(p.type)}</td><td><span class="badge ${statutPlainte(p.statut)}">${fmtStatut(p.statut)}</span></td><td class="mono">${fmtDate(p.date)}</td><td><button class="btn btn-outline btn-sm" onclick="viewPlainte(${p.id})">👁</button>${canModify()?` <button class="btn btn-danger btn-sm" onclick="deletePlainte(${p.id})">🗑</button>`:""}</td></tr>`).join("")||`<tr><td colspan="7" style="text-align:center;color:var(--muted);padding:18px">Aucune plainte</td></tr>`;
 }
 function savePlainte(){
   const pl=v("p-plaignant"),ac=v("p-accuse"),desc=v("p-desc");if(!pl||!ac||!desc)return;
@@ -3373,7 +3370,7 @@ function savePlainte(){
 function viewPlainte(id){
   const p=DB.plaintes.find(x=>x.id===id);if(!p)return;
   el("vp-ref").textContent=`Plainte #${p.id}`;
-  el("vp-body").innerHTML=`<div class="form-group"><label class="form-label">Plaignant</label><div style="font-size:13.5px">${esc(p.plaignant)}</div></div><div class="form-group"><label class="form-label">Accusé</label><div style="font-size:13.5px">${esc(p.accuse)}</div></div><div class="form-group"><label class="form-label">Type</label><div>${p.type}</div></div><div class="form-group"><label class="form-label">Description</label><div style="font-size:12.5px;color:#555;line-height:1.65;white-space:pre-wrap">${esc(p.desc)}</div></div><div class="form-group"><label class="form-label">Date des faits</label><div>${p.dateFaits||"—"}</div></div><div class="form-group"><label class="form-label">Statut</label><span class="badge ${statutPlainte(p.statut)}">${fmtStatut(p.statut)}</span></div>`;
+  el("vp-body").innerHTML=`<div class="form-group"><label class="form-label">Plaignant</label><div style="font-size:13.5px">${esc(p.plaignant)}</div></div><div class="form-group"><label class="form-label">Accusé</label><div style="font-size:13.5px">${esc(p.accuse)}</div></div><div class="form-group"><label class="form-label">Type</label><div>${esc(p.type)}</div></div><div class="form-group"><label class="form-label">Description</label><div style="font-size:12.5px;color:#555;line-height:1.65;white-space:pre-wrap">${esc(p.desc)}</div></div><div class="form-group"><label class="form-label">Date des faits</label><div>${esc(p.dateFaits)||"—"}</div></div><div class="form-group"><label class="form-label">Statut</label><span class="badge ${statutPlainte(p.statut)}">${fmtStatut(p.statut)}</span></div>`;
   const footer=el("vp-footer");footer.innerHTML="";
   if(canModify()){
     if(p.statut==="ouverte")footer.innerHTML+=`<button class="btn btn-primary btn-sm" onclick="setPlainteStatut(${p.id},'en_cours')">Prendre en charge</button>`;
@@ -3401,8 +3398,8 @@ function renderDossiers(){
       <td>${photoCell}</td>
       <td><b>${esc(d.nom)}</b></td>
       <td style="font-size:11.5px">${esc(d.infractions)}</td>
-      <td><span class="badge ${dangerBadge(d.danger)}">${d.danger}</span></td>
-      <td><span class="badge ${dossierStatutBadge(d.statut)}">${d.statut}</span></td>
+      <td><span class="badge ${dangerBadge(d.danger)}">${esc(d.danger)}</span></td>
+      <td><span class="badge ${dossierStatutBadge(d.statut)}">${esc(d.statut)}</span></td>
       <td style="font-size:11px;white-space:nowrap">
         ${(d.amendePayee||0)>0?`<div style="color:#166534;font-family:'Share Tech Mono',monospace">✅ ${Number(d.amendePayee).toLocaleString()} Ryos</div>`:""}
         ${(d.amendeImpayee||0)>0?`<div style="color:#991b1b;font-family:'Share Tech Mono',monospace">❌ ${Number(d.amendeImpayee).toLocaleString()} Ryos</div>`:""}
@@ -3425,7 +3422,7 @@ function saveDossier(){
   const amendeImpayee=parseInt(el("d-amende-impayee").value)||0;
   DB.dossiers.push({id:Date.now(),nom,infractions:v("d-infractions"),danger:v("d-danger"),statut:v("d-statut"),notes:v("d-notes"),amendePayee,amendeImpayee,photo,auteur:currentUser.nom,date:now()});
   addTimeline(`Dossier ouvert sur ${nom}`);
-  saveData();closeModal("modal-dossier");renderDossiers();
+  saveData();closeModal("modal-dossier");renderDossiers();syncDashboard();
   clearForm(["d-nom","d-infractions","d-notes","d-amende-payee","d-amende-impayee"]);
   clearDossierPhoto();
 }
@@ -3567,7 +3564,7 @@ function renderOperations(){
       <div class="card-header">
         <span>${typeIcon(op.type)}</span>
         <h3 style="font-size:13px">${esc(op.nom)}</h3>
-        <span class="badge ${op.statut==="Active"?"badge-green":op.statut==="Planifiée"?"badge-blue":"badge-gray"}" style="margin-left:auto">${op.statut}</span>
+        <span class="badge ${op.statut==="Active"?"badge-green":op.statut==="Planifiée"?"badge-blue":"badge-gray"}" style="margin-left:auto">${esc(op.statut)}</span>
       </div>
       <div class="card-body">
         ${urgentBanner(op)}
@@ -3575,7 +3572,7 @@ function renderOperations(){
         <p style="font-size:11.5px;color:#555;line-height:1.6">${esc(op.desc)}</p>
         <div class="divider"></div>
         <div class="text-muted">Responsable : <b>${esc(op.resp)}</b></div>
-        ${op.dateOp?`<div class="text-muted" style="font-size:11px;margin-top:4px">📅 ${op.dateOp}</div>`:""}
+        ${op.dateOp?`<div class="text-muted" style="font-size:11px;margin-top:4px">📅 ${esc(op.dateOp)}</div>`:""}
         ${canModify()?`<div class="flex gap-2 mt-4">
           <button class="btn btn-outline btn-sm" onclick="cycleOpStatut(${op.id})">🔄 Statut</button>
           <button class="btn btn-danger btn-sm" onclick="deleteOperation(${op.id})">🗑</button>
@@ -3589,7 +3586,7 @@ function cycleOpStatut(id){
   const next=cycle[(cycle.indexOf(op.statut)+1)%cycle.length];
   op.statut=next;
   addTimeline(`Opération "${op.nom}" → ${next}`);
-  saveData();renderOperations();updateBadges();
+  saveData();renderOperations();syncDashboard();updateBadges();
   showToast(`Statut mis à jour : ${next}`,"success");
 }
 function saveOperation(){
@@ -3627,9 +3624,13 @@ function addGrade(){
 }
 function removeGrade(i){
   const name=getGrades()[i];
+  if(!name)return;
   if(isProtectedGradeName(name)){showToast("❌ Ce grade est protégé — il est lié à un rôle système et ne peut pas être supprimé.","error");return;}
   askDelete(`Supprimer le grade "${name}" ?`,()=>{
-    getGrades().splice(i,1);saveData();renderGradesList();populateGradeSelects();
+    // Rechercher par nom pour éviter un mauvais index après sync Firebase
+    const idx=getGrades().indexOf(name);
+    if(idx===-1){showToast("Grade introuvable (peut-être déjà supprimé).","error");renderGradesList();populateGradeSelects();return;}
+    getGrades().splice(idx,1);saveData();renderGradesList();populateGradeSelects();
   });
 }
 
@@ -4025,12 +4026,13 @@ function saveSanction(){
   const cible=v("s-cible"),motif=v("s-motif");if(!cible||!motif)return;
   DB.sanctions.push({id:Date.now(),type:v("s-type"),cible,motif,auteur:currentUser.nom,date:now()});
   addTimeline(`${v("s-type")} : ${cible}`);
-  saveData();closeModal("modal-sanction");renderSanctions();clearForm(["s-cible","s-motif"]);
+  saveData();closeModal("modal-sanction");renderSanctions();syncDashboard();clearForm(["s-cible","s-motif"]);
 }
 function deleteSanction(id){askDelete("Supprimer cette entrée ?",()=>{DB.sanctions=DB.sanctions.filter(s=>s.id!==id);saveData();renderSanctions();syncDashboard()})}
 
 // ADMIN (continued)
 function saveEditUser(){
+  if(_loginInProgress)return;
   const id=parseInt(el("eu-id").value);
   const u=DB.users.find(x=>x.id===id);if(!u)return;
   if(u.role==="admin"&&!isAdmin()){showToast("Permission refusée.","error");return;}
@@ -4045,6 +4047,7 @@ function saveEditUser(){
   u.nom=v("eu-nom")||u.nom;
   const newPass=el("eu-pass").value;
   const finalize=()=>{
+    _loginInProgress=false;
     u.grade=v("eu-grade");u.role=newRole;
     const c=DB.candidatures.find(x=>x.authorId===id||x.nom===oldNom);if(c)c.grade=u.grade;
     if(currentUser.id===id){currentUser=u;el("user-name-display").textContent=u.nom;el("user-rank-display").textContent=roleLabel(u.role)+" · "+u.grade;refreshSidebarAvatar();}
@@ -4053,7 +4056,8 @@ function saveEditUser(){
     showToast("Compte mis à jour.","success");
   };
   if(newPass){
-    hashPass(newPass).then(h=>{u.pass=h;finalize();});
+    _loginInProgress=true;
+    hashPass(newPass).then(h=>{u.pass=h;finalize();}).catch(()=>{_loginInProgress=false;showToast("Erreur lors du hachage du mot de passe.","error");});
   } else {
     finalize();
   }
@@ -4074,11 +4078,14 @@ function deleteUserById(){
   });
 }
 function saveUser(){
+  if(_loginInProgress)return;
   const login=v("u-login"),pass=v("u-pass"),nom=v("u-nom");if(!login||!pass||!nom)return;
   if(DB.users.find(u=>u.login===login)){showToast("Identifiant déjà utilisé.","error");return}
   const role=v("u-role");
   if(role==="admin"&&!isAdmin()){showToast("Seul un Admin peut créer un compte Admin.","error");return;}
+  _loginInProgress=true;
   hashPass(pass).then(h=>{
+    _loginInProgress=false;
     DB.users.push({id:Date.now(),login,pass:h,nom,grade:v("u-grade"),role,statut:"Actif",photo:"",created:now()});
     addTimeline(`Nouveau membre : ${nom} ajouté`);
     saveData();closeModal("modal-adduser");renderAdmin();renderEffectifs();syncDashboard();clearForm(["u-login","u-pass","u-nom"]);
@@ -4111,7 +4118,7 @@ function renderCodePenal(){
     <td><span class="badge ${catCPBadge(x.cat)}">${catCPLabel(x.cat)}</span></td>
     <td style="font-weight:600">${esc(x.nom)}</td>
     <td>${esc(x.amende)||"—"}</td>
-    <td><span class="badge ${x.prison==="Oui"?"badge-red":"badge-gray"}">${x.prison}</span></td>
+    <td><span class="badge ${x.prison==="Oui"?"badge-red":"badge-gray"}">${esc(x.prison)}</span></td>
     <td class="mono" style="font-size:11px">${esc(x.duree)||"—"}</td>
     <td style="font-size:11.5px;color:#555;max-width:200px">${esc(x.notes)||"—"}</td>
     ${showDel?`<td><button class="btn btn-danger btn-sm" onclick="askDelete('Supprimer cette infraction du code pénal ?',()=>doDeleteInfraction(${x.id}))">🗑</button></td>`:""}
@@ -4229,7 +4236,7 @@ function updateBottomNav(name){
 function syncBottomNavBadges(){
   const bAn=el("bnav-badge-annonces");const bPl=el("bnav-badge-plaintes");const bRe=el("bnav-badge-recenses");
   if(bAn){const n=_countNew(DB.annonces||[],"annonces");bAn.textContent=n;bAn.style.display=n>0?"block":"none";}
-  if(bPl){const n=DB.plaintes.filter(p=>p.statut==="ouverte"||p.statut==="en_cours").length;bPl.textContent=n;bPl.style.display=n>0?"block":"none";}
+  if(bPl){const n=(DB.plaintes||[]).filter(p=>p.statut==="ouverte"||p.statut==="en_cours").length;bPl.textContent=n;bPl.style.display=n>0?"block":"none";}
   if(bRe){const n=_countNew(DB.recenses||[],"recenses");bRe.textContent=n;bRe.style.display=n>0?"block":"none";}
 }
 function toggleMoreDrawer(){
@@ -5194,9 +5201,12 @@ function gsSearch() {
   (DB.plaintes||[]).filter(function(p){ return ((p.plaignant||'')+(p.accuse||'')+(p.type||'')+(p.desc||'')).toLowerCase().indexOf(q) >= 0; }).slice(0,4).forEach(function(p){
     R.plaintes.push({ icon:'&#128203;', title:(p.type||'')+' — '+(p.plaignant||'')+' vs '+(p.accuse||''), sub:'Plainte · '+_gsSt(p.statut)+' · '+_gsDate(p.date), page:'plaintes' });
   });
-  (DB.dossiers||[]).filter(function(d){ return ((d.nom||'')+(d.infractions||'')).toLowerCase().indexOf(q) >= 0; }).slice(0,4).forEach(function(d){
-    R.dossiers.push({ icon:'&#128194;', title: d.nom||'', sub:'Dossier · '+(d.danger||''), page:'dossiers' });
-  });
+  // Dossiers, opérations, sanctions : réservés aux membres
+  if(!isVisiteur()){
+    (DB.dossiers||[]).filter(function(d){ return ((d.nom||'')+(d.infractions||'')).toLowerCase().indexOf(q) >= 0; }).slice(0,4).forEach(function(d){
+      R.dossiers.push({ icon:'&#128194;', title: d.nom||'', sub:'Dossier · '+(d.danger||''), page:'dossiers' });
+    });
+  }
   (DB.recenses||[]).filter(function(r){ return ((r.prenom||'')+(r.nom||'')+(r.faction||'')+(r.competences||'')+(r.rang||'')).toLowerCase().indexOf(q) >= 0; }).slice(0,4).forEach(function(r){
     R.recenses.push({ icon:'&#128221;', title: ((r.prenom||'')+' '+(r.nom||'')).trim()||'—', sub:'Recensement · '+(r.faction||'—'), page:'recensement' });
   });
