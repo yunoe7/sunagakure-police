@@ -1892,6 +1892,8 @@ document.addEventListener('DOMContentLoaded',function(){if(localStorage.getItem(
         </div>
       </div>
     </div><!-- /card notifications -->
+    <!-- Sections réservées aux admins uniquement -->
+    <div id="admin-restricted-sections" style="display:none">
     <!-- Membres -->
     <div class="card" style="overflow:visible">
       <div class="card-header" style="flex-wrap:wrap;gap:10px">
@@ -1957,6 +1959,7 @@ document.addEventListener('DOMContentLoaded',function(){if(localStorage.getItem(
         </div>
       </div>
     </div>
+    </div><!-- /admin-restricted-sections -->
   </div>
 
 <!-- ===== MODALS ===== -->
@@ -2767,6 +2770,11 @@ function showPage(name){
   // Visiteurs : bloquer les pages non autorisées
   if(isVisiteur()&&!VISITOR_PAGES.includes(name)){
     showToast("Accès réservé aux membres de la Police.","error");
+    return;
+  }
+  // Panel Admin : réservé aux admins uniquement
+  if(name==="admin"&&!(currentUser&&currentUser.role==="admin")){
+    showToast("Accès réservé aux administrateurs.","error");
     return;
   }
   document.querySelectorAll(".page-content").forEach(p=>p.classList.remove("active"));
@@ -3743,6 +3751,9 @@ function openRecrue(id){
 // RENDER ADMIN — populate grade selects when opening
 function renderAdmin(){
   populateGradeSelects();renderGradesList();
+  // Sections sensibles : visibles uniquement pour les vrais admins
+  const restricted=el("admin-restricted-sections");
+  if(restricted)restricted.style.display=(currentUser&&currentUser.role==="admin")?"block":"none";
   // Stats
   if(el("adm-stat-total"))el("adm-stat-total").textContent=DB.users.length;
   if(el("adm-stat-actif"))el("adm-stat-actif").textContent=DB.users.filter(u=>u.statut==="Actif").length;
