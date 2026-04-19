@@ -2725,7 +2725,7 @@ function applyLogin(){
   el("login-screen").style.display="none";
   el("user-name-display").textContent=currentUser.nom;
   el("user-rank-display").textContent=roleLabel(currentUser.role)+" · "+currentUser.grade;
-  el("user-avatar").textContent=currentUser.nom.charAt(0).toUpperCase();
+  refreshSidebarAvatar();
   // Sidebar : masquer les rubriques membres-only pour visiteurs
   document.querySelectorAll('[data-member-only="true"]').forEach(item=>{
     item.style.display=isVisiteur()?'none':'';
@@ -2773,6 +2773,8 @@ function doLogout(){
   el("sanction-del-th").style.display="none";
   // Fermer tous les modaux ouverts
   document.querySelectorAll(".modal-overlay.open").forEach(m=>m.classList.remove("open"));
+  // Réinitialiser l'avatar sidebar
+  const av=el("user-avatar");if(av){av.textContent="?";av.style.padding="";av.style.overflow="";const img=av.querySelector("img");if(img)img.remove();}
   el("login-user").value="";el("login-pass").value="";el("login-alert").style.display="none";
   switchLoginTab('login');
 }
@@ -2900,12 +2902,14 @@ function refreshAll(){
   updateBadges();
   syncBottomNavBadges();
   updateStats();
-  // La timeline est rendue par renderDashboard() si la page active est le dashboard
+  refreshSidebarAvatar();
   const activePage=document.querySelector(".page-content.active");
   if(activePage&&activePage.id==="page-dashboard"){renderDashboard();}
-  else{renderTimeline();}// Maintenir la timeline à jour même si une autre page est active
-  // Mettre à jour les stats admin si on est sur la page admin
+  else{renderTimeline();}
   if(activePage&&activePage.id==="page-admin"){renderAdmin();}
+  if(activePage&&activePage.id==="page-operations"){renderOperations();}
+  if(activePage&&activePage.id==="page-effectifs"){renderEffectifs();}
+  if(activePage&&activePage.id==="page-sanctions"){renderSanctions();}
 }
 // Appelé après chaque modification de données pour mettre à jour le dashboard en temps réel
 function syncDashboard(){updateStats();updateBadges();syncBottomNavBadges();const a=document.querySelector(".page-content.active");if(a&&a.id==="page-dashboard")renderDashboard();}
@@ -2913,7 +2917,7 @@ function syncDashboard(){updateStats();updateBadges();syncBottomNavBadges();cons
 // DASHBOARD
 function updateStats(){
   el("stat-effectifs").textContent=(DB.users||[]).filter(u=>u.statut==="Actif").length;
-  el("stat-recenses").textContent=DB.recenses.length;
+  el("stat-recenses").textContent=(DB.recenses||[]).length;
   el("stat-plaintes").textContent=(DB.plaintes||[]).filter(p=>p.statut==="ouverte").length;
   el("stat-operations").textContent=(DB.operations||[]).filter(o=>o.statut==="Active").length;
 }
@@ -2944,9 +2948,9 @@ function _setBadge(id,n,hidden){
   e.style.display=n>0?"":"none";
 }
 function updateBadges(){
-  const nA=_countNew(DB.annonces,"annonces");
+  const nA=_countNew(DB.annonces||[],"annonces");
   const nP=(DB.plaintes||[]).filter(p=>p.statut==="ouverte"||p.statut==="en_cours").length;
-  const nR=_countNew(DB.recenses,"recenses");
+  const nR=_countNew(DB.recenses||[],"recenses");
   const nRec=(DB.candidatures||[]).filter(c=>c.statut==="en_attente").length;
   const nOp=(DB.operations||[]).filter(o=>o.statut==="Active").length;
   const nD=(DB.dossiers||[]).filter(d=>(d.statut||"").toLowerCase()==="recherché"||(d.statut||"")==="En garde à vue").length;
@@ -3010,7 +3014,7 @@ let _annFilter="all";
 function filterAnnonces(f,e){_annFilter=f;document.querySelectorAll("#page-annonces .tab-btn").forEach(b=>b.classList.remove("active"));e.classList.add("active");renderAnnonces();}
 function renderAnnonces(){
   // Stats
-  const all=DB.annonces;
+  const all=DB.annonces||[];
   const weekAgo=Date.now()-7*24*60*60*1000;
   if(el("ann-stat-total"))el("ann-stat-total").textContent=all.length;
   if(el("ann-stat-pin"))el("ann-stat-pin").textContent=all.filter(a=>a.pin).length;
@@ -3103,8 +3107,8 @@ function renderRecensement(){
   const allNats=[...new Set(DB.recenses.flatMap(r=>r.natures||[]))].sort();
   const selNat=el("filter-nature");
   if(selNat){const cur=selNat.value;selNat.innerHTML='<option value="">Toutes natures</option>'+allNats.map(n=>`<option${cur===n?" selected":""}>${esc(n)}</option>`).join("")}
-  let list=DB.recenses;
-  if(q)list=list.filter(r=>(r.prenom+" "+r.nom+" "+r.faction+" "+(r.natures||[]).join(" ")+" "+r.rang+" "+r.competences).toLowerCase().includes(q));
+  let list=DB.recenses||[];
+  if(q)list=list.filter(r=>((r.prenom||"")+" "+(r.nom||"")+" "+(r.faction||"")+" "+((r.natures||[]).join(" "))+" "+(r.rang||"")+" "+(r.competences||"")).toLowerCase().includes(q));
   if(fFac)list=list.filter(r=>r.faction===fFac);
   if(fNat)list=list.filter(r=>(r.natures||[]).includes(fNat));
   const cnt=el("recense-count");if(cnt)cnt.textContent=list.length+" joueur"+(list.length>1?"s":"");
@@ -3114,7 +3118,7 @@ function renderRecensement(){
   const grid=el("recensement-grid");
   const rangBadge=(rang)=>rang==="Criminel recherché"?"badge-red":rang==="Kage"?"badge-gold":rang==="ANBU"?"badge-gray":"badge-orange";
   grid.innerHTML=list.map(r=>{
-    const initials=(r.prenom.charAt(0)+(r.nom.charAt(0)||"")).toUpperCase();
+    const initials=((r.prenom||"?").charAt(0)+((r.nom||"").charAt(0)||"")).toUpperCase();
     const isCrim=r.rang==="Criminel recherché";
     const avatarStyle=isCrim?"background:rgba(220,38,38,0.25);border:2px solid var(--red)":r.rang==="Kage"?"background:rgba(180,140,20,0.15);border:2px solid var(--gold)":"background:linear-gradient(135deg,rgba(224,92,26,0.25),rgba(212,160,23,0.15));border:2px solid rgba(180,140,20,0.3)";
     const avatarContent=r.photo?`<img src="${r.photo}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`:`${initials}`;
@@ -3525,7 +3529,7 @@ function renderOperations(){
   const q=(el("search-operations")?.value||"").toLowerCase();
   let ops=[...all];
   if(_opFilter!=="all")ops=ops.filter(o=>o.statut===_opFilter);
-  if(q)ops=ops.filter(o=>(o.nom+o.type+o.desc+o.resp).toLowerCase().includes(q));
+  if(q)ops=ops.filter(o=>((o.nom||"")+(o.type||"")+(o.desc||"")+(o.resp||"")).toLowerCase().includes(q));
   const typeIcon=t=>t==="Arrestation"?"🚔":t==="Perquisition"?"🏠":t==="Surveillance"?"👁":"🚨";
   const urgentBanner=op=>op.statut==="Active"?'<div style="height:3px;background:linear-gradient(90deg,var(--green),transparent);margin:-16px -18px 14px;border-radius:0"></div>':'';
   el("operations-grid").innerHTML=ops.map(op=>`
@@ -3789,10 +3793,27 @@ function renderEffectifs(){
     <div style="font-size:11px;margin-top:4px;font-family:'Share Tech Mono',monospace;letter-spacing:1px">${q?"AUCUN RÉSULTAT POUR CETTE RECHERCHE":"AUCUN AGENT EN SERVICE"}</div>
   </div>`;
 }
+function refreshSidebarAvatar(){
+  if(!currentUser)return;
+  const av=el("user-avatar");if(!av)return;
+  if(currentUser.photo){
+    av.textContent="";
+    av.style.padding="0";av.style.overflow="hidden";
+    let img=av.querySelector("img");
+    if(!img){img=document.createElement("img");av.appendChild(img);}
+    img.src=currentUser.photo;
+    img.style.cssText="width:100%;height:100%;object-fit:cover;border-radius:50%;display:block";
+  } else {
+    av.textContent=currentUser.nom.charAt(0).toUpperCase();
+    av.style.padding="";av.style.overflow="";
+  }
+}
+
 function removeUserPhoto(userId){
   const u=DB.users.find(x=>x.id===userId);if(!u)return;
   u.photo="";
   const c=DB.candidatures.find(x=>x.authorId===userId||x.nom===u.nom);if(c)c.photo="";
+  if(currentUser&&currentUser.id===userId){currentUser.photo="";refreshSidebarAvatar();}
   saveData();renderEffectifs();renderRecrues();
 }
 function uploadMemberPhoto(userId,input){
@@ -3800,7 +3821,9 @@ function uploadMemberPhoto(userId,input){
   const reader=new FileReader();
   reader.onload=e=>{
     const u=DB.users.find(x=>x.id===userId);if(!u)return;
-    u.photo=e.target.result;saveData();renderEffectifs();
+    u.photo=e.target.result;
+    if(currentUser&&currentUser.id===userId){currentUser.photo=e.target.result;refreshSidebarAvatar();}
+    saveData();renderEffectifs();
     const c=DB.candidatures.find(x=>x.authorId===userId||x.nom===u.nom);
     if(c){c.photo=e.target.result;saveData();renderRecrues();}
   };
@@ -3992,7 +4015,7 @@ function saveEditUser(){
   const finalize=()=>{
     u.grade=v("eu-grade");u.role=newRole;
     const c=DB.candidatures.find(x=>x.authorId===id||x.nom===oldNom);if(c)c.grade=u.grade;
-    if(currentUser.id===id){currentUser=u;el("user-name-display").textContent=u.nom;el("user-rank-display").textContent=u.grade;el("user-avatar").textContent=u.nom.charAt(0).toUpperCase()}
+    if(currentUser.id===id){currentUser=u;el("user-name-display").textContent=u.nom;el("user-rank-display").textContent=roleLabel(u.role)+" · "+u.grade;refreshSidebarAvatar();}
     addTimeline(`Compte de ${u.nom} modifié par ${currentUser.nom}`);
     saveData();closeModal("modal-edituser");renderAdmin();renderEffectifs();renderRecrues();
     showToast("Compte mis à jour.","success");
@@ -4030,7 +4053,15 @@ function saveUser(){
     showToast(`Compte de ${nom} créé.`,"success");
   });
 }
-function toggleUser(id){const u=DB.users.find(x=>x.id===id);if(!u)return;u.statut=u.statut==="Actif"?"Désactivé":"Actif";saveData();renderAdmin();syncDashboard()}
+function toggleUser(id){
+  const u=DB.users.find(x=>x.id===id);if(!u)return;
+  // Empêcher de désactiver le dernier admin actif
+  if(u.role==="admin"&&u.statut==="Actif"){
+    const activeAdmins=DB.users.filter(x=>x.role==="admin"&&x.statut==="Actif");
+    if(activeAdmins.length<=1){showToast("Impossible : vous ne pouvez pas désactiver le dernier administrateur actif.","error");return;}
+  }
+  u.statut=u.statut==="Actif"?"Désactivé":"Actif";saveData();renderAdmin();syncDashboard();
+}
 
 // CODE PÉNAL
 let cpFilter="all";
@@ -4165,9 +4196,9 @@ function updateBottomNav(name){
 }
 function syncBottomNavBadges(){
   const bAn=el("bnav-badge-annonces");const bPl=el("bnav-badge-plaintes");const bRe=el("bnav-badge-recenses");
-  if(bAn){const n=_countNew(DB.annonces,"annonces");bAn.textContent=n;bAn.style.display=n>0?"block":"none";}
+  if(bAn){const n=_countNew(DB.annonces||[],"annonces");bAn.textContent=n;bAn.style.display=n>0?"block":"none";}
   if(bPl){const n=DB.plaintes.filter(p=>p.statut==="ouverte"||p.statut==="en_cours").length;bPl.textContent=n;bPl.style.display=n>0?"block":"none";}
-  if(bRe){const n=_countNew(DB.recenses,"recenses");bRe.textContent=n;bRe.style.display=n>0?"block":"none";}
+  if(bRe){const n=_countNew(DB.recenses||[],"recenses");bRe.textContent=n;bRe.style.display=n>0?"block":"none";}
 }
 function toggleMoreDrawer(){
   const d=el("more-drawer"),o=el("sidebar-overlay");
@@ -5103,16 +5134,21 @@ function gsSearch() {
     { label:'Panel Admin', icon:'&#9881;&#65039;', page:'admin', keywords:'admin administration comptes utilisateurs' }
   ];
   GS_PAGES.filter(function(p){
+    if(!currentUser) return false;
+    // Filtrer selon les droits
+    if(p.page==='admin' && currentUser.role!=='admin') return false;
+    if(['operations','effectifs','sanctions'].includes(p.page) && isVisiteur()) return false;
     return (p.label.toLowerCase()+' '+p.keywords).indexOf(q) >= 0;
   }).slice(0,5).forEach(function(p){
     R.pages.push({ icon:p.icon, title:p.label, sub:'Page · '+p.label, page:p.page });
   });
 
-  // Membres (users)
+  // Membres (users) — lien effectifs uniquement si accès autorisé
+  var memPage = (!isVisiteur()) ? 'effectifs' : 'dashboard';
   (DB.users||[]).filter(function(u){
     return ((u.nom||'')+(u.login||'')+(u.grade||'')).toLowerCase().indexOf(q) >= 0;
   }).slice(0,5).forEach(function(u){
-    R.membres.push({ icon:'&#128100;', title:u.nom||u.login||'', sub:'Membre · '+(u.grade||'')+(u.role?' · '+u.role:''), page:'effectifs' });
+    R.membres.push({ icon:'&#128100;', title:u.nom||u.login||'', sub:'Membre · '+(u.grade||'')+(u.role?' · '+u.role:''), page:memPage });
   });
 
   (DB.annonces||[]).filter(function(a){ return ((a.titre||'')+(a.contenu||'')+(a.auteur||'')).toLowerCase().indexOf(q) >= 0; }).slice(0,4).forEach(function(a){
