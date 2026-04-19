@@ -2458,7 +2458,9 @@ const STORE="suna_v4";
 
 // ========== FIREBASE SYNC ==========
 let _fbSaveTimeout=null;
-let _fbIsSaving=false; // Flag pour bloquer le listener pendant une save locale
+let _fbIsSaving=false;    // Flag pour bloquer le listener pendant une save locale
+let _fbFirstLoad=true;   // Flag : premier chargement Firebase pas encore traité
+let _loginInProgress=false; // Anti double-submit
 
 function saveData(){
   // Sauvegarde Firebase (temps réel)
@@ -2489,8 +2491,10 @@ function initFirebaseSync(){
   if(!window._fbDB||!window._fbRef||!window._fbOnValue)return;
   const r=window._fbRef(window._fbDB,"sunagakure");
   window._fbOnValue(r,(snapshot)=>{
-    // Si on est en train de sauvegarder, ignorer l'écho Firebase pour éviter la race condition
-    if(_fbIsSaving)return;
+    // Bloquer uniquement les échos de sauvegarde, PAS le premier chargement initial
+    if(_fbIsSaving&&!_fbFirstLoad)return;
+    const wasFirst=_fbFirstLoad;
+    _fbFirstLoad=false;
     const data=snapshot.val();
     if(data&&typeof data==="object"){
       // Fusionner avec les valeurs par défaut pour les champs manquants SEULEMENT
@@ -2511,6 +2515,14 @@ function initFirebaseSync(){
       const fbNeedsMigration=DB.users&&DB.users.some(u=>!isHashed(u.pass));
       const afterFbMigration=()=>{
         try{localStorage.setItem(STORE,JSON.stringify(DB))}catch(e){}
+        // Premier chargement Firebase sans utilisateur connecté → lancer checkRememberMe
+        if(wasFirst&&!currentUser){
+          const fl=document.getElementById('firebase-loading');if(fl)fl.remove();
+          if(!fbNeedsMigration)_fbIsSaving=false;
+          updateLoginStats();
+          if(!checkRememberMe())el("login-screen").style.display="flex";
+          return;
+        }
         if(currentUser){
           const freshUser=DB.users.find(u=>u.id===currentUser.id&&u.statut!=="Désactivé");
           if(freshUser){
@@ -2573,6 +2585,12 @@ function initFirebaseSync(){
           setTimeout(()=>{_fbIsSaving=false},1000);
         }).catch(()=>{_fbIsSaving=false});
       }
+      // Premier chargement avec Firebase vide → lancer checkRememberMe
+      if(wasFirst&&!currentUser){
+        const fl=document.getElementById('firebase-loading');if(fl)fl.remove();
+        updateLoginStats();
+        if(!checkRememberMe())el("login-screen").style.display="flex";
+      }
     }
   });
 }
@@ -2616,18 +2634,23 @@ function switchLoginTab(tab){
 
 // REGISTER
 async function doRegister(){
+  if(_loginInProgress)return;
+  _loginInProgress=true;
   const login=v('reg-login').trim(),nom=v('reg-nom').trim();
   const pass=el('reg-pass').value,pass2=el('reg-pass2').value;
   const ra=el('register-alert'),rs=el('register-success');
   ra.style.display='none';rs.style.display='none';
-  if(!login||!nom||!pass)return(ra.textContent='Tous les champs sont requis.',ra.style.display='block');
-  if(pass.length<4)return(ra.textContent='Mot de passe trop court (4 caractères min).',ra.style.display='block');
-  if(pass!==pass2)return(ra.textContent='Les mots de passe ne correspondent pas.',ra.style.display='block');
-  if(DB.users.find(u=>u.login===login))return(ra.textContent='Cet identifiant est déjà utilisé.',ra.style.display='block');
+  if(!login||!nom||!pass){ra.textContent='Tous les champs sont requis.';ra.style.display='block';_loginInProgress=false;return;}
+  if(pass.length<4){ra.textContent='Mot de passe trop court (4 caractères min).';ra.style.display='block';_loginInProgress=false;return;}
+  if(pass!==pass2){ra.textContent='Les mots de passe ne correspondent pas.';ra.style.display='block';_loginInProgress=false;return;}
+  if(DB.users.find(u=>u.login===login)){ra.textContent='Cet identifiant est déjà utilisé.';ra.style.display='block';_loginInProgress=false;return;}
   const hashed=await hashPass(pass);
-  const newUser={id:Date.now(),login,pass:hashed,nom,grade:'Visiteur',role:'visiteur',statut:'Actif',photo:'',created:now()};
+  // Utiliser le premier grade disponible plutôt que 'Visiteur' (absent de la liste des grades)
+  const defaultGrade=(DB.grades&&DB.grades.length?DB.grades[DB.grades.length-1]:'Stagiaire');
+  const newUser={id:Date.now(),login,pass:hashed,nom,grade:defaultGrade,role:'visiteur',statut:'Actif',photo:'',created:now()};
   DB.users.push(newUser);saveData();
   rs.textContent='✅ Compte créé ! Connexion en cours...';rs.style.display='block';
+  _loginInProgress=false;
   setTimeout(()=>{
     currentUser=newUser;
     // NE PAS sauvegarder la session automatiquement à l'inscription.
@@ -2664,9 +2687,12 @@ function checkRememberMe(){
 }
 
 function doLogin(){
+  if(_loginInProgress)return;
+  _loginInProgress=true;
   const login=el("login-user").value.trim();
   const pass=el("login-pass").value;
   hashPass(pass).then(hashed=>{
+    _loginInProgress=false;
     const user=DB.users.find(u=>u.login===login&&u.pass===hashed&&u.statut!=="Désactivé");
     if(!user){
       showLoginErr("Identifiants incorrects ou compte désactivé.");
@@ -3954,7 +3980,9 @@ function openEditUser(id){
   if(u.role==="admin"&&!isAdmin()){
     showToast("Seul un Administrateur peut modifier un compte Admin.","error");return;
   }
-  el("eu-id").value=id;
+  // Fix : si le compte n'a pas d'id (entrée corrompue), on lui en attribue un
+  if(!u.id){u.id=Date.now();saveData();}
+  el("eu-id").value=u.id;
   el("eu-nom").value=u.nom;
   el("eu-pass").value="";
   el("eu-grade").value=u.grade;
@@ -4319,16 +4347,21 @@ window.addEventListener("load",()=>{
       fbWait++;
       if(window._fbDB&&window._fbRef&&window._fbOnValue){
         clearInterval(fbInterval);
-        // Marquer comme "sauvegarde en cours" pour éviter que le listener Firebase
-        // n'écrase la session restaurée depuis localStorage pendant le chargement initial
-        _fbIsSaving=true;
+        // Lancer la sync Firebase sans bloquer le premier chargement
         initFirebaseSync();
+        // Fallback : si Firebase n'a pas répondu dans 1500ms → données locales
         setTimeout(()=>{
-          loadingMsg.remove();
-          _fbIsSaving=false;
-          updateLoginStats();
-          if(!checkRememberMe()){
-            el("login-screen").style.display="flex";
+          if(_fbFirstLoad){
+            // Firebase n'a pas encore répondu dans le délai imparti
+            _fbFirstLoad=false;
+            const fl=document.getElementById('firebase-loading');if(fl)fl.remove();
+            updateLoginStats();
+            if(!checkRememberMe()){
+              el("login-screen").style.display="flex";
+            }
+          } else {
+            // Firebase a déjà répondu via onValue → s'assurer que le spinner est retiré
+            const fl=document.getElementById('firebase-loading');if(fl)fl.remove();
           }
         },1500);
       } else if(fbWait>30){
