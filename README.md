@@ -24,7 +24,7 @@ L'application est un **fichier HTML auto-suffisant** (`index.html`). Aucune inst
 
 | Identifiant | Mot de passe |
 |---|---|
-| `admin` | `aysenLM69001toz` |
+| `????` | `?????` |
 
 > Changer le mot de passe admin dès le premier déploiement via **Panel Admin → Modifier**.
 
