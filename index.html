@@ -1652,7 +1652,38 @@ document.addEventListener('DOMContentLoaded',function(){if(localStorage.getItem(
 
   <!-- EFFECTIFS -->
   <div class="page-content" id="page-effectifs">
-    <div class="section-header"><div><div class="section-title">Effectifs</div><div class="section-sub">PERSONNELS EN SERVICE</div></div></div>
+    <div class="section-header">
+      <div>
+        <div class="section-title">Effectifs</div>
+        <div class="section-sub">PERSONNELS EN SERVICE</div>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        <input type="text" id="search-effectifs" class="form-control" placeholder="🔍 Rechercher un agent..." oninput="renderEffectifs()" style="max-width:240px;margin:0">
+      </div>
+    </div>
+    <!-- Stats rapides -->
+    <div class="grid grid-4" style="margin-bottom:20px" id="effectifs-stats-row">
+      <div class="stat-card" style="--card-accent:var(--green);padding:13px 15px">
+        <div class="stat-icon" style="font-size:18px;top:9px;right:9px">👮</div>
+        <div class="stat-value" id="eff-stat-total" style="font-size:26px;color:var(--green)">0</div>
+        <div class="stat-label">En service</div>
+      </div>
+      <div class="stat-card" style="--card-accent:var(--gold);padding:13px 15px">
+        <div class="stat-icon" style="font-size:18px;top:9px;right:9px">🔴</div>
+        <div class="stat-value" id="eff-stat-admin" style="font-size:26px;color:var(--gold2)">0</div>
+        <div class="stat-label">Administrateurs</div>
+      </div>
+      <div class="stat-card" style="--card-accent:var(--blue);padding:13px 15px">
+        <div class="stat-icon" style="font-size:18px;top:9px;right:9px">⭐</div>
+        <div class="stat-value" id="eff-stat-officiers" style="font-size:26px;color:var(--blue)">0</div>
+        <div class="stat-label">Officiers & +</div>
+      </div>
+      <div class="stat-card" style="--card-accent:var(--accent);padding:13px 15px">
+        <div class="stat-icon" style="font-size:18px;top:9px;right:9px">🎖️</div>
+        <div class="stat-value" id="eff-stat-membres" style="font-size:26px;color:var(--accent)">0</div>
+        <div class="stat-label">Membres & Stagiaires</div>
+      </div>
+    </div>
     <div class="grid grid-3" id="effectifs-grid"></div>
   </div>
 
@@ -3684,22 +3715,79 @@ function renderNotifHistory(){
 
 // EFFECTIFS WITH PHOTO
 function renderEffectifs(){
-  el("effectifs-grid").innerHTML=(DB.users||[]).filter(u=>u.statut==="Actif").map(u=>`<div class="card"><div class="effectif-card-inner">
-    <div style="position:relative;width:56px;margin:0 auto 10px">
-      ${u.photo
-        ?`<img src="${u.photo}" style="width:56px;height:56px;border-radius:50%;object-fit:cover;border:2px solid rgba(180,140,20,0.3);display:block">`
-        :`<div class="effectif-avatar" style="margin:0"><span style="font-size:22px;font-weight:700">${u.nom.charAt(0).toUpperCase()}</span></div>`
-      }
-      ${canModify()?`<div style="position:absolute;bottom:-4px;right:-4px;display:flex;gap:2px">
-        <label title="Changer la photo" style="width:20px;height:20px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:10px">📷<input type="file" accept="image/*" style="display:none" onchange="uploadMemberPhoto(${u.id},this)"></label>
-        ${u.photo?`<span title="Retirer la photo" onclick="removeUserPhoto(${u.id})" style="width:20px;height:20px;border-radius:50%;background:var(--red);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:10px;color:#fff">✕</span>`:""}
-      </div>`:""}
-    </div>
-    <div style="font-size:13.5px;font-weight:700;margin-bottom:5px">${esc(u.nom)}</div>
-    <span class="badge ${roleBadge(u.role)}" style="margin-bottom:7px">${u.grade}</span>
-    <div class="badge badge-green" style="display:block;margin-top:5px">● En service</div>
-    ${canModify()?`<div class="flex gap-2 mt-4" style="justify-content:center"><button class="btn btn-outline btn-sm" onclick="openEditUser(${u.id})">✏️ Grade</button></div>`:""}
-  </div></div>`).join("")||'<p class="text-muted">Aucun effectif.</p>';
+  const actifs=(DB.users||[]).filter(u=>u.statut==="Actif");
+  // Stats
+  if(el("eff-stat-total"))el("eff-stat-total").textContent=actifs.length;
+  if(el("eff-stat-admin"))el("eff-stat-admin").textContent=actifs.filter(u=>u.role==="admin").length;
+  if(el("eff-stat-officiers"))el("eff-stat-officiers").textContent=actifs.filter(u=>["officier","gerant","cogerant"].includes(u.role)).length;
+  if(el("eff-stat-membres"))el("eff-stat-membres").textContent=actifs.filter(u=>["membre","stagiaire"].includes(u.role)).length;
+  // Filtre recherche
+  const q=(el("search-effectifs")?.value||"").toLowerCase();
+  let users=actifs;
+  if(q)users=users.filter(u=>(u.nom+u.login+u.grade+u.role).toLowerCase().includes(q));
+  // Ordre : admins en premier, puis par rôle
+  const roleOrder={admin:0,gerant:1,cogerant:2,officier:3,sergent:4,membre:5,stagiaire:6,visiteur:7};
+  users=[...users].sort((a,b)=>(roleOrder[a.role]??9)-(roleOrder[b.role]??9));
+
+  el("effectifs-grid").innerHTML=users.map(u=>{
+    const initiale=u.nom?u.nom.charAt(0).toUpperCase():"?";
+    const avatarBg=u.role==="admin"?"linear-gradient(135deg,#dc2626,#7f1d1d)":
+                   ["gerant","cogerant"].includes(u.role)?"linear-gradient(135deg,#b8860b,#78590a)":
+                   u.role==="officier"?"linear-gradient(135deg,#1d4ed8,#1e3a8a)":
+                   "linear-gradient(135deg,var(--accent),#a03408)";
+    const statusColor=u.statut==="Actif"?"var(--green)":"var(--red)";
+    return `<div class="card" style="overflow:visible;transition:all 0.25s ease" onmouseover="this.style.transform='translateY(-4px)';this.style.boxShadow='0 12px 32px rgba(0,0,0,0.12)'" onmouseout="this.style.transform='';this.style.boxShadow=''">
+      <!-- Bandeau rôle coloré en haut -->
+      <div style="height:5px;background:${avatarBg};border-radius:12px 12px 0 0"></div>
+      <div class="card-body" style="padding:20px 18px">
+        <!-- Avatar + infos principales -->
+        <div style="display:flex;align-items:center;gap:14px;margin-bottom:14px">
+          <div style="position:relative;flex-shrink:0">
+            ${u.photo
+              ?`<img src="${u.photo}" style="width:54px;height:54px;border-radius:50%;object-fit:cover;border:2px solid rgba(180,140,20,0.35);display:block;box-shadow:0 4px 12px rgba(0,0,0,0.15)">`
+              :`<div style="width:54px;height:54px;border-radius:50%;background:${avatarBg};display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:700;color:#fff;box-shadow:0 4px 12px rgba(0,0,0,0.2);border:2px solid rgba(255,255,255,0.1)">${initiale}</div>`
+            }
+            <span style="position:absolute;bottom:1px;right:1px;width:13px;height:13px;border-radius:50%;background:${statusColor};border:2px solid #fff;box-shadow:0 0 6px ${statusColor}"></span>
+            ${canModify()?`<div style="position:absolute;top:-4px;right:-4px;display:flex;gap:2px">
+              <label title="Photo" style="width:20px;height:20px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:9px;box-shadow:0 2px 6px rgba(0,0,0,0.2)">📷<input type="file" accept="image/*" style="display:none" onchange="uploadMemberPhoto(${u.id},this)"></label>
+              ${u.photo?`<span title="Retirer" onclick="removeUserPhoto(${u.id})" style="width:20px;height:20px;border-radius:50%;background:var(--red);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:9px;color:#fff;box-shadow:0 2px 6px rgba(0,0,0,0.2)">✕</span>`:""}
+            </div>`:""}
+          </div>
+          <div style="flex:1;min-width:0">
+            <div style="font-size:14px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:3px">${esc(u.nom)}</div>
+            <div style="font-size:10px;color:var(--muted);font-family:'Share Tech Mono',monospace;letter-spacing:0.5px">@${esc(u.login)}</div>
+          </div>
+        </div>
+        <!-- Divider -->
+        <div style="height:1px;background:rgba(180,140,20,0.1);margin-bottom:12px"></div>
+        <!-- Infos grade / rôle -->
+        <div style="display:flex;flex-direction:column;gap:7px;margin-bottom:14px">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <span style="font-size:9px;letter-spacing:1.5px;color:var(--muted);font-family:'Share Tech Mono',monospace">GRADE</span>
+            <span style="font-size:12px;font-weight:600;color:var(--text)">${esc(u.grade)}</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <span style="font-size:9px;letter-spacing:1.5px;color:var(--muted);font-family:'Share Tech Mono',monospace">RÔLE</span>
+            <span class="badge ${roleBadge(u.role)}">${roleLabel(u.role)}</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <span style="font-size:9px;letter-spacing:1.5px;color:var(--muted);font-family:'Share Tech Mono',monospace">STATUT</span>
+            <span style="font-size:11px;font-weight:600;color:${statusColor};display:flex;align-items:center;gap:4px"><span style="width:6px;height:6px;border-radius:50%;background:${statusColor};display:inline-block"></span>En service</span>
+          </div>
+          ${u.created?`<div style="display:flex;justify-content:space-between;align-items:center">
+            <span style="font-size:9px;letter-spacing:1.5px;color:var(--muted);font-family:'Share Tech Mono',monospace">INTÉGRÉ LE</span>
+            <span style="font-size:10.5px;color:var(--muted);font-family:'Share Tech Mono',monospace">${fmtDate(u.created)}</span>
+          </div>`:""}
+        </div>
+        <!-- Actions -->
+        ${canModify()?`<div style="display:flex;gap:6px;justify-content:flex-end"><button class="btn btn-outline btn-sm" onclick="openEditUser(${u.id})">✏️ Modifier</button></div>`:""}
+      </div>
+    </div>`;
+  }).join("")||`<div style="grid-column:1/-1;text-align:center;padding:48px 20px;color:var(--muted)">
+    <div style="font-size:40px;margin-bottom:12px">👮</div>
+    <div style="font-size:14px;font-weight:600">Aucun effectif trouvé</div>
+    <div style="font-size:11px;margin-top:4px;font-family:'Share Tech Mono',monospace;letter-spacing:1px">${q?"AUCUN RÉSULTAT POUR CETTE RECHERCHE":"AUCUN AGENT EN SERVICE"}</div>
+  </div>`;
 }
 function removeUserPhoto(userId){
   const u=DB.users.find(x=>x.id===userId);if(!u)return;
