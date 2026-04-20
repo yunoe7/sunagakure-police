@@ -2583,25 +2583,19 @@ function initFirebaseSync(){
         afterFbMigration();
       }
     } else if(data===null){
-      // Base Firebase vide : récupérer les données du localStorage d'abord
+      // Firebase a renvoyé null — cela peut être transitoire (reconnexion, cold start, permissions).
+      // NE JAMAIS écraser Firebase avec les données locales dans ce cas : risque de perte de données.
+      // On utilise simplement les données locales pour cette session sans toucher à Firebase.
       const localRaw=localStorage.getItem(STORE);
       let localData=null;
       try{localData=localRaw?JSON.parse(localRaw):null;}catch(e){}
-      const nullCasePush=async(dataToUse)=>{
-        for(const u of dataToUse.users||[]){if(!isHashed(u.pass)){const rp=(u.pass==="__PENDING_HASH__"||!u.pass)?"aysenLM69001toz":u.pass;u.pass=await hashPass(rp);}}
-        DB=dataToUse;
-        _fbIsSaving=true;
-        const wr=window._fbRef(window._fbDB,"sunagakure");
-        window._fbSet(wr,JSON.parse(JSON.stringify(DB))).then(()=>{setTimeout(()=>{_fbIsSaving=false;},5000);}).catch(()=>{_fbIsSaving=false;});
-        try{localStorage.setItem("suna_police_db",JSON.stringify(DB));}catch(e){}
-      };
-      if(localData&&typeof localData==="object"){
-        // Des données locales existent : les envoyer sur Firebase (après migration des mots de passe)
-        nullCasePush(localData);
-      } else {
-        // Vraiment aucune donnée nulle part : initialiser avec les données par défaut
-        nullCasePush(defaultData());
+      if(localData&&typeof localData==="object"&&(localData.users||[]).length>0){
+        // Des données locales existent → les utiliser sans écraser Firebase
+        DB=localData;
       }
+      // Si vraiment rien nulle part ET c'est le premier chargement : initialiser prudemment
+      // mais seulement si Firebase est vraiment vide (pas juste une erreur réseau)
+      // On ne pousse rien vers Firebase ici pour éviter d'écraser des données existantes
       // Premier chargement avec Firebase vide → lancer checkRememberMe
       if(wasFirst&&!currentUser){
         const fl=document.getElementById('firebase-loading');if(fl)fl.remove();
