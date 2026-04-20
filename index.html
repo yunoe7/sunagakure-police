@@ -2555,7 +2555,7 @@ function initFirebaseSync(){
           for(const u of DB.users){if(!isHashed(u.pass)){const rp=(u.pass==="__PENDING_HASH__"||!u.pass)?"aysenLM69001toz":u.pass;u.pass=await hashPass(rp);}}
           _fbIsSaving=true;
           const wr=window._fbRef(window._fbDB,"sunagakure");
-          window._fbSet(wr,JSON.parse(JSON.stringify(DB))).then(()=>{setTimeout(()=>{_fbIsSaving=false;},1000);}).catch(()=>{_fbIsSaving=false;});
+          window._fbSet(wr,JSON.parse(JSON.stringify(DB))).then(()=>{setTimeout(()=>{_fbIsSaving=false;},5000);}).catch(()=>{_fbIsSaving=false;});
           saveData();
           afterFbMigration();
         })();
@@ -2567,23 +2567,20 @@ function initFirebaseSync(){
       const localRaw=localStorage.getItem(STORE);
       let localData=null;
       try{localData=localRaw?JSON.parse(localRaw):null;}catch(e){}
-      if(localData&&typeof localData==="object"){
-        // Des données locales existent : les envoyer sur Firebase pour synchroniser
-        DB=localData;
+      const nullCasePush=async(dataToUse)=>{
+        for(const u of dataToUse.users||[]){if(!isHashed(u.pass)){const rp=(u.pass==="__PENDING_HASH__"||!u.pass)?"aysenLM69001toz":u.pass;u.pass=await hashPass(rp);}}
+        DB=dataToUse;
         _fbIsSaving=true;
         const wr=window._fbRef(window._fbDB,"sunagakure");
-        window._fbSet(wr,JSON.parse(JSON.stringify(DB))).then(()=>{
-          setTimeout(()=>{_fbIsSaving=false},1000);
-        }).catch(()=>{_fbIsSaving=false});
+        window._fbSet(wr,JSON.parse(JSON.stringify(DB))).then(()=>{setTimeout(()=>{_fbIsSaving=false;},5000);}).catch(()=>{_fbIsSaving=false;});
+        try{localStorage.setItem("suna_police_db",JSON.stringify(DB));}catch(e){}
+      };
+      if(localData&&typeof localData==="object"){
+        // Des données locales existent : les envoyer sur Firebase (après migration des mots de passe)
+        nullCasePush(localData);
       } else {
         // Vraiment aucune donnée nulle part : initialiser avec les données par défaut
-        const def=defaultData();
-        DB=def;
-        _fbIsSaving=true;
-        const wr=window._fbRef(window._fbDB,"sunagakure");
-        window._fbSet(wr,JSON.parse(JSON.stringify(DB))).then(()=>{
-          setTimeout(()=>{_fbIsSaving=false},1000);
-        }).catch(()=>{_fbIsSaving=false});
+        nullCasePush(defaultData());
       }
       // Premier chargement avec Firebase vide → lancer checkRememberMe
       if(wasFirst&&!currentUser){
@@ -2692,8 +2689,14 @@ function doLogin(){
   _loginInProgress=true;
   const login=el("login-user").value.trim();
   const pass=el("login-pass").value;
-  hashPass(pass).then(hashed=>{
+  hashPass(pass).then(async hashed=>{
     _loginInProgress=false;
+    // Si un compte a encore __PENDING_HASH__, le migrer maintenant avant de comparer
+    const toMigrate=DB.users.filter(u=>!isHashed(u.pass));
+    if(toMigrate.length>0){
+      for(const u of toMigrate){const rp=(u.pass==="__PENDING_HASH__"||!u.pass)?"aysenLM69001toz":u.pass;u.pass=await hashPass(rp);}
+      saveData();
+    }
     const user=DB.users.find(u=>u.login===login&&u.pass===hashed&&u.statut!=="Désactivé");
     if(!user){
       showLoginErr("Identifiants incorrects ou compte désactivé.");
