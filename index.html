@@ -2552,7 +2552,7 @@ function initFirebaseSync(){
       };
       if(fbNeedsMigration){
         (async()=>{
-          for(const u of DB.users){if(!isHashed(u.pass)){u.pass=await hashPass(u.pass||"aysenLM69001toz");}}
+          for(const u of DB.users){if(!isHashed(u.pass)){const rp=(u.pass==="__PENDING_HASH__"||!u.pass)?"aysenLM69001toz":u.pass;u.pass=await hashPass(rp);}}
           _fbIsSaving=true;
           const wr=window._fbRef(window._fbDB,"sunagakure");
           window._fbSet(wr,JSON.parse(JSON.stringify(DB))).then(()=>{setTimeout(()=>{_fbIsSaving=false;},1000);}).catch(()=>{_fbIsSaving=false;});
@@ -2601,7 +2601,8 @@ async function hashPass(plain){
   return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,"0")).join("");
 }
 // Version synchrone approximative (pour les vérifications déjà hachées)
-function isHashed(s){return typeof s==="string"&&s.length===64&&/^[0-9a-f]+$/.test(s)}
+// "__PENDING_HASH__" est explicitement exclu : il doit toujours être migré
+function isHashed(s){return typeof s==="string"&&s.length===64&&/^[0-9a-f]+$/.test(s)&&s!=="__PENDING_HASH__"}
 
 const _DEFAULT_PASS_HASH=(async()=>{
   // Pré-calcul du hash du mot de passe par défaut
@@ -4320,8 +4321,9 @@ window.addEventListener("load",()=>{
     let changed=false;
     for(const u of DB.users){
       if(!isHashed(u.pass)){
-        // Mot de passe en clair → hacher
-        u.pass=await hashPass(u.pass||DEFAULT_PASS);
+        // Mot de passe en clair ou __PENDING_HASH__ → hacher avec le vrai mot de passe par défaut
+        const rawPass=(u.pass==="__PENDING_HASH__"||!u.pass)?DEFAULT_PASS:u.pass;
+        u.pass=await hashPass(rawPass);
         changed=true;
       }
     }
