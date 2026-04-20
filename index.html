@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, interactive-widget=resizes-visual">
 <title>Police — Sunagakure Intranet</title>
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;900&family=Barlow+Condensed:wght@400;600;700;900&family=Barlow:wght@300;400;500;600&family=Share+Tech+Mono&display=swap" rel="stylesheet">
 <style>
@@ -1387,7 +1387,7 @@ document.addEventListener('DOMContentLoaded',function(){if(localStorage.getItem(
     <div class="commissaire-banner">
       <span class="cb-icon">🏛️</span>
       <div style="flex:1;min-width:0">
-        <div class="cb-label">Commissaire en chef</div>
+        <div class="cb-label">Gérant</div>
         <div class="cb-name">
           <span id="comm-display"></span>
           <span class="edit-pencil" id="comm-pencil" onclick="startCommEdit()" title="Modifier" style="display:none">✏️</span>
@@ -1776,7 +1776,7 @@ document.addEventListener('DOMContentLoaded',function(){if(localStorage.getItem(
     </div>
     <!-- Commissaire -->
     <div class="card mb-4">
-      <div class="card-header"><span>🏛️</span><h3>Commissaire en chef</h3></div>
+      <div class="card-header"><span>🏛️</span><h3>Gérant</h3></div>
       <div class="card-body">
         <div class="flex gap-3 items-center flex-wrap">
           <input type="text" id="admin-comm-input" class="form-control" placeholder="Nom Prénom RP" style="max-width:300px">
@@ -4617,16 +4617,29 @@ input, select, textarea { transition: border-color 0.18s, box-shadow 0.18s, back
   if(window.innerWidth > 768) return;
 
   // 1. Désactiver les transitions lourdes pendant le scroll (évite les janks)
+  // FIX: sur mobile #main a overflow:hidden — ce sont les .page-content qui scrollent réellement
   var scrollTimer;
-  var scrollArea = document.querySelector('#main');
-  if(scrollArea){
-    scrollArea.addEventListener('scroll', function(){
+  function attachScrollPerf(el){
+    el.addEventListener('scroll', function(){
       document.body.classList.add('is-scrolling');
       clearTimeout(scrollTimer);
       scrollTimer = setTimeout(function(){
         document.body.classList.remove('is-scrolling');
       }, 150);
     }, {passive:true});
+  }
+  document.querySelectorAll('#main > .page-content').forEach(attachScrollPerf);
+  // Observer les pages ajoutées dynamiquement
+  if(window.MutationObserver){
+    new MutationObserver(function(mutations){
+      mutations.forEach(function(m){
+        m.addedNodes.forEach(function(n){
+          if(n.nodeType===1 && n.classList && n.classList.contains('page-content')){
+            attachScrollPerf(n);
+          }
+        });
+      });
+    }).observe(document.getElementById('main')||document.body,{childList:true});
   }
 
   // 2. Précharger les GPU layers sur les éléments animés
@@ -4953,6 +4966,24 @@ body.dark .dash-quick-chip{background:rgba(180,140,20,0.08);border-color:rgba(18
   #main > .page-content{
     scroll-padding-top:16px;
   }
+
+  /* ── 21. iOS KEYBOARD — modal s'adapte quand le clavier s'ouvre ── */
+  /* Utilise dvh pour que la hauteur max de modal se recalcule avec le clavier */
+  .modal{
+    max-height:85dvh !important;
+  }
+  /* Les champs en focus dans une modal scrollent pour rester visibles */
+  .modal-body{
+    overflow-y:auto !important;
+    -webkit-overflow-scrolling:touch !important;
+    overscroll-behavior:contain !important;
+  }
+  /* Empêche body fixed de bloquer le scroll vers l'input focalisé */
+  body:not(.modal-open) input:focus,
+  body:not(.modal-open) textarea:focus,
+  body:not(.modal-open) select:focus{
+    scroll-margin-bottom:calc(env(keyboard-inset-height, 0px) + 16px);
+  }
 }
 
 /* Extra petit (< 390px) */
@@ -4992,21 +5023,32 @@ body.dark .dash-quick-chip{background:rgba(180,140,20,0.08);border-color:rgba(18
   var topbar = document.querySelector('.topbar');
   if (!topbar) return;
 
-  var isMobile = window.innerWidth <= 768;
+  /* FIX: utiliser matchMedia au lieu de innerWidth statique pour détecter mobile */
+  var mobileQuery = window.matchMedia('(max-width:768px)');
+  var isMobile = mobileQuery.matches;
 
   /* Style commun bouton compact */
   var btnStyle = 'width:42px;height:42px;border-radius:12px;border:1px solid rgba(212,180,74,0.18);background:rgba(212,180,74,0.08);cursor:pointer;font-size:17px;display:flex;align-items:center;justify-content:center;flex-shrink:0;padding:0;color:#d4b44a;transition:all 0.15s;-webkit-tap-highlight-color:transparent;';
 
-  if (isMobile) {
-    /* ── MOBILE ──
-       Structure cible : [hamburger] [spacer] [titre centré] [spacer] [🔍] [🌙] [dot]
-       On retire le titre du flux normal et on le remet avec flexbox pur */
-
+  function buildTopbar(isMob) {
+    /* Récupérer les éléments existants avant de vider */
     var title = document.getElementById('topbar-title');
+    var hamburger = document.getElementById('hamburger');
+    /* Retirer les boutons injectés précédemment */
+    ['btn-global-search','btn-darkmode','sync-indicator'].forEach(function(id){
+      var el = document.getElementById(id); if(el) el.remove();
+    });
+    topbar.querySelectorAll('[data-topbar-injected]').forEach(function(el){ el.remove(); });
+
+  if (isMob) {
+    /* ── MOBILE ──
+       Structure cible : [hamburger] [titre centré abs] [spacer→] [🔍] [🌙] [dot] */
+
     var dot   = topbar.querySelector('.status-dot');
 
     /* Spacer droit — pousse les boutons vers la droite */
     var spR = document.createElement('div');
+    spR.setAttribute('data-topbar-injected','1');
     spR.style.cssText = 'margin-left:auto;display:flex;justify-content:flex-end;align-items:center;gap:8px;flex-shrink:0';
 
     /* Bouton recherche */
@@ -5025,11 +5067,11 @@ body.dark .dash-quick-chip{background:rgba(180,140,20,0.08);border-color:rgba(18
     dm.style.cssText = btnStyle;
     dm.addEventListener('click', toggleDarkMode);
 
-    /* Titre centré en absolu : garantit un centrage parfait quel que soit le contenu */
+    /* FIX: right=106px pour laisser la place aux 2 boutons (2×42px + gap 8px + marges) */
     if (title) {
       title.style.position = 'absolute';
       title.style.left = '60px';
-      title.style.right = '60px';
+      title.style.right = '106px';
       title.style.top = '50%';
       title.style.transform = 'translateY(-50%)';
       title.style.maxWidth = 'none';
@@ -5047,7 +5089,6 @@ body.dark .dash-quick-chip{background:rgba(180,140,20,0.08);border-color:rgba(18
     if (dot) spR.appendChild(dot);
 
     /* Vider la topbar de tout sauf le hamburger et réinsérer dans le bon ordre */
-    var hamburger = document.getElementById('hamburger');
     var path = topbar.querySelector('.topbar-path');
     topbar.innerHTML = '';
     if (hamburger) topbar.appendChild(hamburger);
@@ -5056,6 +5097,18 @@ body.dark .dash-quick-chip{background:rgba(180,140,20,0.08);border-color:rgba(18
 
   } else {
     /* ── DESKTOP ── comportement original */
+    /* Remettre le titre dans le flux normal si nécessaire */
+    if (title) {
+      title.style.position = '';
+      title.style.left = '';
+      title.style.right = '';
+      title.style.top = '';
+      title.style.transform = '';
+      title.style.flex = '';
+      title.style.textAlign = '';
+      title.style.pointerEvents = '';
+    }
+
     var sync = document.createElement('div');
     sync.id = 'sync-indicator';
     sync.innerHTML = '<span class="sync-dot"></span>&nbsp;SYNC';
@@ -5070,7 +5123,12 @@ body.dark .dash-quick-chip{background:rgba(180,140,20,0.08);border-color:rgba(18
     dm.id = 'btn-darkmode';
     dm.title = 'Basculer le mode sombre';
     dm.textContent = document.body.classList.contains('dark') ? '\u2600\uFE0F' : '\uD83C\uDF19';
+    dm.style.cssText = btnStyle;
+    dm.setAttribute('data-topbar-injected','1');
     dm.addEventListener('click', toggleDarkMode);
+
+    sync.setAttribute('data-topbar-injected','1');
+    srch.setAttribute('data-topbar-injected','1');
 
     var dot = topbar.querySelector('.status-dot');
     if (dot) {
@@ -5083,9 +5141,39 @@ body.dark .dash-quick-chip{background:rgba(180,140,20,0.08);border-color:rgba(18
       topbar.appendChild(dm);
     }
   }
-})();
+  }
+
+  /* Construire au chargement */
+  buildTopbar(isMobile);
+
+  /* FIX: Reconstruire si l'orientation/taille change */
+  var resizeTimer;
+  function onResize(){
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(function(){
+      var nowMobile = window.innerWidth <= 768;
+      if(nowMobile !== isMobile){
+        isMobile = nowMobile;
+        buildTopbar(isMobile);
+        /* Resynchroniser le bouton dark mode */
+        var btn = document.getElementById('btn-darkmode');
+        if(btn) btn.textContent = document.body.classList.contains('dark') ? '\u2600\uFE0F' : '\uD83C\uDF19';
+      }
+    }, 120);
+  }
+  window.addEventListener('resize', onResize);
+  window.addEventListener('orientationchange', onResize);
+
+})(); /* fin IIFE injection topbar */
 
 /* ======== MODE SOMBRE ======== */
+function toggleDarkMode() {
+  var dark = document.body.classList.toggle('dark');
+  localStorage.setItem('suna_darkmode', dark ? '1' : '0');
+  var btn = document.getElementById('btn-darkmode');
+  if (btn) btn.textContent = dark ? '\u2600\uFE0F' : '\uD83C\uDF19';
+}
+
 (function(){
   if (localStorage.getItem('suna_darkmode') === '1') {
     document.body.classList.add('dark');
@@ -5093,13 +5181,6 @@ body.dark .dash-quick-chip{background:rgba(180,140,20,0.08);border-color:rgba(18
     if (btn) btn.textContent = '\u2600\uFE0F';
   }
 })();
-
-function toggleDarkMode() {
-  var dark = document.body.classList.toggle('dark');
-  localStorage.setItem('suna_darkmode', dark ? '1' : '0');
-  var btn = document.getElementById('btn-darkmode');
-  if (btn) btn.textContent = dark ? '\u2600\uFE0F' : '\uD83C\uDF19';
-}
 
 /* ======== INDICATEUR SYNC FIREBASE ======== */
 (function patchSave(){
