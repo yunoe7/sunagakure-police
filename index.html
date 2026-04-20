@@ -2512,7 +2512,27 @@ function initFirebaseSync(){
       }
       DB=merged;
       // Migration des mots de passe en clair reçus depuis Firebase
+      // Détecter aussi les mots de passe corrompus (hash de "__PENDING_HASH__" au lieu du vrai mot de passe)
       const fbNeedsMigration=DB.users&&DB.users.some(u=>!isHashed(u.pass));
+      // On lance toujours une vérification asynchrone des hashes corrompus
+      const fixCorrupted=(async()=>{
+        const badHash=await hashPass("__PENDING_HASH__");
+        let fixed=false;
+        for(const u of DB.users){
+          if(u.pass===badHash||(u.login==="admin"&&!isHashed(u.pass))){
+            u.pass=await hashPass("aysenLM69001toz");
+            fixed=true;
+          }
+        }
+        if(fixed){
+          try{localStorage.setItem(STORE,JSON.stringify(DB));}catch(e){}
+          if(window._fbDB&&window._fbRef&&window._fbSet){
+            _fbIsSaving=true;
+            const wr2=window._fbRef(window._fbDB,"sunagakure");
+            window._fbSet(wr2,JSON.parse(JSON.stringify(DB))).then(()=>{setTimeout(()=>{_fbIsSaving=false;},5000);}).catch(()=>{_fbIsSaving=false;});
+          }
+        }
+      })();
       const afterFbMigration=()=>{
         try{localStorage.setItem(STORE,JSON.stringify(DB))}catch(e){}
         // Premier chargement Firebase sans utilisateur connecté → lancer checkRememberMe
@@ -2691,10 +2711,15 @@ function doLogin(){
   const pass=el("login-pass").value;
   hashPass(pass).then(async hashed=>{
     _loginInProgress=false;
-    // Si un compte a encore __PENDING_HASH__, le migrer maintenant avant de comparer
-    const toMigrate=DB.users.filter(u=>!isHashed(u.pass));
+    // Si un compte a encore __PENDING_HASH__ ou le hash corrompu, le migrer maintenant
+    const badHash2=await hashPass("__PENDING_HASH__");
+    const toMigrate=DB.users.filter(u=>!isHashed(u.pass)||u.pass===badHash2);
     if(toMigrate.length>0){
-      for(const u of toMigrate){const rp=(u.pass==="__PENDING_HASH__"||!u.pass)?"aysenLM69001toz":u.pass;u.pass=await hashPass(rp);}
+      for(const u of toMigrate){
+        const isCorrupted=u.pass===badHash2;
+        const rp=(u.pass==="__PENDING_HASH__"||isCorrupted||!u.pass)?"aysenLM69001toz":u.pass;
+        u.pass=await hashPass(rp);
+      }
       saveData();
     }
     const user=DB.users.find(u=>u.login===login&&u.pass===hashed&&u.statut!=="Désactivé");
@@ -4322,10 +4347,11 @@ window.addEventListener("load",()=>{
   const DEFAULT_PASS="aysenLM69001toz";
   const migratePasswords=async()=>{
     let changed=false;
+    const badHashVal=await hashPass("__PENDING_HASH__");
     for(const u of DB.users){
-      if(!isHashed(u.pass)){
-        // Mot de passe en clair ou __PENDING_HASH__ → hacher avec le vrai mot de passe par défaut
-        const rawPass=(u.pass==="__PENDING_HASH__"||!u.pass)?DEFAULT_PASS:u.pass;
+      if(!isHashed(u.pass)||u.pass===badHashVal){
+        // Mot de passe en clair, __PENDING_HASH__, ou hash corrompu → remplacer par le vrai hash
+        const rawPass=(u.pass==="__PENDING_HASH__"||u.pass===badHashVal||!u.pass)?DEFAULT_PASS:u.pass;
         u.pass=await hashPass(rawPass);
         changed=true;
       }
