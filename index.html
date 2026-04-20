@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, interactive-widget=resizes-visual">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self' https://fonts.googleapis.com https://fonts.gstatic.com https://*.firebaseio.com https://*.googleapis.com https://www.gstatic.com; script-src 'self' 'unsafe-inline' https://www.gstatic.com https://www.google.com/recaptcha/ https://www.gstatic.com/recaptcha/; img-src 'self' data: blob: https:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; connect-src https://*.firebaseio.com https://*.googleapis.com wss://*.firebaseio.com https://www.google.com/recaptcha/; frame-src https://www.google.com/recaptcha/ https://recaptcha.google.com/recaptcha/;">
 <title>Police — Sunagakure Intranet</title>
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;900&family=Barlow+Condensed:wght@400;600;700;900&family=Barlow:wght@300;400;500;600&family=Share+Tech+Mono&display=swap" rel="stylesheet">
 <style>
@@ -2433,6 +2434,7 @@ document.addEventListener('DOMContentLoaded',function(){if(localStorage.getItem(
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
   import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+  import { initializeAppCheck, ReCaptchaV3Provider } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app-check.js";
 
   const firebaseConfig = {
     apiKey: "AIzaSyAOKtMRVbu1lBc5tZ2zpXkOtmC_TzqGWfs",
@@ -2444,6 +2446,13 @@ document.addEventListener('DOMContentLoaded',function(){if(localStorage.getItem(
     databaseURL: "https://suna-police-default-rtdb.europe-west1.firebasedatabase.app"
   };
   const fbApp = initializeApp(firebaseConfig);
+
+  // App Check — vérifie que les requêtes viennent bien de ton site
+  initializeAppCheck(fbApp, {
+    provider: new ReCaptchaV3Provider("6LcbQ8EsAAAAAc965LlkmvxjGs7zbhOYmmDeXi2"),
+    isTokenAutoRefreshEnabled: true
+  });
+
   const fbDB = getDatabase(fbApp);
   window._fbDB = fbDB;
   window._fbRef = ref;
@@ -2455,6 +2464,9 @@ document.addEventListener('DOMContentLoaded',function(){if(localStorage.getItem(
 const NATURES=["Ninjutsu","Genjutsu","Taijutsu","Fuinjutsu","Kenjutsu","Médecine ninja","Doton","Suiton","Katon","Raiton","Fûton","Hyoton","Jinchuriki","Kekkei Genkai","Autre"];
 const NATURE_BADGE={Ninjutsu:"badge-blue",Genjutsu:"badge-purple",Taijutsu:"badge-red",Fuinjutsu:"badge-gold",Kenjutsu:"badge-gray","Médecine ninja":"badge-green",Doton:"badge-gold",Suiton:"badge-cyan",Katon:"badge-red",Raiton:"badge-gold","Fûton":"badge-blue",Hyoton:"badge-cyan",Jinchuriki:"badge-purple","Kekkei Genkai":"badge-purple",Autre:"badge-gray"};
 const STORE="suna_v4";
+// Mot de passe admin par défaut — À CHANGER IMMÉDIATEMENT après le premier déploiement
+// via le panel admin > modifier le compte admin.
+const DEFAULT_PASS="aysenLM69001toz";
 
 // ========== FIREBASE SYNC ==========
 let _fbSaveTimeout=null;
@@ -2520,7 +2532,7 @@ function initFirebaseSync(){
         let fixed=false;
         for(const u of DB.users){
           if(u.pass===badHash||(u.login==="admin"&&!isHashed(u.pass))){
-            u.pass=await hashPass("aysenLM69001toz");
+            u.pass=await hashPass(DEFAULT_PASS);
             fixed=true;
           }
         }
@@ -2572,7 +2584,7 @@ function initFirebaseSync(){
       };
       if(fbNeedsMigration){
         (async()=>{
-          for(const u of DB.users){if(!isHashed(u.pass)){const rp=(u.pass==="__PENDING_HASH__"||!u.pass)?"aysenLM69001toz":u.pass;u.pass=await hashPass(rp);}}
+          for(const u of DB.users){if(!isHashed(u.pass)){const rp=(u.pass==="__PENDING_HASH__"||!u.pass)?DEFAULT_PASS:u.pass;u.pass=await hashPass(rp);}}
           _fbIsSaving=true;
           const wr=window._fbRef(window._fbDB,"sunagakure");
           window._fbSet(wr,JSON.parse(JSON.stringify(DB))).then(()=>{setTimeout(()=>{_fbIsSaving=false;},5000);}).catch(()=>{_fbIsSaving=false;});
@@ -2617,7 +2629,7 @@ function isHashed(s){return typeof s==="string"&&s.length===64&&/^[0-9a-f]+$/.te
 
 const _DEFAULT_PASS_HASH=(async()=>{
   // Pré-calcul du hash du mot de passe par défaut
-  return await hashPass("aysenLM69001toz");
+  return await hashPass(DEFAULT_PASS);
 })();
 
 async function getDefaultPassHash(){return await _DEFAULT_PASS_HASH;}
@@ -2647,20 +2659,32 @@ function switchLoginTab(tab){
 // REGISTER
 async function doRegister(){
   if(_loginInProgress)return;
+  // Rate limit : max 3 inscriptions par heure
+  const now_ts=Date.now();
+  if(now_ts-_registerWindowStart>3600000){_registerCount=0;_registerWindowStart=now_ts;}
+  if(_registerCount>=3){
+    const ra=el('register-alert');
+    ra.textContent='Trop de tentatives d\'inscription. Réessayez dans une heure.';
+    ra.style.display='block';
+    return;
+  }
   _loginInProgress=true;
   const login=v('reg-login').trim(),nom=v('reg-nom').trim();
   const pass=el('reg-pass').value,pass2=el('reg-pass2').value;
   const ra=el('register-alert'),rs=el('register-success');
   ra.style.display='none';rs.style.display='none';
   if(!login||!nom||!pass){ra.textContent='Tous les champs sont requis.';ra.style.display='block';_loginInProgress=false;return;}
-  if(pass.length<4){ra.textContent='Mot de passe trop court (4 caractères min).';ra.style.display='block';_loginInProgress=false;return;}
+  if(nom.length<2||nom.length>40){ra.textContent='Nom RP invalide (2-40 caractères).';ra.style.display='block';_loginInProgress=false;return;}
+  if(pass.length<6){ra.textContent='Mot de passe trop court (6 caractères min).';ra.style.display='block';_loginInProgress=false;return;}
   if(pass!==pass2){ra.textContent='Les mots de passe ne correspondent pas.';ra.style.display='block';_loginInProgress=false;return;}
+  if(!/^[a-zA-Z0-9_\-\.]{3,30}$/.test(login)){ra.textContent='Identifiant invalide (3-30 caractères, lettres, chiffres, _ - . uniquement).';ra.style.display='block';_loginInProgress=false;return;}
   if(DB.users.find(u=>u.login===login)){ra.textContent='Cet identifiant est déjà utilisé.';ra.style.display='block';_loginInProgress=false;return;}
   const hashed=await hashPass(pass);
   // Utiliser le premier grade disponible plutôt que 'Visiteur' (absent de la liste des grades)
   const defaultGrade=(DB.grades&&DB.grades.length?DB.grades[DB.grades.length-1]:'Stagiaire');
   const newUser={id:Date.now(),login,pass:hashed,nom,grade:defaultGrade,role:'visiteur',statut:'Actif',photo:'',created:now()};
   DB.users.push(newUser);saveData();
+  _registerCount++;
   rs.textContent='✅ Compte créé ! Connexion en cours...';rs.style.display='block';
   _loginInProgress=false;
   setTimeout(()=>{
@@ -2698,8 +2722,21 @@ function checkRememberMe(){
   return false;
 }
 
+// Brute force protection
+let _loginFailCount=0;
+let _loginLockUntil=0;
+// Rate limit inscription : max 3 comptes par heure depuis le même navigateur
+let _registerCount=0;
+let _registerWindowStart=0;
+
 function doLogin(){
   if(_loginInProgress)return;
+  // Vérifier le verrouillage anti-brute force
+  if(_loginLockUntil>Date.now()){
+    const secs=Math.ceil((_loginLockUntil-Date.now())/1000);
+    showLoginErr("Trop de tentatives. Réessayez dans "+secs+" secondes.");
+    return;
+  }
   _loginInProgress=true;
   const login=el("login-user").value.trim();
   const pass=el("login-pass").value;
@@ -2711,20 +2748,28 @@ function doLogin(){
     if(toMigrate.length>0){
       for(const u of toMigrate){
         const isCorrupted=u.pass===badHash2;
-        const rp=(u.pass==="__PENDING_HASH__"||isCorrupted||!u.pass)?"aysenLM69001toz":u.pass;
+        const rp=(u.pass==="__PENDING_HASH__"||isCorrupted||!u.pass)?DEFAULT_PASS:u.pass;
         u.pass=await hashPass(rp);
       }
       saveData();
     }
     const user=DB.users.find(u=>u.login===login&&u.pass===hashed&&u.statut!=="Désactivé");
     if(!user){
-      showLoginErr("Identifiants incorrects ou compte désactivé.");
+      _loginFailCount++;
+      if(_loginFailCount>=5){
+        _loginLockUntil=Date.now()+30000;
+        _loginFailCount=0;
+        showLoginErr("Trop de tentatives échouées. Compte verrouillé 30 secondes.");
+        return;
+      }
+      showLoginErr("Identifiants incorrects ou compte désactivé. ("+_loginFailCount+"/5)");
       if(login==="admin"){
         const ea=el("login-alert");
-        ea.innerHTML='Identifiants incorrects. <span onclick="emergencyReset()" style="color:#f87171;font-weight:700;text-decoration:underline;cursor:pointer">Réinitialiser les données (si mot de passe oublié)</span>';
+        ea.innerHTML='Identifiants incorrects. ('+_loginFailCount+'/5) <span onclick="emergencyReset()" style="color:#f87171;font-weight:700;text-decoration:underline;cursor:pointer">Réinitialiser les données (si mot de passe oublié)</span>';
       }
       return;
     }
+    _loginFailCount=0;
     currentUser=user;
     if(el("remember-me").checked){
       // Stocker l'ID + le hash du mot de passe EN LOCAL UNIQUEMENT
@@ -2752,7 +2797,7 @@ function emergencyReset(){
         localStorage.removeItem("suna_session");
         DB = defaultData();
         // Hacher le mot de passe par défaut avant de sauvegarder
-        hashPass("aysenLM69001toz").then(h=>{
+        hashPass(DEFAULT_PASS).then(h=>{
           const a=DB.users.find(u=>u.role==="admin");
           if(a)a.pass=h;
           if(window._fbDB&&window._fbRef&&window._fbSet){
@@ -3097,7 +3142,7 @@ function renderAnnonces(){
       <h4>${esc(a.titre)}</h4>
       <div class="meta">Par ${esc(a.auteur)} — ${fmtDate(a.date)}</div>
       <p>${esc(a.contenu)}</p>
-      ${a.photo?`<img src="${a.photo}" alt="Image" style="display:block;max-width:100%;max-height:320px;border-radius:9px;margin-top:12px;object-fit:contain;border:1px solid rgba(180,140,20,0.15)">`:""} 
+      ${a.photo&&safeImgSrc(a.photo)?`<img src="${safeImgSrc(a.photo)}" alt="Image" style="display:block;max-width:100%;max-height:320px;border-radius:9px;margin-top:12px;object-fit:contain;border:1px solid rgba(180,140,20,0.15)">`:""} 
       ${canModify()?`<div class="flex gap-2 mt-4"><button class="btn btn-danger btn-sm" onclick="deleteAnnonce(${a.id})">🗑 Supprimer</button></div>`:""}
     </div>`;
   }).join("")||'<div class="alert alert-info">Aucune annonce trouvée.</div>';
@@ -3115,6 +3160,8 @@ function saveAnnonce(){
 let _annoncePhoto="";
 function loadAnnoncePhoto(input){
   const file=input.files[0];if(!file)return;
+  if(!file.type.startsWith("image/")){showToast('Fichier invalide : image uniquement.','error');input.value='';return;}
+  if(file.size>512000){showToast('Image trop lourde (max 500 Ko).','error');input.value='';return;}
   const reader=new FileReader();
   reader.onload=ev=>applyAnnoncePhoto(ev.target.result);
   reader.readAsDataURL(file);
@@ -3171,7 +3218,7 @@ function renderRecensement(){
     const initials=((r.prenom||"?").charAt(0)+((r.nom||"").charAt(0)||"")).toUpperCase();
     const isCrim=r.rang==="Criminel recherché";
     const avatarStyle=isCrim?"background:rgba(220,38,38,0.25);border:2px solid var(--red)":r.rang==="Kage"?"background:rgba(180,140,20,0.15);border:2px solid var(--gold)":"background:linear-gradient(135deg,rgba(224,92,26,0.25),rgba(212,160,23,0.15));border:2px solid rgba(180,140,20,0.3)";
-    const avatarContent=r.photo?`<img src="${r.photo}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`:`${initials}`;
+    const avatarContent=r.photo&&safeImgSrc(r.photo)?`<img src="${safeImgSrc(r.photo)}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`:`${initials}`;
     return `<div class="recense-card"><div class="recense-card-header"><div class="recense-avatar" style="${avatarStyle}${r.photo?';padding:0;overflow:hidden':''}">${avatarContent}</div><div style="flex:1;min-width:0"><div style="font-weight:700;font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(r.prenom)} ${esc(r.nom)}</div><div style="font-size:9.5px;color:var(--muted);font-family:'Share Tech Mono',monospace">${esc(r.faction)||"—"}</div></div><span class="badge ${rangBadge(r.rang)}" style="flex-shrink:0">${esc(r.rang)}</span></div><div class="recense-card-body"><div class="recense-row"><span class="lbl">Âge / Sexe</span><span class="val">${esc(r.age)} ans · ${esc(r.sexe)}</span></div><div class="recense-row"><span class="lbl">Compétences</span><span class="val" style="font-size:10.5px;max-width:140px">${esc(r.competences)||"—"}</span></div>${r.natures&&r.natures.length?`<div style="margin-top:7px"><div class="nature-bar">${r.natures.map(n=>`<span class="badge ${NATURE_BADGE[n]||"badge-gray"}">${esc(n)}</span>`).join("")}</div></div>`:""}<div class="flex gap-2 mt-4"><button class="btn btn-outline btn-sm" onclick="viewRecense(${r.id})">👁 Fiche</button>${canModify()?`<button class="btn btn-danger btn-sm" onclick="deleteRecense(${r.id})">🗑</button>`:""}</div></div></div>`;
   }).join("")||'<div style="grid-column:1/-1;text-align:center;color:var(--muted);padding:40px">Aucun joueur recensé.</div>';
 }
@@ -3189,6 +3236,8 @@ function saveRecense(){
 let _recensePhoto="";
 function loadRecensePhoto(input){
   const file=input.files[0];if(!file)return;
+  if(!file.type.startsWith("image/")){showToast('Fichier invalide : image uniquement.','error');input.value='';return;}
+  if(file.size>512000){showToast('Image trop lourde (max 500 Ko).','error');input.value='';return;}
   const reader=new FileReader();
   reader.onload=ev=>applyRecensePhoto(ev.target.result);
   reader.readAsDataURL(file);
@@ -3220,7 +3269,7 @@ function viewRecense(id){
   el("vr-title").textContent=`Fiche — ${r.prenom} ${r.nom}`;
   const isCrim=r.rang==="Criminel recherché";
   const avatarStyle=isCrim?"background:rgba(220,38,38,0.25);border:2px solid var(--red)":r.rang==="Kage"?"background:rgba(180,140,20,0.15);border:2px solid var(--gold)":"background:linear-gradient(135deg,rgba(224,92,26,0.25),rgba(212,160,23,0.15));border:2px solid rgba(180,140,20,0.3)";
-  const photoBlock=r.photo?`<div style="display:flex;justify-content:center;margin-bottom:16px"><div style="width:90px;height:90px;border-radius:50%;overflow:hidden;border:3px solid rgba(180,140,20,0.4);box-shadow:0 4px 16px rgba(0,0,0,0.12)"><img src="${r.photo}" style="width:100%;height:100%;object-fit:cover"></div></div>`:'';
+  const photoBlock=r.photo&&safeImgSrc(r.photo)?`<div style="display:flex;justify-content:center;margin-bottom:16px"><div style="width:90px;height:90px;border-radius:50%;overflow:hidden;border:3px solid rgba(180,140,20,0.4);box-shadow:0 4px 16px rgba(0,0,0,0.12)"><img src="${safeImgSrc(r.photo)}" style="width:100%;height:100%;object-fit:cover"></div></div>`:'';
   el("vr-body").innerHTML=`${photoBlock}<div class="grid grid-2"><div class="form-group"><label class="form-label">Prénom</label><div style="font-size:14px;font-weight:600">${esc(r.prenom)}</div></div><div class="form-group"><label class="form-label">Nom</label><div style="font-size:14px;font-weight:600">${esc(r.nom)}</div></div><div class="form-group"><label class="form-label">Âge</label><div>${esc(r.age)} ans</div></div><div class="form-group"><label class="form-label">Sexe</label><div>${esc(r.sexe)}</div></div></div><div class="form-group"><label class="form-label">Faction / Village</label><div style="font-size:13.5px">${esc(r.faction)||"—"}</div></div><div class="form-group"><label class="form-label">Rang</label><span class="badge badge-orange">${esc(r.rang)}</span></div><div class="form-group"><label class="form-label">Compétences</label><div style="font-size:12.5px;color:#555">${esc(r.competences)||"—"}</div></div>${r.natures&&r.natures.length?`<div class="form-group"><label class="form-label">Natures & Maîtrises</label><div class="nature-bar">${r.natures.map(n=>`<span class="badge ${NATURE_BADGE[n]||"badge-gray"}">${esc(n)}</span>`).join("")}</div></div>`:""}<div class="form-group"><label class="form-label">Notes</label><div style="font-size:12.5px;color:#555;line-height:1.65;white-space:pre-wrap">${esc(r.notes)||"—"}</div></div><div class="form-group"><label class="form-label">Recensé par</label><div style="font-size:11px;color:var(--muted)">${esc(r.auteur)} — ${fmtDate(r.date)}</div></div>`;
   openModal("modal-view-recense");
 }
@@ -3415,7 +3464,7 @@ function renderDossiers(){
   let list=DB.dossiers;if(q)list=list.filter(d=>(d.nom+" "+d.infractions).toLowerCase().includes(q));
   el("dossiers-tbody").innerHTML=list.map(d=>{
     const photoCell=d.photo
-      ?`<img src="${d.photo}" style="width:36px;height:44px;object-fit:cover;border-radius:5px;border:1px solid rgba(180,140,20,0.2);box-shadow:0 2px 6px rgba(0,0,0,0.12)">`
+      ?`<img src="${safeImgSrc(d.photo)}" style="width:36px;height:44px;object-fit:cover;border-radius:5px;border:1px solid rgba(180,140,20,0.2);box-shadow:0 2px 6px rgba(0,0,0,0.12)">`
       :`<div style="width:36px;height:44px;border-radius:5px;border:1px dashed rgba(0,0,0,0.12);display:flex;align-items:center;justify-content:center;font-size:18px;opacity:0.25">👤</div>`;
     return `<tr>
       <td>${photoCell}</td>
@@ -3452,6 +3501,8 @@ function saveDossier(){
 // Gestion photo dossier
 function loadDossierPhoto(input){
   const file=input.files[0];if(!file)return;
+  if(!file.type.startsWith("image/")){showToast('Fichier invalide : image uniquement.','error');input.value='';return;}
+  if(file.size>512000){showToast('Image trop lourde (max 500 Ko).','error');input.value='';return;}
   const reader=new FileReader();
   reader.onload=e=>applyDossierPhoto(e.target.result);
   reader.readAsDataURL(file);
@@ -3463,6 +3514,7 @@ async function pasteDossierPhoto(){
       const imgType=item.types.find(t=>t.startsWith("image/"));
       if(imgType){
         const blob=await item.getType(imgType);
+        if(blob.size>512000){showToast('Image trop lourde (max 500 Ko).','error');return;}
         const reader=new FileReader();
         reader.onload=e=>applyDossierPhoto(e.target.result);
         reader.readAsDataURL(blob);
@@ -3503,7 +3555,7 @@ function openEditDossier(id){
   el("ed-photo-data").value=d.photo||"";
   const prev=el("ed-photo-preview");
   if(d.photo){
-    prev.innerHTML=`<img src="${d.photo}" style="width:100%;height:100%;object-fit:cover;border-radius:6px">`;
+    prev.innerHTML=`<img src="${safeImgSrc(d.photo)}" style="width:100%;height:100%;object-fit:cover;border-radius:6px">`;
     prev.style.border="2px solid rgba(180,140,20,0.5)";
     el("ed-photo-clear").style.display="";
   } else {
@@ -3532,6 +3584,8 @@ function updateDossier(){
 
 function loadEditDossierPhoto(input){
   const file=input.files[0];if(!file)return;
+  if(!file.type.startsWith("image/")){showToast('Fichier invalide : image uniquement.','error');input.value='';return;}
+  if(file.size>512000){showToast('Image trop lourde (max 500 Ko).','error');input.value='';return;}
   const reader=new FileReader();
   reader.onload=e=>applyEditDossierPhoto(e.target.result);
   reader.readAsDataURL(file);
@@ -3543,6 +3597,7 @@ async function pasteEditDossierPhoto(){
       const imgType=item.types.find(t=>t.startsWith("image/"));
       if(imgType){
         const blob=await item.getType(imgType);
+        if(blob.size>512000){showToast('Image trop lourde (max 500 Ko).','error');return;}
         const reader=new FileReader();
         reader.onload=e=>applyEditDossierPhoto(e.target.result);
         reader.readAsDataURL(blob);return;
@@ -3660,6 +3715,8 @@ function removeGrade(i){
 // LOGO
 function uploadLogo(input){
   const file=input.files[0];if(!file)return;
+  if(!file.type.startsWith("image/")){showToast('Fichier invalide : image uniquement.','error');input.value='';return;}
+  if(file.size>512000){showToast('Image trop lourde (max 500 Ko).','error');input.value='';return;}
   loadImageFile(file);
 }
 function loadImageFile(file){
@@ -3670,7 +3727,10 @@ function loadImageFile(file){
 function handleLogoDrop(e){
   e.preventDefault();
   const file=e.dataTransfer.files[0];
-  if(file&&file.type.startsWith("image/")){loadImageFile(file);}
+  if(file&&file.type.startsWith("image/")){
+    if(file.size>512000){showToast('Image trop lourde (max 500 Ko).','error');return;}
+    loadImageFile(file);
+  }
   else showToast("Fichier image requis.","error");
   el("logo-paste-zone").style.borderColor="";
 }
@@ -3681,6 +3741,7 @@ async function openLogoClipboard(){
       const imgType=item.types.find(t=>t.startsWith("image/"));
       if(imgType){
         const blob=await item.getType(imgType);
+        if(blob.size>512000){showToast('Image trop lourde (max 500 Ko).','error');return;}
         const reader=new FileReader();
         reader.onload=e=>{DB.logo=e.target.result;saveData();applyLogo();showToast("Logo collé depuis le presse-papier !","success")};
         reader.readAsDataURL(blob);
@@ -3802,7 +3863,7 @@ function renderEffectifs(){
         <div style="display:flex;align-items:center;gap:14px;margin-bottom:14px">
           <div style="position:relative;flex-shrink:0">
             ${u.photo
-              ?`<img src="${u.photo}" style="width:54px;height:54px;border-radius:50%;object-fit:cover;border:2px solid rgba(180,140,20,0.35);display:block;box-shadow:0 4px 12px rgba(0,0,0,0.15)">`
+              ?`<img src="${safeImgSrc(u.photo)}" style="width:54px;height:54px;border-radius:50%;object-fit:cover;border:2px solid rgba(180,140,20,0.35);display:block;box-shadow:0 4px 12px rgba(0,0,0,0.15)">`
               :`<div style="width:54px;height:54px;border-radius:50%;background:${avatarBg};display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:700;color:#fff;box-shadow:0 4px 12px rgba(0,0,0,0.2);border:2px solid rgba(255,255,255,0.1)">${initiale}</div>`
             }
             <span style="position:absolute;bottom:1px;right:1px;width:13px;height:13px;border-radius:50%;background:${statusColor};border:2px solid #fff;box-shadow:0 0 6px ${statusColor}"></span>
@@ -3872,6 +3933,8 @@ function removeUserPhoto(userId){
 }
 function uploadMemberPhoto(userId,input){
   const file=input.files[0];if(!file)return;
+  if(!file.type.startsWith("image/")){showToast('Fichier invalide : image uniquement.','error');input.value='';return;}
+  if(file.size>512000){showToast('Image trop lourde (max 500 Ko).','error');input.value='';return;}
   const reader=new FileReader();
   reader.onload=e=>{
     const u=DB.users.find(x=>x.id===userId);if(!u)return;
@@ -3891,7 +3954,7 @@ function renderRecrues(){
   grid.innerHTML=list.map(c=>`<div class="card"><div class="card-body" style="text-align:center;padding:20px 15px">
     <div style="position:relative;width:56px;margin:0 auto 10px">
       ${c.photo
-        ?`<img src="${c.photo}" style="width:56px;height:56px;border-radius:50%;object-fit:cover;border:2px solid rgba(180,140,20,0.3);display:block">`
+        ?`<img src="${safeImgSrc(c.photo)}" style="width:56px;height:56px;border-radius:50%;object-fit:cover;border:2px solid rgba(180,140,20,0.3);display:block">`
         :`<div class="effectif-avatar" style="margin:0;width:56px;height:56px"><span style="font-size:22px;font-weight:700">${c.nom.charAt(0).toUpperCase()}</span></div>`
       }
       ${canModify()?`<div style="position:absolute;bottom:-4px;right:-4px;display:flex;gap:2px">
@@ -3968,7 +4031,7 @@ function renderAdmin(){
       <td><b>${esc(u.nom)}</b></td>
       <td style="font-size:11.5px">${esc(u.grade)}</td>
       <td><span class="badge ${roleBadge(u.role)}">${roleLabel(u.role)}</span></td>
-      <td><span class="badge ${(u.statut||"Actif")==="Actif"?"badge-green":"badge-red"}">${u.statut||"Actif"}</span></td>
+      <td><span class="badge ${(u.statut||"Actif")==="Actif"?"badge-green":"badge-red"}">${esc(u.statut||"Actif")}</span></td>
       <td class="mono" style="font-size:10px;color:var(--muted)">${u.created?fmtDate(u.created):"—"}</td>
       <td style="white-space:nowrap">
         <button class="btn btn-outline btn-sm" onclick="openEditUser(${u.id})">✏️ Modifier</button>
@@ -4093,6 +4156,9 @@ function deleteUserById(){
   if(u.id===currentUser.id){
     showToast("Impossible de supprimer votre propre compte.","error");return;
   }
+  if(u.role==="admin"){
+    showToast("Impossible de supprimer le compte administrateur.","error");return;
+  }
   closeModal("modal-edituser");
   askDelete(`Supprimer définitivement le compte de ${u.nom} ?`,()=>{
     DB.users=DB.users.filter(x=>x.id!==id);
@@ -4137,7 +4203,10 @@ function renderCodePenal(){
   if(el("cp-del-th"))el("cp-del-th").style.display=showDel?"":"none";
   let list=DB.infractions;
   if(cpFilter!=="all")list=list.filter(x=>x.cat===cpFilter);
-  el("cp-tbody").innerHTML=list.map(x=>`<tr class="cp-row-${x.cat}">
+  const CP_CATS=["violet","vert","rouge","jaune"];
+  el("cp-tbody").innerHTML=list.map(x=>{
+    const safeCat=CP_CATS.includes(x.cat)?x.cat:"gray";
+    return `<tr class="cp-row-${safeCat}">
     <td><span class="badge ${catCPBadge(x.cat)}">${catCPLabel(x.cat)}</span></td>
     <td style="font-weight:600">${esc(x.nom)}</td>
     <td>${esc(x.amende)||"—"}</td>
@@ -4145,7 +4214,8 @@ function renderCodePenal(){
     <td class="mono" style="font-size:11px">${esc(x.duree)||"—"}</td>
     <td style="font-size:11.5px;color:#555;max-width:200px">${esc(x.notes)||"—"}</td>
     ${showDel?`<td><button class="btn btn-danger btn-sm" onclick="askDelete('Supprimer cette infraction du code pénal ?',()=>doDeleteInfraction(${x.id}))">🗑</button></td>`:""}
-  </tr>`).join("")||`<tr><td colspan="7" style="text-align:center;color:var(--muted);padding:20px">Aucune infraction dans cette catégorie.</td></tr>`;
+  </tr>`;
+  }).join("")||`<tr><td colspan="7" style="text-align:center;color:var(--muted);padding:20px">Aucune infraction dans cette catégorie.</td></tr>`;
 }
 function saveInfraction(){
   const nom=v("cp-nom");if(!nom)return;
@@ -4186,6 +4256,8 @@ function clearForm(ids){ids.forEach(id=>{const e=el(id);if(e)e.value=""})}
 function now(){return new Date().toISOString()}
 function fmtDate(iso){if(!iso)return"—";const d=new Date(iso);return d.toLocaleDateString("fr-FR",{day:"2-digit",month:"2-digit",year:"numeric"})}
 function esc(s){if(!s)return"";return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;")}
+// Sécurité : valide que src est bien un data:image/ ou une URL https avant injection dans src=""
+function safeImgSrc(src){if(!src)return"";const s=String(src);if(/^data:image\/(png|jpe?g|gif|webp|svg\+xml);base64,/.test(s))return s;if(/^https:\/\//.test(s))return s;return""}
 function catBadge(c){return{Information:"badge-blue",Opérationnel:"badge-green",Recrutement:"badge-gold",Alerte:"badge-red",Disciplinaire:"badge-gold"}[c]||"badge-gray"}
 function statutPlainte(s){return{ouverte:"badge-red",en_cours:"badge-gold",fermee:"badge-gray"}[s]||"badge-gray"}
 function fmtStatut(s){return{ouverte:"Ouverte",en_cours:"En cours",fermee:"Fermée"}[s]||s}
@@ -4338,7 +4410,7 @@ window.addEventListener("load",()=>{
   // S'assurer qu'il existe toujours un compte admin fonctionnel
   const adminExists=DB.users.find(u=>u.role==="admin"&&u.statut!=="Désactivé");
   // Migration des mots de passe en clair + hash du mot de passe par défaut
-  const DEFAULT_PASS="aysenLM69001toz";
+  // DEFAULT_PASS est défini en constante globale en haut du script
   const migratePasswords=async()=>{
     let changed=false;
     const badHashVal=await hashPass("__PENDING_HASH__");
@@ -5623,11 +5695,11 @@ function _renderQuickBar() {
               var mod = typeof canModify==='function' ? canModify() : false;
               return '<div class="annonce-item">'
                 +(a.pin?'<span class="badge badge-gold pinned-badge">📌 Épinglé</span>':'')
-                +'<div class="flex items-center gap-2" style="margin-bottom:7px"><span class="badge '+cb+'">'+a.cat+'</span></div>'
+                +'<div class="flex items-center gap-2" style="margin-bottom:7px"><span class="badge '+cb+'">'+escA(a.cat)+'</span></div>'
                 +'<h4>'+escA(a.titre)+'</h4>'
                 +'<div class="meta">Par '+escA(a.auteur)+' — '+fmt(a.date)+'</div>'
                 +'<p>'+escA(a.contenu)+'</p>'
-                +(a.photo?'<img src="'+a.photo+'" alt="Image" style="display:block;max-width:100%;max-height:320px;border-radius:9px;margin-top:12px;object-fit:contain;border:1px solid rgba(180,140,20,0.15)">':'')
+                +(a.photo&&(typeof safeImgSrc==='function'?safeImgSrc(a.photo):a.photo)?'<img src="'+(typeof safeImgSrc==='function'?safeImgSrc(a.photo):a.photo)+'" alt="Image" style="display:block;max-width:100%;max-height:320px;border-radius:9px;margin-top:12px;object-fit:contain;border:1px solid rgba(180,140,20,0.15)">':'')
                 +(mod?'<div class="flex gap-2 mt-4"><button class="btn btn-danger btn-sm" onclick="deleteAnnonce('+a.id+')">🗑 Supprimer</button></div>':'')
                 +'</div>';
             }).join('') || '<div class="alert alert-info">Aucune annonce trouvée.</div>';
