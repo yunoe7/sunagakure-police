@@ -1317,6 +1317,23 @@ textarea.form-control{resize:vertical;min-height:80px}
 .btn-export{background:rgba(21,128,61,0.08);color:var(--green);border:1px solid rgba(21,128,61,0.25)}
 .btn-export:hover{background:var(--green);color:#fff}
 
+
+
+/* ── SKELETON LOADING ── */
+@keyframes shimmer{0%{background-position:-200% 0}100%{background-position:200% 0}}
+.skeleton{border-radius:8px;background:linear-gradient(90deg,rgba(180,140,20,0.07) 25%,rgba(180,140,20,0.13) 50%,rgba(180,140,20,0.07) 75%);background-size:200% 100%;animation:shimmer 1.4s ease infinite}
+.skeleton-line{height:12px;margin-bottom:7px}
+.skeleton-line.lg{height:20px}
+.skeleton-line.sm{height:9px;width:60%}
+.skeleton-block{height:80px}
+body.dark .skeleton{background:linear-gradient(90deg,rgba(255,255,255,0.04) 25%,rgba(255,255,255,0.09) 50%,rgba(255,255,255,0.04) 75%);background-size:200% 100%}
+
+/* ── FILTRES ACTIFS — chips ── */
+.filter-chip-bar{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px;align-items:center;min-height:28px}
+.filter-chip{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;background:rgba(192,65,14,0.1);border:1px solid rgba(192,65,14,0.3);border-radius:99px;font-size:10px;font-weight:600;color:var(--accent);font-family:'Share Tech Mono',monospace;cursor:pointer;transition:all 0.15s}
+.filter-chip:hover{background:rgba(192,65,14,0.2)}
+.filter-chip .fc-x{font-size:12px;opacity:0.7;line-height:1}
+
 /* ===== PRINT CSS ===== */
 @media print{
   #sidebar,#login-screen,.topbar,#bottom-nav,#more-drawer,.btn,.modal-overlay,#gs-overlay,
@@ -1583,6 +1600,7 @@ document.addEventListener('DOMContentLoaded',function(){if(localStorage.getItem(
         <span class="text-muted" id="recense-count"></span>
       </div>
     </div>
+    <div id="recense-filter-chips" class="filter-chip-bar" style="margin-bottom:12px"></div>
     <div class="grid grid-3" id="recensement-grid"></div>
   </div>
 
@@ -1881,8 +1899,29 @@ document.addEventListener('DOMContentLoaded',function(){if(localStorage.getItem(
       </div>
     </div>
     <div class="grid grid-3" id="effectifs-grid"></div>
+
+    <!-- Graphiques effectifs -->
+    <div class="grid grid-2 mt-6" style="margin-top:16px" id="effectifs-charts-row">
+      <div class="chart-card">
+        <div class="chart-title">📊 Répartition par rôle</div>
+        <canvas id="chart-roles" height="180"></canvas>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">🎖️ Répartition par grade</div>
+        <canvas id="chart-grades-eff" height="180"></canvas>
+      </div>
+    </div>
+
   </div>
 
+
+  <!-- HIÉRARCHIE & ORGANIGRAMME -->
+  <div class="page-content" id="page-hierarchie">
+    <div class="section-header">
+      <div><div class="section-title">Hiérarchie</div><div class="section-sub">ORGANIGRAMME OFFICIEL — POLICE SUNAGAKURE</div></div>
+    </div>
+    <div id="hierarchy-container"></div>
+  </div>
   <!-- SANCTIONS -->
   <div class="page-content" id="page-sanctions">
     <div class="section-header">
@@ -2542,12 +2581,12 @@ document.addEventListener('DOMContentLoaded',function(){if(localStorage.getItem(
           <select id="u-grade" class="form-control"></select></div>
         <div class="form-group"><label class="form-label">Rôle système</label>
           <select id="u-role" class="form-control">
-            <option value="stagiaire">Stagiaire</option>
-            <option value="membre">Membre</option>
-            <option value="sergent">Sergent</option>
-            <option value="officier">Officier</option>
-            <option value="cogerant">Co-Gérant</option>
-            <option value="gerant">Gérant</option>
+            <option value="visiteur">👁 Visiteur</option>
+            <option value="stagiaire" selected>🌱 Stagiaire</option>
+            <option value="officier">🔵 Officier</option>
+            <option value="sergent">⚔️ Sergent</option>
+            <option value="cogerant">🥈 Co-Gérant</option>
+            <option value="gerant">🏛️ Gérant</option>
           </select></div>
       </div>
     </div>
@@ -2569,12 +2608,12 @@ document.addEventListener('DOMContentLoaded',function(){if(localStorage.getItem(
           <select id="eu-grade" class="form-control"></select></div>
         <div class="form-group"><label class="form-label">Rôle</label>
           <select id="eu-role" class="form-control">
-            <option value="stagiaire">Stagiaire</option>
-            <option value="membre">Membre</option>
-            <option value="sergent">Sergent</option>
-            <option value="officier">Officier</option>
-            <option value="cogerant">Co-Gérant</option>
-            <option value="gerant">Gérant</option>
+            <option value="visiteur">👁 Visiteur</option>
+            <option value="stagiaire">🌱 Stagiaire</option>
+            <option value="officier">🔵 Officier</option>
+            <option value="sergent">⚔️ Sergent</option>
+            <option value="cogerant">🥈 Co-Gérant</option>
+            <option value="gerant">🏛️ Gérant</option>
             <option value="admin" id="eu-role-admin-opt">🔴 Administrateur</option>
           </select></div>
       </div>
@@ -3127,7 +3166,7 @@ function saveCommNameAdmin(){
 }
 
 // NAV
-const PAGES={dashboard:"Tableau de bord",annonces:"Annonces",recensement:"Recensement",recrutement:"Recrutement",plaintes:"Plaintes",dossiers:"Dossiers criminels",codepenal:"Code Pénal",operations:"Opérations",effectifs:"Effectifs",sanctions:"Sanctions & Promotions",admin:"Panel Admin",messagerie:"Messagerie",profil:"Mon profil"};
+const PAGES={dashboard:"Tableau de bord",annonces:"Annonces",recensement:"Recensement",recrutement:"Recrutement",plaintes:"Plaintes",dossiers:"Dossiers criminels",codepenal:"Code Pénal",operations:"Opérations",effectifs:"Effectifs",hierarchie:"Hiérarchie",sanctions:"Sanctions & Promotions",admin:"Panel Admin",messagerie:"Messagerie",profil:"Mon profil"};
 const VISITOR_PAGES=["dashboard","annonces","recensement","recrutement","plaintes","codepenal"];
 
 // Mapping page → bnav-item id (pour les 4 onglets directs de la barre)
@@ -3144,7 +3183,7 @@ function showPage(name){
     return;
   }
   // Pages membres (opérations, effectifs, sanctions) — interdites aux visiteurs
-  const MEMBER_ONLY_PAGES=["operations","effectifs","sanctions","messagerie","profil"];
+  const MEMBER_ONLY_PAGES=["operations","effectifs","hierarchie","sanctions","messagerie","profil"];
   if(MEMBER_ONLY_PAGES.includes(name)&&isVisiteur()){
     showToast("Accès réservé aux membres de la Police.","error");
     return;
@@ -3182,9 +3221,10 @@ function renderPage(name){
   if(name==="operations")renderOperations();
   if(name==="effectifs")renderEffectifs();
   if(name==="sanctions")renderSanctions();
-  if(name==="admin"){renderAdmin();el("admin-comm-input").value=DB.commissaire||"";applyLogo();loadNotifPrefs();refreshNotifCounts();renderNotifHistory();renderAdminTimeline();}
+  if(name==="admin"){renderAdmin();el("admin-comm-input").value=DB.commissaire||"";applyLogo();loadNotifPrefs();refreshNotifCounts();renderNotifHistory();renderAdminTimeline();renderAuditLog();}
   if(name==="messagerie")renderMsgContacts();
   if(name==="profil")renderProfil();
+  if(name==="hierarchie")renderHierarchie();
 }
 
 function renderVisitorCandBanner(){
@@ -3240,10 +3280,11 @@ function syncDashboard(){updateStats();updateBadges();syncBottomNavBadges();cons
 
 // DASHBOARD
 function updateStats(){
-  el("stat-effectifs").textContent=(DB.users||[]).filter(u=>u.statut==="Actif").length;
-  el("stat-recenses").textContent=(DB.recenses||[]).length;
-  el("stat-plaintes").textContent=(DB.plaintes||[]).filter(p=>p.statut==="ouverte").length;
-  el("stat-operations").textContent=(DB.operations||[]).filter(o=>o.statut==="Active").length;
+  const _set=(id,val)=>{const e=el(id);if(e)e.textContent=val;};
+  _set("stat-effectifs",(DB.users||[]).filter(u=>u.statut==="Actif").length);
+  _set("stat-recenses",(DB.recenses||[]).length);
+  _set("stat-plaintes",(DB.plaintes||[]).filter(p=>p.statut==="ouverte").length);
+  _set("stat-operations",(DB.operations||[]).filter(o=>o.statut==="Active").length);
   // Synchro stats admin — toujours mise à jour peu importe la page active + fix repaint iOS
   const users=DB.users||[];
   const setAdm=(id,val)=>{const e=el(id);if(!e)return;e.textContent=val;e.style.transform='translateZ(0)';requestAnimationFrame(()=>{e.style.transform='';});};
@@ -3432,6 +3473,24 @@ function buildNatureCheckboxes(){
   c.innerHTML=NATURES.map(n=>`<label class="nature-checkbox-label"><input type="checkbox" value="${n}" name="nature" style="accent-color:var(--gold)"> ${n}</label>`).join("");
 }
 function renderRecensement(){
+  // Chips filtres actifs
+  var chips = [];
+  var qVal = (el("search-recense")||{}).value||"";
+  var fVal = (el("filter-faction")||{}).value||"";
+  var nVal = (el("filter-nature")||{}).value||"";
+  if(qVal) chips.push({label:"Recherche : "+qVal, clear:function(){var e=el("search-recense");if(e){e.value="";renderRecensement();}}});
+  if(fVal) chips.push({label:"Faction : "+fVal, clear:function(){var e=el("filter-faction");if(e){e.value="";renderRecensement();}}});
+  if(nVal) chips.push({label:"Nature : "+nVal, clear:function(){var e=el("filter-nature");if(e){e.value="";renderRecensement();}}});
+  var chipBar = el("recense-filter-chips");
+  if(chipBar){
+    chipBar.innerHTML = chips.length ? chips.map(function(c,i){
+      return '<span class="filter-chip" data-chip="'+i+'"><span>✕</span> '+esc(c.label)+'</span>';
+    }).join("") : "";
+    chipBar.querySelectorAll(".filter-chip").forEach(function(el2,i){
+      el2.addEventListener("click",function(){chips[i].clear();});
+    });
+  }
+
   const q=(el("search-recense")?.value||"").toLowerCase();
   const fFac=el("filter-faction")?.value||"";
   const fNat=el("filter-nature")?.value||"";
@@ -3679,7 +3738,12 @@ function savePlainte(){
 function viewPlainte(id){
   const p=DB.plaintes.find(x=>x.id===id);if(!p)return;
   el("vp-ref").textContent=`Plainte #${p.id}`;
-  el("vp-body").innerHTML=`<div class="form-group"><label class="form-label">Plaignant</label><div style="font-size:13.5px">${esc(p.plaignant)}</div></div><div class="form-group"><label class="form-label">Accusé</label><div style="font-size:13.5px">${esc(p.accuse)}</div></div><div class="form-group"><label class="form-label">Type</label><div>${esc(p.type)}</div></div><div class="form-group"><label class="form-label">Description</label><div style="font-size:12.5px;color:#555;line-height:1.65;white-space:pre-wrap">${esc(p.desc)}</div></div><div class="form-group"><label class="form-label">Date des faits</label><div>${esc(p.dateFaits)||"—"}</div></div><div class="form-group"><label class="form-label">Statut</label><span class="badge ${statutPlainte(p.statut)}">${fmtStatut(p.statut)}</span></div>`;
+  // Chercher dossier & recensé correspondant à l'accusé
+  const dossierAcc=(DB.dossiers||[]).find(d=>(d.nom||"").toLowerCase().includes((p.accuse||"").toLowerCase())&&p.accuse&&p.accuse.length>2);
+  const recenseAcc=(DB.recenses||[]).find(r=>((r.prenom||"")+" "+(r.nom||"")).toLowerCase().includes((p.accuse||"").toLowerCase())&&p.accuse&&p.accuse.length>2);
+  const liensDossier=dossierAcc?`<div style="margin-top:10px;padding:10px 13px;background:rgba(220,38,38,0.06);border:1px solid rgba(220,38,38,0.2);border-radius:9px;font-size:12px;display:flex;align-items:center;gap:8px">🗂️ <span>Dossier criminel trouvé :</span><button class="btn btn-danger btn-sm" onclick="closeModal('modal-view-plainte');showPage('dossiers');setTimeout(()=>{const s=el('search-dossier');if(s){s.value='${esc(p.accuse||'')}';renderDossiers();}},150)">Voir le dossier</button></div>`:"";
+  const liensRecense=recenseAcc?`<div style="margin-top:8px;padding:10px 13px;background:rgba(109,40,217,0.06);border:1px solid rgba(109,40,217,0.2);border-radius:9px;font-size:12px;display:flex;align-items:center;gap:8px">📝 <span>Fiche de recensement trouvée</span><button class="btn btn-purple btn-sm" onclick="closeModal('modal-view-plainte');showPage('recensement');setTimeout(()=>{const s=el('search-recense');if(s){s.value='${esc(p.accuse||'')}';renderRecensement();}},150)">Voir la fiche</button></div>`:"";
+  el("vp-body").innerHTML=`<div class="form-group"><label class="form-label">Plaignant</label><div style="font-size:13.5px">${esc(p.plaignant)}</div></div><div class="form-group"><label class="form-label">Accusé</label><div style="font-size:13.5px">${esc(p.accuse)}</div></div><div class="form-group"><label class="form-label">Type</label><div>${esc(p.type)}</div></div><div class="form-group"><label class="form-label">Description</label><div style="font-size:12.5px;color:#555;line-height:1.65;white-space:pre-wrap">${esc(p.desc)}</div></div><div class="form-group"><label class="form-label">Date des faits</label><div>${esc(p.dateFaits)||"—"}</div></div><div class="form-group"><label class="form-label">Statut</label><span class="badge ${statutPlainte(p.statut)}">${fmtStatut(p.statut)}</span></div>${liensDossier}${liensRecense}`;
   const footer=el("vp-footer");footer.innerHTML="";
   if(canModify()){
     if(p.statut==="ouverte")footer.innerHTML+=`<button class="btn btn-primary btn-sm" onclick="setPlainteStatut(${p.id},'en_cours')">Prendre en charge</button>`;
@@ -4072,7 +4136,13 @@ function renderNotifHistory(){
 // markAllNotifsRead est défini plus haut (section badges)
 
 // EFFECTIFS WITH PHOTO
+
 function renderEffectifs(){
+  _renderEffectifsOrig();
+  setTimeout(renderEffectifsCharts, 80);
+}
+
+function _renderEffectifsOrig(){
   const actifs=(DB.users||[]).filter(u=>u.statut==="Actif");
   // Stats
   if(el("eff-stat-total"))el("eff-stat-total").textContent=actifs.length;
@@ -4087,7 +4157,8 @@ function renderEffectifs(){
   const roleOrder={admin:0,gerant:1,cogerant:2,officier:3,sergent:4,membre:5,stagiaire:6,visiteur:7};
   users=[...users].sort((a,b)=>(roleOrder[a.role]??9)-(roleOrder[b.role]??9));
 
-  el("effectifs-grid").innerHTML=users.map(u=>{
+  const _effGrid=el("effectifs-grid");if(!_effGrid)return;
+  _effGrid.innerHTML=users.map(u=>{
     const initiale=u.nom?u.nom.charAt(0).toUpperCase():"?";
     const avatarBg=u.role==="admin"?"linear-gradient(135deg,#dc2626,#7f1d1d)":
                    ["gerant","cogerant"].includes(u.role)?"linear-gradient(135deg,#b8860b,#78590a)":
@@ -4573,7 +4644,165 @@ function confirmYes(){closeModal("modal-confirm");if(_confirmCb){_confirmCb();_c
 function confirmNo(){closeModal("modal-confirm");_confirmCb=null;}
 
 // UTILS
-function canModify(){return currentUser&&(currentUser.role==="admin"||currentUser.role==="officier"||currentUser.role==="gerant"||currentUser.role==="cogerant")}
+
+
+
+// ─── JOURNAL D'AUDIT ────────────────────────────────────────────
+function renderAuditLog(){
+  var e = el("audit-log-list"); if(!e) return;
+  var items = [...(DB.timeline||[])].reverse().slice(0,50);
+  if(!items.length){e.innerHTML="<div style=\"font-size:11px;color:var(--muted);padding:4px\">Aucune activité enregistrée.</div>";return;}
+  e.innerHTML = items.map(function(t){
+    var icon = "📝";
+    var txt = t.text||"";
+    if(txt.includes("Promotion")||txt.includes("→"))icon="⬆️";
+    else if(txt.includes("Exclusion")||txt.includes("renvoyé"))icon="🚫";
+    else if(txt.includes("Annonce"))icon="📢";
+    else if(txt.includes("Plainte"))icon="📋";
+    else if(txt.includes("Candidature"))icon="🎖️";
+    else if(txt.includes("Opération"))icon="🚨";
+    else if(txt.includes("Dossier"))icon="🗂️";
+    else if(txt.includes("Infraction"))icon="⚖️";
+    return `<div class="notif-hist-item"><span style="font-size:13px;flex-shrink:0">${icon}</span><span style="flex:1;font-size:11.5px">${esc(txt)}</span><span style="font-size:9px;color:var(--muted);font-family:'Share Tech Mono',monospace;white-space:nowrap;margin-left:6px">${fmtDate(t.date)}</span></div>`;
+  }).join("");
+}
+
+function exportAuditLog(){
+  var rows = [["Date","Action"],...(DB.timeline||[]).reverse().map(function(t){return [t.date?fmtDate(t.date):"",t.text||""];})];
+  var csv = rows.map(function(r){return r.map(function(v){return '"'+String(v||"").replace(/"/g,"\"")+'"';}).join(",");}).join("\n");
+  var blob = new Blob(["\uFEFF"+csv],{type:"text/csv;charset=utf-8;"});
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement("a"); a.href=url; a.download="audit_sunagakure_"+new Date().toISOString().slice(0,10)+".csv";
+  document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
+  showToast("Journal exporté","success");
+}
+
+// ─── GRAPHIQUES EFFECTIFS ────────────────────────────────────
+var _chartRoles = null;
+var _chartGradesEff = null;
+function renderEffectifsCharts(){
+  if(typeof Chart === "undefined") return;
+  var isDark = document.body.classList.contains("dark");
+  var textColor = isDark ? "#94a3b8" : "#6b7280";
+  
+  var users = (DB.users||[]).filter(function(u){return u.statut!=="Désactivé";});
+  var palette = ["#dc2626","#b8860b","#0e7490","#c0410e","#1d4ed8","#6b7280"];
+  
+  // Chart rôles
+  var c1 = document.getElementById("chart-roles");
+  if(c1){
+    var roleMap = {};
+    users.forEach(function(u){
+      var r = u.role||"stagiaire";
+      var lb = {admin:"Admin",gerant:"Gérant",cogerant:"Co-Gérant",sergent:"Sergent",officier:"Officier",stagiaire:"Stagiaire",visiteur:"Visiteur"}[r]||r;
+      roleMap[lb]=(roleMap[lb]||0)+1;
+    });
+    var rl = Object.keys(roleMap), rd = rl.map(function(k){return roleMap[k];});
+    if(_chartRoles) _chartRoles.destroy();
+    _chartRoles = new Chart(c1,{type:"bar",data:{labels:rl,datasets:[{data:rd,backgroundColor:palette,borderRadius:6,borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:textColor,font:{size:9}},grid:{display:false}},y:{ticks:{color:textColor,font:{size:9},stepSize:1,precision:0},grid:{color:isDark?"rgba(255,255,255,0.05)":"rgba(0,0,0,0.05)"},beginAtZero:true}}}});
+  }
+  
+  // Chart grades
+  var c2 = document.getElementById("chart-grades-eff");
+  if(c2){
+    var gradeMap = {};
+    users.forEach(function(u){ var g=u.grade||"—"; gradeMap[g]=(gradeMap[g]||0)+1; });
+    var gl = Object.keys(gradeMap).sort(function(a,b){return gradeMap[b]-gradeMap[a];}).slice(0,8);
+    var gd = gl.map(function(k){return gradeMap[k];});
+    if(_chartGradesEff) _chartGradesEff.destroy();
+    _chartGradesEff = new Chart(c2,{type:"doughnut",data:{labels:gl.length?gl:["Aucun"],datasets:[{data:gl.length?gd:[1],backgroundColor:palette,borderWidth:2,borderColor:isDark?"#181a2e":"#fff"}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:"right",labels:{color:textColor,font:{size:10},boxWidth:12,padding:8}},tooltip:{enabled:gl.length>0}},cutout:"55%"}});
+  }
+}
+
+// ─── RÔLES / HIÉRARCHIE ──────────────────────────────────────────
+function rolePriority(r){return{admin:0,gerant:1,cogerant:2,sergent:3,officier:4,stagiaire:5,visiteur:9}[r]||6}
+function roleColor(r){return{admin:"#dc2626",gerant:"#b8860b",cogerant:"#0e7490",sergent:"#c0410e",officier:"#1d4ed8",stagiaire:"#6b7280",visiteur:"#9ca3af"}[r]||"#9ca3af"}
+function roleIcon(r){return{admin:"🔴",gerant:"🏛️",cogerant:"🥈",sergent:"⚔️",officier:"🔵",stagiaire:"🌱",visiteur:"👁"}[r]||"👤"}
+
+function renderHierarchie(){
+  var container = el("hierarchy-container"); if(!container) return;
+  var users = (DB.users||[]).filter(function(u){return u.statut!=="Désactivé";});
+  
+  // Grouper par rôle dans l'ordre
+  var ROLE_ORDER = ["admin","gerant","cogerant","sergent","officier","stagiaire"];
+  var ROLE_LABELS = {admin:"Administrateur",gerant:"Gérant",cogerant:"Co-Gérant",sergent:"Sergent",officier:"Officier",stagiaire:"Stagiaire"};
+  var ROLE_DESC = {
+    admin:"Accès total — gestion technique du système",
+    gerant:"Direction suprême de la Police de Sunagakure",
+    cogerant:"Bras droit du Gérant — administration générale",
+    sergent:"Commandement de terrain — supervision des opérations",
+    officier:"Agent opérationnel — patrouilles et enquêtes",
+    stagiaire:"Nouvelle recrue en formation"
+  };
+  var groups = {};
+  ROLE_ORDER.forEach(function(r){ groups[r] = []; });
+  users.forEach(function(u){
+    var r = u.role||"stagiaire";
+    if(!groups[r]) groups[r] = [];
+    groups[r].push(u);
+  });
+
+  var html = '<div style="max-width:900px;margin:0 auto">';
+
+  // Titre principal
+  html += '<div style="text-align:center;margin-bottom:28px">';
+  html += '<div style="font-family:Cinzel,serif;font-size:13px;letter-spacing:4px;color:var(--gold2);margin-bottom:6px">POLICE DE SUNAGAKURE</div>';
+  html += '<div style="font-size:10px;color:var(--muted);font-family:monospace;letter-spacing:2px">ORGANIGRAMME OFFICIEL \u2014 ' + users.length + ' MEMBRE(S) ACTIF(S)</div>';
+  html += '</div>';
+
+  ROLE_ORDER.forEach(function(role, idx){
+    var members = groups[role]||[];
+    if(!members.length && role !== "gerant" && role !== "cogerant") return;
+    var color = roleColor(role);
+    var icon = roleIcon(role);
+    var label = ROLE_LABELS[role]||role;
+    var desc = ROLE_DESC[role]||"";
+
+    // Ligne de connexion verticale sauf pour le premier
+    if(idx > 0){
+      html += '<div style="display:flex;justify-content:center;margin:0"><div style="width:2px;height:20px;background:linear-gradient(180deg,'+color+',rgba(180,140,20,0.2))"></div></div>';
+    }
+
+    html += '<div style="border:1.5px solid '+color+'33;border-left:4px solid '+color+';border-radius:14px;background:var(--bg2);margin-bottom:4px;box-shadow:var(--card-shadow);overflow:hidden">';
+
+    // Header du grade
+    html += '<div style="padding:14px 18px;background:linear-gradient(90deg,'+color+'12,transparent);display:flex;align-items:center;gap:12px;border-bottom:1px solid '+color+'20">';
+    html += '<div style="width:38px;height:38px;border-radius:10px;background:'+color+'18;border:1.5px solid '+color+'44;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">'+icon+'</div>';
+    html += '<div style="flex:1;min-width:0">';
+    html += '<div style="font-family:Barlow Condensed,sans-serif;font-size:15px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:'+color+'">'+label+'</div>';
+    html += '<div style="font-size:10px;color:var(--muted);font-family:monospace;margin-top:1px">'+esc(desc)+'</div>';
+    html += '</div>';
+    html += '<span style="font-family:monospace;font-size:11px;background:'+color+'15;color:'+color+';padding:3px 10px;border-radius:99px;border:1px solid '+color+'30">'+members.length+' membre'+(members.length!==1?'s':'')+'</span>';
+    html += '</div>';
+
+    if(members.length){
+      html += '<div style="padding:12px 16px;display:flex;flex-wrap:wrap;gap:10px">';
+      members.forEach(function(u){
+        var initials = (u.nom||"?").charAt(0).toUpperCase();
+        var photoHtml = (u.photo && typeof safeImgSrc==="function" && safeImgSrc(u.photo))
+          ? '<div style="width:38px;height:38px;border-radius:50%;overflow:hidden;flex-shrink:0;border:2px solid '+color+'33"><img src="'+safeImgSrc(u.photo)+'" style="width:100%;height:100%;object-fit:cover"></div>'
+          : '<div style="width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,'+color+','+color+'88);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#fff;flex-shrink:0">'+initials+'</div>';
+        html += '<div style="display:flex;align-items:center;gap:9px;padding:9px 13px;background:var(--bg3);border:1px solid rgba(180,140,20,0.1);border-radius:10px;min-width:160px;flex:1;max-width:280px;cursor:pointer;transition:all 0.18s" onclick="showPage(\'effectifs\')" title="Voir dans Effectifs">';
+        html += photoHtml;
+        html += '<div style="flex:1;min-width:0">';
+        html += '<div style="font-weight:600;font-size:12.5px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+esc(u.nom||u.login)+'</div>';
+        html += '<div style="font-size:9.5px;color:var(--muted);font-family:monospace">'+esc(u.grade||label)+'</div>';
+        html += '</div>';
+        html += '<div style="width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 5px rgba(21,128,61,0.5);flex-shrink:0" title="Actif"></div>';
+        html += '</div>';
+      });
+      html += '</div>';
+    } else {
+      html += '<div style="padding:14px 18px;font-size:12px;color:var(--muted);font-style:italic">Poste vacant</div>';
+    }
+    html += '</div>';
+  });
+
+  html += '</div>';
+  container.innerHTML = html;
+}
+
+function canModify(){return currentUser&&(currentUser.role==="admin"||currentUser.role==="gerant"||currentUser.role==="cogerant"||currentUser.role==="sergent"||currentUser.role==="officier")}
 function isAdmin(){return currentUser&&currentUser.role==="admin"}
 function openModal(id){el(id).classList.add("open")}
 function closeModal(id){
@@ -4596,8 +4825,8 @@ function statutCand(s){return{en_attente:"badge-blue",acceptee:"badge-green",ref
 function fmtCand(s){return{en_attente:"En attente",acceptee:"Acceptée",refusee:"Refusée"}[s]||s}
 function dangerBadge(d){return{Faible:"badge-green",Modéré:"badge-blue",Élevé:"badge-gold",Extrême:"badge-red"}[d]||"badge-gray"}
 function dossierStatutBadge(s){return{Recherché:"badge-red","En garde à vue":"badge-gold",Incarcéré:"badge-blue",Libéré:"badge-gray",Surveillé:"badge-gold"}[s]||"badge-gray"}
-function roleBadge(r){return{admin:"badge-red",officier:"badge-gold",gerant:"badge-gold",cogerant:"badge-cyan",sergent:"badge-orange",membre:"badge-blue",stagiaire:"badge-gray"}[r]||"badge-gray"}
-function roleLabel(r){return{admin:"🔴 Admin",officier:"Officier",gerant:"Gérant",cogerant:"Co-Gérant",sergent:"Sergent",membre:"Membre",stagiaire:"Stagiaire",visiteur:"👁 Visiteur"}[r]||r}
+function roleBadge(r){return{admin:"badge-red",gerant:"badge-gold",cogerant:"badge-cyan",sergent:"badge-orange",officier:"badge-blue",stagiaire:"badge-gray",visiteur:"badge-gray"}[r]||"badge-gray"}
+function roleLabel(r){return{admin:"🔴 Admin",gerant:"🏛️ Gérant",cogerant:"🥈 Co-Gérant",sergent:"⚔️ Sergent",officier:"🔵 Officier",stagiaire:"🌱 Stagiaire",visiteur:"👁 Visiteur"}[r]||r}
 
 // PASTE GLOBAL : Ctrl+V pour photo dossier quand modale ouverte
 document.addEventListener("paste", function(e){
@@ -4912,6 +5141,9 @@ window.addEventListener("load",()=>{
   </div>
   <div class="drawer-item" id="ditem-effectifs" data-admin-only="true" style="display:none">
     <span class="d-icon">👮</span> Effectifs
+  </div>
+  <div class="drawer-item" id="ditem-hierarchie" data-member-only="true" onclick="closeMoreDrawer();showPage('hierarchie')">
+    <span class="d-icon">🏛️</span> Hiérarchie
   </div>
   <div class="drawer-item" id="ditem-sanctions" data-admin-only="true" style="display:none">
     <span class="d-icon">⚖️</span> Sanctions / Promo
@@ -7402,6 +7634,15 @@ function doChangePass(){
     });
   });
 }
+
+
+// ─── CONFIRMATION DÉCONNEXION ─────────────────────────────────
+var _origDoLogout = window.doLogout;
+window.doLogout = function(){
+  askDelete("Se déconnecter de l'intranet Police Sunagakure ?", function(){
+    if(typeof _origDoLogout === 'function') _origDoLogout();
+  }, "🚪 Se déconnecter");
+};
 
 /* ─── 7. NOTIFICATIONS TEMPS RÉEL — toast auto ──────────────────── */
 var _prevCounts={plaintes:0,annonces:0,operations:0,recenses:0};
