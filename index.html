@@ -1469,7 +1469,7 @@ document.addEventListener('DOMContentLoaded',function(){if(localStorage.getItem(
     <div class="nav-item" onclick="showPage('sanctions')" data-page="sanctions" data-admin-only="true" style="display:none"><span class="icon">⚖️</span> Sanctions / Promo</div>
     <div class="nav-section" data-member-only="true">Administration</div>
     <div class="nav-item" id="nav-admin" onclick="showPage('admin')" style="display:none"><span class="icon">⚙️</span> Panel Admin</div>
-    <div class="nav-item" onclick="showPage('profil')" data-page="profil" data-member-only="true"><span class="icon">👤</span> Mon profil</div>
+    <div class="nav-item" onclick="showPage('profil')" data-page="profil"><span class="icon">👤</span> Mon profil</div>
   </nav>
   <div class="sidebar-footer">
     <div class="user-pill">
@@ -2745,18 +2745,27 @@ function saveData(){
   if(window._fbDB&&window._fbRef&&window._fbSet){
     clearTimeout(_fbSaveTimeout);
     _fbIsSaving=true; // Bloquer le listener pendant la sauvegarde
+    window._fbSavingStartTime=Date.now(); // Horodatage pour déblocage d'urgence
+    // Sécurité absolue : jamais bloqué plus de 10s
+    clearTimeout(window._fbSavingSafetyTimer);
+    window._fbSavingSafetyTimer=setTimeout(()=>{_fbIsSaving=false;window._fbSavingStartTime=0;},10000);
     // Sauvegarder immédiatement en localStorage
     try{localStorage.setItem(STORE,JSON.stringify(DB))}catch(e){}
     _fbSaveTimeout=setTimeout(()=>{
       const r=window._fbRef(window._fbDB,"sunagakure");
+      // Sécurité : remettre _fbIsSaving à false après 5s max quoi qu'il arrive
+      const _saveSafetyTimer=setTimeout(()=>{_fbIsSaving=false;},5000);
       window._fbSet(r,JSON.parse(JSON.stringify(DB))).then(()=>{
-        // Laisser le flag actif encore 1s après la save pour absorber l'écho Firebase
-        setTimeout(()=>{_fbIsSaving=false},2000);
+        clearTimeout(_saveSafetyTimer);
+        // Flag down après 800ms (absorber l'écho) — bien moins que les 2s du listener
+        setTimeout(()=>{_fbIsSaving=false;window._fbSavingStartTime=0;},800);
       }).catch(err=>{
+        clearTimeout(_saveSafetyTimer);
         console.warn("Firebase save error:",err);
         _fbIsSaving=false;
+        window._fbSavingStartTime=0;
       });
-    },400);
+    },150);
   } else {
     // Fallback si Firebase pas encore prêt
     try{localStorage.setItem(STORE,JSON.stringify(DB))}catch(e){}
@@ -2769,8 +2778,35 @@ function initFirebaseSync(){
   if(!window._fbDB||!window._fbRef||!window._fbOnValue)return;
   const r=window._fbRef(window._fbDB,"sunagakure");
   window._fbOnValue(r,(snapshot)=>{
-    // Bloquer uniquement les échos de sauvegarde, PAS le premier chargement initial
-    if(_fbIsSaving&&!_fbFirstLoad)return;
+    // Bloquer uniquement les échos IMMÉDIATS de notre propre sauvegarde (<2s)
+    // JAMAIS bloquer si les données Firebase sont plus récentes que notre dernière save
+    if(_fbIsSaving&&!_fbFirstLoad){
+      const msSinceSave=window._fbSavingStartTime?(Date.now()-window._fbSavingStartTime):9999;
+      // Après 2s, on laisse toujours passer — les données viennent d'un autre utilisateur
+      if(msSinceSave>2000){
+        _fbIsSaving=false;
+      } else {
+        // Dans la fenêtre de 2s : vérifier si les données contiennent des entrées plus récentes
+        // (ex: nouvelle plainte d'un autre user pendant qu'on sauvegardait)
+        try{
+          const incoming=snapshot.val();
+          if(incoming){
+            const incomingUsers=(incoming.users||[]).length;
+            const incomingPlaintes=(incoming.plaintes||[]).length;
+            const incomingAnnonces=(incoming.annonces||[]).length;
+            const localUsers=(DB.users||[]).length;
+            const localPlaintes=(DB.plaintes||[]).length;
+            const localAnnonces=(DB.annonces||[]).length;
+            // Si Firebase a plus d'entrées que nous → c'est un autre user, laisser passer
+            if(incomingUsers>localUsers||incomingPlaintes>localPlaintes||incomingAnnonces>localAnnonces){
+              _fbIsSaving=false; // laisser passer
+            } else {
+              return; // c'est notre propre écho, ignorer
+            }
+          }
+        }catch(e){ return; }
+      }
+    }
     const wasFirst=_fbFirstLoad;
     _fbFirstLoad=false;
     const data=snapshot.val();
@@ -2838,12 +2874,13 @@ function initFirebaseSync(){
           } else {
             // Utilisateur désactivé ou supprimé → déconnexion forcée
             localStorage.removeItem("suna_session");
-            doLogout();
+            forceLogout();
             return;
           }
           refreshAll();
           updateBadges();
           syncBottomNavBadges();
+          updateMsgBadge();
           const activePage=document.querySelector(".page-content.active");
           if(activePage){const name=activePage.id.replace("page-","");renderPage(name);}
         }
@@ -2879,6 +2916,10 @@ function initFirebaseSync(){
         const fl=document.getElementById('firebase-loading');if(fl)fl.remove();
         updateLoginStats();
         if(!checkRememberMe())el("login-screen").style.display="flex";
+      }
+      // Mise à jour non-initiale sans user connecté → refresh stats login
+      if(!wasFirst&&!currentUser){
+        updateLoginStats();
       }
     }
   });
@@ -3071,7 +3112,7 @@ function emergencyReset(){
             window._fbSet(r,JSON.parse(JSON.stringify(DB)));
           }
           saveData();
-          doLogout();
+          forceLogout();
           el("login-user").value="admin";
           showToast("Données réinitialisées. Connectez-vous avec vos identifiants.","success");
         });
@@ -3167,7 +3208,7 @@ function saveCommNameAdmin(){
 
 // NAV
 const PAGES={dashboard:"Tableau de bord",annonces:"Annonces",recensement:"Recensement",recrutement:"Recrutement",plaintes:"Plaintes",dossiers:"Dossiers criminels",codepenal:"Code Pénal",operations:"Opérations",effectifs:"Effectifs",hierarchie:"Hiérarchie",sanctions:"Sanctions & Promotions",admin:"Panel Admin",messagerie:"Messagerie",profil:"Mon profil"};
-const VISITOR_PAGES=["dashboard","annonces","recensement","recrutement","plaintes","codepenal"];
+const VISITOR_PAGES=["dashboard","annonces","recensement","recrutement","plaintes","codepenal","profil"];
 
 // Mapping page → bnav-item id (pour les 4 onglets directs de la barre)
 const BNAV_MAP={dashboard:"bnav-dashboard",annonces:"bnav-annonces",recensement:"bnav-recensement",plaintes:"bnav-plaintes"};
@@ -3183,7 +3224,7 @@ function showPage(name){
     return;
   }
   // Pages membres (opérations, effectifs, sanctions) — interdites aux visiteurs
-  const MEMBER_ONLY_PAGES=["operations","effectifs","hierarchie","sanctions","messagerie","profil"];
+  const MEMBER_ONLY_PAGES=["operations","effectifs","hierarchie","sanctions","messagerie"];
   if(MEMBER_ONLY_PAGES.includes(name)&&isVisiteur()){
     showToast("Accès réservé aux membres de la Police.","error");
     return;
@@ -3268,12 +3309,10 @@ function refreshAll(){
   updateStats();
   refreshSidebarAvatar();
   const activePage=document.querySelector(".page-content.active");
-  if(activePage&&activePage.id==="page-dashboard"){renderDashboard();}
-  else{renderTimeline();}
-  if(activePage&&activePage.id==="page-admin"){renderAdmin();}
-  if(activePage&&activePage.id==="page-operations"){renderOperations();}
-  if(activePage&&activePage.id==="page-effectifs"){renderEffectifs();}
-  if(activePage&&activePage.id==="page-sanctions"){renderSanctions();}
+  if(!activePage)return;
+  const name=activePage.id.replace("page-","");
+  // Re-render la page active quelle qu'elle soit
+  renderPage(name);
 }
 // Appelé après chaque modification de données pour mettre à jour le dashboard en temps réel
 function syncDashboard(){updateStats();updateBadges();syncBottomNavBadges();const a=document.querySelector(".page-content.active");if(a&&a.id==="page-dashboard")renderDashboard();}
@@ -3712,7 +3751,7 @@ function setCandidature(id,statut){
       const userId=Date.now();
       const userLogin="recrue_"+userId;
       hashPass("recrue123").then(h=>{
-        DB.users.push({id:userId,login:userLogin,pass:h,nom:c.nom,grade:c.grade||"Stagiaire",role:"membre",statut:"Actif",photo:"",created:now()});
+        DB.users.push({id:userId,login:userLogin,pass:h,nom:c.nom,grade:c.grade||"Stagiaire",role:"stagiaire",statut:"Actif",photo:"",created:now()});
         addTimeline(`Candidature de ${c.nom} : acceptée ✅ par ${currentUser.nom}`);
         saveData();renderCandidatures();renderRecrues();renderEffectifs();syncDashboard();
       });
@@ -4252,7 +4291,7 @@ function uploadMemberPhoto(userId,input){
     if(currentUser&&currentUser.id===userId){currentUser.photo=e.target.result;refreshSidebarAvatar();}
     saveData();renderEffectifs();
     const c=DB.candidatures.find(x=>x.authorId===userId||x.nom===u.nom);
-    if(c){c.photo=e.target.result;saveData();renderRecrues();}
+    if(c){c.photo=e.target.result;renderRecrues();}
   };
   reader.readAsDataURL(file);
 }
@@ -4451,7 +4490,7 @@ function saveEditUser(){
     const c=DB.candidatures.find(x=>x.authorId===id||x.nom===oldNom);if(c)c.grade=u.grade;
     if(currentUser.id===id){currentUser=u;el("user-name-display").textContent=u.nom;el("user-rank-display").textContent=roleLabel(u.role)+" · "+u.grade;refreshSidebarAvatar();}
     addTimeline(`Compte de ${u.nom} modifié par ${currentUser.nom}`);
-    saveData();closeModal("modal-edituser");renderAdmin();renderEffectifs();renderRecrues();
+    saveData();closeModal("modal-edituser");renderAdmin();renderEffectifs();renderRecrues();syncDashboard();
     showToast("Compte mis à jour.","success");
   };
   if(newPass){
@@ -4590,7 +4629,10 @@ function toggleUser(id){
     const activeAdmins=DB.users.filter(x=>x.role==="admin"&&x.statut==="Actif");
     if(activeAdmins.length<=1){showToast("Impossible : vous ne pouvez pas désactiver le dernier administrateur actif.","error");return;}
   }
-  u.statut=u.statut==="Actif"?"Désactivé":"Actif";saveData();renderAdmin();syncDashboard();
+  var oldStatut=u.statut;
+u.statut=u.statut==="Actif"?"Désactivé":"Actif";
+addTimeline(`${u.nom} : compte ${u.statut==="Actif"?"réactivé":"désactivé"} par ${currentUser?currentUser.nom:"admin"}`);
+saveData();renderAdmin();syncDashboard();
 }
 
 // CODE PÉNAL
@@ -7419,13 +7461,13 @@ function sendMsg(){
   var msg = {id:msgId,senderId:currentUser.id,senderNom:currentUser.nom,text:text,ts:msgId,read:false};
   DB.messages[key][msgId] = msg;
   inp.value='';
-  // Save to Firebase directly for real-time
+  // Save to Firebase directly for real-time + localStorage backup
   if(window._fbDB&&window._fbRef&&window._fbSet){
     var fbRef = window._fbRef(window._fbDB,'sunagakure/messages/'+key+'/'+msgId);
     window._fbSet(fbRef, msg);
-  } else {
-    saveData();
   }
+  // Toujours sauvegarder en localStorage (backup hors-ligne)
+  try{localStorage.setItem('suna_v4', JSON.stringify(DB));}catch(e){}
   renderMsgThread();
   updateMsgBadge();
 }
@@ -7636,9 +7678,17 @@ function doChangePass(){
 }
 
 
-// ─── CONFIRMATION DÉCONNEXION ─────────────────────────────────
+// ─── CONFIRMATION DÉCONNEXION ─────────────────────────────
 var _origDoLogout = window.doLogout;
-window.doLogout = function(){
+// forceLogout : déconnexion sans confirmation (Firebase, session expirée, compte désactivé)
+window.forceLogout = function(){
+  if(typeof _origDoLogout === 'function') _origDoLogout();
+};
+window.doLogout = function(force){
+  if(force){
+    if(typeof _origDoLogout === 'function') _origDoLogout();
+    return;
+  }
   askDelete("Se déconnecter de l'intranet Police Sunagakure ?", function(){
     if(typeof _origDoLogout === 'function') _origDoLogout();
   }, "🚪 Se déconnecter");
