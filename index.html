@@ -1256,6 +1256,91 @@ textarea.form-control{resize:vertical;min-height:80px}
   #page-recensement .grid-3{grid-template-columns:1fr !important}
   #effectifs-grid{grid-template-columns:1fr !important}
 }
+
+/* ===== MESSAGERIE ===== */
+.msg-thread{display:flex;flex-direction:column;gap:10px;padding:16px}
+.msg-bubble{max-width:70%;padding:10px 14px;border-radius:16px;font-size:13px;line-height:1.6;position:relative}
+.msg-bubble.mine{align-self:flex-end;background:linear-gradient(135deg,var(--accent),#8a2c08);color:#fff;border-bottom-right-radius:4px}
+.msg-bubble.theirs{align-self:flex-start;background:var(--bg2);border:1px solid rgba(180,140,20,0.15);color:var(--text);border-bottom-left-radius:4px}
+.msg-meta{font-size:9.5px;opacity:0.6;margin-top:4px;font-family:'Share Tech Mono',monospace}
+.msg-input-row{display:flex;gap:8px;padding:12px 16px;border-top:1px solid rgba(180,140,20,0.12);background:rgba(255,255,255,0.6);backdrop-filter:blur(8px);position:sticky;bottom:0}
+.msg-contact{display:flex;align-items:center;gap:10px;padding:11px 16px;cursor:pointer;border-bottom:1px solid rgba(180,140,20,0.08);transition:background 0.15s}
+.msg-contact:hover{background:rgba(180,140,20,0.05)}
+.msg-contact.active{background:rgba(192,65,14,0.08);border-left:3px solid var(--accent)}
+.msg-contact-name{font-weight:600;font-size:13px;color:var(--text)}
+.msg-contact-preview{font-size:10.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:160px}
+.msg-contact-avatar{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;flex-shrink:0;background:linear-gradient(135deg,var(--accent),#8a2c08);color:#fff}
+.msg-unread-dot{width:8px;height:8px;border-radius:50%;background:var(--accent);flex-shrink:0;margin-left:auto}
+#page-messagerie .msg-layout{display:grid;grid-template-columns:260px 1fr;height:calc(100vh - 56px - 48px);overflow:hidden;gap:0}
+#page-messagerie .msg-sidebar{border-right:1px solid rgba(180,140,20,0.12);overflow-y:auto;background:var(--bg2)}
+#page-messagerie .msg-main{display:flex;flex-direction:column;overflow:hidden}
+#page-messagerie .msg-thread-wrap{flex:1;overflow-y:auto}
+@media(max-width:768px){
+  #page-messagerie .msg-layout{grid-template-columns:1fr;height:auto}
+  #page-messagerie .msg-sidebar{height:200px;border-right:none;border-bottom:1px solid rgba(180,140,20,0.12)}
+  .msg-bubble{max-width:85%}
+}
+
+/* ===== PROFIL ===== */
+.profile-hero{background:linear-gradient(135deg,rgba(192,65,14,0.12),rgba(180,140,20,0.08));border:1px solid rgba(180,140,20,0.2);border-radius:18px;padding:28px 24px;display:flex;align-items:center;gap:20px;margin-bottom:20px}
+.profile-hero-avatar{width:80px;height:80px;border-radius:50%;background:linear-gradient(135deg,var(--accent),#8a2c08);display:flex;align-items:center;justify-content:center;font-size:30px;font-weight:700;color:#fff;flex-shrink:0;border:3px solid rgba(180,140,20,0.4);box-shadow:0 4px 20px rgba(0,0,0,0.15)}
+.profile-stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
+@media(max-width:768px){.profile-stat-grid{grid-template-columns:repeat(2,1fr)}}
+.profile-stat-item{background:var(--bg2);border:1px solid rgba(180,140,20,0.12);border-radius:12px;padding:16px;text-align:center}
+.profile-stat-val{font-family:'Barlow Condensed',sans-serif;font-size:32px;font-weight:900;color:var(--text);line-height:1}
+.profile-stat-label{font-size:9.5px;color:var(--muted);letter-spacing:1.5px;text-transform:uppercase;font-family:'Share Tech Mono',monospace;margin-top:4px}
+
+/* ===== CALENDRIER OPÉRATIONS ===== */
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px}
+.cal-header{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;margin-bottom:4px}
+.cal-day-name{text-align:center;font-size:9px;font-family:'Share Tech Mono',monospace;color:var(--muted);letter-spacing:1px;padding:4px}
+.cal-cell{min-height:72px;background:var(--bg2);border:1px solid rgba(180,140,20,0.1);border-radius:8px;padding:5px;font-size:10.5px}
+.cal-cell.today{border-color:rgba(180,140,20,0.5);background:rgba(180,140,20,0.04)}
+.cal-cell.other-month{opacity:0.4}
+.cal-date{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--muted);margin-bottom:3px;font-weight:600}
+.cal-date.today-num{color:var(--accent);font-weight:800}
+.cal-event{font-size:9px;padding:2px 5px;border-radius:4px;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer}
+.cal-event.active{background:rgba(21,128,61,0.15);color:#166534;border-left:2px solid var(--green)}
+.cal-event.planifiee{background:rgba(29,78,216,0.12);color:#1e3a8a;border-left:2px solid var(--blue)}
+.cal-event.terminee{background:rgba(107,114,128,0.1);color:#4b5563;border-left:2px solid #9ca3af}
+@media(max-width:768px){
+  .cal-cell{min-height:52px;padding:3px}
+  .cal-event{display:none}
+  .cal-cell:has(.cal-event){box-shadow:inset 0 0 0 2px rgba(192,65,14,0.3)}
+}
+
+/* ===== CHARTS ===== */
+.chart-card{background:var(--bg2);border:1px solid rgba(180,140,20,0.12);border-radius:16px;padding:18px;box-shadow:var(--card-shadow)}
+.chart-title{font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--gold2);margin-bottom:14px}
+
+/* ===== EXPORT BUTTONS ===== */
+.btn-export{background:rgba(21,128,61,0.08);color:var(--green);border:1px solid rgba(21,128,61,0.25)}
+.btn-export:hover{background:var(--green);color:#fff}
+
+/* ===== PRINT CSS ===== */
+@media print{
+  #sidebar,#login-screen,.topbar,#bottom-nav,#more-drawer,.btn,.modal-overlay,#gs-overlay,
+  #toast-container,.modal-overlay{display:none!important}
+  #main{margin-left:0!important}
+  .page-content{display:block!important;padding:0!important}
+  .page-content:not(.active){display:none!important}
+  body{background:#fff!important;color:#000!important}
+  .card,.stat-card,.recense-card,.annonce-item{box-shadow:none!important;border:1px solid #ddd!important;break-inside:avoid}
+  .section-title{font-size:18px!important}
+  @page{margin:1.5cm}
+}
+
+/* Dark mode chart / messagerie */
+body.dark .chart-card{background:var(--bg2)!important;border-color:rgba(180,140,20,0.12)!important}
+body.dark .msg-contact{border-bottom-color:rgba(255,255,255,0.05)!important}
+body.dark .msg-contact:hover{background:rgba(255,255,255,0.04)!important}
+body.dark .msg-contact.active{background:rgba(192,65,14,0.12)!important}
+body.dark .msg-bubble.theirs{background:var(--bg3)!important;border-color:rgba(180,140,20,0.15)!important}
+body.dark .msg-input-row{background:rgba(18,20,36,0.9)!important;border-top-color:rgba(180,140,20,0.12)!important}
+body.dark #page-messagerie .msg-sidebar{background:var(--bg2)!important;border-color:rgba(180,140,20,0.12)!important}
+body.dark .cal-cell{background:var(--bg2)!important;border-color:rgba(180,140,20,0.08)!important}
+body.dark .profile-stat-item{background:var(--bg2)!important;border-color:rgba(180,140,20,0.12)!important}
+body.dark .profile-hero{background:linear-gradient(135deg,rgba(192,65,14,0.1),rgba(180,140,20,0.06))!important}
 </style>
 </head>
 <body>
@@ -1360,12 +1445,14 @@ document.addEventListener('DOMContentLoaded',function(){if(localStorage.getItem(
     <div class="nav-item" onclick="showPage('plaintes')" data-page="plaintes"><span class="icon">📋</span> Plaintes <span class="nav-badge" id="badge-plaintes">0</span></div>
     <div class="nav-item" onclick="showPage('dossiers')" data-page="dossiers" data-member-only="true"><span class="icon">🗂️</span> Dossiers criminels <span class="nav-badge" id="badge-dossiers" style="background:var(--purple);display:none">0</span></div>
     <div class="nav-item" onclick="showPage('codepenal')" data-page="codepenal"><span class="icon">📜</span> Code Pénal</div>
+    <div class="nav-item" onclick="showPage('messagerie')" data-page="messagerie" data-member-only="true"><span class="icon">💬</span> Messagerie <span class="nav-badge" id="badge-messagerie" style="background:var(--cyan);display:none">0</span></div>
     <div class="nav-section" data-admin-only="true" style="display:none">Opérations</div>
     <div class="nav-item" onclick="showPage('operations')" data-page="operations" data-admin-only="true" style="display:none"><span class="icon">🚨</span> Opérations <span class="nav-badge" id="badge-operations" style="background:var(--accent);display:none">0</span></div>
     <div class="nav-item" onclick="showPage('effectifs')" data-page="effectifs" data-admin-only="true" style="display:none"><span class="icon">👮</span> Effectifs</div>
     <div class="nav-item" onclick="showPage('sanctions')" data-page="sanctions" data-admin-only="true" style="display:none"><span class="icon">⚖️</span> Sanctions / Promo</div>
     <div class="nav-section" data-member-only="true">Administration</div>
     <div class="nav-item" id="nav-admin" onclick="showPage('admin')" style="display:none"><span class="icon">⚙️</span> Panel Admin</div>
+    <div class="nav-item" onclick="showPage('profil')" data-page="profil" data-member-only="true"><span class="icon">👤</span> Mon profil</div>
   </nav>
   <div class="sidebar-footer">
     <div class="user-pill">
@@ -1420,6 +1507,17 @@ document.addEventListener('DOMContentLoaded',function(){if(localStorage.getItem(
       <div class="card-header"><span>📅</span><h3>Journal d'activité</h3></div>
       <div class="card-body"><div class="timeline" id="timeline"></div></div>
     </div>
+    <!-- GRAPHIQUES DASHBOARD -->
+    <div class="grid grid-2 mt-6" id="dash-charts-row">
+      <div class="chart-card">
+        <div class="chart-title">📈 Plaintes (30 derniers jours)</div>
+        <canvas id="chart-plaintes" height="160"></canvas>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">🏘️ Recensement par faction</div>
+        <canvas id="chart-factions" height="160"></canvas>
+      </div>
+    </div>
   </div>
 
   <!-- ANNONCES -->
@@ -1472,7 +1570,10 @@ document.addEventListener('DOMContentLoaded',function(){if(localStorage.getItem(
   <div class="page-content" id="page-recensement">
     <div class="section-header">
       <div><div class="section-title">Recensement</div><div class="section-sub">REGISTRE DES HABITANTS, FACTIONS & MAÎTRISES</div></div>
-      <button class="btn btn-purple" id="btn-recenser" onclick="removeRecensePhoto();openModal('modal-recense')">+ Recenser un joueur</button>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn btn-export" onclick="exportCSV('recensement')">⬇️ Export CSV</button>
+        <button class="btn btn-purple" id="btn-recenser" onclick="removeRecensePhoto();openModal('modal-recense')">+ Recenser un joueur</button>
+      </div>
     </div>
     <div class="card mb-4">
       <div class="card-body flex gap-3 flex-wrap" style="align-items:center">
@@ -1520,7 +1621,10 @@ document.addEventListener('DOMContentLoaded',function(){if(localStorage.getItem(
   <div class="page-content" id="page-plaintes">
     <div class="section-header">
       <div><div class="section-title">Plaintes civiles</div><div class="section-sub">DÉPÔT ET SUIVI</div></div>
-      <button class="btn btn-primary" onclick="clearForm(['p-plaignant','p-accuse','p-desc','p-date']);openModal('modal-plainte')">+ Déposer une plainte</button>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn btn-export" onclick="exportCSV('plaintes')">⬇️ Export CSV</button>
+        <button class="btn btn-primary" onclick="clearForm(['p-plaignant','p-accuse','p-desc','p-date']);openModal('modal-plainte')">+ Déposer une plainte</button>
+      </div>
     </div>
     <div class="tab-row">
       <div class="tab-btn active" onclick="filterPlaintes('all',this)">Toutes</div>
@@ -1542,7 +1646,10 @@ document.addEventListener('DOMContentLoaded',function(){if(localStorage.getItem(
   <div class="page-content" id="page-dossiers">
     <div class="section-header">
       <div><div class="section-title">Dossiers criminels</div><div class="section-sub">BASE DE DONNÉES JUDICIAIRE</div></div>
-      <button class="btn btn-primary" id="btn-new-dossier" onclick="clearDossierPhoto();openModal('modal-dossier')" style="display:none">+ Nouveau dossier</button>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn btn-export" onclick="exportCSV('dossiers')">⬇️ Export CSV</button>
+        <button class="btn btn-primary" id="btn-new-dossier" onclick="clearDossierPhoto();openModal('modal-dossier')" style="display:none">+ Nouveau dossier</button>
+      </div>
     </div>
     <div class="card mb-4"><div class="card-body">
       <input type="text" id="search-dossier" class="form-control" placeholder="🔍  Nom, infraction..." oninput="renderDossiers()" style="max-width:320px">
@@ -1615,7 +1722,13 @@ document.addEventListener('DOMContentLoaded',function(){if(localStorage.getItem(
   <div class="page-content" id="page-operations">
     <div class="section-header">
       <div><div class="section-title">Opérations</div><div class="section-sub">MISSIONS & DÉPLOIEMENTS</div></div>
-      <button class="btn btn-primary" id="btn-new-operation" onclick="clearForm(['op-nom','op-resp','op-desc','op-date']);openModal('modal-operation')" style="display:none">+ Nouvelle opération</button>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+        <div class="tab-row" style="margin-bottom:0;min-width:0">
+          <div class="tab-btn active" id="op-view-list" onclick="switchOpView('list',this)">📋 Liste</div>
+          <div class="tab-btn" id="op-view-cal" onclick="switchOpView('cal',this)">📅 Calendrier</div>
+        </div>
+        <button class="btn btn-primary" id="btn-new-operation" onclick="clearForm(['op-nom','op-resp','op-desc','op-date']);openModal('modal-operation')" style="display:none">+ Nouvelle opération</button>
+      </div>
     </div>
     <!-- Stats opérations -->
     <div class="grid grid-4" style="margin-bottom:16px">
@@ -1653,9 +1766,87 @@ document.addEventListener('DOMContentLoaded',function(){if(localStorage.getItem(
       </div>
     </div>
     <div class="grid grid-3" id="operations-grid"></div>
+    <!-- Vue calendrier opérations -->
+    <div id="operations-calendar" style="display:none">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+        <button class="btn btn-outline btn-sm" onclick="calNav(-1)">← Mois préc.</button>
+        <div style="font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:700;letter-spacing:1px;color:var(--gold2)" id="cal-month-label"></div>
+        <button class="btn btn-outline btn-sm" onclick="calNav(1)">Mois suiv. →</button>
+      </div>
+      <div class="cal-header">
+        <div class="cal-day-name">LUN</div><div class="cal-day-name">MAR</div><div class="cal-day-name">MER</div>
+        <div class="cal-day-name">JEU</div><div class="cal-day-name">VEN</div><div class="cal-day-name">SAM</div><div class="cal-day-name">DIM</div>
+      </div>
+      <div class="cal-grid" id="cal-cells"></div>
+    </div>
   </div>
 
-  <!-- EFFECTIFS -->
+  <!-- MESSAGERIE -->
+  <div class="page-content" id="page-messagerie">
+    <div class="section-header">
+      <div><div class="section-title">Messagerie interne</div><div class="section-sub">COMMUNICATIONS ENTRE MEMBRES</div></div>
+      <button class="btn btn-primary" onclick="openModal('modal-new-msg')">✉️ Nouveau message</button>
+    </div>
+    <div class="msg-layout card" style="padding:0;overflow:hidden">
+      <div class="msg-sidebar" id="msg-contacts-list">
+        <div style="padding:12px 14px;border-bottom:1px solid rgba(180,140,20,0.1)">
+          <input type="text" class="form-control" placeholder="🔍 Chercher un contact..." id="msg-search" oninput="renderMsgContacts()" style="margin:0;font-size:12px;padding:7px 10px">
+        </div>
+        <div id="msg-contacts-inner"></div>
+      </div>
+      <div class="msg-main">
+        <div id="msg-header" style="padding:12px 16px;border-bottom:1px solid rgba(180,140,20,0.1);display:flex;align-items:center;gap:10px;background:rgba(255,255,255,0.7)">
+          <div style="font-size:20px">💬</div>
+          <div>
+            <div id="msg-header-name" style="font-weight:700;font-size:14px;color:var(--text)">Sélectionnez un contact</div>
+            <div id="msg-header-grade" style="font-size:10px;color:var(--muted);font-family:'Share Tech Mono',monospace"></div>
+          </div>
+        </div>
+        <div class="msg-thread-wrap" id="msg-thread"><div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--muted);font-size:13px;padding:40px">Sélectionnez un contact pour voir la conversation.</div></div>
+        <div class="msg-input-row" id="msg-input-row" style="display:none">
+          <textarea id="msg-text" class="form-control" placeholder="Écrire un message..." rows="1" style="resize:none;min-height:38px;padding:8px 12px" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendMsg()}"></textarea>
+          <button class="btn btn-primary" onclick="sendMsg()" style="flex-shrink:0;padding:8px 14px">Envoyer</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PROFIL -->
+  <div class="page-content" id="page-profil">
+    <div class="section-header">
+      <div><div class="section-title">Mon profil</div><div class="section-sub">INFORMATIONS PERSONNELLES & STATISTIQUES</div></div>
+      <button class="btn btn-gold" onclick="openModal('modal-change-pass')">🔒 Changer mot de passe</button>
+    </div>
+    <div class="profile-hero" id="profil-hero">
+      <div class="profile-hero-avatar" id="profil-avatar">?</div>
+      <div style="flex:1;min-width:0">
+        <div style="font-family:'Cinzel',serif;font-size:22px;font-weight:700;color:var(--text)" id="profil-name">—</div>
+        <div style="font-size:11px;color:var(--gold2);font-family:'Share Tech Mono',monospace;letter-spacing:1.5px;margin-top:3px" id="profil-grade">—</div>
+        <div style="font-size:11px;color:var(--muted);font-family:'Share Tech Mono',monospace;margin-top:2px" id="profil-login">—</div>
+      </div>
+      <div id="profil-role-badge"></div>
+    </div>
+    <div class="profile-stat-grid" id="profil-stats-grid">
+      <div class="profile-stat-item"><div class="profile-stat-val" id="ps-plaintes">0</div><div class="profile-stat-label">Plaintes déposées</div></div>
+      <div class="profile-stat-item"><div class="profile-stat-val" id="ps-dossiers">0</div><div class="profile-stat-label">Dossiers ouverts</div></div>
+      <div class="profile-stat-item"><div class="profile-stat-val" id="ps-operations">0</div><div class="profile-stat-label">Opérations menées</div></div>
+      <div class="profile-stat-item"><div class="profile-stat-val" id="ps-sanctions">0</div><div class="profile-stat-label">Sanctions / Promos</div></div>
+    </div>
+    <div class="grid grid-2">
+      <div class="card">
+        <div class="card-header"><span>📋</span><h3>Mes dernières plaintes</h3></div>
+        <div class="card-body" id="profil-plaintes-list" style="padding:14px"></div>
+      </div>
+      <div class="card">
+        <div class="card-header"><span>📅</span><h3>Mon activité récente</h3></div>
+        <div class="card-body" id="profil-timeline" style="padding:14px"></div>
+      </div>
+    </div>
+    <div class="card mt-6">
+      <div class="card-header"><span>⚖️</span><h3>Mes sanctions & promotions</h3></div>
+      <div class="card-body" id="profil-sanctions-list" style="padding:14px"></div>
+    </div>
+  </div>
   <div class="page-content" id="page-effectifs">
     <div class="section-header">
       <div>
@@ -2467,7 +2658,7 @@ document.addEventListener('DOMContentLoaded',function(){if(localStorage.getItem(
 <!-- Firebase SDK -->
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-  import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+  import { getDatabase, ref, set, onValue, push, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
   import { initializeAppCheck, ReCaptchaV3Provider } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app-check.js";
 
   const firebaseConfig = {
@@ -2492,6 +2683,8 @@ document.addEventListener('DOMContentLoaded',function(){if(localStorage.getItem(
   window._fbRef = ref;
   window._fbSet = set;
   window._fbOnValue = onValue;
+  window._fbPush = push;
+  window._fbServerTimestamp = serverTimestamp;
 </script>
 
 <script>
@@ -2675,7 +2868,7 @@ function defaultData(){
     grades:["Gérant","Co-Gérant","Sergent","Officier","Stagiaire"],
     users:[{id:1,login:"admin",pass:"__PENDING_HASH__",nom:"Développeur",grade:"Gérant",role:"admin",statut:"Actif",photo:"",created:now()}],
     annonces:[{id:1,titre:"Bienvenue sur le portail Police de Sunagakure",cat:"Information",contenu:"Ce portail est le centre névralgique des communications internes.\n\nToutes les informations officielles y seront publiées.",auteur:"Administration",pin:true,date:now()}],
-    recenses:[],candidatures:[],plaintes:[],dossiers:[],operations:[],sanctions:[],infractions:[],timeline:[],adminNotes:{}}
+    recenses:[],candidatures:[],plaintes:[],dossiers:[],operations:[],sanctions:[],infractions:[],timeline:[],adminNotes:{},messages:{}}
 }
 let DB=loadData();
 let currentUser=null;
@@ -2934,7 +3127,7 @@ function saveCommNameAdmin(){
 }
 
 // NAV
-const PAGES={dashboard:"Tableau de bord",annonces:"Annonces",recensement:"Recensement",recrutement:"Recrutement",plaintes:"Plaintes",dossiers:"Dossiers criminels",codepenal:"Code Pénal",operations:"Opérations",effectifs:"Effectifs",sanctions:"Sanctions & Promotions",admin:"Panel Admin"};
+const PAGES={dashboard:"Tableau de bord",annonces:"Annonces",recensement:"Recensement",recrutement:"Recrutement",plaintes:"Plaintes",dossiers:"Dossiers criminels",codepenal:"Code Pénal",operations:"Opérations",effectifs:"Effectifs",sanctions:"Sanctions & Promotions",admin:"Panel Admin",messagerie:"Messagerie",profil:"Mon profil"};
 const VISITOR_PAGES=["dashboard","annonces","recensement","recrutement","plaintes","codepenal"];
 
 // Mapping page → bnav-item id (pour les 4 onglets directs de la barre)
@@ -2951,7 +3144,7 @@ function showPage(name){
     return;
   }
   // Pages membres (opérations, effectifs, sanctions) — interdites aux visiteurs
-  const MEMBER_ONLY_PAGES=["operations","effectifs","sanctions"];
+  const MEMBER_ONLY_PAGES=["operations","effectifs","sanctions","messagerie","profil"];
   if(MEMBER_ONLY_PAGES.includes(name)&&isVisiteur()){
     showToast("Accès réservé aux membres de la Police.","error");
     return;
@@ -2990,6 +3183,8 @@ function renderPage(name){
   if(name==="effectifs")renderEffectifs();
   if(name==="sanctions")renderSanctions();
   if(name==="admin"){renderAdmin();el("admin-comm-input").value=DB.commissaire||"";applyLogo();loadNotifPrefs();refreshNotifCounts();renderNotifHistory();renderAdminTimeline();}
+  if(name==="messagerie")renderMsgContacts();
+  if(name==="profil")renderProfil();
 }
 
 function renderVisitorCandBanner(){
@@ -3130,6 +3325,7 @@ function renderDashboard(){
   el("dash-annonces").innerHTML=[...(DB.annonces||[])].reverse().slice(0,3).map(a=>`<div class="plainte-item"><div class="plainte-header"><span class="badge ${catBadge(a.cat)}">${esc(a.cat)}</span><span class="plainte-title">${esc(a.titre)}</span></div><div class="plainte-meta">${esc(a.auteur)} — ${fmtDate(a.date)}</div></div>`).join("")||'<p class="text-muted">Aucune annonce.</p>';
   el("dash-plaintes").innerHTML=[...(DB.plaintes||[])].reverse().slice(0,4).map(p=>`<div class="plainte-item"><div class="plainte-header"><span class="badge ${statutPlainte(p.statut)}">${fmtStatut(p.statut)}</span><span class="plainte-title">${esc(p.type)}</span></div><div class="plainte-meta">${esc(p.plaignant)} vs ${esc(p.accuse)} — ${fmtDate(p.date)}</div></div>`).join("")||'<p class="text-muted">Aucune plainte.</p>';
   renderTimeline();
+  setTimeout(renderDashboardCharts,100);
 }
 function renderTimeline(){
   const e=el("timeline");if(!e)return;
@@ -3665,7 +3861,7 @@ function clearEditDossierPhoto(){
 
 // OPÉRATIONS
 let _opFilter="all";
-function filterOperations(f,e){_opFilter=f;document.querySelectorAll("#page-operations .tab-btn").forEach(b=>b.classList.remove("active"));e.classList.add("active");renderOperations();}
+function filterOperations(f,e){_opFilter=f;document.querySelectorAll("#page-operations .card.mb-4 .tab-btn").forEach(b=>b.classList.remove("active"));e.classList.add("active");renderOperations();}
 function renderOperations(){
   const all=DB.operations||[];
   if(el("op-stat-active"))el("op-stat-active").textContent=all.filter(o=>o.statut==="Active").length;
@@ -3698,6 +3894,8 @@ function renderOperations(){
         </div>`:""}
       </div>
     </div>`).join("")||'<div style="grid-column:1/-1;padding:32px;text-align:center;color:var(--muted)">Aucune opération.</div>';
+  // Re-render calendar si vue calendrier active
+  if(typeof _opViewMode!=='undefined'&&_opViewMode==='cal') setTimeout(renderCalendar,50);
 }
 function cycleOpStatut(id){
   const op=DB.operations.find(o=>o.id===id);if(!op)return;
@@ -6710,6 +6908,554 @@ document.querySelectorAll('.modal-overlay').forEach(function(o){
 });
 
 })();
+</script>
+
+<!-- Chart.js CDN -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+
+<script>
+/* ════════════════════════════════════════════════════════════════
+   NOUVELLES FONCTIONNALITÉS — v4 AMÉLIORÉ
+   1. Graphiques Dashboard (Chart.js)
+   2. Export CSV
+   3. Messagerie interne (Firebase)
+   4. Calendrier des opérations
+   5. Page Profil
+   6. Changement de mot de passe profil
+   ════════════════════════════════════════════════════════════════ */
+
+/* ─── 1. GRAPHIQUES DASHBOARD ─────────────────────────────────── */
+var _chartPlaintes = null;
+var _chartFactions = null;
+
+function renderDashboardCharts(){
+  if(typeof Chart === 'undefined') return;
+  var isDark = document.body.classList.contains('dark');
+  var gridColor = isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)';
+  var textColor = isDark ? '#94a3b8' : '#6b7280';
+
+  // ── Graphique 1 : Plaintes sur 30 jours ──
+  var canvas1 = document.getElementById('chart-plaintes');
+  if(canvas1){
+    var labels = [], counts = [];
+    for(var i=29; i>=0; i--){
+      var d = new Date(); d.setDate(d.getDate()-i);
+      var key = d.toLocaleDateString('fr-FR',{day:'2-digit',month:'2-digit'});
+      labels.push(key);
+      var dayStr = d.toLocaleDateString('fr-FR',{day:'2-digit',month:'2-digit',year:'numeric'});
+      counts.push((DB.plaintes||[]).filter(function(p){
+        return (p.date||'').startsWith(dayStr.split(' ')[0]||dayStr.substring(0,5));
+      }).length);
+    }
+    // Compter par jour différemment : via timestamp
+    var now = Date.now();
+    for(var j=0; j<30; j++){
+      var start = now - (29-j)*86400000;
+      var end = start + 86400000;
+      counts[j] = (DB.plaintes||[]).filter(function(p){
+        var ts = 0;
+        var d2 = p.date||'';
+        if(d2.includes('/')){var parts=d2.split(' ');var dp=parts[0].split('/');ts=new Date(dp[2]+'-'+dp[1]+'-'+dp[0]+(parts[1]?' '+parts[1]:'')).getTime();}
+        else{ts=new Date(d2).getTime();}
+        return !isNaN(ts)&&ts>=start&&ts<end;
+      }).length;
+    }
+    if(_chartPlaintes) _chartPlaintes.destroy();
+    _chartPlaintes = new Chart(canvas1, {
+      type:'line',
+      data:{
+        labels:labels,
+        datasets:[{
+          label:'Plaintes',
+          data:counts,
+          borderColor:'#c0410e',
+          backgroundColor:'rgba(192,65,14,0.1)',
+          fill:true,
+          tension:0.4,
+          pointRadius:2,
+          pointHoverRadius:5,
+          borderWidth:2
+        }]
+      },
+      options:{
+        responsive:true,maintainAspectRatio:false,
+        plugins:{legend:{display:false},tooltip:{mode:'index',intersect:false}},
+        scales:{
+          x:{ticks:{color:textColor,font:{size:9},maxTicksLimit:8},grid:{color:gridColor}},
+          y:{ticks:{color:textColor,font:{size:9},stepSize:1,precision:0},grid:{color:gridColor},beginAtZero:true}
+        }
+      }
+    });
+  }
+
+  // ── Graphique 2 : Recensement par faction ──
+  var canvas2 = document.getElementById('chart-factions');
+  if(canvas2){
+    var facMap = {};
+    (DB.recenses||[]).forEach(function(r){
+      var f = r.faction||'Inconnu';
+      facMap[f] = (facMap[f]||0)+1;
+    });
+    var facLabels = Object.keys(facMap).sort(function(a,b){return facMap[b]-facMap[a];}).slice(0,8);
+    var facData = facLabels.map(function(k){return facMap[k];});
+    var palette = ['#c0410e','#b8860b','#1d4ed8','#15803d','#6d28d9','#0e7490','#dc2626','#d97706'];
+    if(_chartFactions) _chartFactions.destroy();
+    _chartFactions = new Chart(canvas2, {
+      type:'doughnut',
+      data:{
+        labels:facLabels.length?facLabels:['Aucune donnée'],
+        datasets:[{
+          data:facLabels.length?facData:[1],
+          backgroundColor:facLabels.length?palette:['rgba(0,0,0,0.1)'],
+          borderWidth:2,
+          borderColor:isDark?'#181a2e':'#fff'
+        }]
+      },
+      options:{
+        responsive:true,maintainAspectRatio:false,
+        plugins:{
+          legend:{position:'right',labels:{color:textColor,font:{size:10},boxWidth:12,padding:10}},
+          tooltip:{enabled:facLabels.length>0}
+        },
+        cutout:'60%'
+      }
+    });
+  }
+}
+
+// Re-render charts on dark mode toggle
+var _origToggleDark = window.toggleDarkMode;
+window.toggleDarkMode = function(){
+  if(typeof _origToggleDark==='function') _origToggleDark();
+  var activePage = document.querySelector('.page-content.active');
+  if(activePage&&activePage.id==='page-dashboard') setTimeout(renderDashboardCharts,150);
+};
+
+/* ─── 2. EXPORT CSV ────────────────────────────────────────────── */
+function exportCSV(type){
+  var rows=[], filename='export.csv';
+  if(type==='plaintes'){
+    filename='plaintes_'+new Date().toISOString().slice(0,10)+'.csv';
+    rows.push(['Réf.','Plaignant','Accusé','Type','Statut','Description','Date','Agent']);
+    (DB.plaintes||[]).forEach(function(p){
+      rows.push([p.id,p.plaignant||'',p.accuse||'',p.type||'',p.statut||'',
+        (p.desc||'').replace(/"/g,'""'),p.date||'',p.agent||'']);
+    });
+  } else if(type==='recensement'){
+    filename='recensement_'+new Date().toISOString().slice(0,10)+'.csv';
+    rows.push(['Prénom','Nom','Âge','Sexe','Faction','Rang','Compétences','Natures','Notes','Date']);
+    (DB.recenses||[]).forEach(function(r){
+      rows.push([r.prenom||'',r.nom||'',r.age||'',r.sexe||'',r.faction||'',
+        r.rang||'',r.competences||'',(r.natures||[]).join(';'),
+        (r.notes||'').replace(/"/g,'""'),r.date||'']);
+    });
+  } else if(type==='dossiers'){
+    filename='dossiers_criminels_'+new Date().toISOString().slice(0,10)+'.csv';
+    rows.push(['Nom RP','Infractions','Dangerosité','Statut','Amendes totales','Agent','Date']);
+    (DB.dossiers||[]).forEach(function(d){
+      rows.push([d.nom||'',d.infractions||'',d.danger||'',d.statut||'',
+        d.amendes||'',d.agent||'',d.date||'']);
+    });
+  }
+  if(!rows.length){showToast('Aucune donnée à exporter.','error');return;}
+  var csv = rows.map(function(r){
+    return r.map(function(v){ return '"'+String(v||'').replace(/"/g,'""')+'"'; }).join(',');
+  }).join('\n');
+  var bom = '\uFEFF'; // BOM pour Excel UTF-8
+  var blob = new Blob([bom+csv],{type:'text/csv;charset=utf-8;'});
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a'); a.href=url; a.download=filename;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  showToast('Export CSV téléchargé !','success');
+}
+
+/* ─── 3. MESSAGERIE INTERNE ────────────────────────────────────── */
+var _currentMsgContact = null;
+var _msgUnsubscribe = null;
+
+function _msgKey(idA, idB){
+  return [idA,idB].sort().join('_');
+}
+
+function renderMsgContacts(){
+  if(!currentUser) return;
+  var inner = document.getElementById('msg-contacts-inner'); if(!inner) return;
+  var q = (document.getElementById('msg-search')||{}).value||'';
+  q = q.toLowerCase();
+  var members = (DB.users||[]).filter(function(u){
+    return u.id!==currentUser.id && u.statut!=='Désactivé' &&
+      (!q || (u.nom||'').toLowerCase().includes(q));
+  });
+  if(!members.length){
+    inner.innerHTML='<div style="padding:20px;text-align:center;color:var(--muted);font-size:12px">Aucun membre trouvé.</div>';
+    return;
+  }
+  inner.innerHTML = members.map(function(u){
+    var key = _msgKey(currentUser.id, u.id);
+    var thread = (DB.messages||{})[key]||{};
+    var msgs = Object.values(thread);
+    var last = msgs.length ? msgs[msgs.length-1] : null;
+    var preview = last ? (last.text||'').slice(0,35)+(last.text&&last.text.length>35?'…':'') : 'Aucun message';
+    var unread = msgs.filter(function(m){return m.senderId!==currentUser.id&&!m.read;}).length;
+    var initials = (u.nom||'?').charAt(0).toUpperCase();
+    var isActive = _currentMsgContact && _currentMsgContact.id===u.id;
+    return '<div class="msg-contact'+(isActive?' active':'')+'" onclick="openMsgContact('+u.id+')">'
+      +'<div class="msg-contact-avatar">'+initials+'</div>'
+      +'<div style="flex:1;min-width:0">'
+      +'<div class="msg-contact-name">'+esc(u.nom)+'</div>'
+      +'<div class="msg-contact-preview">'+esc(preview)+'</div>'
+      +'</div>'
+      +(unread>0?'<span class="msg-unread-dot" title="'+unread+' non lu(s)"></span>':'')
+      +'</div>';
+  }).join('');
+}
+
+function openMsgContact(userId){
+  var u = (DB.users||[]).find(function(u){return u.id===userId;});
+  if(!u) return;
+  _currentMsgContact = u;
+  // Update header
+  var headerName = document.getElementById('msg-header-name');
+  var headerGrade = document.getElementById('msg-header-grade');
+  if(headerName) headerName.textContent = u.nom;
+  if(headerGrade) headerGrade.textContent = (u.grade||'')+(u.role?' · '+roleLabel(u.role):'');
+  // Show input
+  var inputRow = document.getElementById('msg-input-row');
+  if(inputRow) inputRow.style.display='flex';
+  // Mark all as read
+  var key = _msgKey(currentUser.id, u.id);
+  if(DB.messages&&DB.messages[key]){
+    var changed=false;
+    Object.keys(DB.messages[key]).forEach(function(k){
+      if(DB.messages[key][k].senderId!==currentUser.id&&!DB.messages[key][k].read){
+        DB.messages[key][k].read=true; changed=true;
+      }
+    });
+    if(changed) saveData();
+  }
+  renderMsgContacts();
+  renderMsgThread();
+  // Subscribe to real-time updates if Firebase available
+  if(window._fbDB && window._fbRef && window._fbOnValue){
+    if(_msgUnsubscribe) _msgUnsubscribe();
+    var fbRef = window._fbRef(window._fbDB, 'sunagakure/messages/'+key);
+    _msgUnsubscribe = window._fbOnValue(fbRef, function(snap){
+      var data = snap.val();
+      if(!DB.messages) DB.messages={};
+      DB.messages[key] = data||{};
+      renderMsgThread();
+      renderMsgContacts();
+      updateMsgBadge();
+    });
+  }
+}
+
+function renderMsgThread(){
+  var thread = document.getElementById('msg-thread'); if(!thread) return;
+  if(!_currentMsgContact){
+    thread.innerHTML='<div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--muted);font-size:13px;padding:40px">Sélectionnez un contact.</div>';
+    return;
+  }
+  var key = _msgKey(currentUser.id, _currentMsgContact.id);
+  var msgs = Object.values((DB.messages||{})[key]||{});
+  msgs.sort(function(a,b){return (a.ts||0)-(b.ts||0);});
+  if(!msgs.length){
+    thread.innerHTML='<div class="msg-thread"><div style="text-align:center;color:var(--muted);font-size:12px;padding:24px">Aucun message. Commencez la conversation !</div></div>';
+    return;
+  }
+  thread.innerHTML='<div class="msg-thread">'+msgs.map(function(m){
+    var mine = m.senderId===currentUser.id;
+    var time = m.ts ? new Date(m.ts).toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}) : '';
+    var date2 = m.ts ? new Date(m.ts).toLocaleDateString('fr-FR',{day:'2-digit',month:'2-digit'}) : '';
+    return '<div class="msg-bubble '+(mine?'mine':'theirs')+'">'
+      +esc(m.text||'')
+      +'<div class="msg-meta">'+(mine?'Moi':esc(_currentMsgContact.nom||''))+' · '+date2+' '+time+'</div>'
+      +'</div>';
+  }).join('')+'</div>';
+  setTimeout(function(){ thread.scrollTop=thread.scrollHeight; },50);
+}
+
+function sendMsg(){
+  if(!_currentMsgContact||!currentUser) return;
+  var inp = document.getElementById('msg-text'); if(!inp) return;
+  var text = (inp.value||'').trim(); if(!text) return;
+  var key = _msgKey(currentUser.id, _currentMsgContact.id);
+  if(!DB.messages) DB.messages={};
+  if(!DB.messages[key]) DB.messages[key]={};
+  var msgId = Date.now();
+  var msg = {id:msgId,senderId:currentUser.id,senderNom:currentUser.nom,text:text,ts:msgId,read:false};
+  DB.messages[key][msgId] = msg;
+  inp.value='';
+  // Save to Firebase directly for real-time
+  if(window._fbDB&&window._fbRef&&window._fbSet){
+    var fbRef = window._fbRef(window._fbDB,'sunagakure/messages/'+key+'/'+msgId);
+    window._fbSet(fbRef, msg);
+  } else {
+    saveData();
+  }
+  renderMsgThread();
+  updateMsgBadge();
+}
+
+function updateMsgBadge(){
+  if(!currentUser) return;
+  var total = 0;
+  Object.keys((DB.messages||{})).forEach(function(key){
+    if(!key.toString().includes(String(currentUser.id))) return;
+    Object.values(DB.messages[key]||{}).forEach(function(m){
+      if(m.senderId!==currentUser.id&&!m.read) total++;
+    });
+  });
+  var b = document.getElementById('badge-messagerie');
+  if(b){b.textContent=total;b.style.display=total>0?'':'none';}
+}
+
+/* ─── 4. CALENDRIER DES OPÉRATIONS ────────────────────────────── */
+var _calYear = new Date().getFullYear();
+var _calMonth = new Date().getMonth();
+var _opViewMode = 'list';
+
+function switchOpView(mode, btn){
+  _opViewMode = mode;
+  document.getElementById('operations-grid').style.display = mode==='list'?'':'none';
+  var filtre = document.querySelector('#page-operations .card.mb-4');
+  if(filtre) filtre.style.display = mode==='list'?'':'none';
+  document.getElementById('operations-calendar').style.display = mode==='cal'?'':'none';
+  document.querySelectorAll('#page-operations .section-header .tab-btn').forEach(function(b){b.classList.remove('active');});
+  if(btn) btn.classList.add('active');
+  if(mode==='cal') renderCalendar();
+}
+
+function calNav(dir){
+  _calMonth += dir;
+  if(_calMonth>11){_calMonth=0;_calYear++;}
+  if(_calMonth<0){_calMonth=11;_calYear--;}
+  renderCalendar();
+}
+
+function renderCalendar(){
+  var label = document.getElementById('cal-month-label');
+  var cells = document.getElementById('cal-cells');
+  if(!label||!cells) return;
+  var months = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
+  label.textContent = months[_calMonth]+' '+_calYear;
+  // First day of month (Mon=0)
+  var firstDay = new Date(_calYear, _calMonth, 1).getDay();
+  firstDay = (firstDay+6)%7; // Convert Sun=0 to Mon=0
+  var daysInMonth = new Date(_calYear, _calMonth+1, 0).getDate();
+  var daysInPrev = new Date(_calYear, _calMonth, 0).getDate();
+  var today = new Date();
+  var html='';
+  var total = Math.ceil((firstDay+daysInMonth)/7)*7;
+  for(var i=0; i<total; i++){
+    var day, month2, year2, otherMonth=false;
+    if(i<firstDay){day=daysInPrev-firstDay+i+1;month2=_calMonth-1;year2=_calYear;if(month2<0){month2=11;year2--;}otherMonth=true;}
+    else if(i>=firstDay+daysInMonth){day=i-firstDay-daysInMonth+1;month2=_calMonth+1;year2=_calYear;if(month2>11){month2=0;year2++;}otherMonth=true;}
+    else{day=i-firstDay+1;month2=_calMonth;year2=_calYear;}
+    var isToday=(!otherMonth&&day===today.getDate()&&_calMonth===today.getMonth()&&_calYear===today.getFullYear());
+    // Find ops on this day
+    var cellDate = new Date(year2, month2, day);
+    var ops = (DB.operations||[]).filter(function(op){
+      if(!op.dateOp) return false;
+      var d = new Date(op.dateOp+'T00:00:00');
+      return d.getFullYear()===year2&&d.getMonth()===month2&&d.getDate()===day;
+    });
+    html+='<div class="cal-cell'+(otherMonth?' other-month':'')+(isToday?' today':'')+'">'
+      +'<div class="cal-date'+(isToday?' today-num':'')+'">'+day+'</div>'
+      +ops.map(function(op){
+        var cls=op.statut==='Active'?'active':op.statut==='Planifiée'?'planifiee':'terminee';
+        return '<div class="cal-event '+cls+'" title="'+esc(op.nom)+' — '+esc(op.statut)+'">'+esc(op.nom)+'</div>';
+      }).join('')
+      +'</div>';
+  }
+  cells.innerHTML=html;
+}
+
+/* ─── 5. PAGE PROFIL ──────────────────────────────────────────── */
+function renderProfil(){
+  if(!currentUser) return;
+  var u = currentUser;
+  // Hero
+  var av = document.getElementById('profil-avatar');
+  if(av) av.textContent=(u.nom||'?').charAt(0).toUpperCase();
+  var nm = document.getElementById('profil-name'); if(nm) nm.textContent=u.nom||'—';
+  var gr = document.getElementById('profil-grade'); if(gr) gr.textContent=(u.grade||'—')+' · '+(u.role||'').toUpperCase();
+  var lg = document.getElementById('profil-login'); if(lg) lg.textContent='@'+u.login;
+  var rb = document.getElementById('profil-role-badge');
+  if(rb){var roleColors={admin:'badge-red',gerant:'badge-gold',cogerant:'badge-gold',officier:'badge-blue',sergent:'badge-cyan',membre:'badge-green',stagiaire:'badge-gray',visiteur:'badge-gray'};rb.innerHTML='<span class="badge '+(roleColors[u.role]||'badge-gray')+'">'+roleLabel(u.role)+'</span>';}
+  // Stats
+  var myPlaintes=(DB.plaintes||[]).filter(function(p){return p.agent===u.nom||p.plaignant===u.nom;});
+  var myDossiers=(DB.dossiers||[]).filter(function(d){return d.agent===u.nom;});
+  var myOps=(DB.operations||[]).filter(function(o){return o.resp===u.nom||(o.membres||[]).includes(u.nom);});
+  var mySanctions=(DB.sanctions||[]).filter(function(s){return s.cible===u.nom;});
+  var setVal=function(id,v){var e=document.getElementById(id);if(e)e.textContent=v;};
+  setVal('ps-plaintes',myPlaintes.length);
+  setVal('ps-dossiers',myDossiers.length);
+  setVal('ps-operations',myOps.length);
+  setVal('ps-sanctions',mySanctions.length);
+  // Plaintes list
+  var pl=document.getElementById('profil-plaintes-list');
+  if(pl){pl.innerHTML=myPlaintes.slice(-5).reverse().map(function(p){return '<div class="plainte-item"><div class="plainte-header"><span class="badge '+statutPlainte(p.statut)+'">'+fmtStatut(p.statut)+'</span><span class="plainte-title">'+esc(p.type)+'</span></div><div class="plainte-meta">'+esc(p.plaignant)+' vs '+esc(p.accuse)+' — '+fmtDate(p.date)+'</div></div>';}).join('')||'<p class="text-muted">Aucune plainte liée à votre compte.</p>';}
+  // Timeline
+  var tl=document.getElementById('profil-timeline');
+  if(tl){var myTl=(DB.timeline||[]).filter(function(t){return (t.text||'').includes(u.nom);}).slice(-8).reverse();tl.innerHTML='<div class="timeline">'+myTl.map(function(t){return '<div class="timeline-item"><div class="t-time">'+fmtDate(t.date)+'</div><div class="t-text">'+esc(t.text)+'</div></div>';}).join('')+'</div>'||'<p class="text-muted">Aucune activité récente.</p>';}
+  // Sanctions
+  var sl=document.getElementById('profil-sanctions-list');
+  if(sl){sl.innerHTML=mySanctions.slice(-8).reverse().map(function(s){var icons={Promotion:'⬆️',Félicitation:'⭐',Avertissement:'⚠️',Exclusion:'🚫'};return '<div class="plainte-item"><div class="plainte-header"><span style="font-size:14px">'+(icons[s.type]||'⚖️')+'</span><span class="plainte-title">'+esc(s.type)+'</span><span class="badge badge-gray" style="margin-left:auto">'+fmtDate(s.date)+'</span></div><div class="plainte-meta">'+esc(s.motif||'—')+'</div></div>';}).join('')||'<p class="text-muted">Aucune sanction ou promotion.</p>';}
+}
+
+/* ─── 6. CHANGEMENT DE MOT DE PASSE (profil) ──────────────────── */
+// Ajouter le modal inline
+(function(){
+  var m=document.createElement('div');
+  m.className='modal-overlay'; m.id='modal-change-pass';
+  m.innerHTML='<div class="modal" style="max-width:420px">'
+    +'<div class="modal-header"><h3>🔒 Changer le mot de passe</h3><span class="modal-close" onclick="closeModal(\'modal-change-pass\')">✕</span></div>'
+    +'<div class="modal-body">'
+    +'<div class="form-group"><label class="form-label">Mot de passe actuel</label><input type="password" id="cp-old" class="form-control" placeholder="Mot de passe actuel"></div>'
+    +'<div class="form-group"><label class="form-label">Nouveau mot de passe</label><input type="password" id="cp-new" class="form-control" placeholder="Au moins 6 caractères"></div>'
+    +'<div class="form-group"><label class="form-label">Confirmer le nouveau</label><input type="password" id="cp-confirm" class="form-control" placeholder="Répéter le mot de passe"></div>'
+    +'<div id="cp-alert" class="alert alert-error" style="display:none"></div>'
+    +'</div>'
+    +'<div class="modal-footer"><button class="btn btn-outline" onclick="closeModal(\'modal-change-pass\')">Annuler</button>'
+    +'<button class="btn btn-primary" onclick="doChangePass()">💾 Enregistrer</button></div>'
+    +'</div>';
+  document.body.appendChild(m);
+
+  // Ajouter modal nouveau message
+  var m2=document.createElement('div');
+  m2.className='modal-overlay'; m2.id='modal-new-msg';
+  m2.innerHTML='<div class="modal" style="max-width:480px">'
+    +'<div class="modal-header"><h3>✉️ Nouveau message</h3><span class="modal-close" onclick="closeModal(\'modal-new-msg\')">✕</span></div>'
+    +'<div class="modal-body">'
+    +'<div class="form-group"><label class="form-label">Destinataire</label>'
+    +'<select id="msg-new-to" class="form-control"><option value="">— Choisir un membre —</option></select></div>'
+    +'<div class="form-group"><label class="form-label">Message</label><textarea id="msg-new-text" class="form-control" style="min-height:100px" placeholder="Votre message..."></textarea></div>'
+    +'</div>'
+    +'<div class="modal-footer"><button class="btn btn-outline" onclick="closeModal(\'modal-new-msg\')">Annuler</button>'
+    +'<button class="btn btn-primary" onclick="sendNewMsg()">Envoyer →</button></div>'
+    +'</div>';
+  document.body.appendChild(m2);
+})();
+
+function openModal_newMsg(){
+  var sel=document.getElementById('msg-new-to'); if(!sel) return;
+  var members=(DB.users||[]).filter(function(u){return u.id!==currentUser.id&&u.statut!=='Désactivé';});
+  sel.innerHTML='<option value="">— Choisir un membre —</option>'+members.map(function(u){return '<option value="'+u.id+'">'+esc(u.nom)+'</option>';}).join('');
+  openModal('modal-new-msg');
+}
+
+// Override openModal for new-msg
+var _origOpenModal2=window.openModal;
+window.openModal=function(id){
+  if(id==='modal-new-msg'){
+    var sel=document.getElementById('msg-new-to'); if(sel){
+      var members=(DB.users||[]).filter(function(u){return u.id!==currentUser.id&&u.statut!=='Désactivé';});
+      sel.innerHTML='<option value="">— Choisir —</option>'+members.map(function(u){return '<option value="'+u.id+'">'+esc(u.nom)+'</option>';}).join('');
+    }
+  }
+  if(_origOpenModal2) _origOpenModal2(id);
+};
+
+function sendNewMsg(){
+  var toId=parseInt(document.getElementById('msg-new-to').value);
+  var text=(document.getElementById('msg-new-text').value||'').trim();
+  if(!toId){showToast('Choisissez un destinataire.','error');return;}
+  if(!text){showToast('Écrivez un message.','error');return;}
+  var u=(DB.users||[]).find(function(u){return u.id===toId;});
+  if(!u) return;
+  closeModal('modal-new-msg');
+  document.getElementById('msg-new-text').value='';
+  // Open contact and send
+  showPage('messagerie');
+  setTimeout(function(){
+    openMsgContact(toId);
+    var inp=document.getElementById('msg-text');
+    if(inp){inp.value=text;sendMsg();}
+  },200);
+}
+
+function doChangePass(){
+  var oldP=document.getElementById('cp-old').value;
+  var newP=document.getElementById('cp-new').value;
+  var conf=document.getElementById('cp-confirm').value;
+  var alert=document.getElementById('cp-alert');
+  if(!oldP||!newP||!conf){alert.textContent='Tous les champs sont requis.';alert.style.display='block';return;}
+  if(newP.length<6){alert.textContent='Le nouveau mot de passe doit faire au moins 6 caractères.';alert.style.display='block';return;}
+  if(newP!==conf){alert.textContent='Les mots de passe ne correspondent pas.';alert.style.display='block';return;}
+  hashPass(oldP).then(function(oldH){
+    if(oldH!==currentUser.pass){alert.textContent='Mot de passe actuel incorrect.';alert.style.display='block';return;}
+    hashPass(newP).then(function(newH){
+      var u=(DB.users||[]).find(function(u){return u.id===currentUser.id;});
+      if(!u) return;
+      u.pass=newH; currentUser.pass=newH;
+      // Update localStorage session
+      try{var s=JSON.parse(localStorage.getItem('suna_session')||'{}');s.passHash=newH;localStorage.setItem('suna_session',JSON.stringify(s));}catch(e){}
+      saveData();
+      closeModal('modal-change-pass');
+      alert.style.display='none';
+      document.getElementById('cp-old').value='';
+      document.getElementById('cp-new').value='';
+      document.getElementById('cp-confirm').value='';
+      showToast('Mot de passe modifié avec succès !','success');
+    });
+  });
+}
+
+/* ─── 7. NOTIFICATIONS TEMPS RÉEL — toast auto ──────────────────── */
+var _prevCounts={plaintes:0,annonces:0,operations:0,recenses:0};
+var _notifReady=false;
+function _checkRealtimeNotifs(){
+  if(!currentUser||isVisiteur()) return;
+  var prefs=JSON.parse(localStorage.getItem('suna_notifs')||'{}');
+  var nP=(DB.plaintes||[]).length;
+  var nA=(DB.annonces||[]).length;
+  var nO=(DB.operations||[]).filter(function(o){return o.statut==='Active';}).length;
+  var nR=(DB.recenses||[]).length;
+  if(_notifReady){
+    if(prefs.plaintes!==false&&nP>_prevCounts.plaintes) showToast('📋 Nouvelle plainte enregistrée !','info');
+    if(prefs.annonces!==false&&nA>_prevCounts.annonces) showToast('📢 Nouvelle annonce publiée !','info');
+    if(prefs.operations!==false&&nO>_prevCounts.operations) showToast('🚨 Nouvelle opération active !','info');
+    if(prefs.recenses!==false&&nR>_prevCounts.recenses) showToast('📝 Nouveau joueur recensé !','info');
+  }
+  _prevCounts={plaintes:nP,annonces:nA,operations:nO,recenses:nR};
+  setTimeout(function(){_notifReady=true;},500);
+}
+
+// Hook into Firebase sync to trigger notif checks
+var _origInitFirebase=window.initFirebaseSync;
+window.initFirebaseSync=function(){
+  if(_origInitFirebase) _origInitFirebase();
+  // Patch refreshAll to check notifs
+  var _origRefreshAll=window.refreshAll;
+  window.refreshAll=function(){
+    _checkRealtimeNotifs();
+    if(_origRefreshAll) _origRefreshAll();
+  };
+};
+
+/* ─── 8. PRINT ──────────────────────────────────────────────────── */
+function printPage(){window.print();}
+
+// Ajouter bouton impression dans la topbar (desktop uniquement)
+(function(){
+  var attempts=0;
+  var t=setInterval(function(){
+    attempts++;
+    var topbar=document.querySelector('.topbar');
+    if(topbar&&document.getElementById('btn-global-search')||attempts>30){
+      clearInterval(t);
+      // Pas de bouton print affiché — déjà disponible via window.print()
+    }
+  },300);
+})();
+
+/* ─── BADGE MESSAGERIE au chargement ───────────────────────────── */
+setTimeout(function(){
+  if(currentUser) updateMsgBadge();
+},2000);
+
 </script>
 
 </body>
