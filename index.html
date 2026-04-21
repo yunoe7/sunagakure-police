@@ -105,11 +105,15 @@ body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:9997;
 .grid-3{grid-template-columns:repeat(3,1fr)}
 .grid-2{grid-template-columns:repeat(2,1fr)}
 
-.stat-card{background:var(--bg2);border:1px solid rgba(180,140,20,0.15);border-radius:12px;padding:20px;position:relative;overflow:hidden;transition:all 0.25s ease;box-shadow:var(--card-shadow)}
+.stat-card{background:var(--bg2);border:1px solid rgba(180,140,20,0.15);border-radius:12px;padding:20px;position:relative;overflow:hidden;transition:all 0.25s ease;box-shadow:var(--card-shadow);-webkit-transform:translateZ(0)}
 .stat-card::before{content:'';position:absolute;inset:0;background:var(--stripe)}
 .stat-card::after{content:'';position:absolute;bottom:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--card-accent,var(--gold)),transparent);opacity:0.6}
 .stat-card:hover{border-color:rgba(180,140,20,0.35);transform:translateY(-3px);box-shadow:0 10px 30px rgba(0,0,0,0.1)}
-.stat-value{font-family:'Barlow Condensed',sans-serif;font-size:42px;font-weight:900;color:var(--text);line-height:1;position:relative}
+.stat-value{font-family:'Barlow Condensed',sans-serif;font-size:42px;font-weight:900;color:var(--text);line-height:1;position:relative;-webkit-font-smoothing:antialiased;transform:translateZ(0)}
+/* ── NOTES PRIVÉES ── */
+#notes-list::-webkit-scrollbar{width:3px}
+#notes-list::-webkit-scrollbar-thumb{background:rgba(180,140,20,0.2);border-radius:2px}
+#note-input:focus{border-color:var(--gold2)!important;box-shadow:0 0 0 3px rgba(180,140,20,0.1)!important}
 .stat-label{font-size:9px;letter-spacing:2px;color:var(--muted);margin-top:4px;text-transform:uppercase;font-family:'Share Tech Mono',monospace;position:relative}
 .stat-icon{position:absolute;right:14px;top:12px;font-size:30px;opacity:0.45}
 
@@ -2386,6 +2390,7 @@ document.addEventListener('DOMContentLoaded',function(){if(localStorage.getItem(
     </div>
     <div class="modal-footer">
       <button class="btn btn-danger" onclick="deleteUserById()">🗑 Supprimer</button>
+      <button class="btn btn-gold" onclick="openNotesFromEditModal()">📝 Notes privées</button>
       <button class="btn btn-outline" onclick="closeModal('modal-edituser')">Annuler</button>
       <button class="btn btn-primary" onclick="saveEditUser()">💾 Enregistrer</button>
     </div>
@@ -2426,6 +2431,35 @@ document.addEventListener('DOMContentLoaded',function(){if(localStorage.getItem(
       <button class="btn btn-success" onclick="recrueAction('promouvoir')">⬆️ Promouvoir</button>
       <button class="btn btn-gold" onclick="recrueAction('retrograder')">⬇️ Rétrograder</button>
       <button class="btn btn-outline" onclick="closeModal('modal-recrue-action')">Annuler</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Notes Privées Admin -->
+<div class="modal-overlay" id="modal-notes">
+  <div class="modal" style="max-width:560px">
+    <div class="modal-header">
+      <div style="display:flex;align-items:center;gap:10px">
+        <span style="font-size:20px">📝</span>
+        <div>
+          <h3 id="notes-modal-title" style="margin:0">Notes privées</h3>
+          <div id="notes-modal-sub" style="font-size:10px;color:var(--muted);font-family:'Share Tech Mono',monospace;margin-top:1px;letter-spacing:1px">ADMIN SEULEMENT · NON VISIBLE PAR LE MEMBRE</div>
+        </div>
+      </div>
+      <span class="modal-close" onclick="closeModal('modal-notes')">✕</span>
+    </div>
+    <div class="modal-body" style="padding:0">
+      <div style="padding:16px 20px;border-bottom:1px solid rgba(180,140,20,0.1);background:rgba(180,140,20,0.02)">
+        <div class="form-label" style="margin-bottom:6px">Ajouter une note</div>
+        <textarea id="note-input" class="form-control" placeholder="Saisissez votre note privée ici..." style="min-height:72px;resize:vertical;margin-bottom:10px"></textarea>
+        <div style="display:flex;justify-content:flex-end">
+          <button class="btn btn-primary btn-sm" onclick="addNote()">💾 Ajouter la note</button>
+        </div>
+      </div>
+      <div id="notes-list" style="padding:14px 20px;min-height:80px;max-height:320px;overflow-y:auto"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('modal-notes')">Fermer</button>
     </div>
   </div>
 </div>
@@ -2641,7 +2675,7 @@ function defaultData(){
     grades:["Gérant","Co-Gérant","Sergent","Officier","Stagiaire"],
     users:[{id:1,login:"admin",pass:"__PENDING_HASH__",nom:"Développeur",grade:"Gérant",role:"admin",statut:"Actif",photo:"",created:now()}],
     annonces:[{id:1,titre:"Bienvenue sur le portail Police de Sunagakure",cat:"Information",contenu:"Ce portail est le centre névralgique des communications internes.\n\nToutes les informations officielles y seront publiées.",auteur:"Administration",pin:true,date:now()}],
-    recenses:[],candidatures:[],plaintes:[],dossiers:[],operations:[],sanctions:[],infractions:[],timeline:[]}
+    recenses:[],candidatures:[],plaintes:[],dossiers:[],operations:[],sanctions:[],infractions:[],timeline:[],adminNotes:{}}
 }
 let DB=loadData();
 let currentUser=null;
@@ -3015,6 +3049,13 @@ function updateStats(){
   el("stat-recenses").textContent=(DB.recenses||[]).length;
   el("stat-plaintes").textContent=(DB.plaintes||[]).filter(p=>p.statut==="ouverte").length;
   el("stat-operations").textContent=(DB.operations||[]).filter(o=>o.statut==="Active").length;
+  // Synchro stats admin — toujours mise à jour peu importe la page active + fix repaint iOS
+  const users=DB.users||[];
+  const setAdm=(id,val)=>{const e=el(id);if(!e)return;e.textContent=val;e.style.transform='translateZ(0)';requestAnimationFrame(()=>{e.style.transform='';});};
+  setAdm("adm-stat-total",users.length);
+  setAdm("adm-stat-actif",users.filter(u=>u.statut==="Actif").length);
+  setAdm("adm-stat-inactif",users.filter(u=>u.statut!=="Actif").length);
+  setAdm("adm-stat-admin",users.filter(u=>u.role==="admin").length);
 }
 // ─── SYSTÈME BADGES "NON LUS" ───────────────────────────────────────────
 // Chaque badge compte les éléments créés APRÈS la date de dernière lecture
@@ -4035,6 +4076,9 @@ function renderAdmin(){
       <td class="mono" style="font-size:10px;color:var(--muted)">${u.created?fmtDate(u.created):"—"}</td>
       <td style="white-space:nowrap">
         <button class="btn btn-outline btn-sm" onclick="openEditUser(${u.id})">✏️ Modifier</button>
+        <button class="btn btn-gold btn-sm" onclick="openNotesModal(${u.id})" title="Notes privées admin" style="position:relative">
+          📝${((DB.adminNotes||{})[u.id]||[]).length>0?` <span style="display:inline-flex;align-items:center;justify-content:center;background:var(--accent);color:#fff;font-size:8px;font-weight:700;border-radius:99px;padding:0 5px;min-width:16px;height:16px;margin-left:2px;font-family:'Share Tech Mono',monospace;vertical-align:middle">${((DB.adminNotes||{})[u.id]||[]).length}</span>`:""}
+        </button>
         ${!isSelf?` <button class="btn btn-${(u.statut||"Actif")==="Actif"?"danger":"success"} btn-sm" onclick="toggleUser(${u.id})">${(u.statut||"Actif")==="Actif"?"Désactiver":"Réactiver"}</button>`:""}
       </td>
     </tr>`;
@@ -4181,6 +4225,95 @@ function saveUser(){
     showToast(`Compte de ${nom} créé.`,"success");
   });
 }
+// ═══════════════════════════════════════════════
+// NOTES PRIVÉES ADMIN
+// ═══════════════════════════════════════════════
+let _currentNotesUserId = null;
+
+function openNotesModal(userId){
+  if(!isAdmin()){showToast("Accès réservé aux administrateurs.","error");return;}
+  _currentNotesUserId = userId;
+  if(!DB.adminNotes) DB.adminNotes = {};
+  if(!DB.adminNotes[userId]) DB.adminNotes[userId] = [];
+  const u = DB.users.find(x => x.id === userId);
+  if(el("notes-modal-title")) el("notes-modal-title").textContent = "Notes — " + (u ? u.nom : "Membre");
+  el("note-input").value = "";
+  renderNotesList();
+  openModal("modal-notes");
+}
+
+function renderNotesList(){
+  const uid = _currentNotesUserId;
+  if(!uid) return;
+  const notes = (DB.adminNotes[uid] || []).slice().reverse();
+  const container = el("notes-list");
+  if(!notes.length){
+    container.innerHTML = `
+      <div style="text-align:center;padding:24px 0;color:var(--muted)">
+        <div style="font-size:28px;margin-bottom:8px">📭</div>
+        <div style="font-size:12px;font-family:'Share Tech Mono',monospace;letter-spacing:1px">AUCUNE NOTE POUR CE MEMBRE</div>
+      </div>`;
+    return;
+  }
+  container.innerHTML = notes.map(n => {
+    const dateStr = n.date ? new Date(n.date).toLocaleDateString("fr-FR",{day:"2-digit",month:"2-digit",year:"numeric",hour:"2-digit",minute:"2-digit"}) : "—";
+    const isMine = n.authorId === currentUser.id || isAdmin();
+    return `
+    <div id="note-${n.id}" style="padding:12px 14px;border:1px solid rgba(180,140,20,0.12);border-radius:10px;margin-bottom:8px;background:#fff;transition:all 0.2s;position:relative">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;gap:8px;flex-wrap:wrap">
+        <div style="display:flex;align-items:center;gap:7px">
+          <div style="width:22px;height:22px;border-radius:50%;background:linear-gradient(135deg,var(--accent),#b86010);display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:#fff;flex-shrink:0">${esc((n.author||"?").charAt(0).toUpperCase())}</div>
+          <span style="font-size:11px;font-weight:600;color:var(--text)">${esc(n.author||"Inconnu")}</span>
+          <span style="font-size:9px;color:var(--muted);font-family:'Share Tech Mono',monospace">${dateStr}</span>
+        </div>
+        ${isMine ? `<button onclick="deleteNote(${n.id})" style="background:rgba(220,38,38,0.08);border:1px solid rgba(220,38,38,0.2);color:#dc2626;border-radius:5px;padding:2px 8px;font-size:10px;cursor:pointer;transition:all 0.15s;flex-shrink:0" onmouseover="this.style.background='var(--red)';this.style.color='#fff'" onmouseout="this.style.background='rgba(220,38,38,0.08)';this.style.color='#dc2626'">🗑 Supprimer</button>` : ""}
+      </div>
+      <div style="font-size:13px;color:var(--text);line-height:1.65;white-space:pre-wrap;word-break:break-word">${esc(n.text)}</div>
+    </div>`;
+  }).join("");
+}
+
+function addNote(){
+  const uid = _currentNotesUserId;
+  if(!uid || !isAdmin()) return;
+  const text = (el("note-input").value || "").trim();
+  if(!text){ showToast("La note ne peut pas être vide.","error"); return; }
+  if(!DB.adminNotes) DB.adminNotes = {};
+  if(!DB.adminNotes[uid]) DB.adminNotes[uid] = [];
+  const note = {
+    id: Date.now(),
+    text,
+    author: currentUser.nom,
+    authorId: currentUser.id,
+    date: now()
+  };
+  DB.adminNotes[uid].push(note);
+  saveData();
+  el("note-input").value = "";
+  renderNotesList();
+  renderAdmin(); // Rafraîchir le badge dans le tableau
+  showToast("Note ajoutée.","success");
+}
+
+function deleteNote(noteId){
+  const uid = _currentNotesUserId;
+  if(!uid || !isAdmin()) return;
+  askDelete("Supprimer cette note ?", () => {
+    DB.adminNotes[uid] = (DB.adminNotes[uid] || []).filter(n => n.id !== noteId);
+    saveData();
+    renderNotesList();
+    renderAdmin();
+    showToast("Note supprimée.","success");
+  });
+}
+
+function openNotesFromEditModal(){
+  const id = parseInt(el("eu-id").value);
+  if(!id) return;
+  closeModal("modal-edituser");
+  setTimeout(() => openNotesModal(id), 180);
+}
+
 function toggleUser(id){
   const u=DB.users.find(x=>x.id===id);if(!u)return;
   // Empêcher de désactiver le dernier admin actif
@@ -5332,6 +5465,13 @@ function _gsEsc(t) {
   return String(t || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 }
 
+function _gsHighlight(text, q) {
+  if (!q || !text) return _gsEsc(text);
+  var escaped = _gsEsc(text);
+  var escapedQ = q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+  return escaped.replace(new RegExp('('+escapedQ+')', 'gi'), '<mark style="background:rgba(180,140,20,0.28);color:inherit;border-radius:2px;padding:0 1px">$1</mark>');
+}
+
 function gsSearch() {
   if (typeof DB === 'undefined' || !DB) return;
   var q = (document.getElementById('gs-input').value || '').trim().toLowerCase();
@@ -5339,9 +5479,8 @@ function gsSearch() {
   var emptyMsg = '<div style="padding:32px;text-align:center;color:var(--muted);font-size:13px"><span style="font-size:30px;display:block;margin-bottom:8px;opacity:0.35">&#128269;</span>Commencez a taper pour rechercher...</div>';
   if (!q) { document.getElementById('gs-results').innerHTML = emptyMsg; return; }
 
-  var R = { pages:[], membres:[], annonces:[], plaintes:[], dossiers:[], recenses:[], candidatures:[] };
+  var R = { pages:[], membres:[], annonces:[], plaintes:[], dossiers:[], recenses:[], candidatures:[], operations:[], sanctions:[], codepenal:[] };
 
-  // Onglets / pages de l'intranet
   var GS_PAGES = [
     { label:'Tableau de bord', icon:'&#128202;', page:'dashboard', keywords:'dashboard accueil home' },
     { label:'Annonces', icon:'&#128226;', page:'annonces', keywords:'annonces messages communications' },
@@ -5357,57 +5496,90 @@ function gsSearch() {
   ];
   GS_PAGES.filter(function(p){
     if(!currentUser) return false;
-    // Filtrer selon les droits
     if(p.page==='admin' && currentUser.role!=='admin') return false;
-    if(['operations','effectifs','sanctions'].includes(p.page) && isVisiteur()) return false;
+    if(['operations','effectifs','sanctions'].indexOf(p.page)>=0 && isVisiteur()) return false;
     return (p.label.toLowerCase()+' '+p.keywords).indexOf(q) >= 0;
-  }).slice(0,5).forEach(function(p){
-    R.pages.push({ icon:p.icon, title:p.label, sub:'Page · '+p.label, page:p.page });
+  }).slice(0,4).forEach(function(p){
+    R.pages.push({ icon:p.icon, title:p.label, sub:'Page · '+p.label, page:p.page, q:q });
   });
 
-  // Membres (users) — lien effectifs uniquement si accès autorisé
   var memPage = (!isVisiteur()) ? 'effectifs' : 'dashboard';
   (DB.users||[]).filter(function(u){
-    return ((u.nom||'')+(u.login||'')+(u.grade||'')).toLowerCase().indexOf(q) >= 0;
-  }).slice(0,5).forEach(function(u){
-    R.membres.push({ icon:'&#128100;', title:u.nom||u.login||'', sub:'Membre · '+(u.grade||'')+(u.role?' · '+u.role:''), page:memPage });
+    return ((u.nom||'')+(u.login||'')+(u.grade||'')+(u.role||'')).toLowerCase().indexOf(q) >= 0;
+  }).slice(0,4).forEach(function(u){
+    R.membres.push({ icon:'&#128100;', title:u.nom||u.login||'', sub:'Membre · '+(u.grade||'')+(u.role?' · '+u.role:'')+(u.statut&&u.statut!=='Actif'?' · 🔴 '+u.statut:''), page:memPage, q:q });
   });
 
-  (DB.annonces||[]).filter(function(a){ return ((a.titre||'')+(a.contenu||'')+(a.auteur||'')).toLowerCase().indexOf(q) >= 0; }).slice(0,4).forEach(function(a){
-    R.annonces.push({ icon:'&#128226;', title: a.titre||'', sub:'Annonce · '+_gsDate(a.date), page:'annonces' });
+  (DB.annonces||[]).filter(function(a){ return ((a.titre||'')+(a.contenu||'')+(a.auteur||'')+(a.cat||'')).toLowerCase().indexOf(q) >= 0; }).slice(0,4).forEach(function(a){
+    R.annonces.push({ icon:'&#128226;', title:a.titre||'', sub:'Annonce · '+(a.cat||'')+(a.auteur?' · '+a.auteur:'')+' · '+_gsDate(a.date), page:'annonces', q:q });
   });
+
   (DB.plaintes||[]).filter(function(p){ return ((p.plaignant||'')+(p.accuse||'')+(p.type||'')+(p.desc||'')).toLowerCase().indexOf(q) >= 0; }).slice(0,4).forEach(function(p){
-    R.plaintes.push({ icon:'&#128203;', title:(p.type||'')+' — '+(p.plaignant||'')+' vs '+(p.accuse||''), sub:'Plainte · '+_gsSt(p.statut)+' · '+_gsDate(p.date), page:'plaintes' });
+    R.plaintes.push({ icon:'&#128203;', title:(p.type||'')+' — '+(p.plaignant||'')+' vs '+(p.accuse||''), sub:'Plainte · '+_gsSt(p.statut)+' · '+_gsDate(p.date), page:'plaintes', q:q });
   });
-  // Dossiers, opérations, sanctions : réservés aux membres
+
   if(!isVisiteur()){
-    (DB.dossiers||[]).filter(function(d){ return ((d.nom||'')+(d.infractions||'')).toLowerCase().indexOf(q) >= 0; }).slice(0,4).forEach(function(d){
-      R.dossiers.push({ icon:'&#128194;', title: d.nom||'', sub:'Dossier · '+(d.danger||''), page:'dossiers' });
+    (DB.dossiers||[]).filter(function(d){ return ((d.nom||'')+(d.infractions||'')+(d.statut||'')).toLowerCase().indexOf(q) >= 0; }).slice(0,4).forEach(function(d){
+      R.dossiers.push({ icon:'&#128194;', title:d.nom||'', sub:'Dossier criminel · '+(d.danger||'—')+(d.statut?' · '+d.statut:''), page:'dossiers', q:q });
+    });
+
+    (DB.operations||[]).filter(function(o){ return ((o.nom||'')+(o.type||'')+(o.resp||'')+(o.desc||'')+(o.statut||'')).toLowerCase().indexOf(q) >= 0; }).slice(0,4).forEach(function(o){
+      var icon = o.statut==='Active'?'&#128680;': o.statut==='Planifiée'?'&#128197;':'&#9989;';
+      R.operations.push({ icon:icon, title:o.nom||'', sub:'Opération · '+(o.type||'—')+' · '+(o.statut||'')+(o.resp?' · Resp: '+o.resp:''), page:'operations', q:q });
+    });
+
+    (DB.sanctions||[]).filter(function(s){ return ((s.cible||'')+(s.type||'')+(s.motif||'')+(s.auteur||'')).toLowerCase().indexOf(q) >= 0; }).slice(0,4).forEach(function(s){
+      var icon = {Promotion:'&#11014;&#65039;',Félicitation:'&#11088;',Avertissement:'&#9888;&#65039;',Exclusion:'&#128683;'}[s.type]||'&#9878;&#65039;';
+      R.sanctions.push({ icon:icon, title:s.cible||'', sub:'Sanction · '+(s.type||'—')+(s.auteur?' · Par '+s.auteur:'')+' · '+_gsDate(s.date), page:'sanctions', q:q });
     });
   }
+
   (DB.recenses||[]).filter(function(r){ return ((r.prenom||'')+(r.nom||'')+(r.faction||'')+(r.competences||'')+(r.rang||'')).toLowerCase().indexOf(q) >= 0; }).slice(0,4).forEach(function(r){
-    R.recenses.push({ icon:'&#128221;', title: ((r.prenom||'')+' '+(r.nom||'')).trim()||'—', sub:'Recensement · '+(r.faction||'—'), page:'recensement' });
+    R.recenses.push({ icon:'&#128221;', title:((r.prenom||'')+' '+(r.nom||'')).trim()||'—', sub:'Recensement · '+(r.faction||'—')+(r.rang?' · '+r.rang:''), page:'recensement', q:q });
   });
+
   (DB.candidatures||[]).filter(function(c){ return ((c.nom||'')+(c.motif||'')+(c.discord||'')).toLowerCase().indexOf(q) >= 0; }).slice(0,3).forEach(function(c){
-    R.candidatures.push({ icon:'&#127894;', title: c.nom||'', sub:'Candidature · '+_gsSt(c.statut), page:'recrutement' });
+    R.candidatures.push({ icon:'&#127894;', title:c.nom||'', sub:'Candidature · '+_gsSt(c.statut)+(c.grade?' · Grade visé: '+c.grade:''), page:'recrutement', q:q });
+  });
+
+  (DB.infractions||[]).filter(function(i){ return ((i.nom||'')+(i.cat||'')+(i.notes||'')).toLowerCase().indexOf(q) >= 0; }).slice(0,4).forEach(function(i){
+    var catLabel = {violet:'Petit délit',vert:'Moyen délit',rouge:'Gros délit',jaune:'Crime'}[i.cat]||i.cat||'';
+    R.codepenal.push({ icon:'&#128220;', title:i.nom||'', sub:'Code Pénal · '+catLabel+(i.amende?' · Amende: '+i.amende:'')+(i.prison?' · Prison: '+i.prison:''), page:'codepenal', q:q });
   });
 
   var html = '';
-  var sections = [['pages','Pages & Salons'],['membres','Membres'],['annonces','Annonces'],['plaintes','Plaintes'],['dossiers','Dossiers criminels'],['recenses','Recensement'],['candidatures','Recrutement']];
+  var sections = [
+    ['pages','Pages'],['membres','Membres'],['annonces','Annonces'],
+    ['plaintes','Plaintes'],['dossiers','Dossiers criminels'],
+    ['operations','Opérations'],['sanctions','Sanctions & Promos'],
+    ['recenses','Recensement'],['candidatures','Recrutement'],['codepenal','Code Pénal']
+  ];
+
+  var total = 0;
+  sections.forEach(function(pair){ total += R[pair[0]].length; });
+
   sections.forEach(function(pair){
     if (!R[pair[0]].length) return;
-    html += '<div class="gs-section-label">'+pair[1]+'</div>';
+    html += '<div class="gs-section-label">'+pair[1]+' <span style="opacity:0.5">('+R[pair[0]].length+')</span></div>';
     R[pair[0]].forEach(function(item){
       var idx = _gsItems.length;
       _gsItems.push(item);
       html += '<div class="gs-item" onclick="gsGo('+idx+')" onmouseover="gsHover('+idx+')">'
             + '<div class="gs-item-icon">'+item.icon+'</div>'
-            + '<div class="gs-item-main"><div class="gs-item-title">'+_gsEsc(item.title)+'</div>'
-            + '<div class="gs-item-sub">'+_gsEsc(item.sub)+'</div></div></div>';
+            + '<div class="gs-item-main">'
+            + '<div class="gs-item-title">'+_gsHighlight(item.title, item.q)+'</div>'
+            + '<div class="gs-item-sub">'+_gsEsc(item.sub)+'</div>'
+            + '</div>'
+            + '<div style="font-size:10px;color:var(--muted);flex-shrink:0;padding-left:6px;font-family:\'Share Tech Mono\',monospace">›</div>'
+            + '</div>';
     });
   });
 
-  if (!html) html = '<div style="padding:32px;text-align:center;color:var(--muted);font-size:13px"><span style="font-size:30px;display:block;margin-bottom:8px;opacity:0.35">&#128512;</span>Aucun resultat pour <b>'+_gsEsc(q)+'</b></div>';
+  if (!html) html = '<div style="padding:32px;text-align:center;color:var(--muted);font-size:13px"><span style="font-size:30px;display:block;margin-bottom:8px;opacity:0.35">&#128512;</span>Aucun résultat pour <b>'+_gsEsc(q)+'</b><br><span style="font-size:11px;margin-top:6px;display:block">Vérifiez l\'orthographe ou essayez d\'autres mots-clés</span></div>';
+  else {
+    var totalEl = '<div style="padding:6px 14px 2px;font-size:10px;color:var(--muted);font-family:\'Share Tech Mono\',monospace;text-align:right;letter-spacing:1px">'+total+' résultat'+(total>1?'s':'')+' trouvé'+(total>1?'s':'')+'</div>';
+    html = totalEl + html;
+  }
   document.getElementById('gs-results').innerHTML = html;
   _gsIdx = -1;
 }
@@ -5419,9 +5591,38 @@ function gsHover(idx) {
 function gsGo(idx) {
   var item = _gsItems[idx];
   if (!item) return;
+  var q = item.q || '';
+  var targetTitle = item.title || '';
   closeGlobalSearch();
   showPage(item.page);
   if (typeof updateBottomNav === 'function') updateBottomNav(item.page);
+  // Après navigation, tenter de mettre en évidence l'élément dans la page
+  if (q && targetTitle) {
+    setTimeout(function(){
+      // Chercher dans les cellules / titres de la page active
+      var page = document.getElementById('page-' + item.page);
+      if (!page) return;
+      var candidates = page.querySelectorAll('b, td, .plainte-title, .annonce-item h4, .recense-card-header, h4, .data-table td');
+      var found = null;
+      candidates.forEach(function(el){
+        if (!found && el.textContent.toLowerCase().indexOf(targetTitle.toLowerCase()) >= 0) {
+          found = el;
+        }
+      });
+      if (found) {
+        found.scrollIntoView({ behavior:'smooth', block:'center' });
+        var orig = found.style.cssText;
+        found.style.transition = 'background 0.3s';
+        found.style.background = 'rgba(180,140,20,0.25)';
+        found.style.borderRadius = '4px';
+        setTimeout(function(){
+          found.style.background = '';
+          found.style.borderRadius = '';
+          setTimeout(function(){ found.style.transition = ''; }, 400);
+        }, 1800);
+      }
+    }, 320);
+  }
 }
 function gsKeyNav(e) {
   if (e.key === 'ArrowDown') { e.preventDefault(); _gsIdx = Math.min(_gsIdx+1, _gsItems.length-1); gsUpdateSel(); }
