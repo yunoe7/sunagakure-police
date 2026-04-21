@@ -2449,14 +2449,14 @@ document.addEventListener('DOMContentLoaded',function(){if(localStorage.getItem(
       <span class="modal-close" onclick="closeModal('modal-notes')">✕</span>
     </div>
     <div class="modal-body" style="padding:0">
-      <div style="padding:16px 20px;border-bottom:1px solid rgba(180,140,20,0.1);background:rgba(180,140,20,0.02)">
+      <div style="padding:16px 20px;border-bottom:1px solid rgba(180,140,20,0.1);background:rgba(180,140,20,0.03)">
         <div class="form-label" style="margin-bottom:6px">Ajouter une note</div>
         <textarea id="note-input" class="form-control" placeholder="Saisissez votre note privée ici..." style="min-height:72px;resize:vertical;margin-bottom:10px"></textarea>
         <div style="display:flex;justify-content:flex-end">
           <button class="btn btn-primary btn-sm" onclick="addNote()">💾 Ajouter la note</button>
         </div>
       </div>
-      <div id="notes-list" style="padding:14px 20px;min-height:80px;max-height:320px;overflow-y:auto"></div>
+      <div id="notes-list" style="padding:14px 20px;min-height:80px;max-height:320px;overflow-y:auto;background:var(--bg,#f0ede8)"></div>
     </div>
     <div class="modal-footer">
       <button class="btn btn-outline" onclick="closeModal('modal-notes')">Fermer</button>
@@ -4259,14 +4259,14 @@ function renderNotesList(){
     const dateStr = n.date ? new Date(n.date).toLocaleDateString("fr-FR",{day:"2-digit",month:"2-digit",year:"numeric",hour:"2-digit",minute:"2-digit"}) : "—";
     const isMine = n.authorId === currentUser.id || isAdmin();
     return `
-    <div id="note-${n.id}" style="padding:12px 14px;border:1px solid rgba(180,140,20,0.12);border-radius:10px;margin-bottom:8px;background:#fff;transition:all 0.2s;position:relative">
+    <div id="note-${n.id}" style="padding:12px 14px;border:1px solid rgba(180,140,20,0.15);border-radius:10px;margin-bottom:8px;background:var(--bg3,var(--bg2,#fafaf9));transition:all 0.2s;position:relative">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;gap:8px;flex-wrap:wrap">
         <div style="display:flex;align-items:center;gap:7px">
           <div style="width:22px;height:22px;border-radius:50%;background:linear-gradient(135deg,var(--accent),#b86010);display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:#fff;flex-shrink:0">${esc((n.author||"?").charAt(0).toUpperCase())}</div>
           <span style="font-size:11px;font-weight:600;color:var(--text)">${esc(n.author||"Inconnu")}</span>
           <span style="font-size:9px;color:var(--muted);font-family:'Share Tech Mono',monospace">${dateStr}</span>
         </div>
-        ${isMine ? `<button onclick="deleteNote(${n.id})" style="background:rgba(220,38,38,0.08);border:1px solid rgba(220,38,38,0.2);color:#dc2626;border-radius:5px;padding:2px 8px;font-size:10px;cursor:pointer;transition:all 0.15s;flex-shrink:0" onmouseover="this.style.background='var(--red)';this.style.color='#fff'" onmouseout="this.style.background='rgba(220,38,38,0.08)';this.style.color='#dc2626'">🗑 Supprimer</button>` : ""}
+        ${isMine ? `<button onclick="deleteNote(${n.id})" style="background:rgba(220,38,38,0.08);border:1px solid rgba(220,38,38,0.2);color:var(--red,#dc2626);border-radius:5px;padding:2px 8px;font-size:10px;cursor:pointer;transition:all 0.15s;flex-shrink:0" onmouseover="this.style.background='var(--red,#dc2626)';this.style.color='#fff'" onmouseout="this.style.background='rgba(220,38,38,0.08)';this.style.color='var(--red,#dc2626)'">🗑 Supprimer</button>` : ""}
       </div>
       <div style="font-size:13px;color:var(--text);line-height:1.65;white-space:pre-wrap;word-break:break-word">${esc(n.text)}</div>
     </div>`;
@@ -4971,6 +4971,9 @@ body.dark #gs-input-wrap,body.dark #gs-hint{border-color:rgba(255,255,255,0.07) 
 body.dark #gs-input{color:var(--text)}
 body.dark .gs-item:hover,body.dark .gs-item.gs-selected{background:rgba(180,140,20,0.1) !important}
 body.dark .gs-item-title{color:var(--text)}
+body.dark #notes-list{background:var(--bg2) !important}
+body.dark #notes-list [id^="note-"]{background:var(--bg3) !important;border-color:rgba(180,140,20,0.12) !important}
+body.dark #modal-notes .modal-body > div:first-child{background:rgba(180,140,20,0.04) !important;border-bottom-color:rgba(180,140,20,0.1) !important}
 
 /* ---- NOUVEAUX BOUTONS TOPBAR ---- */
 #btn-global-search{display:flex;align-items:center;gap:7px;padding:6px 12px;background:rgba(0,0,0,0.05);border:1px solid rgba(180,140,20,0.18);border-radius:8px;cursor:pointer;font-size:11px;font-family:'Share Tech Mono',monospace;color:var(--muted);transition:all 0.18s;white-space:nowrap;margin-left:auto;flex-shrink:0}
