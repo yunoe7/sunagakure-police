@@ -2894,29 +2894,53 @@ async function _flushSaveQueue(){
         }
       }
       merged.messages=mergedMsgs;
-      // Pour chaque tableau : partir de Firebase comme base, ajouter ce qui est dans local mais absent de Firebase
+      // Pour chaque tableau : Firebase = base. On n'applique QUE les vrais changements locaux,
+      // détectés en comparant avec _lastFbArrays (dernier état Firebase connu).
+      // Cela évite d'écraser des données fraîches d'autres utilisateurs avec des copies locales périmées.
       ARRAY_KEYS.forEach(k=>{
         const fbArr=Array.isArray(fbData[k])?fbData[k]:[];
         const localArr=Array.isArray(toSave[k])?toSave[k]:[];
+        const lastFbArr=Array.isArray(_lastFbArrays[k])?_lastFbArrays[k]:[];
         const fbIds=new Set(fbArr.map(x=>x&&x.id));
+        // Nouveaux items = présents en local, absents de Firebase actuel (pas de doublon)
         const newItems=localArr.filter(x=>x&&x.id&&!fbIds.has(x.id));
-        // Mettre à jour les entrées existantes avec les modifications locales
+        // Items modifiés = existaient dans _lastFbArrays mais leur contenu local a changé
+        const lastFbById={};lastFbArr.forEach(x=>{if(x&&x.id)lastFbById[x.id]=x;});
         const localById={};localArr.forEach(x=>{if(x&&x.id)localById[x.id]=x;});
-        const updated=fbArr.map(x=>(x&&x.id&&localById[x.id])?localById[x.id]:x);
+        const modifiedIds=new Set();
+        localArr.forEach(x=>{
+          if(x&&x.id&&lastFbById[x.id]&&JSON.stringify(x)!==JSON.stringify(lastFbById[x.id])){
+            modifiedIds.add(x.id);
+          }
+        });
+        // Firebase = base, on écrase uniquement les items confirmés comme modifiés localement
+        const updated=fbArr.map(x=>(x&&x.id&&modifiedIds.has(x.id)&&localById[x.id])?localById[x.id]:x);
         merged[k]=[...updated,...newItems];
       });
-      // Users : fusionner en prenant Firebase comme base + nouveaux users locaux
+      // Users : même logique — Firebase = base, nouveaux users + users vraiment modifiés localement
       const fbUsers=Array.isArray(fbData.users)?fbData.users:[];
       const localUsers=Array.isArray(toSave.users)?toSave.users:[];
+      const lastFbUsers=Array.isArray(_lastFbArrays.users)?_lastFbArrays.users:[];
       const fbUserIds=new Set(fbUsers.map(u=>u&&u.id));
       const newUsers=localUsers.filter(u=>u&&u.id&&!fbUserIds.has(u.id));
+      const lastFbUserById={};lastFbUsers.forEach(u=>{if(u&&u.id)lastFbUserById[u.id]=u;});
       const localUserById={};localUsers.forEach(u=>{if(u&&u.id)localUserById[u.id]=u;});
-      const updatedUsers=fbUsers.map(u=>(u&&u.id&&localUserById[u.id])?localUserById[u.id]:u);
+      const modifiedUserIds=new Set();
+      localUsers.forEach(u=>{
+        if(u&&u.id&&lastFbUserById[u.id]&&JSON.stringify(u)!==JSON.stringify(lastFbUserById[u.id])){
+          modifiedUserIds.add(u.id);
+        }
+      });
+      const updatedUsers=fbUsers.map(u=>(u&&u.id&&modifiedUserIds.has(u.id)&&localUserById[u.id])?localUserById[u.id]:u);
       merged.users=[...updatedUsers,...newUsers];
     }
     // 3. Mettre à jour DB locale avec le résultat fusionné
     DB=merged;
     try{localStorage.setItem(STORE,JSON.stringify(DB))}catch(e){}
+    // Mettre à jour _lastFbArrays pour que le prochain save calcule un delta correct
+    ['plaintes','dossiers','annonces','candidatures','operations','sanctions','recenses','infractions','timeline','users'].forEach(k=>{
+      if(Array.isArray(DB[k]))_lastFbArrays[k]=JSON.parse(JSON.stringify(DB[k]));
+    });
     // 4. Écrire dans Firebase
     await window._fbSet(window._fbRef(window._fbDB,"sunagakure"),JSON.parse(JSON.stringify(merged)));
   }catch(err){
