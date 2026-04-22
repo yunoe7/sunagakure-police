@@ -3113,42 +3113,74 @@ async function doRegister(){
   if(pass.length<6){ra.textContent='Mot de passe trop court (6 caractères min).';ra.style.display='block';_loginInProgress=false;return;}
   if(pass!==pass2){ra.textContent='Les mots de passe ne correspondent pas.';ra.style.display='block';_loginInProgress=false;return;}
   if(!/^[a-zA-Z0-9_\-\.]{3,30}$/.test(login)){ra.textContent='Identifiant invalide (3-30 caractères, lettres, chiffres, _ - . uniquement).';ra.style.display='block';_loginInProgress=false;return;}
-  if(DB.users.find(u=>u.login===login)){ra.textContent='Cet identifiant est déjà utilisé.';ra.style.display='block';_loginInProgress=false;return;}
-  const hashed=await hashPass(pass);
-  // Utiliser le premier grade disponible plutôt que 'Visiteur' (absent de la liste des grades)
-  const defaultGrade=(DB.grades&&DB.grades.length?DB.grades[DB.grades.length-1]:'Stagiaire');
-  const newUser={id:Date.now(),login,pass:hashed,nom,grade:defaultGrade,role:'visiteur',statut:'Actif',photo:'',created:now()};
-  // Lire Firebase d'abord pour éviter d'écraser des données d'autres sessions
+  // Afficher un indicateur de chargement pendant la vérification Firebase
+  rs.textContent='⏳ Vérification en cours...';rs.style.display='block';
+  // TOUJOURS lire Firebase en priorité pour avoir les données les plus fraîches
   if(window._fbDB&&window._fbRef&&window._fbGet){
     try{
       const snap=await window._fbGet(window._fbRef(window._fbDB,"sunagakure"));
       const fbData=snap.val();
       if(fbData&&typeof fbData==="object"){
-        // Fusionner les données Firebase avec notre DB locale
-        const arrays=['plaintes','dossiers','annonces','candidatures','operations','sanctions','recenses','infractions','timeline'];
-        arrays.forEach(k=>{if(Array.isArray(fbData[k]))DB[k]=_mergeArrayById(DB[k],fbData[k]);});
-        // Fusionner les utilisateurs — s'assurer que tous les comptes existants sont conservés
-        if(Array.isArray(fbData.users)){DB.users=_mergeArrayById(fbData.users,DB.users);}
-        // Vérifier à nouveau que le login n'existe pas dans la version Firebase fraîche
-        if(DB.users.find(u=>u.login===login)){
-          ra.textContent='Cet identifiant est déjà utilisé (conflit serveur). Choisissez-en un autre.';
-          ra.style.display='block';_loginInProgress=false;return;
-        }
+        // Remplacer complètement la DB locale par les données Firebase (source de vérité)
+        const def=defaultData();
+        const merged={};
+        for(const key of Object.keys(def)){merged[key]=fbData.hasOwnProperty(key)?fbData[key]:def[key];}
+        for(const key of Object.keys(fbData)){if(!merged.hasOwnProperty(key))merged[key]=fbData[key];}
+        DB=merged;
+        // Mettre à jour _lastFbArrays
+        ['plaintes','dossiers','annonces','candidatures','operations','sanctions','recenses','infractions','timeline','users'].forEach(k=>{
+          if(Array.isArray(DB[k])&&DB[k].length>0)_lastFbArrays[k]=JSON.parse(JSON.stringify(DB[k]));
+        });
       }
     }catch(e){console.warn("Firebase read before register failed:",e);}
   }
-  DB.users.push(newUser);saveData();
+  rs.style.display='none';
+  // Vérifier que le login n'existe pas (avec données Firebase fraîches)
+  if(DB.users.find(u=>u.login===login)){
+    ra.textContent='Cet identifiant est déjà utilisé.';ra.style.display='block';_loginInProgress=false;return;
+  }
+  const hashed=await hashPass(pass);
+  // Utiliser le dernier grade disponible plutôt que 'Visiteur' (absent de la liste des grades)
+  const defaultGrade=(DB.grades&&DB.grades.length?DB.grades[DB.grades.length-1]:'Stagiaire');
+  const newUser={id:Date.now(),login,pass:hashed,nom,grade:defaultGrade,role:'visiteur',statut:'Actif',photo:'',created:now()};
+  DB.users.push(newUser);
+  // Sauvegarde immédiate et synchrone vers Firebase
+  await _saveDataAndWait();
   _registerCount++;
   rs.textContent='✅ Compte créé ! Connexion en cours...';rs.style.display='block';
   _loginInProgress=false;
   setTimeout(()=>{
     currentUser=newUser;
-    // NE PAS sauvegarder la session automatiquement à l'inscription.
-    // Cela évite d'écraser la session admin si quelqu'un crée un compte
-    // visiteur sur le même appareil. L'utilisateur pourra cocher
-    // "Se souvenir de moi" lors de sa prochaine connexion manuelle.
+    // Sauvegarder la session automatiquement (le visiteur n'a pas de "Se souvenir de moi" coché,
+    // mais on enregistre quand même pour que la reconnexion manuelle fonctionne)
     applyLogin();
   },1200);
+}
+
+// Sauvegarde Firebase avec attente de confirmation (pour l'inscription)
+async function _saveDataAndWait(){
+  // Fusionner avec _lastFbArrays comme saveData() le fait
+  if(_lastFbArrays){
+    const arrays=['plaintes','dossiers','annonces','candidatures','operations','sanctions','recenses','infractions','timeline'];
+    arrays.forEach(key=>{if(_lastFbArrays[key]&&_lastFbArrays[key].length)DB[key]=_mergeArrayById(DB[key],_lastFbArrays[key]);});
+    if(_lastFbArrays.users&&_lastFbArrays.users.length)DB.users=_mergeArrayById(DB.users,_lastFbArrays.users);
+  }
+  try{localStorage.setItem(STORE,JSON.stringify(DB));}catch(e){}
+  if(window._fbDB&&window._fbRef&&window._fbSet){
+    try{
+      _fbIsSaving=true;
+      window._fbSavingStartTime=Date.now();
+      const r=window._fbRef(window._fbDB,"sunagakure");
+      await window._fbSet(r,JSON.parse(JSON.stringify(DB)));
+      ['plaintes','dossiers','annonces','candidatures','operations','sanctions','recenses','infractions','timeline','users'].forEach(k=>{
+        if(Array.isArray(DB[k]))_lastFbArrays[k]=JSON.parse(JSON.stringify(DB[k]));
+      });
+      setTimeout(()=>{_fbIsSaving=false;window._fbSavingStartTime=0;},800);
+    }catch(e){
+      console.warn("Firebase save error during register:",e);
+      _fbIsSaving=false;
+    }
+  }
 }
 
 // REMEMBER ME
@@ -3170,7 +3202,7 @@ function checkRememberMe(){
     const user=DB.users.find(u=>u.id===s.id&&u.pass===s.passHash&&u.statut!=="Désactivé");
     // Sécurité supplémentaire : ne jamais auto-connecter un compte visiteur via "Se souvenir de moi".
     // Les visiteurs doivent toujours se connecter manuellement.
-    if(user&&user.role!=="visiteur"){currentUser=user;applyLogin();return true}
+    if(user){currentUser=user;applyLogin();return true}
   }catch(e){}
   localStorage.removeItem("suna_session");
   return false;
@@ -3194,8 +3226,26 @@ function doLogin(){
   _loginInProgress=true;
   const login=el("login-user").value.trim();
   const pass=el("login-pass").value;
-  hashPass(pass).then(async hashed=>{
+  showLoginErr("");
+  el("login-alert").style.display="none";
+  // Afficher un indicateur de chargement
+  const btnLogin=document.querySelector("#form-login .btn-primary");
+  if(btnLogin){btnLogin.disabled=true;btnLogin.textContent="⏳ Connexion...";}
+  // Toujours lire Firebase avant de vérifier les identifiants (pour avoir les comptes récents)
+  const _doLoginCheck=async function(hashed){
     _loginInProgress=false;
+    if(btnLogin){btnLogin.disabled=false;btnLogin.textContent="Connexion";}
+    // Rafraîchir depuis Firebase si disponible
+    if(window._fbDB&&window._fbRef&&window._fbGet){
+      try{
+        const snap=await window._fbGet(window._fbRef(window._fbDB,"sunagakure"));
+        const fbData=snap.val();
+        if(fbData&&typeof fbData==="object"&&Array.isArray(fbData.users)&&fbData.users.length>0){
+          DB.users=fbData.users;
+          _lastFbArrays.users=JSON.parse(JSON.stringify(fbData.users));
+        }
+      }catch(e){console.warn("Firebase read before login failed:",e);}
+    }
     // Si un compte a encore __PENDING_HASH__ ou le hash corrompu, le migrer maintenant
     const badHash2=await hashPass("__PENDING_HASH__");
     const toMigrate=DB.users.filter(u=>!isHashed(u.pass)||u.pass===badHash2);
@@ -3227,13 +3277,13 @@ function doLogin(){
     currentUser=user;
     if(el("remember-me").checked){
       // Stocker l'ID + le hash du mot de passe EN LOCAL UNIQUEMENT
-      // Ne plus écrire le token dans Firebase (source du bug de déconnexion inter-appareils)
       localStorage.setItem("suna_session",JSON.stringify({id:user.id,passHash:user.pass}));
     } else {
       localStorage.removeItem("suna_session");
     }
     applyLogin();
-  });
+  };
+  hashPass(pass).then(_doLoginCheck);
 }
 
 // Reset d'urgence : efface le localStorage et réinitialise sans rechargement
@@ -3426,7 +3476,26 @@ function renderPage(name){
   if(name==="operations")renderOperations();
   if(name==="effectifs")renderEffectifs();
   if(name==="sanctions")renderSanctions();
-  if(name==="admin"){renderAdmin();el("admin-comm-input").value=DB.commissaire||"";applyLogo();loadNotifPrefs();refreshNotifCounts();renderNotifHistory();renderAdminTimeline();renderAuditLog();renderLoginHistory();}
+  if(name==="admin"){
+    el("admin-comm-input").value=DB.commissaire||"";applyLogo();loadNotifPrefs();refreshNotifCounts();renderNotifHistory();
+    // Forcer une relecture Firebase pour afficher les comptes les plus récents
+    if(window._fbDB&&window._fbRef&&window._fbGet){
+      window._fbGet(window._fbRef(window._fbDB,"sunagakure")).then(function(snap){
+        var fbData=snap.val();
+        if(fbData&&typeof fbData==="object"){
+          if(Array.isArray(fbData.users)&&fbData.users.length>0){
+            DB.users=fbData.users;
+            _lastFbArrays.users=JSON.parse(JSON.stringify(fbData.users));
+          }
+          var arrays=['plaintes','dossiers','annonces','candidatures','operations','sanctions','recenses','infractions','timeline'];
+          arrays.forEach(function(k){if(Array.isArray(fbData[k])&&fbData[k].length>0){DB[k]=fbData[k];_lastFbArrays[k]=JSON.parse(JSON.stringify(fbData[k]));}}); 
+        }
+        renderAdmin();renderAdminTimeline();renderAuditLog();renderLoginHistory();
+      }).catch(function(){renderAdmin();renderAdminTimeline();renderAuditLog();renderLoginHistory();});
+    } else {
+      renderAdmin();renderAdminTimeline();renderAuditLog();renderLoginHistory();
+    }
+  }
   if(name==="messagerie")renderMsgContacts();
   if(name==="profil"){renderProfil();renderLoginHistory();}
   if(name==="hierarchie")renderHierarchie();
