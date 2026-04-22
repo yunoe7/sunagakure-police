@@ -2794,7 +2794,7 @@ document.addEventListener('DOMContentLoaded',function(){if(localStorage.getItem(
 <!-- Firebase SDK -->
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-  import { getDatabase, ref, set, onValue, push, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+  import { getDatabase, ref, set, onValue, push, serverTimestamp, get } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
   import { initializeAppCheck, ReCaptchaV3Provider } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app-check.js";
 
   const firebaseConfig = {
@@ -2821,6 +2821,7 @@ document.addEventListener('DOMContentLoaded',function(){if(localStorage.getItem(
   window._fbOnValue = onValue;
   window._fbPush = push;
   window._fbServerTimestamp = serverTimestamp;
+  window._fbGet = get;
 </script>
 
 <script>
@@ -3117,6 +3118,25 @@ async function doRegister(){
   // Utiliser le premier grade disponible plutôt que 'Visiteur' (absent de la liste des grades)
   const defaultGrade=(DB.grades&&DB.grades.length?DB.grades[DB.grades.length-1]:'Stagiaire');
   const newUser={id:Date.now(),login,pass:hashed,nom,grade:defaultGrade,role:'visiteur',statut:'Actif',photo:'',created:now()};
+  // Lire Firebase d'abord pour éviter d'écraser des données d'autres sessions
+  if(window._fbDB&&window._fbRef&&window._fbGet){
+    try{
+      const snap=await window._fbGet(window._fbRef(window._fbDB,"sunagakure"));
+      const fbData=snap.val();
+      if(fbData&&typeof fbData==="object"){
+        // Fusionner les données Firebase avec notre DB locale
+        const arrays=['plaintes','dossiers','annonces','candidatures','operations','sanctions','recenses','infractions','timeline'];
+        arrays.forEach(k=>{if(Array.isArray(fbData[k]))DB[k]=_mergeArrayById(DB[k],fbData[k]);});
+        // Fusionner les utilisateurs — s'assurer que tous les comptes existants sont conservés
+        if(Array.isArray(fbData.users)){DB.users=_mergeArrayById(fbData.users,DB.users);}
+        // Vérifier à nouveau que le login n'existe pas dans la version Firebase fraîche
+        if(DB.users.find(u=>u.login===login)){
+          ra.textContent='Cet identifiant est déjà utilisé (conflit serveur). Choisissez-en un autre.';
+          ra.style.display='block';_loginInProgress=false;return;
+        }
+      }
+    }catch(e){console.warn("Firebase read before register failed:",e);}
+  }
   DB.users.push(newUser);saveData();
   _registerCount++;
   rs.textContent='✅ Compte créé ! Connexion en cours...';rs.style.display='block';
