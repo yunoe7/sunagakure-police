@@ -2680,6 +2680,7 @@ document.addEventListener('DOMContentLoaded',function(){if(localStorage.getItem(
           <select id="u-role" class="form-control">
             <option value="visiteur">👁 Visiteur</option>
             <option value="stagiaire" selected>🌱 Stagiaire</option>
+            <option value="membre">👥 Membre</option>
             <option value="officier">🔵 Officier</option>
             <option value="sergent">⚔️ Sergent</option>
             <option value="cogerant">🥈 Co-Gérant</option>
@@ -2707,6 +2708,7 @@ document.addEventListener('DOMContentLoaded',function(){if(localStorage.getItem(
           <select id="eu-role" class="form-control">
             <option value="visiteur">👁 Visiteur</option>
             <option value="stagiaire">🌱 Stagiaire</option>
+            <option value="membre">👥 Membre</option>
             <option value="officier">🔵 Officier</option>
             <option value="sergent">⚔️ Sergent</option>
             <option value="cogerant">🥈 Co-Gérant</option>
@@ -2874,6 +2876,11 @@ function saveData(){
       const _saveSafetyTimer=setTimeout(()=>{_fbIsSaving=false;},5000);
       window._fbSet(r,JSON.parse(JSON.stringify(DB))).then(()=>{
         clearTimeout(_saveSafetyTimer);
+        // Mettre à jour _lastFbArrays avec les données qu'on vient de sauvegarder
+        // Évite la race condition où un save ultérieur repart avec des données obsolètes
+        ['plaintes','dossiers','annonces','candidatures','operations','sanctions','recenses','infractions','timeline','users'].forEach(k=>{
+          if(Array.isArray(DB[k])) _lastFbArrays[k]=JSON.parse(JSON.stringify(DB[k]));
+        });
         // Flag down après 800ms (absorber l'écho) — bien moins que les 2s du listener
         setTimeout(()=>{_fbIsSaving=false;window._fbSavingStartTime=0;},800);
       }).catch(err=>{
@@ -4726,7 +4733,12 @@ function saveEditUser(){
     const c=DB.candidatures.find(x=>x.authorId===id||x.nom===oldNom);if(c)c.grade=u.grade;
     if(currentUser.id===id){currentUser=u;el("user-name-display").textContent=u.nom;el("user-rank-display").textContent=roleLabel(u.role)+" · "+u.grade;refreshSidebarAvatar();}
     addTimeline(`Compte de ${u.nom} modifié par ${currentUser.nom}`);
-    saveData();closeModal("modal-edituser");renderAdmin();renderEffectifs();renderRecrues();syncDashboard();
+    saveData();
+    // Sync immédiat de _lastFbArrays.users pour éviter la race condition :
+    // sans ça, si le visiteur sauvegarde dans la foulée, son _lastFbArrays encore ancien
+    // peut écraser le changement de rôle côté Firebase.
+    if(typeof _lastFbArrays!=='undefined')_lastFbArrays.users=JSON.parse(JSON.stringify(DB.users));
+    closeModal("modal-edituser");renderAdmin();renderEffectifs();renderRecrues();syncDashboard();
     showToast("Compte mis à jour.","success");
   };
   if(newPass){
