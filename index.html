@@ -2795,7 +2795,6 @@ document.addEventListener('DOMContentLoaded',function(){if(localStorage.getItem(
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
   import { getDatabase, ref, set, onValue, push, serverTimestamp, get } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
-  import { initializeAppCheck, ReCaptchaV3Provider } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app-check.js";
 
   const firebaseConfig = {
     apiKey: "AIzaSyAOKtMRVbu1lBc5tZ2zpXkOtmC_TzqGWfs",
@@ -2807,12 +2806,6 @@ document.addEventListener('DOMContentLoaded',function(){if(localStorage.getItem(
     databaseURL: "https://suna-police-default-rtdb.europe-west1.firebasedatabase.app"
   };
   const fbApp = initializeApp(firebaseConfig);
-
-  // App Check — vérifie que les requêtes viennent bien de ton site
-  initializeAppCheck(fbApp, {
-    provider: new ReCaptchaV3Provider("6LcbQ8EsAAAAAc965LlkmvxjGs7zbhOYmmDeXi2"),
-    isTokenAutoRefreshEnabled: true
-  });
 
   const fbDB = getDatabase(fbApp);
   window._fbDB = fbDB;
