@@ -1521,8 +1521,24 @@ document.addEventListener('DOMContentLoaded',function(){if(localStorage.getItem(
       </div>
     </div>
     <div class="card mt-6">
-      <div class="card-header"><span>📅</span><h3>Journal d'activité</h3></div>
-      <div class="card-body"><div class="timeline" id="timeline"></div></div>
+      <div class="card-header">
+        <span>📅</span><h3>Journal d'activité</h3>
+        <div style="margin-left:auto;display:flex;gap:7px;align-items:center">
+          <select id="timeline-filter" class="form-control" onchange="renderTimeline()" style="font-size:10px;padding:4px 8px;max-width:130px;margin:0;font-family:'Share Tech Mono',monospace">
+            <option value="all">Toutes actions</option>
+            <option value="plainte">📋 Plaintes</option>
+            <option value="annonce">📢 Annonces</option>
+            <option value="dossier">🗂️ Dossiers</option>
+            <option value="candidature">🎖️ Recrutement</option>
+            <option value="operation">🚨 Opérations</option>
+            <option value="sanction">⚖️ Sanctions</option>
+            <option value="recense">📝 Recensement</option>
+            <option value="compte">👤 Comptes</option>
+          </select>
+          <button class="btn btn-gold btn-sm" onclick="openNotifTimelineModal()" id="btn-notif-timeline" style="display:none">🔔 Notifier</button>
+        </div>
+      </div>
+      <div class="card-body" style="max-height:320px;overflow-y:auto"><div class="timeline" id="timeline"></div></div>
     </div>
     <!-- GRAPHIQUES DASHBOARD -->
     <div class="grid grid-2 mt-6" id="dash-charts-row">
@@ -3185,21 +3201,22 @@ el("login-pass").addEventListener("keydown",e=>{if(e.key==="Enter")doLogin()});
 
 // COMMISSAIRE
 function renderCommissaire(){
-  el("comm-display").textContent=DB.commissaire||"—";
+  const _cd=el("comm-display");if(_cd)_cd.textContent=DB.commissaire||"—";
   if(el("admin-comm-input"))el("admin-comm-input").value=DB.commissaire||"";
 }
 function startCommEdit(){
-  el("comm-display").style.display="none";el("comm-pencil").style.display="none";
-  el("comm-input").value=DB.commissaire;el("comm-input").style.display="inline-block";
-  el("comm-input").focus();el("comm-input").select();
+  const _cde=el("comm-display");if(_cde)_cde.style.display="none";
+  const _cpe=el("comm-pencil");if(_cpe)_cpe.style.display="none";
+  const _cie=el("comm-input");if(_cie){_cie.value=DB.commissaire;_cie.style.display="inline-block";_cie.focus();_cie.select();}
 }
 function saveCommName(){
   const val=el("comm-input").value.trim();
   if(val){DB.commissaire=val;saveData()}
-  el("comm-display").textContent=DB.commissaire;
-  el("comm-display").style.display="";el("comm-input").style.display="none";el("comm-pencil").style.display="inline";
+  const _cd2=el("comm-display");if(_cd2){_cd2.textContent=DB.commissaire;_cd2.style.display="";}
+  const _ci2=el("comm-input");if(_ci2)_ci2.style.display="none";
+  const _cp2=el("comm-pencil");if(_cp2)_cp2.style.display="inline";
 }
-function cancelCommEdit(){el("comm-display").style.display="";el("comm-input").style.display="none";el("comm-pencil").style.display="inline"}
+function cancelCommEdit(){const _cdc=el("comm-display");if(_cdc)_cdc.style.display="";const _cic=el("comm-input");if(_cic)_cic.style.display="none";const _cpc=el("comm-pencil");if(_cpc)_cpc.style.display="inline";}
 function saveCommNameAdmin(){
   const val=el("admin-comm-input").value.trim();if(!val)return;
   DB.commissaire=val;saveData();renderCommissaire();
@@ -3237,8 +3254,8 @@ function showPage(name){
     if(restricted)restricted.style.display="none";
   }
   el("page-"+name).classList.add("active");
-  el("topbar-title").textContent=PAGES[name]||name;
-  el("topbar-path").textContent="Police Sunagakure / "+(PAGES[name]||name);
+  const _tt=el("topbar-title");if(_tt)_tt.textContent=PAGES[name]||name;
+  const _tp=el("topbar-path");if(_tp)_tp.textContent="Police Sunagakure / "+(PAGES[name]||name);
   document.querySelectorAll(".nav-item").forEach(n=>{if(n.getAttribute("onclick")&&n.getAttribute("onclick").includes("'"+name+"'"))n.classList.add("active")});
   // Mémoriser l'onglet actif pour le restaurer au refresh
   try{sessionStorage.setItem("suna_active_page",name)}catch(e){}
@@ -3402,17 +3419,62 @@ function markPageRead(page){
 }
 function renderDashboard(){
   updateStats();renderCommissaire();
-  el("dash-annonces").innerHTML=[...(DB.annonces||[])].reverse().slice(0,3).map(a=>`<div class="plainte-item"><div class="plainte-header"><span class="badge ${catBadge(a.cat)}">${esc(a.cat)}</span><span class="plainte-title">${esc(a.titre)}</span></div><div class="plainte-meta">${esc(a.auteur)} — ${fmtDate(a.date)}</div></div>`).join("")||'<p class="text-muted">Aucune annonce.</p>';
-  el("dash-plaintes").innerHTML=[...(DB.plaintes||[])].reverse().slice(0,4).map(p=>`<div class="plainte-item"><div class="plainte-header"><span class="badge ${statutPlainte(p.statut)}">${fmtStatut(p.statut)}</span><span class="plainte-title">${esc(p.type)}</span></div><div class="plainte-meta">${esc(p.plaignant)} vs ${esc(p.accuse)} — ${fmtDate(p.date)}</div></div>`).join("")||'<p class="text-muted">Aucune plainte.</p>';
+  const _da=el("dash-annonces"); if(_da) _da.innerHTML=[...(DB.annonces||[])].reverse().slice(0,3).map(a=>`<div class="plainte-item"><div class="plainte-header"><span class="badge ${catBadge(a.cat)}">${esc(a.cat)}</span><span class="plainte-title">${esc(a.titre)}</span></div><div class="plainte-meta">${esc(a.auteur)} — ${fmtDate(a.date)}</div></div>`).join("")||'<p class="text-muted">Aucune annonce.</p>';
+  const _dp=el("dash-plaintes"); if(_dp) _dp.innerHTML=[...(DB.plaintes||[])].reverse().slice(0,4).map(p=>`<div class="plainte-item"><div class="plainte-header"><span class="badge ${statutPlainte(p.statut)}">${fmtStatut(p.statut)}</span><span class="plainte-title">${esc(p.type)}</span></div><div class="plainte-meta">${esc(p.plaignant)} vs ${esc(p.accuse)} — ${fmtDate(p.date)}</div></div>`).join("")||'<p class="text-muted">Aucune plainte.</p>';
   renderTimeline();
   setTimeout(renderDashboardCharts,100);
 }
 function renderTimeline(){
   const e=el("timeline");if(!e)return;
-  const items=[...(DB.timeline||[])].reverse().slice(0,12);
-  e.innerHTML=items.map(t=>`<div class="timeline-item"><div class="t-time">${fmtDate(t.date)}</div><div class="t-text">${esc(t.text)}</div></div>`).join("")||'<p class="text-muted">Aucune activité.</p>';
+  // Bouton Notifier visible pour les admins/gérants seulement
+  const btnN=el("btn-notif-timeline");
+  if(btnN)btnN.style.display=(canModify()&&!isVisiteur())?"":"none";
+  // Filtre
+  const filterSel=el("timeline-filter");
+  const f=filterSel?filterSel.value:"all";
+  const ICONS={plainte:"📋",annonce:"📢",dossier:"🗂️",candidature:"🎖️",operation:"🚨",sanction:"⚖️",recense:"📝",compte:"👤",notif:"🔔"};
+  function tlIcon(txt){
+    const t=(txt||"").toLowerCase();
+    if(t.includes("plainte"))return ICONS.plainte;
+    if(t.includes("annonce"))return ICONS.annonce;
+    if(t.includes("dossier"))return ICONS.dossier;
+    if(t.includes("candidature")||t.includes("recrue")||t.includes("recrut"))return ICONS.candidature;
+    if(t.includes("opération")||t.includes("operation"))return ICONS.operation;
+    if(t.includes("sanction")||t.includes("promo")||t.includes("félicit")||t.includes("avertiss")||t.includes("exclusion"))return ICONS.sanction;
+    if(t.includes("recensé")||t.includes("recense")||t.includes("recensement"))return ICONS.recense;
+    if(t.includes("compte")||t.includes("modifié par")||t.includes("renvoy"))return ICONS.compte;
+    if(t.includes("🔔")||t.includes("notification"))return ICONS.notif;
+    return "📌";
+  }
+  function tlMatch(txt,f){
+    if(f==="all")return true;
+    const t=(txt||"").toLowerCase();
+    if(f==="plainte")return t.includes("plainte");
+    if(f==="annonce")return t.includes("annonce");
+    if(f==="dossier")return t.includes("dossier");
+    if(f==="candidature")return t.includes("candidature")||t.includes("recrue")||t.includes("recrut");
+    if(f==="operation")return t.includes("opération")||t.includes("operation");
+    if(f==="sanction")return t.includes("sanction")||t.includes("promo")||t.includes("félicit")||t.includes("avertiss")||t.includes("exclusion");
+    if(f==="recense")return t.includes("recensé")||t.includes("recense");
+    if(f==="compte")return t.includes("compte")||t.includes("modifié par")||t.includes("renvoy");
+    return true;
+  }
+  let items=[...(DB.timeline||[])].reverse().filter(t=>tlMatch(t.text,f)).slice(0,20);
+  e.innerHTML=items.map(t=>{
+    const icon=tlIcon(t.text);
+    const isNotif=(t.text||"").includes("🔔")||(t.urgence);
+    const urgStyle=isNotif?"background:rgba(192,65,14,0.07);border-left:3px solid var(--accent);border-radius:6px;padding:6px 8px;margin-bottom:2px":"";
+    return `<div class="timeline-item" style="${urgStyle}">
+      <div class="t-time" style="display:flex;align-items:center;gap:5px">
+        <span style="font-size:12px">${icon}</span>
+        <span>${fmtDate(t.date)}</span>
+        ${t.auteur?`<span style="font-size:9px;color:var(--gold2);font-family:'Share Tech Mono',monospace;margin-left:4px">par ${esc(t.auteur)}</span>`:""}
+      </div>
+      <div class="t-text">${esc(t.text)}</div>
+    </div>`;
+  }).join("")||`<div style="color:var(--muted);font-size:12px;padding:8px">Aucune activité${f!=="all"?" dans cette catégorie":""}</div>`;
 }
-function addTimeline(text){if(!DB.timeline)DB.timeline=[];DB.timeline.push({text,date:now()});if(DB.timeline.length>100)DB.timeline=DB.timeline.slice(-100);renderAdminTimeline();}
+function addTimeline(text,urgence){if(!DB.timeline)DB.timeline=[];const auteur=currentUser?currentUser.nom:null;DB.timeline.push({text,date:now(),auteur,urgence:urgence||false});if(DB.timeline.length>200)DB.timeline=DB.timeline.slice(-200);renderTimeline();renderAdminTimeline();}
 function renderAdminTimeline(){
   const e=el("admin-timeline-list");if(!e)return;
   const items=[...(DB.timeline||[])].reverse().slice(0,15);
@@ -3770,7 +3832,7 @@ function renderPlaintes(){
 }
 function savePlainte(){
   const pl=v("p-plaignant"),ac=v("p-accuse"),desc=v("p-desc");if(!pl||!ac||!desc)return;
-  DB.plaintes.push({id:Date.now(),plaignant:pl,accuse:ac,type:v("p-type"),desc,dateFaits:v("p-date"),statut:"ouverte",date:now()});
+  DB.plaintes.push({id:Date.now(),plaignant:pl,accuse:ac,type:v("p-type"),desc,dateFaits:v("p-date"),statut:"ouverte",auteur:currentUser?currentUser.nom:"Anonyme",agent:null,date:now()});
   addTimeline(`Plainte déposée par ${pl} contre ${ac}`);
   saveData();closeModal("modal-plainte");renderPlaintes();syncDashboard();clearForm(["p-plaignant","p-accuse","p-desc","p-date"]);
 }
@@ -3782,7 +3844,7 @@ function viewPlainte(id){
   const recenseAcc=(DB.recenses||[]).find(r=>((r.prenom||"")+" "+(r.nom||"")).toLowerCase().includes((p.accuse||"").toLowerCase())&&p.accuse&&p.accuse.length>2);
   const liensDossier=dossierAcc?`<div style="margin-top:10px;padding:10px 13px;background:rgba(220,38,38,0.06);border:1px solid rgba(220,38,38,0.2);border-radius:9px;font-size:12px;display:flex;align-items:center;gap:8px">🗂️ <span>Dossier criminel trouvé :</span><button class="btn btn-danger btn-sm" onclick="closeModal('modal-view-plainte');showPage('dossiers');setTimeout(()=>{const s=el('search-dossier');if(s){s.value='${esc(p.accuse||'')}';renderDossiers();}},150)">Voir le dossier</button></div>`:"";
   const liensRecense=recenseAcc?`<div style="margin-top:8px;padding:10px 13px;background:rgba(109,40,217,0.06);border:1px solid rgba(109,40,217,0.2);border-radius:9px;font-size:12px;display:flex;align-items:center;gap:8px">📝 <span>Fiche de recensement trouvée</span><button class="btn btn-purple btn-sm" onclick="closeModal('modal-view-plainte');showPage('recensement');setTimeout(()=>{const s=el('search-recense');if(s){s.value='${esc(p.accuse||'')}';renderRecensement();}},150)">Voir la fiche</button></div>`:"";
-  el("vp-body").innerHTML=`<div class="form-group"><label class="form-label">Plaignant</label><div style="font-size:13.5px">${esc(p.plaignant)}</div></div><div class="form-group"><label class="form-label">Accusé</label><div style="font-size:13.5px">${esc(p.accuse)}</div></div><div class="form-group"><label class="form-label">Type</label><div>${esc(p.type)}</div></div><div class="form-group"><label class="form-label">Description</label><div style="font-size:12.5px;color:#555;line-height:1.65;white-space:pre-wrap">${esc(p.desc)}</div></div><div class="form-group"><label class="form-label">Date des faits</label><div>${esc(p.dateFaits)||"—"}</div></div><div class="form-group"><label class="form-label">Statut</label><span class="badge ${statutPlainte(p.statut)}">${fmtStatut(p.statut)}</span></div>${liensDossier}${liensRecense}`;
+  el("vp-body").innerHTML=`<div class="form-group"><label class="form-label">Plaignant</label><div style="font-size:13.5px">${esc(p.plaignant)}</div></div><div class="form-group"><label class="form-label">Accusé</label><div style="font-size:13.5px">${esc(p.accuse)}</div></div><div class="form-group"><label class="form-label">Type</label><div>${esc(p.type)}</div></div><div class="form-group"><label class="form-label">Description</label><div style="font-size:12.5px;color:#555;line-height:1.65;white-space:pre-wrap">${esc(p.desc)}</div></div><div class="form-group"><label class="form-label">Date des faits</label><div>${esc(p.dateFaits)||"—"}</div></div><div class="form-group"><label class="form-label">Statut</label><span class="badge ${statutPlainte(p.statut)}">${fmtStatut(p.statut)}</span></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:8px"><div class="form-group" style="margin:0"><label class="form-label">Déposée par</label><div style="font-size:12px;font-weight:600">${esc(p.auteur||p.plaignant||"—")}</div></div><div class="form-group" style="margin:0"><label class="form-label">Agent en charge</label><div style="font-size:12px;font-weight:600;color:${p.agent?"var(--green)":"var(--muted)"}">${esc(p.agent||"Non assigné")}</div></div></div>${liensDossier}${liensRecense}`;
   const footer=el("vp-footer");footer.innerHTML="";
   if(canModify()){
     if(p.statut==="ouverte")footer.innerHTML+=`<button class="btn btn-primary btn-sm" onclick="setPlainteStatut(${p.id},'en_cours')">Prendre en charge</button>`;
@@ -3793,6 +3855,8 @@ function viewPlainte(id){
 }
 function setPlainteStatut(id,statut){
   const p=DB.plaintes.find(x=>x.id===id);if(!p)return;p.statut=statut;
+  if(statut==="en_cours"&&!p.agent)p.agent=currentUser.nom;
+  if(statut==="fermee")p.agentCloture=currentUser.nom;
   addTimeline(`Plainte #${id} → ${fmtStatut(statut)} par ${currentUser.nom}`);
   saveData();renderPlaintes();syncDashboard();closeModal("modal-view-plainte");
 }
@@ -4867,8 +4931,8 @@ function statutCand(s){return{en_attente:"badge-blue",acceptee:"badge-green",ref
 function fmtCand(s){return{en_attente:"En attente",acceptee:"Acceptée",refusee:"Refusée"}[s]||s}
 function dangerBadge(d){return{Faible:"badge-green",Modéré:"badge-blue",Élevé:"badge-gold",Extrême:"badge-red"}[d]||"badge-gray"}
 function dossierStatutBadge(s){return{Recherché:"badge-red","En garde à vue":"badge-gold",Incarcéré:"badge-blue",Libéré:"badge-gray",Surveillé:"badge-gold"}[s]||"badge-gray"}
-function roleBadge(r){return{admin:"badge-red",gerant:"badge-gold",cogerant:"badge-cyan",sergent:"badge-orange",officier:"badge-blue",stagiaire:"badge-gray",visiteur:"badge-gray"}[r]||"badge-gray"}
-function roleLabel(r){return{admin:"🔴 Admin",gerant:"🏛️ Gérant",cogerant:"🥈 Co-Gérant",sergent:"⚔️ Sergent",officier:"🔵 Officier",stagiaire:"🌱 Stagiaire",visiteur:"👁 Visiteur"}[r]||r}
+function roleBadge(r){return{admin:"badge-red",gerant:"badge-gold",cogerant:"badge-cyan",sergent:"badge-orange",officier:"badge-blue",membre:"badge-blue",stagiaire:"badge-gray",visiteur:"badge-gray"}[r]||"badge-gray"}
+function roleLabel(r){return{admin:"🔴 Admin",gerant:"🏛️ Gérant",cogerant:"🥈 Co-Gérant",sergent:"⚔️ Sergent",officier:"🔵 Officier",membre:"🔵 Officier",stagiaire:"🌱 Stagiaire",visiteur:"👁 Visiteur"}[r]||r}
 
 // PASTE GLOBAL : Ctrl+V pour photo dossier quand modale ouverte
 document.addEventListener("paste", function(e){
@@ -5967,6 +6031,7 @@ function gsSearch() {
     { label:'Opérations', icon:'&#128680;', page:'operations', keywords:'operations missions arrestation perquisition surveillance' },
     { label:'Effectifs', icon:'&#128110;', page:'effectifs', keywords:'effectifs membres agents policiers' },
     { label:'Sanctions / Promo', icon:'&#9878;&#65039;', page:'sanctions', keywords:'sanctions promotions felicitations avertissement exclusion' },
+    { label:'Hiérarchie', icon:'&#127963;&#65039;', page:'hierarchie', keywords:'hierarchie organigramme grades gerant cogerant sergent officier stagiaire' },
     { label:'Panel Admin', icon:'&#9881;&#65039;', page:'admin', keywords:'admin administration comptes utilisateurs' }
   ];
   GS_PAGES.filter(function(p){
@@ -6017,7 +6082,43 @@ function gsSearch() {
     R.candidatures.push({ icon:'&#127894;', title:c.nom||'', sub:'Candidature · '+_gsSt(c.statut)+(c.grade?' · Grade visé: '+c.grade:''), page:'recrutement', q:q });
   });
 
-  (DB.infractions||[]).filter(function(i){ return ((i.nom||'')+(i.cat||'')+(i.notes||'')).toLowerCase().indexOf(q) >= 0; }).slice(0,4).forEach(function(i){
+  // Messages privés (uniquement les siens)
+  if(!isVisiteur()&&currentUser){
+    var msgs=[];
+    var dbMsgs=DB.messages||{};
+    Object.keys(dbMsgs).forEach(function(key){
+      if(key.indexOf(String(currentUser.id))<0) return;
+      var thread=dbMsgs[key]||{};
+      Object.values(thread).forEach(function(m){
+        if(((m.text||'')+(m.senderNom||'')).toLowerCase().indexOf(q)>=0){
+          var otherId=key.split('_').find(function(id){return parseInt(id)!==currentUser.id;});
+          var other=(DB.users||[]).find(function(u){return u.id===parseInt(otherId);});
+          msgs.push({icon:'&#128172;',title:(m.text||'').slice(0,60)+(m.text&&m.text.length>60?'…':''),sub:'Message · De '+esc(m.senderNom||'?')+(other?' → '+esc(other.nom):''),page:'messagerie',q:q});
+        }
+      });
+    });
+    msgs.slice(0,3).forEach(function(item){ R.membres.push(item); }); // réutilise section membres
+  }
+
+    // Index messages privés de l'utilisateur connecté
+  if(!isVisiteur()&&currentUser){
+    var _dbMsgs=DB.messages||{};
+    var _msgResults=[];
+    Object.keys(_dbMsgs).forEach(function(key){
+      if(key.indexOf(String(currentUser.id))<0) return;
+      var thread=_dbMsgs[key]||{};
+      Object.values(thread).forEach(function(m){
+        if(((m.text||'')+(m.senderNom||'')).toLowerCase().indexOf(q)>=0){
+          var otherId=key.split('_').find(function(id){return parseInt(id)!==currentUser.id;});
+          var other=(DB.users||[]).find(function(u){return u.id===parseInt(otherId);});
+          _msgResults.push({icon:'&#128172;',title:(m.text||'').slice(0,55)+(m.text&&m.text.length>55?'…':''),sub:'Message · '+_gsEsc(m.senderNom||'?')+(other?' ↔ '+_gsEsc(other.nom):''),page:'messagerie',q:q});
+        }
+      });
+    });
+    _msgResults.slice(0,3).forEach(function(item){R.membres.push(item);});
+  }
+
+    (DB.infractions||[]).filter(function(i){ return ((i.nom||'')+(i.cat||'')+(i.notes||'')).toLowerCase().indexOf(q) >= 0; }).slice(0,4).forEach(function(i){
     var catLabel = {violet:'Petit délit',vert:'Moyen délit',rouge:'Gros délit',jaune:'Crime'}[i.cat]||i.cat||'';
     R.codepenal.push({ icon:'&#128220;', title:i.nom||'', sub:'Code Pénal · '+catLabel+(i.amende?' · Amende: '+i.amende:'')+(i.prison?' · Prison: '+i.prison:''), page:'codepenal', q:q });
   });
@@ -7552,7 +7653,20 @@ function renderProfil(){
   var u = currentUser;
   // Hero
   var av = document.getElementById('profil-avatar');
-  if(av) av.textContent=(u.nom||'?').charAt(0).toUpperCase();
+  if(av){
+    if(u.photo && typeof safeImgSrc==='function' && safeImgSrc(u.photo)){
+      av.textContent='';
+      av.style.padding='0';av.style.overflow='hidden';
+      var _pImg=av.querySelector('img');
+      if(!_pImg){_pImg=document.createElement('img');av.appendChild(_pImg);}
+      _pImg.src=safeImgSrc(u.photo);
+      _pImg.style.cssText='width:100%;height:100%;object-fit:cover;border-radius:50%;display:block';
+    } else {
+      var _pOldImg=av.querySelector('img');if(_pOldImg)_pOldImg.remove();
+      av.style.padding='';av.style.overflow='';
+      av.textContent=(u.nom||'?').charAt(0).toUpperCase();
+    }
+  }
   var nm = document.getElementById('profil-name'); if(nm) nm.textContent=u.nom||'—';
   var gr = document.getElementById('profil-grade'); if(gr) gr.textContent=(u.grade||'—')+' · '+(u.role||'').toUpperCase();
   var lg = document.getElementById('profil-login'); if(lg) lg.textContent='@'+u.login;
@@ -7749,5 +7863,83 @@ setTimeout(function(){
 
 </script>
 
+
+<script>
+// ─── NOTIFICATIONS JOURNAL D'ACTIVITÉ ───────────────────────────────────
+function openNotifTimelineModal(){
+  if(!canModify()){showToast("Accès réservé.","error");return;}
+  var ta=document.getElementById("notif-timeline-msg");if(ta)ta.value="";
+  var al=document.getElementById("notif-timeline-alert");if(al)al.style.display="none";
+  openModal("modal-notif-timeline");
+}
+function sendNotifTimeline(){
+  var msg=(document.getElementById("notif-timeline-msg")||{}).value||"";
+  if(!msg.trim()){
+    var al=document.getElementById("notif-timeline-alert");
+    if(al){al.textContent="Le message ne peut pas être vide.";al.style.display="block";}
+    return;
+  }
+  var dest=document.querySelector('input[name="notif-dest"]:checked');
+  var destVal=dest?dest.value:"tous";
+  var typeEl=document.getElementById("notif-timeline-type");
+  var type=typeEl?typeEl.value:"info";
+  var typeIcons={info:"📢",alerte:"🚨",reunion:"📅",sanction:"⚖️"};
+  var icon=typeIcons[type]||"🔔";
+  var destLabel={tous:"Tous les membres",membres:"Membres actifs",gerants:"Gérants & Co-Gérants"}[destVal]||"Tous";
+  var fullMsg=icon+" [NOTIFICATION → "+destLabel+"] "+msg.trim();
+  addTimeline(fullMsg, true);
+  saveData();
+  closeModal("modal-notif-timeline");
+  showToast("🔔 Notification envoyée dans le journal !","success");
+  renderTimeline();
+}
+</script>
+
+<!-- Modal Notifier via Journal -->
+<div class="modal-overlay" id="modal-notif-timeline">
+  <div class="modal" style="max-width:500px">
+    <div class="modal-header">
+      <h3>🔔 Envoyer une notification</h3>
+      <span class="modal-close" onclick="closeModal('modal-notif-timeline')">✕</span>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label">Message de la notification</label>
+        <textarea id="notif-timeline-msg" class="form-control" style="min-height:80px" placeholder="Ex: Réunion de brigade ce soir à 20h sur le serveur..."></textarea>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Destinataires</label>
+        <div style="display:flex;flex-direction:column;gap:6px">
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:12.5px">
+            <input type="radio" name="notif-dest" value="tous" checked> Tous les membres actifs
+          </label>
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:12.5px">
+            <input type="radio" name="notif-dest" value="membres"> Membres (hors visiteurs)
+          </label>
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:12.5px">
+            <input type="radio" name="notif-dest" value="gerants"> Gérants & Co-Gérants uniquement
+          </label>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Type</label>
+        <select id="notif-timeline-type" class="form-control">
+          <option value="info">📢 Information</option>
+          <option value="alerte">🚨 Alerte urgente</option>
+          <option value="reunion">📅 Réunion / Événement</option>
+          <option value="sanction">⚖️ Annonce disciplinaire</option>
+        </select>
+      </div>
+      <div id="notif-timeline-alert" class="alert alert-error" style="display:none"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('modal-notif-timeline')">Annuler</button>
+      <button class="btn btn-primary" onclick="sendNotifTimeline()">🔔 Envoyer la notification</button>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>
 </body>
 </html>
