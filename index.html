@@ -2255,6 +2255,7 @@ document.addEventListener('DOMContentLoaded',function(){if(localStorage.getItem(
             <option value="sergent">Sergent</option>
             <option value="membre">Membre</option>
             <option value="stagiaire">Stagiaire</option>
+            <option value="visiteur">👁 Visiteur</option>
           </select>
           <!-- Filtre statut -->
           <select id="admin-statut-filter" class="form-control" style="max-width:130px;padding:6px 10px;font-size:11px;margin:0" onchange="renderAdmin()">
@@ -2836,7 +2837,33 @@ let _fbIsSaving=false;    // Flag pour bloquer le listener pendant une save loca
 let _fbFirstLoad=true;   // Flag : premier chargement Firebase pas encore traité
 let _loginInProgress=false; // Anti double-submit
 
+// Dernières données reçues de Firebase — utilisées pour éviter d'écraser les données d'autres utilisateurs
+let _lastFbArrays={plaintes:[],dossiers:[],annonces:[],candidatures:[],operations:[],sanctions:[],recenses:[],infractions:[],timeline:[],users:[]};
+
+// Fusionne deux tableaux en évitant les doublons (par id)
+function _mergeArrayById(local, remote){
+  if(!remote||!remote.length) return local||[];
+  if(!local||!local.length) return remote;
+  const ids=new Set((local).map(x=>x&&x.id));
+  const extra=remote.filter(x=>x&&x.id&&!ids.has(x.id));
+  return extra.length?[...local,...extra]:local;
+}
+
 function saveData(){
+  // Fusionner les tableaux critiques avec les dernières données Firebase
+  // pour éviter d'écraser des données ajoutées par d'autres utilisateurs
+  if(_lastFbArrays){
+    const arrays=['plaintes','dossiers','annonces','candidatures','operations','sanctions','recenses','infractions','timeline'];
+    arrays.forEach(key=>{
+      if(_lastFbArrays[key]&&_lastFbArrays[key].length){
+        DB[key]=_mergeArrayById(DB[key],_lastFbArrays[key]);
+      }
+    });
+    // Fusionner les utilisateurs aussi (ne jamais en perdre)
+    if(_lastFbArrays.users&&_lastFbArrays.users.length){
+      DB.users=_mergeArrayById(DB.users,_lastFbArrays.users);
+    }
+  }
   // Sauvegarde Firebase (temps réel)
   if(window._fbDB&&window._fbRef&&window._fbSet){
     clearTimeout(_fbSaveTimeout);
@@ -2907,6 +2934,10 @@ function initFirebaseSync(){
     _fbFirstLoad=false;
     const data=snapshot.val();
     if(data&&typeof data==="object"){
+      // Mémoriser les derniers tableaux Firebase pour éviter les écrasements
+      ['plaintes','dossiers','annonces','candidatures','operations','sanctions','recenses','infractions','timeline','users'].forEach(k=>{
+        if(Array.isArray(data[k])&&data[k].length>0) _lastFbArrays[k]=data[k];
+      });
       // Fusionner avec les valeurs par défaut pour les champs manquants SEULEMENT
       // Ne pas écraser les tableaux existants de Firebase avec ceux de defaultData()
       const def=defaultData();
@@ -4378,14 +4409,14 @@ function _renderEffectifsOrig(){
   // Stats
   if(el("eff-stat-total"))el("eff-stat-total").textContent=actifs.length;
   if(el("eff-stat-admin"))el("eff-stat-admin").textContent=actifs.filter(u=>u.role==="admin").length;
-  if(el("eff-stat-officiers"))el("eff-stat-officiers").textContent=actifs.filter(u=>["officier","gerant","cogerant"].includes(u.role)).length;
-  if(el("eff-stat-membres"))el("eff-stat-membres").textContent=actifs.filter(u=>["membre","stagiaire"].includes(u.role)).length;
+  if(el("eff-stat-officiers"))el("eff-stat-officiers").textContent=actifs.filter(u=>["officier","sergent","gerant","cogerant"].includes(u.role)).length;
+  if(el("eff-stat-membres"))el("eff-stat-membres").textContent=actifs.filter(u=>["membre","stagiaire","visiteur"].includes(u.role)).length;
   // Filtre recherche
   const q=(el("search-effectifs")?.value||"").toLowerCase();
   let users=actifs;
   if(q)users=users.filter(u=>(u.nom+u.login+u.grade+u.role).toLowerCase().includes(q));
   // Ordre : admins en premier, puis par rôle
-  const roleOrder={admin:0,gerant:1,cogerant:2,officier:3,sergent:4,membre:5,stagiaire:6,visiteur:7};
+  const roleOrder={admin:0,gerant:1,cogerant:2,sergent:3,officier:4,membre:5,stagiaire:6,visiteur:7};
   users=[...users].sort((a,b)=>(roleOrder[a.role]??9)-(roleOrder[b.role]??9));
 
   const _effGrid=el("effectifs-grid");if(!_effGrid)return;
@@ -4993,7 +5024,7 @@ function renderEffectifsCharts(){
 }
 
 // ─── RÔLES / HIÉRARCHIE ──────────────────────────────────────────
-function rolePriority(r){return{admin:0,gerant:1,cogerant:2,sergent:3,officier:4,stagiaire:5,visiteur:9}[r]||6}
+function rolePriority(r){return{admin:0,gerant:1,cogerant:2,sergent:3,officier:4,membre:5,stagiaire:6,visiteur:9}[r]||7}
 function roleColor(r){return{admin:"#dc2626",gerant:"#b8860b",cogerant:"#0e7490",sergent:"#c0410e",officier:"#1d4ed8",stagiaire:"#6b7280",visiteur:"#9ca3af"}[r]||"#9ca3af"}
 function roleIcon(r){return{admin:"🔴",gerant:"🏛️",cogerant:"🥈",sergent:"⚔️",officier:"🔵",stagiaire:"🌱",visiteur:"👁"}[r]||"👤"}
 
@@ -5103,8 +5134,8 @@ function statutCand(s){return{en_attente:"badge-blue",acceptee:"badge-green",ref
 function fmtCand(s){return{en_attente:"En attente",acceptee:"Acceptée",refusee:"Refusée"}[s]||s}
 function dangerBadge(d){return{Faible:"badge-green",Modéré:"badge-blue",Élevé:"badge-gold",Extrême:"badge-red"}[d]||"badge-gray"}
 function dossierStatutBadge(s){return{Recherché:"badge-red","En garde à vue":"badge-gold",Incarcéré:"badge-blue",Libéré:"badge-gray",Surveillé:"badge-gold"}[s]||"badge-gray"}
-function roleBadge(r){return{admin:"badge-red",gerant:"badge-gold",cogerant:"badge-cyan",sergent:"badge-orange",officier:"badge-blue",membre:"badge-blue",stagiaire:"badge-gray",visiteur:"badge-gray"}[r]||"badge-gray"}
-function roleLabel(r){return{admin:"🔴 Admin",gerant:"🏛️ Gérant",cogerant:"🥈 Co-Gérant",sergent:"⚔️ Sergent",officier:"🔵 Officier",membre:"🔵 Officier",stagiaire:"🌱 Stagiaire",visiteur:"👁 Visiteur"}[r]||r}
+function roleBadge(r){return{admin:"badge-red",gerant:"badge-gold",cogerant:"badge-cyan",sergent:"badge-orange",officier:"badge-blue",membre:"badge-green",stagiaire:"badge-gray",visiteur:"badge-gray"}[r]||"badge-gray"}
+function roleLabel(r){return{admin:"🔴 Admin",gerant:"🏛️ Gérant",cogerant:"🥈 Co-Gérant",sergent:"⚔️ Sergent",officier:"🔵 Officier",membre:"👥 Membre",stagiaire:"🌱 Stagiaire",visiteur:"👁 Visiteur"}[r]||r}
 
 // PASTE GLOBAL : Ctrl+V pour photo dossier quand modale ouverte
 document.addEventListener("paste", function(e){
@@ -7883,7 +7914,7 @@ function renderProfil(){
   var gr = document.getElementById('profil-grade'); if(gr) gr.textContent=(u.grade||'—')+' · '+(u.role||'').toUpperCase();
   var lg = document.getElementById('profil-login'); if(lg) lg.textContent='@'+u.login;
   var rb = document.getElementById('profil-role-badge');
-  if(rb){var roleColors={admin:'badge-red',gerant:'badge-gold',cogerant:'badge-gold',officier:'badge-blue',sergent:'badge-cyan',membre:'badge-green',stagiaire:'badge-gray',visiteur:'badge-gray'};rb.innerHTML='<span class="badge '+(roleColors[u.role]||'badge-gray')+'">'+roleLabel(u.role)+'</span>';}
+  if(rb){var roleColors={admin:'badge-red',gerant:'badge-gold',cogerant:'badge-gold',officier:'badge-blue',sergent:'badge-orange',membre:'badge-green',stagiaire:'badge-gray',visiteur:'badge-gray'};rb.innerHTML='<span class="badge '+(roleColors[u.role]||'badge-gray')+'">'+roleLabel(u.role)+'</span>';}
   // Stats
   var myPlaintes=(DB.plaintes||[]).filter(function(p){return p.agent===u.nom||p.plaignant===u.nom;});
   var myDossiers=(DB.dossiers||[]).filter(function(d){return d.agent===u.nom;});
