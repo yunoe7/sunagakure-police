@@ -2836,63 +2836,100 @@ let _loginInProgress=false; // Anti double-submit
 // Dernières données reçues de Firebase — utilisées pour éviter d'écraser les données d'autres utilisateurs
 let _lastFbArrays={plaintes:[],dossiers:[],annonces:[],candidatures:[],operations:[],sanctions:[],recenses:[],infractions:[],timeline:[],users:[]};
 
-// Fusionne deux tableaux en évitant les doublons (par id)
-function _mergeArrayById(local, remote){
-  if(!remote||!remote.length) return local||[];
-  if(!local||!local.length) return remote;
-  const ids=new Set((local).map(x=>x&&x.id));
-  const extra=remote.filter(x=>x&&x.id&&!ids.has(x.id));
-  return extra.length?[...local,...extra]:local;
+// Fusionne deux tableaux en évitant les doublons (par id) — utilisé uniquement pour les users
+function _mergeArrayById(base, extra){
+  if(!extra||!extra.length) return base||[];
+  if(!base||!base.length) return extra;
+  const ids=new Set(base.map(x=>x&&x.id));
+  const news=extra.filter(x=>x&&x.id&&!ids.has(x.id));
+  return news.length?[...base,...news]:base;
 }
 
+// ── SAVE DATA ──
+// Stratégie : lire Firebase → fusionner notre DB locale → réécrire
+// Ainsi les données des autres utilisateurs ne sont JAMAIS écrasées.
+let _fbSaveQueue=null; // dernière DB en attente d'écriture
+let _fbSaveRunning=false;
+
 function saveData(){
-  // Fusionner les tableaux critiques avec les dernières données Firebase
-  // pour éviter d'écraser des données ajoutées par d'autres utilisateurs
-  if(_lastFbArrays){
-    const arrays=['plaintes','dossiers','annonces','candidatures','operations','sanctions','recenses','infractions','timeline'];
-    arrays.forEach(key=>{
-      if(_lastFbArrays[key]&&_lastFbArrays[key].length){
-        DB[key]=_mergeArrayById(DB[key],_lastFbArrays[key]);
+  // Sauvegarde locale immédiate (fallback offline)
+  try{localStorage.setItem(STORE,JSON.stringify(DB))}catch(e){}
+  if(!window._fbDB||!window._fbRef||!window._fbSet||!window._fbGet){return;}
+  // Mémoriser la DB à sauvegarder et lancer l'écriture si pas déjà en cours
+  _fbSaveQueue=JSON.parse(JSON.stringify(DB));
+  if(_fbSaveRunning)return; // une écriture est déjà en cours, elle prendra la queue
+  _flushSaveQueue();
+}
+
+async function _flushSaveQueue(){
+  if(_fbSaveRunning||!_fbSaveQueue)return;
+  _fbSaveRunning=true;
+  _fbIsSaving=true;
+  window._fbSavingStartTime=Date.now();
+  const toSave=_fbSaveQueue;
+  _fbSaveQueue=null;
+  try{
+    // 1. Lire Firebase pour récupérer les données des autres utilisateurs
+    const snap=await window._fbGet(window._fbRef(window._fbDB,"sunagakure"));
+    const fbData=snap.val();
+    let merged=toSave;
+    if(fbData&&typeof fbData==="object"){
+      // 2. Fusionner : Firebase est la base, on y ajoute ce qui est en local mais pas dans Firebase
+      const ARRAY_KEYS=['plaintes','dossiers','annonces','candidatures','operations','sanctions','recenses','infractions','timeline'];
+      merged={...fbData};
+      // Copier les clés scalaires depuis notre DB locale (commissaire, grades, etc.)
+      // SAUF messages qui est géré séparément par son propre listener Firebase
+      for(const k of Object.keys(toSave)){
+        if(!ARRAY_KEYS.includes(k)&&k!=='users'&&k!=='messages'){merged[k]=toSave[k];}
       }
-    });
-    // Fusionner les utilisateurs aussi (ne jamais en perdre)
-    if(_lastFbArrays.users&&_lastFbArrays.users.length){
-      DB.users=_mergeArrayById(DB.users,_lastFbArrays.users);
-    }
-  }
-  // Sauvegarde Firebase (temps réel)
-  if(window._fbDB&&window._fbRef&&window._fbSet){
-    clearTimeout(_fbSaveTimeout);
-    _fbIsSaving=true; // Bloquer le listener pendant la sauvegarde
-    window._fbSavingStartTime=Date.now(); // Horodatage pour déblocage d'urgence
-    // Sécurité absolue : jamais bloqué plus de 10s
-    clearTimeout(window._fbSavingSafetyTimer);
-    window._fbSavingSafetyTimer=setTimeout(()=>{_fbIsSaving=false;window._fbSavingStartTime=0;},10000);
-    // Sauvegarder immédiatement en localStorage
-    try{localStorage.setItem(STORE,JSON.stringify(DB))}catch(e){}
-    _fbSaveTimeout=setTimeout(()=>{
-      const r=window._fbRef(window._fbDB,"sunagakure");
-      // Sécurité : remettre _fbIsSaving à false après 5s max quoi qu'il arrive
-      const _saveSafetyTimer=setTimeout(()=>{_fbIsSaving=false;},5000);
-      window._fbSet(r,JSON.parse(JSON.stringify(DB))).then(()=>{
-        clearTimeout(_saveSafetyTimer);
-        // Mettre à jour _lastFbArrays avec les données qu'on vient de sauvegarder
-        // Évite la race condition où un save ultérieur repart avec des données obsolètes
-        ['plaintes','dossiers','annonces','candidatures','operations','sanctions','recenses','infractions','timeline','users'].forEach(k=>{
-          if(Array.isArray(DB[k])) _lastFbArrays[k]=JSON.parse(JSON.stringify(DB[k]));
-        });
-        // Flag down après 800ms (absorber l'écho) — bien moins que les 2s du listener
-        setTimeout(()=>{_fbIsSaving=false;window._fbSavingStartTime=0;},800);
-      }).catch(err=>{
-        clearTimeout(_saveSafetyTimer);
-        console.warn("Firebase save error:",err);
-        _fbIsSaving=false;
-        window._fbSavingStartTime=0;
+      // Messages : fusionner les deux versions (Firebase + local) pour ne perdre aucun message
+      const fbMsgs=fbData.messages&&typeof fbData.messages==='object'?fbData.messages:{};
+      const localMsgs=toSave.messages&&typeof toSave.messages==='object'?toSave.messages:{};
+      const mergedMsgs={...fbMsgs};
+      for(const conv of Object.keys(localMsgs)){
+        if(!mergedMsgs[conv]){mergedMsgs[conv]=localMsgs[conv];}
+        else{
+          // Fusionner les messages de la conversation (par id de message)
+          mergedMsgs[conv]={...localMsgs[conv],...mergedMsgs[conv]};
+        }
+      }
+      merged.messages=mergedMsgs;
+      // Pour chaque tableau : partir de Firebase comme base, ajouter ce qui est dans local mais absent de Firebase
+      ARRAY_KEYS.forEach(k=>{
+        const fbArr=Array.isArray(fbData[k])?fbData[k]:[];
+        const localArr=Array.isArray(toSave[k])?toSave[k]:[];
+        const fbIds=new Set(fbArr.map(x=>x&&x.id));
+        const newItems=localArr.filter(x=>x&&x.id&&!fbIds.has(x.id));
+        // Mettre à jour les entrées existantes avec les modifications locales
+        const localById={};localArr.forEach(x=>{if(x&&x.id)localById[x.id]=x;});
+        const updated=fbArr.map(x=>(x&&x.id&&localById[x.id])?localById[x.id]:x);
+        merged[k]=[...updated,...newItems];
       });
-    },150);
-  } else {
-    // Fallback si Firebase pas encore prêt
+      // Users : fusionner en prenant Firebase comme base + nouveaux users locaux
+      const fbUsers=Array.isArray(fbData.users)?fbData.users:[];
+      const localUsers=Array.isArray(toSave.users)?toSave.users:[];
+      const fbUserIds=new Set(fbUsers.map(u=>u&&u.id));
+      const newUsers=localUsers.filter(u=>u&&u.id&&!fbUserIds.has(u.id));
+      const localUserById={};localUsers.forEach(u=>{if(u&&u.id)localUserById[u.id]=u;});
+      const updatedUsers=fbUsers.map(u=>(u&&u.id&&localUserById[u.id])?localUserById[u.id]:u);
+      merged.users=[...updatedUsers,...newUsers];
+    }
+    // 3. Mettre à jour DB locale avec le résultat fusionné
+    DB=merged;
     try{localStorage.setItem(STORE,JSON.stringify(DB))}catch(e){}
+    // 4. Écrire dans Firebase
+    await window._fbSet(window._fbRef(window._fbDB,"sunagakure"),JSON.parse(JSON.stringify(merged)));
+  }catch(err){
+    // Firebase inaccessible : sauvegarder quand même localement et réessayer plus tard
+    console.warn("Firebase save error (will retry):",err);
+    try{localStorage.setItem(STORE,JSON.stringify(toSave))}catch(e){}
+    // Remettre en queue pour réessayer dans 3s
+    if(!_fbSaveQueue){_fbSaveQueue=toSave;setTimeout(_flushSaveQueue,3000);}
+  }finally{
+    _fbSaveRunning=false;
+    setTimeout(()=>{_fbIsSaving=false;window._fbSavingStartTime=0;},500);
+    // Si une nouvelle sauvegarde est en attente, la traiter
+    if(_fbSaveQueue)setTimeout(_flushSaveQueue,100);
   }
 }
 
@@ -2902,34 +2939,12 @@ function initFirebaseSync(){
   if(!window._fbDB||!window._fbRef||!window._fbOnValue)return;
   const r=window._fbRef(window._fbDB,"sunagakure");
   window._fbOnValue(r,(snapshot)=>{
-    // Bloquer uniquement les échos IMMÉDIATS de notre propre sauvegarde (<2s)
-    // JAMAIS bloquer si les données Firebase sont plus récentes que notre dernière save
+    // Si on est en train de sauvegarder (fenêtre courte <1s), ignorer l'écho
+    // mais JAMAIS bloquer plus de 1s pour ne pas rater les données des autres utilisateurs
     if(_fbIsSaving&&!_fbFirstLoad){
       const msSinceSave=window._fbSavingStartTime?(Date.now()-window._fbSavingStartTime):9999;
-      // Après 2s, on laisse toujours passer — les données viennent d'un autre utilisateur
-      if(msSinceSave>2000){
-        _fbIsSaving=false;
-      } else {
-        // Dans la fenêtre de 2s : vérifier si les données contiennent des entrées plus récentes
-        // (ex: nouvelle plainte d'un autre user pendant qu'on sauvegardait)
-        try{
-          const incoming=snapshot.val();
-          if(incoming){
-            const incomingUsers=(incoming.users||[]).length;
-            const incomingPlaintes=(incoming.plaintes||[]).length;
-            const incomingAnnonces=(incoming.annonces||[]).length;
-            const localUsers=(DB.users||[]).length;
-            const localPlaintes=(DB.plaintes||[]).length;
-            const localAnnonces=(DB.annonces||[]).length;
-            // Si Firebase a plus d'entrées que nous → c'est un autre user, laisser passer
-            if(incomingUsers>localUsers||incomingPlaintes>localPlaintes||incomingAnnonces>localAnnonces){
-              _fbIsSaving=false; // laisser passer
-            } else {
-              return; // c'est notre propre écho, ignorer
-            }
-          }
-        }catch(e){ return; }
-      }
+      if(msSinceSave<1000){return;} // court-circuit uniquement pour l'écho immédiat
+      _fbIsSaving=false;
     }
     const wasFirst=_fbFirstLoad;
     _fbFirstLoad=false;
@@ -3009,8 +3024,6 @@ function initFirebaseSync(){
           updateBadges();
           syncBottomNavBadges();
           updateMsgBadge();
-          const activePage=document.querySelector(".page-content.active");
-          if(activePage){const name=activePage.id.replace("page-","");renderPage(name);}
         }
       };
       if(fbNeedsMigration){
@@ -3113,12 +3126,12 @@ async function doRegister(){
   if(pass.length<6){ra.textContent='Mot de passe trop court (6 caractères min).';ra.style.display='block';_loginInProgress=false;return;}
   if(pass!==pass2){ra.textContent='Les mots de passe ne correspondent pas.';ra.style.display='block';_loginInProgress=false;return;}
   if(!/^[a-zA-Z0-9_\-\.]{3,30}$/.test(login)){ra.textContent='Identifiant invalide (3-30 caractères, lettres, chiffres, _ - . uniquement).';ra.style.display='block';_loginInProgress=false;return;}
-  // Afficher un indicateur de chargement pendant la vérification Firebase
-  rs.textContent='⏳ Vérification en cours...';rs.style.display='block';
-  // TOUJOURS lire Firebase en priorité pour avoir les données les plus fraîches
+  // TOUJOURS lire Firebase en priorité pour avoir les données les plus fraîches (timeout 5s)
   if(window._fbDB&&window._fbRef&&window._fbGet){
     try{
-      const snap=await window._fbGet(window._fbRef(window._fbDB,"sunagakure"));
+      const fbPromise=window._fbGet(window._fbRef(window._fbDB,"sunagakure"));
+      const timeout=new Promise((_,rej)=>setTimeout(()=>rej(new Error("timeout")),5000));
+      const snap=await Promise.race([fbPromise,timeout]);
       const fbData=snap.val();
       if(fbData&&typeof fbData==="object"){
         // Remplacer complètement la DB locale par les données Firebase (source de vérité)
@@ -3132,9 +3145,8 @@ async function doRegister(){
           if(Array.isArray(DB[k])&&DB[k].length>0)_lastFbArrays[k]=JSON.parse(JSON.stringify(DB[k]));
         });
       }
-    }catch(e){console.warn("Firebase read before register failed:",e);}
+    }catch(e){console.warn("Firebase read before register failed (ignored):",e);}
   }
-  rs.style.display='none';
   // Vérifier que le login n'existe pas (avec données Firebase fraîches)
   if(DB.users.find(u=>u.login===login)){
     ra.textContent='Cet identifiant est déjà utilisé.';ra.style.display='block';_loginInProgress=false;return;
@@ -3144,8 +3156,7 @@ async function doRegister(){
   const defaultGrade=(DB.grades&&DB.grades.length?DB.grades[DB.grades.length-1]:'Stagiaire');
   const newUser={id:Date.now(),login,pass:hashed,nom,grade:defaultGrade,role:'visiteur',statut:'Actif',photo:'',created:now()};
   DB.users.push(newUser);
-  // Sauvegarde immédiate et synchrone vers Firebase
-  await _saveDataAndWait();
+  saveData();
   _registerCount++;
   rs.textContent='✅ Compte créé ! Connexion en cours...';rs.style.display='block';
   _loginInProgress=false;
@@ -3157,30 +3168,11 @@ async function doRegister(){
   },1200);
 }
 
-// Sauvegarde Firebase avec attente de confirmation (pour l'inscription)
+// _saveDataAndWait : alias de saveData (la nouvelle version gère déjà la fusion Firebase)
 async function _saveDataAndWait(){
-  // Fusionner avec _lastFbArrays comme saveData() le fait
-  if(_lastFbArrays){
-    const arrays=['plaintes','dossiers','annonces','candidatures','operations','sanctions','recenses','infractions','timeline'];
-    arrays.forEach(key=>{if(_lastFbArrays[key]&&_lastFbArrays[key].length)DB[key]=_mergeArrayById(DB[key],_lastFbArrays[key]);});
-    if(_lastFbArrays.users&&_lastFbArrays.users.length)DB.users=_mergeArrayById(DB.users,_lastFbArrays.users);
-  }
-  try{localStorage.setItem(STORE,JSON.stringify(DB));}catch(e){}
-  if(window._fbDB&&window._fbRef&&window._fbSet){
-    try{
-      _fbIsSaving=true;
-      window._fbSavingStartTime=Date.now();
-      const r=window._fbRef(window._fbDB,"sunagakure");
-      await window._fbSet(r,JSON.parse(JSON.stringify(DB)));
-      ['plaintes','dossiers','annonces','candidatures','operations','sanctions','recenses','infractions','timeline','users'].forEach(k=>{
-        if(Array.isArray(DB[k]))_lastFbArrays[k]=JSON.parse(JSON.stringify(DB[k]));
-      });
-      setTimeout(()=>{_fbIsSaving=false;window._fbSavingStartTime=0;},800);
-    }catch(e){
-      console.warn("Firebase save error during register:",e);
-      _fbIsSaving=false;
-    }
-  }
+  saveData();
+  // Attendre un peu pour laisser le temps à Firebase de recevoir l'écriture
+  await new Promise(r=>setTimeout(r,800));
 }
 
 // REMEMBER ME
@@ -3195,6 +3187,9 @@ function updateLoginStats(){
 function checkRememberMe(){
   const saved=localStorage.getItem("suna_session");
   if(!saved)return false;
+  // Si DB.users est vide (Firebase pas encore chargé), ne pas invalider la session
+  // On laisse Firebase charger et rappeler checkRememberMe via initFirebaseSync
+  if(!DB.users||DB.users.length===0)return false;
   try{
     const s=JSON.parse(saved);
     // Validation : on compare l'ID + le hash du mot de passe stocké LOCALEMENT
@@ -3229,22 +3224,21 @@ function doLogin(){
   showLoginErr("");
   el("login-alert").style.display="none";
   // Afficher un indicateur de chargement
-  const btnLogin=document.querySelector("#form-login .btn-primary");
-  if(btnLogin){btnLogin.disabled=true;btnLogin.textContent="⏳ Connexion...";}
   // Toujours lire Firebase avant de vérifier les identifiants (pour avoir les comptes récents)
   const _doLoginCheck=async function(hashed){
     _loginInProgress=false;
-    if(btnLogin){btnLogin.disabled=false;btnLogin.textContent="Connexion";}
-    // Rafraîchir depuis Firebase si disponible
+    // Rafraîchir depuis Firebase si disponible (avec timeout 5s pour ne pas bloquer)
     if(window._fbDB&&window._fbRef&&window._fbGet){
       try{
-        const snap=await window._fbGet(window._fbRef(window._fbDB,"sunagakure"));
+        const fbPromise=window._fbGet(window._fbRef(window._fbDB,"sunagakure"));
+        const timeout=new Promise((_,rej)=>setTimeout(()=>rej(new Error("timeout")),5000));
+        const snap=await Promise.race([fbPromise,timeout]);
         const fbData=snap.val();
         if(fbData&&typeof fbData==="object"&&Array.isArray(fbData.users)&&fbData.users.length>0){
           DB.users=fbData.users;
           _lastFbArrays.users=JSON.parse(JSON.stringify(fbData.users));
         }
-      }catch(e){console.warn("Firebase read before login failed:",e);}
+      }catch(e){console.warn("Firebase read before login failed (ignored):",e);}
     }
     // Si un compte a encore __PENDING_HASH__ ou le hash corrompu, le migrer maintenant
     const badHash2=await hashPass("__PENDING_HASH__");
@@ -3479,21 +3473,25 @@ function renderPage(name){
   if(name==="admin"){
     el("admin-comm-input").value=DB.commissaire||"";applyLogo();loadNotifPrefs();refreshNotifCounts();renderNotifHistory();
     // Forcer une relecture Firebase pour afficher les comptes les plus récents
+    // Affichage immédiat avec les données déjà à jour via le listener onValue
+    renderAdmin();renderAdminTimeline();renderAuditLog();renderLoginHistory();
+    // GET Firebase en arrière-plan — re-render uniquement si la liste users a changé
     if(window._fbDB&&window._fbRef&&window._fbGet){
       window._fbGet(window._fbRef(window._fbDB,"sunagakure")).then(function(snap){
         var fbData=snap.val();
         if(fbData&&typeof fbData==="object"){
+          var usersChanged=false;
           if(Array.isArray(fbData.users)&&fbData.users.length>0){
+            var prevUsers=JSON.stringify(DB.users);
             DB.users=fbData.users;
             _lastFbArrays.users=JSON.parse(JSON.stringify(fbData.users));
+            if(JSON.stringify(DB.users)!==prevUsers)usersChanged=true;
           }
           var arrays=['plaintes','dossiers','annonces','candidatures','operations','sanctions','recenses','infractions','timeline'];
           arrays.forEach(function(k){if(Array.isArray(fbData[k])&&fbData[k].length>0){DB[k]=fbData[k];_lastFbArrays[k]=JSON.parse(JSON.stringify(fbData[k]));}}); 
+          if(usersChanged){renderAdmin();renderAdminTimeline();renderAuditLog();renderLoginHistory();}
         }
-        renderAdmin();renderAdminTimeline();renderAuditLog();renderLoginHistory();
-      }).catch(function(){renderAdmin();renderAdminTimeline();renderAuditLog();renderLoginHistory();});
-    } else {
-      renderAdmin();renderAdminTimeline();renderAuditLog();renderLoginHistory();
+      }).catch(function(){});
     }
   }
   if(name==="messagerie")renderMsgContacts();
@@ -4803,10 +4801,6 @@ function saveEditUser(){
     if(currentUser.id===id){currentUser=u;el("user-name-display").textContent=u.nom;el("user-rank-display").textContent=roleLabel(u.role)+" · "+u.grade;refreshSidebarAvatar();}
     addTimeline(`Compte de ${u.nom} modifié par ${currentUser.nom}`);
     saveData();
-    // Sync immédiat de _lastFbArrays.users pour éviter la race condition :
-    // sans ça, si le visiteur sauvegarde dans la foulée, son _lastFbArrays encore ancien
-    // peut écraser le changement de rôle côté Firebase.
-    if(typeof _lastFbArrays!=='undefined')_lastFbArrays.users=JSON.parse(JSON.stringify(DB.users));
     closeModal("modal-edituser");renderAdmin();renderEffectifs();renderRecrues();syncDashboard();
     showToast("Compte mis à jour.","success");
   };
@@ -5423,6 +5417,11 @@ window.addEventListener("load",()=>{
             _fbFirstLoad=false;
             const fl=document.getElementById('firebase-loading');if(fl)fl.remove();
             updateLoginStats();
+            // Si DB.users est vide (Firebase offline), utiliser les données localStorage
+            if(!DB.users||DB.users.length===0){
+              const localRaw=localStorage.getItem(STORE);
+              try{const localData=localRaw?JSON.parse(localRaw):null;if(localData&&localData.users&&localData.users.length>0)DB=localData;}catch(e){}
+            }
             if(!checkRememberMe()){
               el("login-screen").style.display="flex";
             }
@@ -5511,6 +5510,7 @@ window.addEventListener("load",()=>{
     if(!btn) return;
     var page = item.page;
     btn.addEventListener('click', function(){
+      closeMoreDrawer();
       showPage(page);
       updateBottomNav(page);
     });
@@ -6185,6 +6185,8 @@ body.dark .dash-quick-chip{background:rgba(180,140,20,0.08);border-color:rgba(18
     if (hamburger) topbar.appendChild(hamburger);
     if (title) topbar.appendChild(title);
     topbar.appendChild(spR);
+    /* FIX Bug 3 : réinsérer topbar-path pour que el("topbar-path") reste valide */
+    if (path) topbar.appendChild(path);
 
   } else {
     /* ── DESKTOP ── comportement original */
@@ -8568,6 +8570,7 @@ document.addEventListener('keydown', function(e) {
 /* ── 7. INDICATEUR "VU PAR" sur les annonces (compteur de vues) ── */
 (function patchViewCount() {
   var _origRA = null;
+  var _viewSaveTimer = null;
   var attempts = 0;
   var t = setInterval(function() {
     attempts++;
@@ -8579,10 +8582,16 @@ document.addEventListener('keydown', function(e) {
       // Enregistrer la vue de l'utilisateur courant
       if (currentUser) {
         var uid = String(currentUser.id);
+        var changed = false;
         (DB.annonces || []).forEach(function(a) {
           if (!a.views) a.views = [];
-          if (!a.views.includes(uid)) a.views.push(uid);
+          if (!a.views.includes(uid)) { a.views.push(uid); changed = true; }
         });
+        // FIX Bug 6 : sauvegarder avec debounce 2s pour ne pas spammer Firebase
+        if (changed) {
+          clearTimeout(_viewSaveTimer);
+          _viewSaveTimer = setTimeout(function() { saveData(); }, 2000);
+        }
       }
       _origRA();
     };
