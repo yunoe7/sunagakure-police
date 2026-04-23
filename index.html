@@ -2895,29 +2895,24 @@ async function _flushSaveQueue(){
       _lastFbArrays[k]=JSON.parse(JSON.stringify(patch[k]));
     });
 
-    // Users : on utilise _lastFbArrays (maintenu en temps réel par onValue) — plus rapide et fiable que fbGet
-    let freshFbUsers=Array.isArray(_lastFbArrays.users)?[..._lastFbArrays.users]:[];
-    console.log('[FB-SAVE] freshFbUsers depuis _lastFbArrays:', freshFbUsers.length, freshFbUsers.map(u=>u&&u.login));
-    // Tentative de refresh via GET (non bloquant si ça échoue)
-    try{
-      if(window._fbGet){
-        const snap=await window._fbGet(window._fbRef(window._fbDB,"sunagakure/users"));
-        const fbRaw=snap.val();
-        console.log('[FB-SAVE] GET users Firebase — type:', typeof fbRaw, '— isArray:', Array.isArray(fbRaw));
-        if(Array.isArray(fbRaw)&&fbRaw.length>0){
-          freshFbUsers=fbRaw;_lastFbArrays.users=JSON.parse(JSON.stringify(fbRaw));
-          console.log('[FB-SAVE] GET OK — users Firebase:', fbRaw.length);
-        } else if(fbRaw&&typeof fbRaw==='object'&&!Array.isArray(fbRaw)){
-          const converted=Object.values(fbRaw).filter(Boolean);
-          console.log('[FB-SAVE] Objet→array:', converted.length, 'entrées');
-          if(converted.length>0){freshFbUsers=converted;_lastFbArrays.users=JSON.parse(JSON.stringify(converted));}
-        } else if(fbRaw===null){
-          console.log('[FB-SAVE] GET users = null (Firebase vide ou permission refusée)');
-        }
-      }
-    }catch(e){
-      console.error('[FB-SAVE] GET users échoué (non bloquant):', e.message||e, '— on continue avec _lastFbArrays');
+    // Users : _lastFbArrays est maintenu en temps réel par onValue — source de vérité, pas besoin de GET
+    // Si _lastFbArrays.users est vide, attendre que onValue réponde (max 4 secondes)
+    if(!_lastFbArrays.users||_lastFbArrays.users.length===0){
+      console.log('[FB-SAVE] _lastFbArrays.users vide — attente onValue...');
+      await new Promise(r=>{
+        let waited=0;
+        const chk=setInterval(()=>{
+          waited+=200;
+          if((_lastFbArrays.users&&_lastFbArrays.users.length>0)||waited>=4000){
+            clearInterval(chk);
+            console.log('[FB-SAVE] onValue reçu après', waited, 'ms — users:', (_lastFbArrays.users||[]).length);
+            r();
+          }
+        },200);
+      });
     }
+    let freshFbUsers=Array.isArray(_lastFbArrays.users)?[..._lastFbArrays.users]:[];
+    console.log('[FB-SAVE] freshFbUsers:', freshFbUsers.length, freshFbUsers.map(u=>u&&u.login));
     const localUsers=Array.isArray(toSave.users)?toSave.users:[];
     const fbUserIds=new Set(freshFbUsers.map(u=>u&&u.id));
     const newUsers=localUsers.filter(u=>u&&u.id&&!fbUserIds.has(u.id));
