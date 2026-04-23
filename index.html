@@ -2866,6 +2866,7 @@ async function _flushSaveQueue(){
   _fbSaveRunning=true;
   const toSave=_fbSaveQueue;
   _fbSaveQueue=null;
+  console.log('[FB-SAVE] Début flush — users locaux:', (toSave.users||[]).length);
   try{
     // update() = écriture partielle atomique côté Firebase.
     // Pas de GET préalable, pas de race condition, ~3× plus rapide que set().
@@ -2899,8 +2900,15 @@ async function _flushSaveQueue(){
     try{
       const snap=await window._fbGet(window._fbRef(window._fbDB,"sunagakure/users"));
       const fbRaw=snap.val();
+      console.log('[FB-SAVE] GET users Firebase — type:', typeof fbRaw, '— isArray:', Array.isArray(fbRaw), '— valeur:', fbRaw);
       if(Array.isArray(fbRaw)&&fbRaw.length>0){freshFbUsers=fbRaw;_lastFbArrays.users=JSON.parse(JSON.stringify(fbRaw));}
-    }catch(e){}
+      else if(fbRaw&&typeof fbRaw==='object'&&!Array.isArray(fbRaw)){
+        // Firebase a retourné un objet {0:{...},1:{...}} au lieu d'un array — convertir
+        const converted=Object.values(fbRaw).filter(Boolean);
+        console.log('[FB-SAVE] Conversion objet→array users:', converted.length, 'entrées');
+        if(converted.length>0){freshFbUsers=converted;_lastFbArrays.users=JSON.parse(JSON.stringify(converted));}
+      }
+    }catch(e){console.error('[FB-SAVE] Erreur GET users:', e);}
     const localUsers=Array.isArray(toSave.users)?toSave.users:[];
     const fbUserIds=new Set(freshFbUsers.map(u=>u&&u.id));
     const newUsers=localUsers.filter(u=>u&&u.id&&!fbUserIds.has(u.id));
@@ -2917,8 +2925,11 @@ async function _flushSaveQueue(){
     try{localStorage.setItem(STORE,JSON.stringify(DB));}catch(e){}
 
     // Écriture avec données fraîches — plus de risque d'écraser des comptes créés simultanément
+    console.log('[FB-SAVE] Envoi Firebase — users dans patch:', (patch.users||[]).length, patch.users&&patch.users.map(u=>u&&u.login));
     await window._fbUpdate(window._fbRef(window._fbDB,"sunagakure"),JSON.parse(JSON.stringify(patch)));
+    console.log('[FB-SAVE] ✅ Écriture Firebase réussie');
   }catch(err){
+    console.error('[FB-SAVE] ❌ Erreur écriture Firebase:', err);
     console.warn("Firebase save error (will retry):",err);
     showToast("⚠️ Erreur de connexion au serveur. Nouvelle tentative...","error");
     try{localStorage.setItem(STORE,JSON.stringify(toSave));}catch(e){}
