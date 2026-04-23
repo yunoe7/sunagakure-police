@@ -4775,6 +4775,7 @@ function saveEditUser(){
     const c=DB.candidatures.find(x=>x.authorId===id||x.nom===oldNom);if(c)c.grade=u.grade;
     if(currentUser.id===id){currentUser=u;el("user-name-display").textContent=u.nom;el("user-rank-display").textContent=roleLabel(u.role)+" · "+u.grade;refreshSidebarAvatar();}
     addTimeline(`Compte de ${u.nom} modifié par ${currentUser.nom}`);
+    _lastFbArrays.users=DB.users.map(x=>JSON.parse(JSON.stringify(x)));
     saveData();
     closeModal("modal-edituser");renderAdmin();renderEffectifs();renderRecrues();syncDashboard();
     showToast("Compte mis à jour.","success");
@@ -4800,6 +4801,8 @@ function deleteUserById(){
   closeModal("modal-edituser");
   askDelete(`Supprimer définitivement le compte de ${u.nom} ?`,()=>{
     DB.users=DB.users.filter(x=>x.id!==id);
+    // Mettre à jour _lastFbArrays immédiatement pour que le merge ne remette pas le compte supprimé
+    _lastFbArrays.users=DB.users.map(u=>JSON.parse(JSON.stringify(u)));
     addTimeline(`Compte de ${u.nom} supprimé par ${currentUser.nom}`);
     saveData();renderAdmin();renderEffectifs();syncDashboard();
   });
@@ -4928,6 +4931,7 @@ function toggleUser(id){
   var oldStatut=u.statut;
 u.statut=u.statut==="Actif"?"Désactivé":"Actif";
 addTimeline(`${u.nom} : compte ${u.statut==="Actif"?"réactivé":"désactivé"} par ${currentUser?currentUser.nom:"admin"}`);
+_lastFbArrays.users=DB.users.map(x=>JSON.parse(JSON.stringify(x)));
 saveData();renderAdmin();syncDashboard();
 }
 
