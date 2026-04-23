@@ -2894,13 +2894,18 @@ async function _flushSaveQueue(){
       _lastFbArrays[k]=JSON.parse(JSON.stringify(patch[k]));
     });
 
-    // Users : même logique
-    const fbUsers=Array.isArray(_lastFbArrays.users)?[..._lastFbArrays.users]:[];
+    // Users : relire Firebase en temps réel pour éviter d'écraser des comptes créés par d'autres
+    let freshFbUsers=Array.isArray(_lastFbArrays.users)?[..._lastFbArrays.users]:[];
+    try{
+      const snap=await window._fbGet(window._fbRef(window._fbDB,"sunagakure/users"));
+      const fbRaw=snap.val();
+      if(Array.isArray(fbRaw)&&fbRaw.length>0){freshFbUsers=fbRaw;_lastFbArrays.users=JSON.parse(JSON.stringify(fbRaw));}
+    }catch(e){}
     const localUsers=Array.isArray(toSave.users)?toSave.users:[];
-    const fbUserIds=new Set(fbUsers.map(u=>u&&u.id));
+    const fbUserIds=new Set(freshFbUsers.map(u=>u&&u.id));
     const newUsers=localUsers.filter(u=>u&&u.id&&!fbUserIds.has(u.id));
     const localUserById={};localUsers.forEach(u=>{if(u&&u.id)localUserById[u.id]=u;});
-    const updatedUsers=fbUsers.map(u=>{
+    const updatedUsers=freshFbUsers.map(u=>{
       if(!u||!u.id||!localUserById[u.id])return u;
       return JSON.stringify(u)!==JSON.stringify(localUserById[u.id])?localUserById[u.id]:u;
     });
@@ -2911,10 +2916,11 @@ async function _flushSaveQueue(){
     Object.assign(DB,patch);
     try{localStorage.setItem(STORE,JSON.stringify(DB));}catch(e){}
 
-    // Écriture partielle atomique — Firebase gère les conflits entre clients automatiquement
+    // Écriture avec données fraîches — plus de risque d'écraser des comptes créés simultanément
     await window._fbUpdate(window._fbRef(window._fbDB,"sunagakure"),JSON.parse(JSON.stringify(patch)));
   }catch(err){
     console.warn("Firebase save error (will retry):",err);
+    showToast("⚠️ Erreur de connexion au serveur. Nouvelle tentative...","error");
     try{localStorage.setItem(STORE,JSON.stringify(toSave));}catch(e){}
     if(!_fbSaveQueue){_fbSaveQueue=toSave;setTimeout(_flushSaveQueue,3000);}
   }finally{
@@ -3121,14 +3127,34 @@ async function doRegister(){
   const defaultGrade=(DB.grades&&DB.grades.length?DB.grades[DB.grades.length-1]:'Stagiaire');
   const newUser={id:Date.now(),login,pass:hashed,nom,grade:defaultGrade,role:'visiteur',statut:'Actif',photo:'',created:now()};
   DB.users.push(newUser);
+
+  // Attendre que Firebase soit prêt avant d'écrire
+  if(!window._fbDB||!window._fbRef||!window._fbUpdate){
+    await new Promise(r=>setTimeout(r,1500));
+  }
   saveData();
+  // Deuxième sauvegarde : attendre que _flushSaveQueue soit terminé avant de retenter
+  await new Promise(r=>{
+    const _chk=(n)=>{if(n<=0||!_fbSaveRunning){r();}else{setTimeout(()=>_chk(n-1),200);}};
+    setTimeout(()=>_chk(15),400);
+  });
+  if(window._fbDB&&window._fbRef&&window._fbUpdate){
+    saveData();
+  }
+
   _registerCount++;
   rs.textContent='✅ Compte créé ! Connexion en cours...';rs.style.display='block';
   _loginInProgress=false;
-  setTimeout(()=>{
-    currentUser=newUser;
-    applyLogin();
-  },300);
+  // Attendre que _flushSaveQueue soit terminé avant de connecter (évite toute race condition)
+  const _waitSaveAndLogin=(tries)=>{
+    if(tries<=0||!_fbSaveRunning){
+      currentUser=newUser;
+      applyLogin();
+    } else {
+      setTimeout(()=>_waitSaveAndLogin(tries-1),200);
+    }
+  };
+  setTimeout(()=>_waitSaveAndLogin(20),1000);
 }
 
 // _saveDataAndWait : alias de saveData (la nouvelle version gère déjà la fusion Firebase)
@@ -3279,7 +3305,8 @@ function applyLogin(){
     var isMobile=/Mobi|Android|iPhone|iPad/.test(ua);
     DB.loginHistory.push({userId:currentUser.id,nom:currentUser.nom,grade:currentUser.grade,date:now(),device:device+(isMobile?" (Mobile)":" (Bureau)")});
     if(DB.loginHistory.length>200)DB.loginHistory=DB.loginHistory.slice(-200);
-    saveData();
+    // Délai pour laisser _flushSaveQueue (création de compte) se terminer avant ce save
+    setTimeout(()=>saveData(), 1200);
   }
   el("login-screen").style.display="none";
   el("user-name-display").textContent=currentUser.nom;
@@ -4009,11 +4036,21 @@ function setCandidature(id,statut){
     if(!DB.users.find(u=>u.nom===c.nom)){
       const userId=Date.now();
       const userLogin="recrue_"+userId;
-      hashPass("recrue123").then(h=>{
+      (async()=>{
+        const h=await hashPass("recrue123");
         DB.users.push({id:userId,login:userLogin,pass:h,nom:c.nom,grade:c.grade||"Stagiaire",role:"stagiaire",statut:"Actif",photo:"",created:now()});
         addTimeline(`Candidature de ${c.nom} : acceptée ✅ par ${currentUser.nom}`);
-        saveData();renderCandidatures();renderRecrues();renderEffectifs();syncDashboard();
-      });
+        if(!window._fbDB||!window._fbRef||!window._fbUpdate){
+          await new Promise(r=>setTimeout(r,1500));
+        }
+        saveData();
+        renderCandidatures();renderRecrues();renderEffectifs();syncDashboard();
+        // Double-save silencieuse — attend que _flushSaveQueue soit libre
+        setTimeout(async()=>{
+          if(_fbSaveRunning) await new Promise(r=>setTimeout(r,1000));
+          if(window._fbDB&&window._fbRef&&window._fbUpdate) saveData();
+        },1200);
+      })();
       return;
     }
   }
@@ -4787,12 +4824,22 @@ function saveUser(){
   const role=v("u-role");
   if(role==="admin"&&!isAdmin()){showToast("Seul un Admin peut créer un compte Admin.","error");return;}
   _loginInProgress=true;
-  hashPass(pass).then(h=>{
+  hashPass(pass).then(async h=>{
     _loginInProgress=false;
     DB.users.push({id:Date.now(),login,pass:h,nom,grade:v("u-grade"),role,statut:"Actif",photo:"",created:now()});
     addTimeline(`Nouveau membre : ${nom} ajouté`);
-    saveData();closeModal("modal-adduser");renderAdmin();renderEffectifs();syncDashboard();clearForm(["u-login","u-pass","u-nom"]);
+    // Attendre Firebase si pas encore prêt
+    if(!window._fbDB||!window._fbRef||!window._fbUpdate){
+      await new Promise(r=>setTimeout(r,1500));
+    }
+    saveData();
+    closeModal("modal-adduser");renderAdmin();renderEffectifs();syncDashboard();clearForm(["u-login","u-pass","u-nom"]);
     showToast(`Compte de ${nom} créé.`,"success");
+    // Deuxième sauvegarde silencieuse — attend que _flushSaveQueue soit libre
+    setTimeout(async()=>{
+      if(_fbSaveRunning) await new Promise(r=>setTimeout(r,1000));
+      if(window._fbDB&&window._fbRef&&window._fbUpdate) saveData();
+    },1200);
   });
 }
 // ═══════════════════════════════════════════════
