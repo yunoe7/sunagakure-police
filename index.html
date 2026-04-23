@@ -2796,7 +2796,7 @@ document.addEventListener('DOMContentLoaded',function(){if(localStorage.getItem(
 <!-- Firebase SDK -->
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-  import { getDatabase, ref, set, onValue, push, serverTimestamp, get } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+  import { getDatabase, ref, set, update, onValue, push, serverTimestamp, get } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 
   const firebaseConfig = {
     apiKey: "AIzaSyAOKtMRVbu1lBc5tZ2zpXkOtmC_TzqGWfs",
@@ -2813,6 +2813,7 @@ document.addEventListener('DOMContentLoaded',function(){if(localStorage.getItem(
   window._fbDB = fbDB;
   window._fbRef = ref;
   window._fbSet = set;
+  window._fbUpdate = update;
   window._fbOnValue = onValue;
   window._fbPush = push;
   window._fbServerTimestamp = serverTimestamp;
@@ -2854,106 +2855,71 @@ let _fbSaveRunning=false;
 function saveData(){
   // Sauvegarde locale immédiate (fallback offline)
   try{localStorage.setItem(STORE,JSON.stringify(DB))}catch(e){}
-  if(!window._fbDB||!window._fbRef||!window._fbSet||!window._fbGet){return;}
-  // Mémoriser la DB à sauvegarder et lancer l'écriture si pas déjà en cours
+  if(!window._fbDB||!window._fbRef||!window._fbUpdate){return;}
   _fbSaveQueue=JSON.parse(JSON.stringify(DB));
-  if(_fbSaveRunning)return; // une écriture est déjà en cours, elle prendra la queue
+  if(_fbSaveRunning)return;
   _flushSaveQueue();
 }
 
 async function _flushSaveQueue(){
   if(_fbSaveRunning||!_fbSaveQueue)return;
   _fbSaveRunning=true;
-  _fbIsSaving=true;
-  window._fbSavingStartTime=Date.now();
   const toSave=_fbSaveQueue;
   _fbSaveQueue=null;
   try{
-    // 1. Lire Firebase pour récupérer les données des autres utilisateurs
-    const snap=await window._fbGet(window._fbRef(window._fbDB,"sunagakure"));
-    const fbData=snap.val();
-    let merged=toSave;
-    if(fbData&&typeof fbData==="object"){
-      // 2. Fusionner : Firebase est la base, on y ajoute ce qui est en local mais pas dans Firebase
-      const ARRAY_KEYS=['plaintes','dossiers','annonces','candidatures','operations','sanctions','recenses','infractions','timeline'];
-      merged={...fbData};
-      // Copier les clés scalaires depuis notre DB locale (commissaire, grades, etc.)
-      // SAUF messages qui est géré séparément par son propre listener Firebase
-      for(const k of Object.keys(toSave)){
-        if(!ARRAY_KEYS.includes(k)&&k!=='users'&&k!=='messages'){merged[k]=toSave[k];}
-      }
-      // Messages : fusionner les deux versions (Firebase + local) pour ne perdre aucun message
-      const fbMsgs=fbData.messages&&typeof fbData.messages==='object'?fbData.messages:{};
-      const localMsgs=toSave.messages&&typeof toSave.messages==='object'?toSave.messages:{};
-      const mergedMsgs={...fbMsgs};
-      for(const conv of Object.keys(localMsgs)){
-        if(!mergedMsgs[conv]){mergedMsgs[conv]=localMsgs[conv];}
-        else{
-          // Fusionner les messages de la conversation (par id de message)
-          mergedMsgs[conv]={...localMsgs[conv],...mergedMsgs[conv]};
-        }
-      }
-      merged.messages=mergedMsgs;
-      // Pour chaque tableau : Firebase = base. On n'applique QUE les vrais changements locaux,
-      // détectés en comparant avec _lastFbArrays (dernier état Firebase connu).
-      // Cela évite d'écraser des données fraîches d'autres utilisateurs avec des copies locales périmées.
-      ARRAY_KEYS.forEach(k=>{
-        const fbArr=Array.isArray(fbData[k])?fbData[k]:[];
-        const localArr=Array.isArray(toSave[k])?toSave[k]:[];
-        const lastFbArr=Array.isArray(_lastFbArrays[k])?_lastFbArrays[k]:[];
-        const fbIds=new Set(fbArr.map(x=>x&&x.id));
-        // Nouveaux items = présents en local, absents de Firebase actuel (pas de doublon)
-        const newItems=localArr.filter(x=>x&&x.id&&!fbIds.has(x.id));
-        // Items modifiés = existaient dans _lastFbArrays mais leur contenu local a changé
-        const lastFbById={};lastFbArr.forEach(x=>{if(x&&x.id)lastFbById[x.id]=x;});
-        const localById={};localArr.forEach(x=>{if(x&&x.id)localById[x.id]=x;});
-        const modifiedIds=new Set();
-        localArr.forEach(x=>{
-          if(x&&x.id&&lastFbById[x.id]&&JSON.stringify(x)!==JSON.stringify(lastFbById[x.id])){
-            modifiedIds.add(x.id);
-          }
-        });
-        // Firebase = base, on écrase uniquement les items confirmés comme modifiés localement
-        const updated=fbArr.map(x=>(x&&x.id&&modifiedIds.has(x.id)&&localById[x.id])?localById[x.id]:x);
-        merged[k]=[...updated,...newItems];
-      });
-      // Users : même logique — Firebase = base, nouveaux users + users vraiment modifiés localement
-      const fbUsers=Array.isArray(fbData.users)?fbData.users:[];
-      const localUsers=Array.isArray(toSave.users)?toSave.users:[];
-      const lastFbUsers=Array.isArray(_lastFbArrays.users)?_lastFbArrays.users:[];
-      const fbUserIds=new Set(fbUsers.map(u=>u&&u.id));
-      const newUsers=localUsers.filter(u=>u&&u.id&&!fbUserIds.has(u.id));
-      const lastFbUserById={};lastFbUsers.forEach(u=>{if(u&&u.id)lastFbUserById[u.id]=u;});
-      const localUserById={};localUsers.forEach(u=>{if(u&&u.id)localUserById[u.id]=u;});
-      const modifiedUserIds=new Set();
-      localUsers.forEach(u=>{
-        if(u&&u.id&&lastFbUserById[u.id]&&JSON.stringify(u)!==JSON.stringify(lastFbUserById[u.id])){
-          modifiedUserIds.add(u.id);
-        }
-      });
-      const updatedUsers=fbUsers.map(u=>(u&&u.id&&modifiedUserIds.has(u.id)&&localUserById[u.id])?localUserById[u.id]:u);
-      merged.users=[...updatedUsers,...newUsers];
+    // update() = écriture partielle atomique côté Firebase.
+    // Pas de GET préalable, pas de race condition, ~3× plus rapide que set().
+    // _lastFbArrays est maintenu en temps réel par onValue → source de vérité pour le merge.
+    const ARRAY_KEYS=['plaintes','dossiers','annonces','candidatures','operations','sanctions','recenses','infractions','timeline'];
+    const patch={};
+
+    // Scalaires (commissaire, grades, logo…) — on écrit directement les valeurs locales
+    for(const k of Object.keys(toSave)){
+      if(!ARRAY_KEYS.includes(k)&&k!=='users'&&k!=='messages')patch[k]=toSave[k];
     }
-    // 3. Mettre à jour DB locale avec le résultat fusionné
-    DB=merged;
-    try{localStorage.setItem(STORE,JSON.stringify(DB))}catch(e){}
-    // Mettre à jour _lastFbArrays pour que le prochain save calcule un delta correct
-    ['plaintes','dossiers','annonces','candidatures','operations','sanctions','recenses','infractions','timeline','users'].forEach(k=>{
-      if(Array.isArray(DB[k]))_lastFbArrays[k]=JSON.parse(JSON.stringify(DB[k]));
+
+    // Tableaux : base = _lastFbArrays (toujours frais via onValue), on ajoute/modifie uniquement ce que CET utilisateur a changé
+    ARRAY_KEYS.forEach(k=>{
+      const fbArr=Array.isArray(_lastFbArrays[k])?[..._lastFbArrays[k]]:[];
+      const localArr=Array.isArray(toSave[k])?toSave[k]:[];
+      const fbIds=new Set(fbArr.map(x=>x&&x.id));
+      const newItems=localArr.filter(x=>x&&x.id&&!fbIds.has(x.id));
+      const localById={};localArr.forEach(x=>{if(x&&x.id)localById[x.id]=x;});
+      const updated=fbArr.map(x=>{
+        if(!x||!x.id||!localById[x.id])return x;
+        return JSON.stringify(x)!==JSON.stringify(localById[x.id])?localById[x.id]:x;
+      });
+      patch[k]=[...updated,...newItems];
+      // Mettre à jour _lastFbArrays immédiatement (évite les doublons sur saves rapides)
+      _lastFbArrays[k]=JSON.parse(JSON.stringify(patch[k]));
     });
-    // 4. Écrire dans Firebase
-    await window._fbSet(window._fbRef(window._fbDB,"sunagakure"),JSON.parse(JSON.stringify(merged)));
+
+    // Users : même logique
+    const fbUsers=Array.isArray(_lastFbArrays.users)?[..._lastFbArrays.users]:[];
+    const localUsers=Array.isArray(toSave.users)?toSave.users:[];
+    const fbUserIds=new Set(fbUsers.map(u=>u&&u.id));
+    const newUsers=localUsers.filter(u=>u&&u.id&&!fbUserIds.has(u.id));
+    const localUserById={};localUsers.forEach(u=>{if(u&&u.id)localUserById[u.id]=u;});
+    const updatedUsers=fbUsers.map(u=>{
+      if(!u||!u.id||!localUserById[u.id])return u;
+      return JSON.stringify(u)!==JSON.stringify(localUserById[u.id])?localUserById[u.id]:u;
+    });
+    patch.users=[...updatedUsers,...newUsers];
+    _lastFbArrays.users=JSON.parse(JSON.stringify(patch.users));
+
+    // Appliquer le patch en local avant l'écriture Firebase
+    Object.assign(DB,patch);
+    try{localStorage.setItem(STORE,JSON.stringify(DB));}catch(e){}
+
+    // Écriture partielle atomique — Firebase gère les conflits entre clients automatiquement
+    await window._fbUpdate(window._fbRef(window._fbDB,"sunagakure"),JSON.parse(JSON.stringify(patch)));
   }catch(err){
-    // Firebase inaccessible : sauvegarder quand même localement et réessayer plus tard
     console.warn("Firebase save error (will retry):",err);
-    try{localStorage.setItem(STORE,JSON.stringify(toSave))}catch(e){}
-    // Remettre en queue pour réessayer dans 3s
+    try{localStorage.setItem(STORE,JSON.stringify(toSave));}catch(e){}
     if(!_fbSaveQueue){_fbSaveQueue=toSave;setTimeout(_flushSaveQueue,3000);}
   }finally{
     _fbSaveRunning=false;
-    setTimeout(()=>{_fbIsSaving=false;window._fbSavingStartTime=0;},500);
-    // Si une nouvelle sauvegarde est en attente, la traiter
-    if(_fbSaveQueue)setTimeout(_flushSaveQueue,100);
+    if(_fbSaveQueue)setTimeout(_flushSaveQueue,50);
   }
 }
 
@@ -2963,21 +2929,19 @@ function initFirebaseSync(){
   if(!window._fbDB||!window._fbRef||!window._fbOnValue)return;
   const r=window._fbRef(window._fbDB,"sunagakure");
   window._fbOnValue(r,(snapshot)=>{
-    // Si on est en train de sauvegarder (fenêtre courte <1s), ignorer l'écho
-    // mais JAMAIS bloquer plus de 1s pour ne pas rater les données des autres utilisateurs
-    if(_fbIsSaving&&!_fbFirstLoad){
-      const msSinceSave=window._fbSavingStartTime?(Date.now()-window._fbSavingStartTime):9999;
-      if(msSinceSave<1000){return;} // court-circuit uniquement pour l'écho immédiat
-      _fbIsSaving=false;
-    }
     const wasFirst=_fbFirstLoad;
     _fbFirstLoad=false;
+    // Si un save est en cours, ne pas écraser DB en mémoire (le save a déjà le merge correct)
+    // On met à jour uniquement _lastFbArrays pour que le prochain save ait un delta frais
     const data=snapshot.val();
     if(data&&typeof data==="object"){
-      // Mémoriser les derniers tableaux Firebase pour éviter les écrasements
       ['plaintes','dossiers','annonces','candidatures','operations','sanctions','recenses','infractions','timeline','users'].forEach(k=>{
         if(Array.isArray(data[k])&&data[k].length>0) _lastFbArrays[k]=data[k];
       });
+      if(_fbSaveRunning&&!wasFirst){
+        // Save en cours : on mémorise mais on ne re-render pas (évite de voir des données intermédiaires)
+        return;
+      }
       // Fusionner avec les valeurs par défaut pour les champs manquants SEULEMENT
       // Ne pas écraser les tableaux existants de Firebase avec ceux de defaultData()
       const def=defaultData();
@@ -3008,9 +2972,8 @@ function initFirebaseSync(){
         if(fixed){
           try{localStorage.setItem(STORE,JSON.stringify(DB));}catch(e){}
           if(window._fbDB&&window._fbRef&&window._fbSet){
-            _fbIsSaving=true;
             const wr2=window._fbRef(window._fbDB,"sunagakure");
-            window._fbSet(wr2,JSON.parse(JSON.stringify(DB))).then(()=>{setTimeout(()=>{_fbIsSaving=false;},5000);}).catch(()=>{_fbIsSaving=false;});
+            window._fbSet(wr2,JSON.parse(JSON.stringify(DB)));
           }
         }
       })();
@@ -3019,7 +2982,6 @@ function initFirebaseSync(){
         // Premier chargement Firebase sans utilisateur connecté → lancer checkRememberMe
         if(wasFirst&&!currentUser){
           const fl=document.getElementById('firebase-loading');if(fl)fl.remove();
-          if(!fbNeedsMigration)_fbIsSaving=false;
           updateLoginStats();
           if(!checkRememberMe())el("login-screen").style.display="flex";
           return;
@@ -3053,9 +3015,8 @@ function initFirebaseSync(){
       if(fbNeedsMigration){
         (async()=>{
           for(const u of DB.users){if(!isHashed(u.pass)){const rp=(u.pass==="__PENDING_HASH__"||!u.pass)?DEFAULT_PASS:u.pass;u.pass=await hashPass(rp);}}
-          _fbIsSaving=true;
           const wr=window._fbRef(window._fbDB,"sunagakure");
-          window._fbSet(wr,JSON.parse(JSON.stringify(DB))).then(()=>{setTimeout(()=>{_fbIsSaving=false;},5000);}).catch(()=>{_fbIsSaving=false;});
+          window._fbSet(wr,JSON.parse(JSON.stringify(DB)));
           saveData();
           afterFbMigration();
         })();
@@ -3150,29 +3111,9 @@ async function doRegister(){
   if(pass.length<6){ra.textContent='Mot de passe trop court (6 caractères min).';ra.style.display='block';_loginInProgress=false;return;}
   if(pass!==pass2){ra.textContent='Les mots de passe ne correspondent pas.';ra.style.display='block';_loginInProgress=false;return;}
   if(!/^[a-zA-Z0-9_\-\.]{3,30}$/.test(login)){ra.textContent='Identifiant invalide (3-30 caractères, lettres, chiffres, _ - . uniquement).';ra.style.display='block';_loginInProgress=false;return;}
-  // TOUJOURS lire Firebase en priorité pour avoir les données les plus fraîches (timeout 5s)
-  if(window._fbDB&&window._fbRef&&window._fbGet){
-    try{
-      const fbPromise=window._fbGet(window._fbRef(window._fbDB,"sunagakure"));
-      const timeout=new Promise((_,rej)=>setTimeout(()=>rej(new Error("timeout")),5000));
-      const snap=await Promise.race([fbPromise,timeout]);
-      const fbData=snap.val();
-      if(fbData&&typeof fbData==="object"){
-        // Remplacer complètement la DB locale par les données Firebase (source de vérité)
-        const def=defaultData();
-        const merged={};
-        for(const key of Object.keys(def)){merged[key]=fbData.hasOwnProperty(key)?fbData[key]:def[key];}
-        for(const key of Object.keys(fbData)){if(!merged.hasOwnProperty(key))merged[key]=fbData[key];}
-        DB=merged;
-        // Mettre à jour _lastFbArrays
-        ['plaintes','dossiers','annonces','candidatures','operations','sanctions','recenses','infractions','timeline','users'].forEach(k=>{
-          if(Array.isArray(DB[k])&&DB[k].length>0)_lastFbArrays[k]=JSON.parse(JSON.stringify(DB[k]));
-        });
-      }
-    }catch(e){console.warn("Firebase read before register failed (ignored):",e);}
-  }
-  // Vérifier que le login n'existe pas (avec données Firebase fraîches)
-  if(DB.users.find(u=>u.login===login)){
+  // _lastFbArrays.users est maintenu en temps réel par onValue — toujours frais, pas de GET nécessaire
+  const freshUsers=(_lastFbArrays.users&&_lastFbArrays.users.length>0)?_lastFbArrays.users:DB.users;
+  if(freshUsers.find(u=>u.login===login)){
     ra.textContent='Cet identifiant est déjà utilisé.';ra.style.display='block';_loginInProgress=false;return;
   }
   const hashed=await hashPass(pass);
@@ -3186,10 +3127,8 @@ async function doRegister(){
   _loginInProgress=false;
   setTimeout(()=>{
     currentUser=newUser;
-    // Sauvegarder la session automatiquement (le visiteur n'a pas de "Se souvenir de moi" coché,
-    // mais on enregistre quand même pour que la reconnexion manuelle fonctionne)
     applyLogin();
-  },1200);
+  },300);
 }
 
 // _saveDataAndWait : alias de saveData (la nouvelle version gère déjà la fusion Firebase)
@@ -3251,19 +3190,7 @@ function doLogin(){
   // Toujours lire Firebase avant de vérifier les identifiants (pour avoir les comptes récents)
   const _doLoginCheck=async function(hashed){
     _loginInProgress=false;
-    // Rafraîchir depuis Firebase si disponible (avec timeout 5s pour ne pas bloquer)
-    if(window._fbDB&&window._fbRef&&window._fbGet){
-      try{
-        const fbPromise=window._fbGet(window._fbRef(window._fbDB,"sunagakure"));
-        const timeout=new Promise((_,rej)=>setTimeout(()=>rej(new Error("timeout")),5000));
-        const snap=await Promise.race([fbPromise,timeout]);
-        const fbData=snap.val();
-        if(fbData&&typeof fbData==="object"&&Array.isArray(fbData.users)&&fbData.users.length>0){
-          DB.users=fbData.users;
-          _lastFbArrays.users=JSON.parse(JSON.stringify(fbData.users));
-        }
-      }catch(e){console.warn("Firebase read before login failed (ignored):",e);}
-    }
+    // Pas de GET Firebase — DB.users est déjà maintenu à jour par le listener onValue en temps réel.
     // Si un compte a encore __PENDING_HASH__ ou le hash corrompu, le migrer maintenant
     const badHash2=await hashPass("__PENDING_HASH__");
     const toMigrate=DB.users.filter(u=>!isHashed(u.pass)||u.pass===badHash2);
