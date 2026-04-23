@@ -2866,20 +2866,23 @@ async function _flushSaveQueue(){
   _fbSaveRunning=true;
   const toSave=_fbSaveQueue;
   _fbSaveQueue=null;
-  console.log('[FB-SAVE] Début flush — users locaux:', (toSave.users||[]).length);
   try{
-    // update() = écriture partielle atomique côté Firebase.
-    // Pas de GET préalable, pas de race condition, ~3× plus rapide que set().
-    // _lastFbArrays est maintenu en temps réel par onValue → source de vérité pour le merge.
+    // Fusionner les users locaux avec _lastFbArrays
+    const localUsers=Array.isArray(toSave.users)?toSave.users:[];
+    const fbUsers=Array.isArray(_lastFbArrays.users)?[..._lastFbArrays.users]:[];
+    const fbUserIds=new Set(fbUsers.map(u=>u&&u.id));
+    const newUsers=localUsers.filter(u=>u&&u.id&&!fbUserIds.has(u.id));
+    const localUserById={};localUsers.forEach(u=>{if(u&&u.id)localUserById[u.id]=u;});
+    const updatedUsers=fbUsers.map(u=>{
+      if(!u||!u.id||!localUserById[u.id])return u;
+      return JSON.stringify(u)!==JSON.stringify(localUserById[u.id])?localUserById[u.id]:u;
+    });
+    const mergedUsers=[...updatedUsers,...newUsers];
+    toSave.users=mergedUsers;
+    _lastFbArrays.users=JSON.parse(JSON.stringify(mergedUsers));
+
+    // Fusionner les autres tableaux
     const ARRAY_KEYS=['plaintes','dossiers','annonces','candidatures','operations','sanctions','recenses','infractions','timeline'];
-    const patch={};
-
-    // Scalaires (commissaire, grades, logo…) — on écrit directement les valeurs locales
-    for(const k of Object.keys(toSave)){
-      if(!ARRAY_KEYS.includes(k)&&k!=='users'&&k!=='messages')patch[k]=toSave[k];
-    }
-
-    // Tableaux : base = _lastFbArrays (toujours frais via onValue), on ajoute/modifie uniquement ce que CET utilisateur a changé
     ARRAY_KEYS.forEach(k=>{
       const fbArr=Array.isArray(_lastFbArrays[k])?[..._lastFbArrays[k]]:[];
       const localArr=Array.isArray(toSave[k])?toSave[k]:[];
@@ -2890,53 +2893,21 @@ async function _flushSaveQueue(){
         if(!x||!x.id||!localById[x.id])return x;
         return JSON.stringify(x)!==JSON.stringify(localById[x.id])?localById[x.id]:x;
       });
-      patch[k]=[...updated,...newItems];
-      // Mettre à jour _lastFbArrays immédiatement (évite les doublons sur saves rapides)
-      _lastFbArrays[k]=JSON.parse(JSON.stringify(patch[k]));
+      toSave[k]=[...updated,...newItems];
+      _lastFbArrays[k]=JSON.parse(JSON.stringify(toSave[k]));
     });
 
-    // Users : _lastFbArrays est maintenu en temps réel par onValue — source de vérité, pas besoin de GET
-    // Si _lastFbArrays.users est vide, attendre que onValue réponde (max 4 secondes)
-    if(!_lastFbArrays.users||_lastFbArrays.users.length===0){
-      console.log('[FB-SAVE] _lastFbArrays.users vide — attente onValue...');
-      await new Promise(r=>{
-        let waited=0;
-        const chk=setInterval(()=>{
-          waited+=200;
-          if((_lastFbArrays.users&&_lastFbArrays.users.length>0)||waited>=4000){
-            clearInterval(chk);
-            console.log('[FB-SAVE] onValue reçu après', waited, 'ms — users:', (_lastFbArrays.users||[]).length);
-            r();
-          }
-        },200);
-      });
-    }
-    let freshFbUsers=Array.isArray(_lastFbArrays.users)?[..._lastFbArrays.users]:[];
-    console.log('[FB-SAVE] freshFbUsers:', freshFbUsers.length, freshFbUsers.map(u=>u&&u.login));
-    const localUsers=Array.isArray(toSave.users)?toSave.users:[];
-    const fbUserIds=new Set(freshFbUsers.map(u=>u&&u.id));
-    const newUsers=localUsers.filter(u=>u&&u.id&&!fbUserIds.has(u.id));
-    const localUserById={};localUsers.forEach(u=>{if(u&&u.id)localUserById[u.id]=u;});
-    const updatedUsers=freshFbUsers.map(u=>{
-      if(!u||!u.id||!localUserById[u.id])return u;
-      return JSON.stringify(u)!==JSON.stringify(localUserById[u.id])?localUserById[u.id]:u;
-    });
-    patch.users=[...updatedUsers,...newUsers];
-    _lastFbArrays.users=JSON.parse(JSON.stringify(patch.users));
-
-    // Appliquer le patch en local avant l'écriture Firebase
-    Object.assign(DB,patch);
+    // Appliquer en local
+    Object.assign(DB,toSave);
     try{localStorage.setItem(STORE,JSON.stringify(DB));}catch(e){}
 
-    // Écriture avec données fraîches — plus de risque d'écraser des comptes créés simultanément
-    console.log('[FB-SAVE] freshFbUsers:', freshFbUsers.length, '— newUsers:', newUsers.length, '— patch.users total:', (patch.users||[]).length);
-    console.log('[FB-SAVE] Envoi Firebase — logins:', patch.users&&patch.users.map(u=>u&&u.login));
-    await window._fbUpdate(window._fbRef(window._fbDB,"sunagakure"),JSON.parse(JSON.stringify(patch)));
-    console.log('[FB-SAVE] ✅ Écriture Firebase réussie');
+    // Écriture Firebase avec fbSet (plus fiable que fbUpdate pour la RTDB)
+    const payload=JSON.parse(JSON.stringify(toSave));
+    delete payload.messages; // messages gérés séparément
+    await window._fbSet(window._fbRef(window._fbDB,"sunagakure"),payload);
+    console.log('[FB-SAVE] ✅ OK — users:', (mergedUsers||[]).length);
   }catch(err){
-    console.error('[FB-SAVE] ❌ Erreur écriture Firebase:', err);
-    console.warn("Firebase save error (will retry):",err);
-    showToast("⚠️ Erreur de connexion au serveur. Nouvelle tentative...","error");
+    console.error('[FB-SAVE] ❌ Erreur:', err.message||err);
     try{localStorage.setItem(STORE,JSON.stringify(toSave));}catch(e){}
     if(!_fbSaveQueue){_fbSaveQueue=toSave;setTimeout(_flushSaveQueue,3000);}
   }finally{
