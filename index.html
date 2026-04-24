@@ -2882,19 +2882,24 @@ async function _flushSaveQueue(){
     _lastFbArrays.users=JSON.parse(JSON.stringify(mergedUsers));
 
     // Fusionner les autres tableaux
+    // LOCAL fait autorite : si supprime localement, reste supprime.
+    // On ajoute depuis Firebase uniquement les items crees par d'autres users (absents en local ET inconnus).
     const ARRAY_KEYS=['plaintes','dossiers','annonces','candidatures','operations','sanctions','recenses','infractions','timeline'];
     ARRAY_KEYS.forEach(k=>{
       const fbArr=Array.isArray(_lastFbArrays[k])?[..._lastFbArrays[k]]:[];
       const localArr=Array.isArray(toSave[k])?toSave[k]:[];
-      const fbIds=new Set(fbArr.map(x=>x&&x.id));
-      const newItems=localArr.filter(x=>x&&x.id&&!fbIds.has(x.id));
-      const localById={};localArr.forEach(x=>{if(x&&x.id)localById[x.id]=x;});
-      const updated=fbArr.map(x=>{
-        if(!x||!x.id||!localById[x.id])return x;
-        return JSON.stringify(x)!==JSON.stringify(localById[x.id])?localById[x.id]:x;
-      });
-      toSave[k]=[...updated,...newItems];
+      // IDs presents en local (apres suppression eventuelle)
+      const localIds=new Set(localArr.map(x=>x&&String(x.id)).filter(Boolean));
+      // IDs Firebase deja connus au cycle precedent
+      const prevKnown=Array.isArray(_lastFbArrays[k+'__known'])?_lastFbArrays[k+'__known']:[];
+      const knownFbIds=new Set(prevKnown.map(String));
+      // Nouveaux elements distants = dans Firebase, absents en local, ET pas connus avant (=crees par autre user)
+      const remoteNew=fbArr.filter(x=>x&&x.id&&!localIds.has(String(x.id))&&!knownFbIds.has(String(x.id)));
+      // Resultat = local (suppressions respectees) + nouveaux distants
+      toSave[k]=[...localArr,...remoteNew];
       _lastFbArrays[k]=JSON.parse(JSON.stringify(toSave[k]));
+      // Memoriser les IDs Firebase connus pour le prochain cycle
+      _lastFbArrays[k+'__known']=fbArr.map(x=>x&&String(x.id)).filter(Boolean);
     });
 
     // Appliquer en local
@@ -2932,23 +2937,44 @@ function initFirebaseSync(){
         if(Array.isArray(data[k])&&data[k].length>0) _lastFbArrays[k]=data[k];
       });
       if(_fbSaveRunning&&!wasFirst){
-        // Save en cours : on mémorise mais on ne re-render pas (évite de voir des données intermédiaires)
+        // Save en cours : on memorise mais on ne re-render pas (evite de voir des donnees intermediaires)
         return;
       }
-      // Fusionner avec les valeurs par défaut pour les champs manquants SEULEMENT
-      // Ne pas écraser les tableaux existants de Firebase avec ceux de defaultData()
+      // Si c'est une mise a jour post-save (pas le premier chargement), ne pas ecraser DB
+      // car Firebase peut renvoyer les anciennes donnees avant que le set() soit pris en compte
+      if(!wasFirst&&currentUser){
+        // Mettre a jour seulement les tableaux avec les nouvelles donnees distantes
+        // mais respecter les suppressions locales (ne pas restaurer les elements supprimes)
+        const SYNC_KEYS=['plaintes','dossiers','annonces','candidatures','operations','sanctions','recenses','infractions','timeline','users'];
+        SYNC_KEYS.forEach(k=>{
+          if(!Array.isArray(data[k])) return;
+          const localIds=new Set((DB[k]||[]).map(x=>x&&String(x.id)).filter(Boolean));
+          const prevKnown=Array.isArray(_lastFbArrays[k+'__known'])?_lastFbArrays[k+'__known']:[];
+          const knownFbIds=new Set(prevKnown.map(String));
+          const remoteNew=data[k].filter(x=>x&&x.id&&!localIds.has(String(x.id))&&!knownFbIds.has(String(x.id)));
+          if(remoteNew.length>0){
+            DB[k]=[...(DB[k]||[]),...remoteNew];
+          }
+          _lastFbArrays[k+'__known']=data[k].map(x=>x&&String(x.id)).filter(Boolean);
+        });
+        // Mettre a jour les champs non-tableau (commissaire, logo, etc.)
+        if(data.commissaire) DB.commissaire=data.commissaire;
+        if(data.grades) DB.grades=data.grades;
+        if(data.adminNotes) DB.adminNotes=data.adminNotes;
+        if(data.loginHistory) DB.loginHistory=data.loginHistory;
+        try{localStorage.setItem(STORE,JSON.stringify(DB));}catch(e){}
+      } else {
+      // Premier chargement : prendre toutes les donnees Firebase
       const def=defaultData();
       const merged={};
       for(const key of Object.keys(def)){
-        // Si la clé existe dans Firebase (y compris tableau vide []), utiliser Firebase
-        // Sinon utiliser la valeur par défaut
         merged[key]=data.hasOwnProperty(key)?data[key]:def[key];
       }
-      // Conserver aussi les clés supplémentaires de Firebase qui ne sont pas dans def
       for(const key of Object.keys(data)){
         if(!merged.hasOwnProperty(key))merged[key]=data[key];
       }
       DB=merged;
+      }
       // Migration des mots de passe en clair reçus depuis Firebase
       // Détecter aussi les mots de passe corrompus (hash de "__PENDING_HASH__" au lieu du vrai mot de passe)
       const fbNeedsMigration=DB.users&&DB.users.some(u=>!isHashed(u.pass));
