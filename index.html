@@ -1623,7 +1623,7 @@ document.addEventListener('DOMContentLoaded',function(){if(localStorage.getItem(
     <div class="section-header">
       <div><div class="section-title">Recensement</div><div class="section-sub">REGISTRE DES HABITANTS, FACTIONS & MAÎTRISES</div></div>
       <div style="display:flex;gap:8px;flex-wrap:wrap">
-        <button class="btn btn-export" onclick="exportCSV('recensement')">⬇️ Export CSV</button>
+        <button class="btn btn-export" onclick="exportCSV('recensement')" data-export-btn style="display:none">⬇️ Export CSV</button>
         <button class="btn btn-purple" id="btn-recenser" onclick="removeRecensePhoto();openModal('modal-recense')">+ Recenser un joueur</button>
       </div>
     </div>
@@ -1684,7 +1684,7 @@ document.addEventListener('DOMContentLoaded',function(){if(localStorage.getItem(
     <div class="section-header">
       <div><div class="section-title">Plaintes civiles</div><div class="section-sub">DÉPÔT ET SUIVI</div></div>
       <div style="display:flex;gap:8px;flex-wrap:wrap">
-        <button class="btn btn-export" onclick="exportCSV('plaintes')">⬇️ Export CSV</button>
+        <button class="btn btn-export" onclick="exportCSV('plaintes')" data-export-btn style="display:none">⬇️ Export CSV</button>
         <button class="btn btn-primary" onclick="clearForm(['p-plaignant','p-accuse','p-desc','p-date']);openModal('modal-plainte')">+ Déposer une plainte</button>
       </div>
     </div>
@@ -1717,7 +1717,7 @@ document.addEventListener('DOMContentLoaded',function(){if(localStorage.getItem(
     <div class="section-header">
       <div><div class="section-title">Dossiers criminels</div><div class="section-sub">BASE DE DONNÉES JUDICIAIRE</div></div>
       <div style="display:flex;gap:8px;flex-wrap:wrap">
-        <button class="btn btn-export" onclick="exportCSV('dossiers')">⬇️ Export CSV</button>
+        <button class="btn btn-export" onclick="exportCSV('dossiers')" data-export-btn style="display:none">⬇️ Export CSV</button>
         <button class="btn btn-primary" id="btn-new-dossier" onclick="clearDossierPhoto();openModal('modal-dossier')" style="display:none">+ Nouveau dossier</button>
       </div>
     </div>
@@ -2051,7 +2051,7 @@ document.addEventListener('DOMContentLoaded',function(){if(localStorage.getItem(
         <div class="section-sub">GESTION DES ACCÈS & CONFIGURATION</div>
       </div>
       <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
-        <button class="btn btn-outline btn-sm" onclick="exportAdminData()" title="Exporter les données">📤 Export</button>
+        <button class="btn btn-outline btn-sm" onclick="exportAdminData()" title="Exporter les données" data-export-btn style="display:none">📤 Export</button>
         <button class="btn btn-primary" onclick="populateGradeSelects();clearForm(['u-login','u-pass','u-nom']);var r=el('u-role');if(r)r.value='membre';openModal('modal-adduser')">+ Ajouter un membre</button>
       </div>
     </div>
@@ -2296,7 +2296,7 @@ document.addEventListener('DOMContentLoaded',function(){if(localStorage.getItem(
       <div class="card-header" style="flex-wrap:wrap;gap:10px">
         <span>🕐</span><h3>Historique des connexions</h3>
         <span style="margin-left:auto;font-size:9px;color:var(--muted);font-family:'Share Tech Mono',monospace;letter-spacing:1px">50 DERNIÈRES</span>
-        <button class="btn btn-export btn-sm" onclick="exportLoginHistory()" style="margin-left:8px">⬇️ Export CSV</button>
+        <button class="btn btn-export btn-sm" onclick="exportLoginHistory()" style="display:none;margin-left:8px" data-export-btn>⬇️ Export CSV</button>
       </div>
       <div class="table-scroll-wrapper">
         <table class="data-table">
@@ -3307,6 +3307,8 @@ function applyLogin(){
     el("nav-admin").style.display="flex";
     const ditAdmin=el("ditem-admin");if(ditAdmin)ditAdmin.style.display="flex";
     ["btn-new-annonce","btn-new-dossier","btn-new-operation","btn-new-sanction","btn-export-cand","btn-export-sanctions"].forEach(id=>{const e=el(id);if(e)e.style.display="inline-flex"});
+    // Boutons export visibles uniquement pour les admins
+    if(isAdmin()){document.querySelectorAll('[data-export-btn]').forEach(b=>b.style.display="inline-flex");}
     el("comm-pencil").style.display="inline";
     el("sanction-del-th").style.display="";
   }
@@ -3342,6 +3344,7 @@ function doLogout(){
   const dsecOps=document.getElementById('dsec-ops');if(dsecOps)dsecOps.style.display='none';
   ["btn-new-annonce","btn-new-dossier","btn-new-operation","btn-new-sanction"].forEach(id=>{const e=el(id);if(e)e.style.display="none"});
   ["btn-export-cand","btn-export-sanctions"].forEach(id=>{const e=el(id);if(e)e.style.display="none"});
+  document.querySelectorAll('[data-export-btn]').forEach(b=>b.style.display="none");
   const btnRecLogout=el("btn-recenser");if(btnRecLogout)btnRecLogout.style.display="none";
   el("comm-pencil").style.display="none";
   el("sanction-del-th").style.display="none";
@@ -3746,7 +3749,7 @@ function removeAnnoncePhoto(ev){
   el("a-photo-remove").style.display="none";
   el("a-photo-input").value="";
 }
-function deleteAnnonce(id){askDelete("Supprimer cette annonce ?",()=>{DB.annonces=DB.annonces.filter(a=>a.id!==id);saveData();renderAnnonces();syncDashboard()})}
+function deleteAnnonce(id){id=parseInt(id);askDelete("Supprimer cette annonce ?",()=>{DB.annonces=DB.annonces.filter(a=>parseInt(a.id)!==id);saveData();renderAnnonces();syncDashboard()})}
 
 // ─── RÉACTIONS ANNONCES ─────────────────────────────────────────
 const REACTION_EMOJIS = ['👍','❤️','🔥','✅','👮'];
@@ -3765,7 +3768,8 @@ function renderReactions(a){
 }
 function toggleReaction(annonceId, emoji){
   if(!currentUser) return;
-  const a = (DB.annonces||[]).find(x=>x.id===annonceId); if(!a) return;
+  annonceId=parseInt(annonceId);
+  const a = (DB.annonces||[]).find(x=>parseInt(x.id)===annonceId); if(!a) return;
   if(!a.reactions) a.reactions = {};
   if(!a.reactions[emoji]) a.reactions[emoji] = [];
   const uid = String(currentUser.id);
@@ -3873,7 +3877,8 @@ function removeRecensePhoto(ev){
   el("r-photo-input").value="";
 }
 function viewRecense(id){
-  const r=DB.recenses.find(x=>x.id===id);if(!r)return;
+  id=parseInt(id);
+  const r=DB.recenses.find(x=>parseInt(x.id)===id);if(!r)return;
   el("vr-title").textContent=`Fiche — ${r.prenom} ${r.nom}`;
   const isCrim=r.rang==="Criminel recherché";
   const avatarStyle=isCrim?"background:rgba(220,38,38,0.25);border:2px solid var(--red)":r.rang==="Kage"?"background:rgba(180,140,20,0.15);border:2px solid var(--gold)":"background:linear-gradient(135deg,rgba(224,92,26,0.25),rgba(212,160,23,0.15));border:2px solid rgba(180,140,20,0.3)";
@@ -3881,7 +3886,7 @@ function viewRecense(id){
   el("vr-body").innerHTML=`${photoBlock}<div class="grid grid-2"><div class="form-group"><label class="form-label">Prénom</label><div style="font-size:14px;font-weight:600">${esc(r.prenom)}</div></div><div class="form-group"><label class="form-label">Nom</label><div style="font-size:14px;font-weight:600">${esc(r.nom)}</div></div><div class="form-group"><label class="form-label">Âge</label><div>${esc(r.age)} ans</div></div><div class="form-group"><label class="form-label">Sexe</label><div>${esc(r.sexe)}</div></div></div><div class="form-group"><label class="form-label">Faction / Village</label><div style="font-size:13.5px">${esc(r.faction)||"—"}</div></div><div class="form-group"><label class="form-label">Rang</label><span class="badge badge-orange">${esc(r.rang)}</span></div><div class="form-group"><label class="form-label">Compétences</label><div style="font-size:12.5px;color:#555">${esc(r.competences)||"—"}</div></div>${r.natures&&r.natures.length?`<div class="form-group"><label class="form-label">Natures & Maîtrises</label><div class="nature-bar">${r.natures.map(n=>`<span class="badge ${NATURE_BADGE[n]||"badge-gray"}">${esc(n)}</span>`).join("")}</div></div>`:""}<div class="form-group"><label class="form-label">Notes</label><div style="font-size:12.5px;color:#555;line-height:1.65;white-space:pre-wrap">${esc(r.notes)||"—"}</div></div><div class="form-group"><label class="form-label">Recensé par</label><div style="font-size:11px;color:var(--muted)">${esc(r.auteur)} — ${fmtDate(r.date)}</div></div>`;
   openModal("modal-view-recense");
 }
-function deleteRecense(id){askDelete("Supprimer cette fiche de recensement ?",()=>{DB.recenses=DB.recenses.filter(r=>r.id!==id);saveData();renderRecensement();syncDashboard()})}
+function deleteRecense(id){id=parseInt(id);askDelete("Supprimer cette fiche de recensement ?",()=>{DB.recenses=DB.recenses.filter(r=>parseInt(r.id)!==id);saveData();renderRecensement();syncDashboard()})}
 
 // CANDIDATURES
 function filterCandidatures(f,e){candFilter=f;document.querySelectorAll("#page-recrutement .tab-btn").forEach(b=>b.classList.remove("active"));e.classList.add("active");renderCandidatures()}
@@ -3962,7 +3967,7 @@ function viewCandidature(id){
 
 function saveEditCandidature(){
   const id=parseInt(el("ec-id").value);
-  const c=DB.candidatures.find(x=>x.id===id);if(!c)return;
+  const c=DB.candidatures.find(x=>parseInt(x.id)===id);if(!c)return;
   if(!canModify()&&c.authorId!==currentUser.id){showToast("Accès refusé.","error");return;}
   const nom=el("ec-nom").value.trim(),age=el("ec-age").value.trim(),motif=el("ec-motif").value.trim();
   if(!nom||!age||!motif){showToast("Veuillez remplir les champs obligatoires.","error");return;}
@@ -3977,15 +3982,16 @@ function saveEditCandidature(){
   showToast(`✅ Votre candidature a bien été modifiée le ${dateStr}.`,"success");
 }
 function deleteCandidature(id){
+  id=parseInt(id);
   askDelete("Supprimer définitivement cette candidature ?",()=>{
-    DB.candidatures=DB.candidatures.filter(c=>c.id!==id);
+    DB.candidatures=DB.candidatures.filter(c=>parseInt(c.id)!==id);
     saveData();renderCandidatures();renderRecrues();renderEffectifs();syncDashboard();
   });
 }
 // renderRecrues and openRecrue defined below in new section
 function recrueAction(type){
   const id=parseInt(el("ra-id").value);
-  const c=DB.candidatures.find(x=>x.id===id);if(!c)return;
+  const c=DB.candidatures.find(x=>parseInt(x.id)===id);if(!c)return;
   const motif=v("ra-motif");
   if(type==="virer"){
     closeModal("modal-recrue-action");
@@ -4017,7 +4023,8 @@ function saveCandidature(){
   showToast(`✅ Candidature de ${nom} envoyée avec succès !`,"success");
 }
 function setCandidature(id,statut){
-  const c=DB.candidatures.find(x=>x.id===id);if(!c)return;c.statut=statut;c.modifiedAt=now();
+  id=parseInt(id);
+  const c=DB.candidatures.find(x=>parseInt(x.id)===id);if(!c)return;c.statut=statut;c.modifiedAt=now();
   if(statut==="acceptee"){c.grade=c.grade||"Stagiaire";c.actif=true;
     // Auto-create a user account for the recruit if none exists (password hashed)
     if(!DB.users.find(u=>u.nom===c.nom)){
@@ -4058,7 +4065,8 @@ function savePlainte(){
   saveData();closeModal("modal-plainte");renderPlaintes();syncDashboard();clearForm(["p-plaignant","p-accuse","p-desc","p-date"]);
 }
 function viewPlainte(id){
-  const p=DB.plaintes.find(x=>x.id===id);if(!p)return;
+  id=parseInt(id);
+  const p=DB.plaintes.find(x=>parseInt(x.id)===id);if(!p)return;
   el("vp-ref").textContent=`Plainte #${p.id}`;
   // Chercher dossier & recensé correspondant à l'accusé
   const dossierAcc=(DB.dossiers||[]).find(d=>(d.nom||"").toLowerCase().includes((p.accuse||"").toLowerCase())&&p.accuse&&p.accuse.length>2);
@@ -4075,13 +4083,14 @@ function viewPlainte(id){
   openModal("modal-view-plainte");
 }
 function setPlainteStatut(id,statut){
-  const p=DB.plaintes.find(x=>x.id===id);if(!p)return;p.statut=statut;
+  id=parseInt(id);
+  const p=DB.plaintes.find(x=>parseInt(x.id)===id);if(!p)return;p.statut=statut;
   if(statut==="en_cours"&&!p.agent)p.agent=currentUser.nom;
   if(statut==="fermee")p.agentCloture=currentUser.nom;
   addTimeline(`Plainte #${id} → ${fmtStatut(statut)} par ${currentUser.nom}`);
   saveData();renderPlaintes();syncDashboard();closeModal("modal-view-plainte");
 }
-function deletePlainte(id){askDelete("Supprimer cette plainte ?",()=>{DB.plaintes=DB.plaintes.filter(p=>p.id!==id);saveData();renderPlaintes();syncDashboard()})}
+function deletePlainte(id){id=parseInt(id);askDelete("Supprimer cette plainte ?",()=>{DB.plaintes=DB.plaintes.filter(p=>parseInt(p.id)!==id);saveData();renderPlaintes();syncDashboard()})}
 
 // DOSSIERS
 function renderDossiers(){
@@ -4163,10 +4172,11 @@ function clearDossierPhoto(){
   if(el("d-photo-clear"))el("d-photo-clear").style.display="none";
   if(el("d-photo-input"))el("d-photo-input").value="";
 }
-function deleteDossier(id){askDelete("Supprimer ce dossier criminel ?",()=>{DB.dossiers=DB.dossiers.filter(d=>d.id!==id);saveData();renderDossiers();syncDashboard()})}
+function deleteDossier(id){id=parseInt(id);askDelete("Supprimer ce dossier criminel ?",()=>{DB.dossiers=DB.dossiers.filter(d=>parseInt(d.id)!==id);saveData();renderDossiers();syncDashboard()})}
 
 function openEditDossier(id){
-  const d=DB.dossiers.find(x=>x.id===id);if(!d)return;
+  id=parseInt(id);
+  const d=DB.dossiers.find(x=>parseInt(x.id)===id);if(!d)return;
   el("ed-id").value=id;
   el("ed-nom").value=d.nom||"";
   el("ed-infractions").value=d.infractions||"";
@@ -4286,7 +4296,8 @@ function renderOperations(){
   if(typeof _opViewMode!=='undefined'&&_opViewMode==='cal') setTimeout(renderCalendar,50);
 }
 function cycleOpStatut(id){
-  const op=DB.operations.find(o=>o.id===id);if(!op)return;
+  id=parseInt(id);
+  const op=DB.operations.find(o=>parseInt(o.id)===id);if(!op)return;
   const cycle=["Planifiée","Active","Terminée"];
   const next=cycle[(cycle.indexOf(op.statut)+1)%cycle.length];
   op.statut=next;
@@ -4300,7 +4311,7 @@ function saveOperation(){
   addTimeline(`Opération "${nom}" créée`);
   saveData();closeModal("modal-operation");renderOperations();syncDashboard();clearForm(["op-nom","op-resp","op-desc","op-date"]);
 }
-function deleteOperation(id){askDelete("Supprimer cette opération ?",()=>{DB.operations=DB.operations.filter(o=>o.id!==id);saveData();renderOperations();syncDashboard()})}
+function deleteOperation(id){id=parseInt(id);askDelete("Supprimer cette opération ?",()=>{DB.operations=DB.operations.filter(o=>parseInt(o.id)!==id);saveData();renderOperations();syncDashboard()})}
 
 // GRADES MANAGEMENT
 // Noms réservés aux rôles système — aucun grade ne peut utiliser ces noms ni les modifier
@@ -4622,7 +4633,8 @@ function removeRecruPhoto(id){
 
 // UPDATE openRecrue to populate grade select
 function openRecrue(id){
-  const c=DB.candidatures.find(x=>x.id===id);if(!c)return;
+  id=parseInt(id);
+  const c=DB.candidatures.find(x=>parseInt(x.id)===id);if(!c)return;
   populateGradeSelects();
   el("ra-id").value=id;
   el("ra-title").textContent=`Gérer — ${c.nom}`;
@@ -4751,7 +4763,7 @@ function saveSanction(){
   addTimeline(`${v("s-type")} : ${cible}`);
   saveData();closeModal("modal-sanction");renderSanctions();syncDashboard();clearForm(["s-cible","s-motif"]);
 }
-function deleteSanction(id){askDelete("Supprimer cette entrée ?",()=>{DB.sanctions=DB.sanctions.filter(s=>s.id!==id);saveData();renderSanctions();syncDashboard()})}
+function deleteSanction(id){id=parseInt(id);askDelete("Supprimer cette entrée ?",()=>{DB.sanctions=DB.sanctions.filter(s=>parseInt(s.id)!==id);saveData();renderSanctions();syncDashboard()})}
 
 // ADMIN (continued)
 function saveEditUser(){
@@ -4969,7 +4981,8 @@ function saveInfraction(){
   saveData();renderCodePenal();clearForm(["cp-nom","cp-amende","cp-duree","cp-notes"]);
 }
 function doDeleteInfraction(id){
-  DB.infractions=DB.infractions.filter(x=>x.id!==id);
+  id=parseInt(id);
+  DB.infractions=DB.infractions.filter(x=>parseInt(x.id)!==id);
   saveData();renderCodePenal();
 }
 
@@ -7797,7 +7810,7 @@ function renderMsgContacts(){
   inner.innerHTML = members.map(function(u){
     var key = _msgKey(currentUser.id, u.id);
     var thread = (DB.messages||{})[key]||{};
-    var msgs = Object.values(thread);
+    var msgs = Object.values(thread).sort(function(a,b){return (a.ts||0)-(b.ts||0);});
     var last = msgs.length ? msgs[msgs.length-1] : null;
     var preview = last ? (last.text||'').slice(0,35)+(last.text&&last.text.length>35?'…':'') : 'Aucun message';
     var unread = msgs.filter(function(m){return m.senderId!==currentUser.id&&!m.read;}).length;
@@ -7896,8 +7909,9 @@ function sendMsg(){
     window._fbSet(fbRef, msg);
   }
   // Toujours sauvegarder en localStorage (backup hors-ligne)
-  try{localStorage.setItem('suna_v4', JSON.stringify(DB));}catch(e){}
+  try{localStorage.setItem(STORE, JSON.stringify(DB));}catch(e){}
   renderMsgThread();
+  renderMsgContacts();
   updateMsgBadge();
 }
 
