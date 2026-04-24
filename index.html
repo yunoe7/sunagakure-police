@@ -3878,7 +3878,8 @@ function removeRecensePhoto(ev){
 }
 function viewRecense(id){
   id=parseInt(id);
-  const r=DB.recenses.find(x=>parseInt(x.id)===id);if(!r)return;
+  const r=DB.recenses.find(x=>parseInt(x.id)===id);if(!r){console.warn("viewRecense: introuvable id="+id);return;}
+  if(!el("vr-title")||!el("vr-body")){console.error("viewRecense: modal manquant");return;}
   el("vr-title").textContent=`Fiche — ${r.prenom} ${r.nom}`;
   const isCrim=r.rang==="Criminel recherché";
   const avatarStyle=isCrim?"background:rgba(220,38,38,0.25);border:2px solid var(--red)":r.rang==="Kage"?"background:rgba(180,140,20,0.15);border:2px solid var(--gold)":"background:linear-gradient(135deg,rgba(224,92,26,0.25),rgba(212,160,23,0.15));border:2px solid rgba(180,140,20,0.3)";
@@ -4066,7 +4067,8 @@ function savePlainte(){
 }
 function viewPlainte(id){
   id=parseInt(id);
-  const p=DB.plaintes.find(x=>parseInt(x.id)===id);if(!p)return;
+  const p=DB.plaintes.find(x=>parseInt(x.id)===id);if(!p){console.warn("viewPlainte: introuvable id="+id);return;}
+  if(!el("vp-ref")||!el("vp-body")||!el("vp-footer")){console.error("viewPlainte: modal manquant");return;}
   el("vp-ref").textContent=`Plainte #${p.id}`;
   // Chercher dossier & recensé correspondant à l'accusé
   const dossierAcc=(DB.dossiers||[]).find(d=>(d.nom||"").toLowerCase().includes((p.accuse||"").toLowerCase())&&p.accuse&&p.accuse.length>2);
