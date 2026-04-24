@@ -598,18 +598,29 @@ textarea.form-control{resize:vertical;min-height:80px}
     height:100vh;height:100dvh;
     display:flex;flex-direction:column;
     overflow:hidden;
+    /* Réserver l'espace pour topbar (56px) + bottom-nav (64px + safe-area) */
+    padding-top:0;
+    padding-bottom:0;
   }
 
   .topbar{
     flex-shrink:0;
-    position:relative !important;top:auto !important;
+    height:56px;
+    min-height:56px;
+    /* Neutraliser le sticky du desktop */
+    position:relative !important;
+    top:auto !important;
+    z-index:50 !important;
     overflow:hidden;
+    order:0;
+    will-change:auto;
   }
 
   /* Scroll natif fluide entre topbar et bottom-nav */
   #main > .page-content,
   #main > [id^="page-"]{
     flex:1;
+    min-height:0; /* CRITIQUE : permet au flex child de scroller correctement */
     overflow-y:auto;overflow-x:hidden;
     -webkit-overflow-scrolling:touch;
     overscroll-behavior-y:contain;
@@ -617,14 +628,21 @@ textarea.form-control{resize:vertical;min-height:80px}
     /* GPU layer pour le scroll */
     will-change:scroll-position;
     transform:translateZ(0);
+    order:1;
   }
 
   /* Padding bas pour ne pas être sous la bottom nav */
   .page-content{
-    padding:14px 13px calc(84px + env(safe-area-inset-bottom,8px)) !important;
+    padding:14px 13px calc(80px + env(safe-area-inset-bottom,8px)) !important;
   }
 
-  #bottom-nav{display:block !important;}
+  /* Espace réservé en bas pour la bottom nav (évite superposition) */
+  #bottom-nav{
+    display:block !important;
+    flex-shrink:0;
+    order:2;
+    /* Reste fixed mais on force la hauteur minimale du main à l'inclure */
+  }
 
   /* ============================================
      TOPBAR MOBILE
@@ -636,7 +654,8 @@ textarea.form-control{resize:vertical;min-height:80px}
     -webkit-backdrop-filter:blur(20px) saturate(1.4) !important;
     border-bottom:1px solid rgba(180,140,20,0.18) !important;
     box-shadow:0 1px 0 rgba(180,140,20,0.1),0 4px 24px rgba(0,0,0,0.4) !important;
-    position:relative;
+    position:relative !important;
+    top:auto !important;
   }
   .topbar-path{display:none}
   .topbar-title{
@@ -1373,6 +1392,8 @@ body.dark .msg-contact:hover{background:rgba(255,255,255,0.04)!important}
 body.dark .msg-contact.active{background:rgba(192,65,14,0.12)!important}
 body.dark .msg-bubble.theirs{background:var(--bg3)!important;border-color:rgba(180,140,20,0.15)!important}
 body.dark .msg-input-row{background:rgba(18,20,36,0.9)!important;border-top-color:rgba(180,140,20,0.12)!important}
+.msg-header-bar{background:rgba(255,255,255,0.7)}
+body.dark .msg-header-bar{background:rgba(18,20,36,0.85)!important}
 body.dark #page-messagerie .msg-sidebar{background:var(--bg2)!important;border-color:rgba(180,140,20,0.12)!important}
 body.dark .cal-cell{background:var(--bg2)!important;border-color:rgba(180,140,20,0.08)!important}
 body.dark .profile-stat-item{background:var(--bg2)!important;border-color:rgba(180,140,20,0.12)!important}
@@ -1643,8 +1664,10 @@ document.addEventListener('DOMContentLoaded',function(){if(localStorage.getItem(
   <div class="page-content" id="page-recrutement">
     <div class="section-header">
       <div><div class="section-title">Recrutement</div><div class="section-sub">CANDIDATURES À LA POLICE</div></div>
-      <button class="btn btn-primary" onclick="clearForm(['c-nom','c-age','c-discord','c-motif','c-exp']);openModal('modal-candidature')">+ Déposer une candidature</button>
-      <button class="btn btn-export" onclick="exportCSV('candidatures')" id="btn-export-cand" style="display:none">⬇️ Export CSV</button>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        <button class="btn btn-primary" onclick="clearForm(['c-nom','c-age','c-discord','c-motif','c-exp']);openModal('modal-candidature')">+ Déposer une candidature</button>
+        <button class="btn btn-export" onclick="exportCSV('candidatures')" id="btn-export-cand" style="display:none">⬇️ Export CSV</button>
+      </div>
     </div>
     <!-- Bandeau visiteur : ma candidature -->
     <div id="visitor-cand-banner" style="display:none;margin-bottom:18px"></div>
@@ -1874,7 +1897,7 @@ document.addEventListener('DOMContentLoaded',function(){if(localStorage.getItem(
         <div id="msg-contacts-inner"></div>
       </div>
       <div class="msg-main">
-        <div id="msg-header" style="padding:12px 16px;border-bottom:1px solid rgba(180,140,20,0.1);display:flex;align-items:center;gap:10px;background:rgba(255,255,255,0.7)">
+        <div id="msg-header" class="msg-header-bar" style="padding:12px 16px;border-bottom:1px solid rgba(180,140,20,0.1);display:flex;align-items:center;gap:10px">
           <div style="font-size:20px">💬</div>
           <div>
             <div id="msg-header-name" style="font-weight:700;font-size:14px;color:var(--text)">Sélectionnez un contact</div>
@@ -1994,8 +2017,10 @@ document.addEventListener('DOMContentLoaded',function(){if(localStorage.getItem(
   <div class="page-content" id="page-sanctions">
     <div class="section-header">
       <div><div class="section-title">Sanctions & Promotions</div><div class="section-sub">GESTION DISCIPLINAIRE ET AVANCEMENT</div></div>
-      <button class="btn btn-primary" id="btn-new-sanction" onclick="clearForm(['s-cible','s-motif']);openModal('modal-sanction')" style="display:none">+ Ajouter</button>
-      <button class="btn btn-export" onclick="exportCSV('sanctions')" id="btn-export-sanctions" style="display:none">⬇️ Export CSV</button>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        <button class="btn btn-primary" id="btn-new-sanction" onclick="clearForm(['s-cible','s-motif']);openModal('modal-sanction')" style="display:none">+ Ajouter</button>
+        <button class="btn btn-export" onclick="exportCSV('sanctions')" id="btn-export-sanctions" style="display:none">⬇️ Export CSV</button>
+      </div>
     </div>
     <!-- Stats sanctions -->
     <div class="grid grid-4" style="margin-bottom:16px">
@@ -2495,9 +2520,33 @@ document.addEventListener('DOMContentLoaded',function(){if(localStorage.getItem(
         </div>
       </div>
       <!-- Description pleine largeur -->
-      <div class="form-group" style="margin:0">
+      <div class="form-group" style="margin:0 0 14px 0">
         <label class="form-label">Description des faits</label>
         <textarea id="p-desc" class="form-control" style="min-height:110px;resize:vertical" placeholder="Décrivez les événements avec précision : lieu, heure, circonstances..."></textarea>
+      </div>
+      <!-- Photo de l'accusé (optionnelle) -->
+      <div class="form-group" style="margin:0">
+        <label class="form-label" style="display:flex;align-items:center;gap:6px">
+          📸 Photo de l'accusé <span style="font-size:9px;color:var(--muted);font-family:'Share Tech Mono',monospace;letter-spacing:1px;font-weight:400">OPTIONNEL</span>
+        </label>
+        <div id="p-photo-zone" onclick="document.getElementById('p-photo-input').click()"
+          style="border:2px dashed rgba(180,140,20,0.3);border-radius:10px;padding:12px 16px;cursor:pointer;transition:border-color 0.2s,background 0.2s;background:rgba(180,140,20,0.03);display:flex;align-items:center;gap:12px;min-height:64px"
+          onmouseenter="this.style.borderColor='rgba(180,140,20,0.6)';this.style.background='rgba(180,140,20,0.06)'"
+          onmouseleave="this.style.borderColor='rgba(180,140,20,0.3)';this.style.background='rgba(180,140,20,0.03)'"
+          ondragover="event.preventDefault();this.style.borderColor='var(--gold)'"
+          ondragleave="this.style.borderColor='rgba(180,140,20,0.3)'"
+          ondrop="handlePlainteDrop(event)">
+          <!-- Préview avatar -->
+          <div id="p-photo-avatar" style="width:44px;height:44px;border-radius:50%;border:2px solid rgba(180,140,20,0.25);overflow:hidden;flex-shrink:0;background:rgba(180,140,20,0.08);display:flex;align-items:center;justify-content:center;font-size:20px;transition:border-color 0.2s">👤</div>
+          <!-- Texte placeholder / état -->
+          <div id="p-photo-placeholder" style="flex:1;min-width:0">
+            <div style="font-size:11.5px;color:var(--muted);font-weight:600">Cliquez pour importer une photo</div>
+            <div style="font-size:10px;color:var(--muted);margin-top:2px;opacity:0.7">ou glissez-déposez une image · Ctrl+V pour coller</div>
+          </div>
+          <!-- Bouton retirer (masqué par défaut) -->
+          <button id="p-photo-remove" onclick="removePlaintePhoto(event)" style="display:none;flex-shrink:0;background:rgba(220,38,38,0.85);color:#fff;border:none;border-radius:7px;padding:4px 10px;font-size:11px;cursor:pointer;font-weight:600">✕ Retirer</button>
+        </div>
+        <input type="file" id="p-photo-input" accept="image/*" style="display:none" onchange="loadPlaintePhoto(this)">
       </div>
     </div>
     <div class="modal-footer">
@@ -3513,7 +3562,19 @@ function renderPage(name){
       }).catch(function(){});
     }
   }
-  if(name==="messagerie")renderMsgContacts();
+  if(name==="messagerie"){
+    renderMsgContacts();
+    // Si une conversation était ouverte, la restaurer (header + thread + input)
+    if(typeof _currentMsgContact !== 'undefined' && _currentMsgContact){
+      var _hName = document.getElementById('msg-header-name');
+      var _hGrade = document.getElementById('msg-header-grade');
+      if(_hName) _hName.textContent = _currentMsgContact.nom;
+      if(_hGrade) _hGrade.textContent = (_currentMsgContact.grade||'')+(_currentMsgContact.role?' · '+roleLabel(_currentMsgContact.role):'');
+      var _iRow = document.getElementById('msg-input-row');
+      if(_iRow) _iRow.style.display='flex';
+      renderMsgThread();
+    }
+  }
   if(name==="profil"){renderProfil();renderLoginHistory();}
   if(name==="hierarchie")renderHierarchie();
 }
@@ -4110,11 +4171,57 @@ function renderPlaintes(){
   let list=DB.plaintes;if(plaintesFilter!=="all")list=list.filter(p=>p.statut===plaintesFilter);
   el("plaintes-tbody").innerHTML=list.map(p=>`<tr><td class="mono">#${p.id}</td><td>${esc(p.plaignant)}</td><td>${esc(p.accuse)}</td><td>${esc(p.type)}</td><td><span class="badge ${statutPlainte(p.statut)}">${fmtStatut(p.statut)}</span></td><td class="mono">${fmtDate(p.date)}</td><td><button class="btn btn-outline btn-sm" onclick="viewPlainte(${p.id})">👁</button>${canModify()?` <button class="btn btn-danger btn-sm" onclick="deletePlainte(${p.id})">🗑</button>`:""}</td></tr>`).join("")||`<tr><td colspan="7" style="text-align:center;color:var(--muted);padding:18px">Aucune plainte</td></tr>`;
 }
+let _plaintePhoto="";
+function loadPlaintePhoto(input){
+  if(!input.files||!input.files[0])return;
+  const reader=new FileReader();
+  reader.onload=function(e){
+    _plaintePhoto=e.target.result;
+    const av=el("p-photo-avatar");
+    av.innerHTML=`<img src="${e.target.result}" style="width:100%;height:100%;object-fit:cover">`;
+    av.style.borderColor="rgba(180,140,20,0.6)";
+    el("p-photo-placeholder").innerHTML='<div style="font-size:11.5px;color:var(--green);font-weight:600">✓ Photo chargée</div><div style="font-size:10px;color:var(--muted);margin-top:2px">Cliquez pour changer</div>';
+    el("p-photo-remove").style.display="block";
+  };
+  reader.readAsDataURL(input.files[0]);
+}
+function removePlaintePhoto(ev){
+  if(ev)ev.stopPropagation();
+  _plaintePhoto="";
+  el("p-photo-avatar").innerHTML="👤";
+  el("p-photo-avatar").style.borderColor="rgba(180,140,20,0.25)";
+  el("p-photo-placeholder").innerHTML='<div style="font-size:11.5px;color:var(--muted);font-weight:600">Cliquez pour importer une photo</div><div style="font-size:10px;color:var(--muted);margin-top:2px;opacity:0.7">ou glissez-déposez une image · Ctrl+V pour coller</div>';
+  el("p-photo-remove").style.display="none";
+  el("p-photo-input").value="";
+}
+document.addEventListener('paste', function(ev){
+  if(!el('modal-plainte') || el('modal-plainte').style.display==='none' && !el('modal-plainte').classList.contains('active')) return;
+  if(document.querySelector('#modal-plainte') && document.querySelector('#modal-plainte').style.display!=='flex') return;
+  const items=ev.clipboardData&&ev.clipboardData.items;
+  if(!items) return;
+  for(let i=0;i<items.length;i++){
+    if(items[i].type.startsWith('image/')){
+      const file=items[i].getAsFile();
+      if(file) loadPlaintePhoto({files:[file]});
+      break;
+    }
+  }
+});
+function handlePlainteDrop(ev){
+  ev.preventDefault();
+  el("p-photo-zone").style.borderColor="rgba(180,140,20,0.3)";
+  const file=ev.dataTransfer&&ev.dataTransfer.files&&ev.dataTransfer.files[0];
+  if(!file||!file.type.startsWith("image/"))return;
+  const fakeInput={files:[file]};
+  loadPlaintePhoto(fakeInput);
+}
 function savePlainte(){
   const pl=v("p-plaignant"),ac=v("p-accuse"),desc=v("p-desc");if(!pl||!ac||!desc)return;
-  DB.plaintes.push({id:Date.now(),plaignant:pl,accuse:ac,type:v("p-type"),desc,dateFaits:v("p-date"),statut:"ouverte",auteur:currentUser?currentUser.nom:"Anonyme",agent:null,date:now()});
+  DB.plaintes.push({id:Date.now(),plaignant:pl,accuse:ac,type:v("p-type"),desc,dateFaits:v("p-date"),statut:"ouverte",auteur:currentUser?currentUser.nom:"Anonyme",agent:null,date:now(),photoAccuse:_plaintePhoto||""});
   addTimeline(`Plainte déposée par ${pl} contre ${ac}`);
+  _plaintePhoto="";
   saveData();closeModal("modal-plainte");renderPlaintes();syncDashboard();clearForm(["p-plaignant","p-accuse","p-desc","p-date"]);
+  removePlaintePhoto();
 }
 function viewPlainte(id){
   id=parseInt(id);
@@ -4126,7 +4233,8 @@ function viewPlainte(id){
   const recenseAcc=(DB.recenses||[]).find(r=>((r.prenom||"")+" "+(r.nom||"")).toLowerCase().includes((p.accuse||"").toLowerCase())&&p.accuse&&p.accuse.length>2);
   const liensDossier=dossierAcc?`<div style="margin-top:10px;padding:10px 13px;background:rgba(220,38,38,0.06);border:1px solid rgba(220,38,38,0.2);border-radius:9px;font-size:12px;display:flex;align-items:center;gap:8px">🗂️ <span>Dossier criminel trouvé :</span><button class="btn btn-danger btn-sm" onclick="closeModal('modal-view-plainte');showPage('dossiers');setTimeout(()=>{const s=el('search-dossier');if(s){s.value='${esc(p.accuse||'')}';renderDossiers();}},150)">Voir le dossier</button></div>`:"";
   const liensRecense=recenseAcc?`<div style="margin-top:8px;padding:10px 13px;background:rgba(109,40,217,0.06);border:1px solid rgba(109,40,217,0.2);border-radius:9px;font-size:12px;display:flex;align-items:center;gap:8px">📝 <span>Fiche de recensement trouvée</span><button class="btn btn-purple btn-sm" onclick="closeModal('modal-view-plainte');showPage('recensement');setTimeout(()=>{const s=el('search-recense');if(s){s.value='${esc(p.accuse||'')}';renderRecensement();}},150)">Voir la fiche</button></div>`:"";
-  el("vp-body").innerHTML=`<div class="form-group"><label class="form-label">Plaignant</label><div style="font-size:13.5px">${esc(p.plaignant)}</div></div><div class="form-group"><label class="form-label">Accusé</label><div style="font-size:13.5px">${esc(p.accuse)}</div></div><div class="form-group"><label class="form-label">Type</label><div>${esc(p.type)}</div></div><div class="form-group"><label class="form-label">Description</label><div style="font-size:12.5px;color:#555;line-height:1.65;white-space:pre-wrap">${esc(p.desc)}</div></div><div class="form-group"><label class="form-label">Date des faits</label><div>${esc(p.dateFaits)||"—"}</div></div><div class="form-group"><label class="form-label">Statut</label><span class="badge ${statutPlainte(p.statut)}">${fmtStatut(p.statut)}</span></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:8px"><div class="form-group" style="margin:0"><label class="form-label">Déposée par</label><div style="font-size:12px;font-weight:600">${esc(p.auteur||p.plaignant||"—")}</div></div><div class="form-group" style="margin:0"><label class="form-label">Agent en charge</label><div style="font-size:12px;font-weight:600;color:${p.agent?"var(--green)":"var(--muted)"}">${esc(p.agent||"Non assigné")}</div></div></div>${liensDossier}${liensRecense}`;
+  const photoAccuseHTML=p.photoAccuse&&safeImgSrc(p.photoAccuse)?`<div class="form-group"><label class="form-label" style="display:flex;align-items:center;gap:6px">📸 Photo de l'accusé</label><div style="display:flex;justify-content:center;padding:6px 0"><img src="${safeImgSrc(p.photoAccuse)}" alt="Photo accusé" style="max-width:180px;max-height:180px;border-radius:10px;object-fit:cover;border:2px solid rgba(180,140,20,0.25);box-shadow:0 4px 16px rgba(0,0,0,0.18)"></div></div>`:"";
+  el("vp-body").innerHTML=`${photoAccuseHTML}<div class="form-group"><label class="form-label">Plaignant</label><div style="font-size:13.5px">${esc(p.plaignant)}</div></div><div class="form-group"><label class="form-label">Accusé</label><div style="font-size:13.5px">${esc(p.accuse)}</div></div><div class="form-group"><label class="form-label">Type</label><div>${esc(p.type)}</div></div><div class="form-group"><label class="form-label">Description</label><div style="font-size:12.5px;color:#555;line-height:1.65;white-space:pre-wrap">${esc(p.desc)}</div></div><div class="form-group"><label class="form-label">Date des faits</label><div>${esc(p.dateFaits)||"—"}</div></div><div class="form-group"><label class="form-label">Statut</label><span class="badge ${statutPlainte(p.statut)}">${fmtStatut(p.statut)}</span></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:8px"><div class="form-group" style="margin:0"><label class="form-label">Déposée par</label><div style="font-size:12px;font-weight:600">${esc(p.auteur||p.plaignant||"—")}</div></div><div class="form-group" style="margin:0"><label class="form-label">Agent en charge</label><div style="font-size:12px;font-weight:600;color:${p.agent?"var(--green)":"var(--muted)"}">${esc(p.agent||"Non assigné")}</div></div></div>${liensDossier}${liensRecense}`;
   const footer=el("vp-footer");footer.innerHTML="";
   if(canModify()){
     if(p.statut==="ouverte")footer.innerHTML+=`<button class="btn btn-primary btn-sm" onclick="setPlainteStatut(${p.id},'en_cours')">Prendre en charge</button>`;
@@ -4564,10 +4672,14 @@ function _renderEffectifsOrig(){
               ?`<img src="${safeImgSrc(u.photo)}" style="width:54px;height:54px;border-radius:50%;object-fit:cover;border:2px solid rgba(180,140,20,0.35);display:block;box-shadow:0 4px 12px rgba(0,0,0,0.15)">`
               :`<div style="width:54px;height:54px;border-radius:50%;background:${avatarBg};display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:700;color:#fff;box-shadow:0 4px 12px rgba(0,0,0,0.2);border:2px solid rgba(255,255,255,0.1)">${initiale}</div>`
             }
-            <span style="position:absolute;bottom:1px;right:1px;width:13px;height:13px;border-radius:50%;background:${statusColor};border:2px solid #fff;box-shadow:0 0 6px ${statusColor}"></span>
-            ${canModify()?`<div style="position:absolute;top:-4px;right:-4px;display:flex;gap:2px">
-              <label title="Photo" style="width:20px;height:20px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:9px;box-shadow:0 2px 6px rgba(0,0,0,0.2)">📷<input type="file" accept="image/*" style="display:none" onchange="uploadMemberPhoto(${u.id},this)"></label>
-              ${u.photo?`<span title="Retirer" onclick="removeUserPhoto(${u.id})" style="width:20px;height:20px;border-radius:50%;background:var(--red);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:9px;color:#fff;box-shadow:0 2px 6px rgba(0,0,0,0.2)">✕</span>`:""}
+            <span style="position:absolute;bottom:1px;right:1px;width:13px;height:13px;border-radius:50%;background:${statusColor};border:2px solid #fff;box-shadow:0 0 6px ${statusColor};z-index:2"></span>
+            ${canModify()?`<div style="position:absolute;inset:0;border-radius:50%;background:rgba(0,0,0,0);display:flex;align-items:center;justify-content:center;gap:3px;opacity:0;transition:opacity 0.2s,background 0.2s;overflow:hidden;z-index:1"
+              onmouseenter="this.style.opacity='1';this.style.background='rgba(0,0,0,0.52)'"
+              onmouseleave="this.style.opacity='0';this.style.background='rgba(0,0,0,0)'"
+              ontouchstart="this.style.opacity='1';this.style.background='rgba(0,0,0,0.52)'"
+              ontouchend="setTimeout(()=>{this.style.opacity='0';this.style.background='rgba(0,0,0,0)'},1400)">
+              <label title="Changer la photo" style="width:22px;height:22px;border-radius:50%;background:rgba(255,255,255,0.18);border:1px solid rgba(255,255,255,0.35);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:11px">📷<input type="file" accept="image/*" style="display:none" onchange="uploadMemberPhoto(${u.id},this)"></label>
+              ${u.photo?`<span title="Retirer la photo" onclick="removeUserPhoto(${u.id})" style="width:22px;height:22px;border-radius:50%;background:rgba(220,38,38,0.8);border:1px solid rgba(255,100,100,0.4);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:11px;color:#fff">✕</span>`:""}
             </div>`:""}
           </div>
           <div style="flex:1;min-width:0">
