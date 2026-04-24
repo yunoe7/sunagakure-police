@@ -3749,7 +3749,7 @@ function removeAnnoncePhoto(ev){
   el("a-photo-remove").style.display="none";
   el("a-photo-input").value="";
 }
-function deleteAnnonce(id){id=parseInt(id);askDelete("Supprimer cette annonce ?",()=>{DB.annonces=DB.annonces.filter(a=>parseInt(a.id)!==id);saveData();renderAnnonces();syncDashboard()})}
+function deleteAnnonce(id){id=parseInt(id);askDelete("Supprimer cette annonce ?",()=>{DB.annonces=DB.annonces.filter(a=>String(a.id)!==String(id));saveData();renderAnnonces();syncDashboard()})}
 
 // ─── RÉACTIONS ANNONCES ─────────────────────────────────────────
 const REACTION_EMOJIS = ['👍','❤️','🔥','✅','👮'];
@@ -3878,7 +3878,7 @@ function removeRecensePhoto(ev){
 }
 function viewRecense(id){
   id=parseInt(id);
-  const r=DB.recenses.find(x=>parseInt(x.id)===id);if(!r){console.warn("viewRecense: introuvable id="+id);return;}
+  const r=DB.recenses.find(x=>String(x.id)===String(id));if(!r){console.warn("viewRecense: introuvable id="+id);return;}
   if(!el("vr-title")||!el("vr-body")){console.error("viewRecense: modal manquant");return;}
   el("vr-title").textContent=`Fiche — ${r.prenom} ${r.nom}`;
   const isCrim=r.rang==="Criminel recherché";
@@ -3887,7 +3887,7 @@ function viewRecense(id){
   el("vr-body").innerHTML=`${photoBlock}<div class="grid grid-2"><div class="form-group"><label class="form-label">Prénom</label><div style="font-size:14px;font-weight:600">${esc(r.prenom)}</div></div><div class="form-group"><label class="form-label">Nom</label><div style="font-size:14px;font-weight:600">${esc(r.nom)}</div></div><div class="form-group"><label class="form-label">Âge</label><div>${esc(r.age)} ans</div></div><div class="form-group"><label class="form-label">Sexe</label><div>${esc(r.sexe)}</div></div></div><div class="form-group"><label class="form-label">Faction / Village</label><div style="font-size:13.5px">${esc(r.faction)||"—"}</div></div><div class="form-group"><label class="form-label">Rang</label><span class="badge badge-orange">${esc(r.rang)}</span></div><div class="form-group"><label class="form-label">Compétences</label><div style="font-size:12.5px;color:#555">${esc(r.competences)||"—"}</div></div>${r.natures&&r.natures.length?`<div class="form-group"><label class="form-label">Natures & Maîtrises</label><div class="nature-bar">${r.natures.map(n=>`<span class="badge ${NATURE_BADGE[n]||"badge-gray"}">${esc(n)}</span>`).join("")}</div></div>`:""}<div class="form-group"><label class="form-label">Notes</label><div style="font-size:12.5px;color:#555;line-height:1.65;white-space:pre-wrap">${esc(r.notes)||"—"}</div></div><div class="form-group"><label class="form-label">Recensé par</label><div style="font-size:11px;color:var(--muted)">${esc(r.auteur)} — ${fmtDate(r.date)}</div></div>`;
   openModal("modal-view-recense");
 }
-function deleteRecense(id){id=parseInt(id);askDelete("Supprimer cette fiche de recensement ?",()=>{DB.recenses=DB.recenses.filter(r=>parseInt(r.id)!==id);saveData();renderRecensement();syncDashboard()})}
+function deleteRecense(id){id=parseInt(id);askDelete("Supprimer cette fiche de recensement ?",()=>{DB.recenses=DB.recenses.filter(r=>String(r.id)!==String(id));saveData();renderRecensement();syncDashboard()})}
 
 // CANDIDATURES
 function filterCandidatures(f,e){candFilter=f;document.querySelectorAll("#page-recrutement .tab-btn").forEach(b=>b.classList.remove("active"));e.classList.add("active");renderCandidatures()}
@@ -3912,7 +3912,7 @@ function renderCandidatures(){
 }
 
 function openEditCandidature(id){
-  const c=DB.candidatures.find(x=>x.id===id);if(!c)return;
+  const c=DB.candidatures.find(x=>String(x.id)===String(id));if(!c)return;
   if(!canModify()&&c.authorId!==currentUser.id){showToast("Accès refusé.","error");return;}
   el("ec-id").value=c.id;
   el("ec-nom").value=c.nom||"";
@@ -3924,7 +3924,7 @@ function openEditCandidature(id){
 }
 
 function viewCandidature(id){
-  const c=DB.candidatures.find(x=>x.id===id);if(!c)return;
+  const c=DB.candidatures.find(x=>String(x.id)===String(id));if(!c)return;
   const statutColor={en_attente:"badge-blue",acceptee:"badge-green",refusee:"badge-red"}[c.statut]||"badge-gray";
   const statutLabel={en_attente:"⏳ En attente",acceptee:"✅ Acceptée",refusee:"❌ Refusée"}[c.statut]||c.statut;
   const modif=c.modifiedAt?`<div style="font-size:10px;color:var(--muted);font-family:'Share Tech Mono',monospace;margin-top:10px">Dernière modification : ${fmtDate(c.modifiedAt)}</div>`:"";
@@ -3968,7 +3968,7 @@ function viewCandidature(id){
 
 function saveEditCandidature(){
   const id=parseInt(el("ec-id").value);
-  const c=DB.candidatures.find(x=>parseInt(x.id)===id);if(!c)return;
+  const c=DB.candidatures.find(x=>String(x.id)===String(id));if(!c)return;
   if(!canModify()&&c.authorId!==currentUser.id){showToast("Accès refusé.","error");return;}
   const nom=el("ec-nom").value.trim(),age=el("ec-age").value.trim(),motif=el("ec-motif").value.trim();
   if(!nom||!age||!motif){showToast("Veuillez remplir les champs obligatoires.","error");return;}
@@ -3985,14 +3985,14 @@ function saveEditCandidature(){
 function deleteCandidature(id){
   id=parseInt(id);
   askDelete("Supprimer définitivement cette candidature ?",()=>{
-    DB.candidatures=DB.candidatures.filter(c=>parseInt(c.id)!==id);
+    DB.candidatures=DB.candidatures.filter(c=>String(c.id)!==String(id));
     saveData();renderCandidatures();renderRecrues();renderEffectifs();syncDashboard();
   });
 }
 // renderRecrues and openRecrue defined below in new section
 function recrueAction(type){
   const id=parseInt(el("ra-id").value);
-  const c=DB.candidatures.find(x=>parseInt(x.id)===id);if(!c)return;
+  const c=DB.candidatures.find(x=>String(x.id)===String(id));if(!c)return;
   const motif=v("ra-motif");
   if(type==="virer"){
     closeModal("modal-recrue-action");
@@ -4025,7 +4025,7 @@ function saveCandidature(){
 }
 function setCandidature(id,statut){
   id=parseInt(id);
-  const c=DB.candidatures.find(x=>parseInt(x.id)===id);if(!c)return;c.statut=statut;c.modifiedAt=now();
+  const c=DB.candidatures.find(x=>String(x.id)===String(id));if(!c)return;c.statut=statut;c.modifiedAt=now();
   if(statut==="acceptee"){c.grade=c.grade||"Stagiaire";c.actif=true;
     // Auto-create a user account for the recruit if none exists (password hashed)
     if(!DB.users.find(u=>u.nom===c.nom)){
@@ -4067,7 +4067,7 @@ function savePlainte(){
 }
 function viewPlainte(id){
   id=parseInt(id);
-  const p=DB.plaintes.find(x=>parseInt(x.id)===id);if(!p){console.warn("viewPlainte: introuvable id="+id);return;}
+  const p=DB.plaintes.find(x=>String(x.id)===String(id));if(!p){console.warn("viewPlainte: introuvable id="+id);return;}
   if(!el("vp-ref")||!el("vp-body")||!el("vp-footer")){console.error("viewPlainte: modal manquant");return;}
   el("vp-ref").textContent=`Plainte #${p.id}`;
   // Chercher dossier & recensé correspondant à l'accusé
@@ -4086,13 +4086,13 @@ function viewPlainte(id){
 }
 function setPlainteStatut(id,statut){
   id=parseInt(id);
-  const p=DB.plaintes.find(x=>parseInt(x.id)===id);if(!p)return;p.statut=statut;
+  const p=DB.plaintes.find(x=>String(x.id)===String(id));if(!p)return;p.statut=statut;
   if(statut==="en_cours"&&!p.agent)p.agent=currentUser.nom;
   if(statut==="fermee")p.agentCloture=currentUser.nom;
   addTimeline(`Plainte #${id} → ${fmtStatut(statut)} par ${currentUser.nom}`);
   saveData();renderPlaintes();syncDashboard();closeModal("modal-view-plainte");
 }
-function deletePlainte(id){id=parseInt(id);askDelete("Supprimer cette plainte ?",()=>{DB.plaintes=DB.plaintes.filter(p=>parseInt(p.id)!==id);saveData();renderPlaintes();syncDashboard()})}
+function deletePlainte(id){id=parseInt(id);askDelete("Supprimer cette plainte ?",()=>{DB.plaintes=DB.plaintes.filter(p=>String(p.id)!==String(id));saveData();renderPlaintes();syncDashboard()})}
 
 // DOSSIERS
 function renderDossiers(){
@@ -4174,11 +4174,11 @@ function clearDossierPhoto(){
   if(el("d-photo-clear"))el("d-photo-clear").style.display="none";
   if(el("d-photo-input"))el("d-photo-input").value="";
 }
-function deleteDossier(id){id=parseInt(id);askDelete("Supprimer ce dossier criminel ?",()=>{DB.dossiers=DB.dossiers.filter(d=>parseInt(d.id)!==id);saveData();renderDossiers();syncDashboard()})}
+function deleteDossier(id){id=parseInt(id);askDelete("Supprimer ce dossier criminel ?",()=>{DB.dossiers=DB.dossiers.filter(d=>String(d.id)!==String(id));saveData();renderDossiers();syncDashboard()})}
 
 function openEditDossier(id){
   id=parseInt(id);
-  const d=DB.dossiers.find(x=>parseInt(x.id)===id);if(!d)return;
+  const d=DB.dossiers.find(x=>String(x.id)===String(id));if(!d)return;
   el("ed-id").value=id;
   el("ed-nom").value=d.nom||"";
   el("ed-infractions").value=d.infractions||"";
@@ -4205,7 +4205,7 @@ function openEditDossier(id){
 
 function updateDossier(){
   const id=parseInt(el("ed-id").value);
-  const d=DB.dossiers.find(x=>x.id===id);if(!d)return;
+  const d=DB.dossiers.find(x=>String(x.id)===String(id));if(!d)return;
   d.nom=el("ed-nom").value.trim();
   d.infractions=el("ed-infractions").value.trim();
   d.danger=el("ed-danger").value;
@@ -4299,7 +4299,7 @@ function renderOperations(){
 }
 function cycleOpStatut(id){
   id=parseInt(id);
-  const op=DB.operations.find(o=>parseInt(o.id)===id);if(!op)return;
+  const op=DB.operations.find(o=>String(o.id)===String(id));if(!op)return;
   const cycle=["Planifiée","Active","Terminée"];
   const next=cycle[(cycle.indexOf(op.statut)+1)%cycle.length];
   op.statut=next;
@@ -4313,7 +4313,7 @@ function saveOperation(){
   addTimeline(`Opération "${nom}" créée`);
   saveData();closeModal("modal-operation");renderOperations();syncDashboard();clearForm(["op-nom","op-resp","op-desc","op-date"]);
 }
-function deleteOperation(id){id=parseInt(id);askDelete("Supprimer cette opération ?",()=>{DB.operations=DB.operations.filter(o=>parseInt(o.id)!==id);saveData();renderOperations();syncDashboard()})}
+function deleteOperation(id){id=parseInt(id);askDelete("Supprimer cette opération ?",()=>{DB.operations=DB.operations.filter(o=>String(o.id)!==String(id));saveData();renderOperations();syncDashboard()})}
 
 // GRADES MANAGEMENT
 // Noms réservés aux rôles système — aucun grade ne peut utiliser ces noms ni les modifier
@@ -4572,7 +4572,7 @@ function refreshSidebarAvatar(){
 }
 
 function removeUserPhoto(userId){
-  const u=DB.users.find(x=>x.id===userId);if(!u)return;
+  const u=DB.users.find(x=>String(x.id)===String(userId));if(!u)return;
   u.photo="";
   const c=DB.candidatures.find(x=>x.authorId===userId||x.nom===u.nom);if(c)c.photo="";
   if(currentUser&&currentUser.id===userId){currentUser.photo="";refreshSidebarAvatar();}
@@ -4584,7 +4584,7 @@ function uploadMemberPhoto(userId,input){
   if(file.size>512000){showToast('Image trop lourde (max 500 Ko).','error');input.value='';return;}
   const reader=new FileReader();
   reader.onload=e=>{
-    const u=DB.users.find(x=>x.id===userId);if(!u)return;
+    const u=DB.users.find(x=>String(x.id)===String(userId));if(!u)return;
     u.photo=e.target.result;
     if(currentUser&&currentUser.id===userId){currentUser.photo=e.target.result;refreshSidebarAvatar();}
     saveData();renderEffectifs();
@@ -4619,7 +4619,7 @@ function uploadRecruPhoto(id,input){
   const file=input.files[0];if(!file)return;
   const reader=new FileReader();
   reader.onload=e=>{
-    const c=DB.candidatures.find(x=>x.id===id);if(!c)return;
+    const c=DB.candidatures.find(x=>String(x.id)===String(id));if(!c)return;
     c.photo=e.target.result;
     const u=DB.users.find(x=>x.id===c.authorId||x.nom===c.nom);if(u){u.photo=e.target.result;}
     saveData();renderRecrues();renderEffectifs();
@@ -4627,7 +4627,7 @@ function uploadRecruPhoto(id,input){
   reader.readAsDataURL(file);
 }
 function removeRecruPhoto(id){
-  const c=DB.candidatures.find(x=>x.id===id);if(!c)return;
+  const c=DB.candidatures.find(x=>String(x.id)===String(id));if(!c)return;
   c.photo="";
   const u=DB.users.find(x=>x.id===c.authorId||x.nom===c.nom);if(u)u.photo="";
   saveData();renderRecrues();renderEffectifs();
@@ -4636,7 +4636,7 @@ function removeRecruPhoto(id){
 // UPDATE openRecrue to populate grade select
 function openRecrue(id){
   id=parseInt(id);
-  const c=DB.candidatures.find(x=>parseInt(x.id)===id);if(!c)return;
+  const c=DB.candidatures.find(x=>String(x.id)===String(id));if(!c)return;
   populateGradeSelects();
   el("ra-id").value=id;
   el("ra-title").textContent=`Gérer — ${c.nom}`;
@@ -4713,7 +4713,7 @@ function exportAdminData(){
 
 function openEditUser(id){
   populateGradeSelects();
-  const u=DB.users.find(x=>x.id===id);if(!u)return;
+  const u=DB.users.find(x=>String(x.id)===String(id));if(!u)return;
   // Protect admin accounts — only an admin can edit another admin
   if(u.role==="admin"&&!isAdmin()){
     showToast("Seul un Administrateur peut modifier un compte Admin.","error");return;
@@ -4765,13 +4765,13 @@ function saveSanction(){
   addTimeline(`${v("s-type")} : ${cible}`);
   saveData();closeModal("modal-sanction");renderSanctions();syncDashboard();clearForm(["s-cible","s-motif"]);
 }
-function deleteSanction(id){id=parseInt(id);askDelete("Supprimer cette entrée ?",()=>{DB.sanctions=DB.sanctions.filter(s=>parseInt(s.id)!==id);saveData();renderSanctions();syncDashboard()})}
+function deleteSanction(id){id=parseInt(id);askDelete("Supprimer cette entrée ?",()=>{DB.sanctions=DB.sanctions.filter(s=>String(s.id)!==String(id));saveData();renderSanctions();syncDashboard()})}
 
 // ADMIN (continued)
 function saveEditUser(){
   if(_loginInProgress)return;
   const id=parseInt(el("eu-id").value);
-  const u=DB.users.find(x=>x.id===id);if(!u)return;
+  const u=DB.users.find(x=>String(x.id)===String(id));if(!u)return;
   if(u.role==="admin"&&!isAdmin()){showToast("Permission refusée.","error");return;}
   const newRole=v("eu-role");
   if(newRole==="admin"&&!isAdmin()){showToast("Seul un Administrateur peut attribuer le rôle Admin.","error");return;}
@@ -4804,7 +4804,7 @@ function saveEditUser(){
 function deleteUserById(){
   const id=parseInt(el("eu-id").value);
   if(!id){closeModal("modal-edituser");return}
-  const u=DB.users.find(x=>x.id===id);
+  const u=DB.users.find(x=>String(x.id)===String(id));
   if(!u){closeModal("modal-edituser");return}
   if(u.id===currentUser.id){
     showToast("Impossible de supprimer votre propre compte.","error");return;
@@ -4856,7 +4856,7 @@ function openNotesModal(userId){
   _currentNotesUserId = userId;
   if(!DB.adminNotes) DB.adminNotes = {};
   if(!DB.adminNotes[userId]) DB.adminNotes[userId] = [];
-  const u = DB.users.find(x => x.id === userId);
+  const u = DB.users.find(x => String(x.id)===String(userId));
   if(el("notes-modal-title")) el("notes-modal-title").textContent = "Notes — " + (u ? u.nom : "Membre");
   el("note-input").value = "";
   renderNotesList();
@@ -4920,7 +4920,7 @@ function deleteNote(noteId){
   const uid = _currentNotesUserId;
   if(!uid || !isAdmin()) return;
   askDelete("Supprimer cette note ?", () => {
-    DB.adminNotes[uid] = (DB.adminNotes[uid] || []).filter(n => n.id !== noteId);
+    DB.adminNotes[uid] = (DB.adminNotes[uid] || []).filter(n => String(n.id)!==String(noteId));
     saveData();
     renderNotesList();
     renderAdmin();
@@ -4936,7 +4936,7 @@ function openNotesFromEditModal(){
 }
 
 function toggleUser(id){
-  const u=DB.users.find(x=>x.id===id);if(!u)return;
+  const u=DB.users.find(x=>String(x.id)===String(id));if(!u)return;
   // Empêcher de désactiver le dernier admin actif
   if(u.role==="admin"&&u.statut==="Actif"){
     const activeAdmins=DB.users.filter(x=>x.role==="admin"&&x.statut==="Actif");
@@ -4984,7 +4984,7 @@ function saveInfraction(){
 }
 function doDeleteInfraction(id){
   id=parseInt(id);
-  DB.infractions=DB.infractions.filter(x=>parseInt(x.id)!==id);
+  DB.infractions=DB.infractions.filter(x=>String(x.id)!==String(id));
   saveData();renderCodePenal();
 }
 
@@ -7830,7 +7830,7 @@ function renderMsgContacts(){
 }
 
 function openMsgContact(userId){
-  var u = (DB.users||[]).find(function(u){return u.id===userId;});
+  var u = (DB.users||[]).find(function(u){return String(u.id)===String(userId);});
   if(!u) return;
   _currentMsgContact = u;
   // Update header
