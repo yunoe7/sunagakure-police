@@ -2257,9 +2257,13 @@ document.addEventListener('DOMContentLoaded',function(){if(localStorage.getItem(
             <div style="font-size:11px;color:var(--muted);text-align:center;padding:8px">Aucune activité récente</div>
           </div>
         </div>
-        <div style="display:flex;gap:8px;flex-wrap:wrap">
-          <button class="btn btn-outline btn-sm" onclick="resetNotifs()">🔄 Réinitialiser</button>
-          <button class="btn btn-gold btn-sm" onclick="markAllNotifsRead()">✓ Tout marquer comme lu</button>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;padding-top:4px;border-top:1px solid rgba(180,140,20,0.12);margin-top:4px">
+          <button class="btn btn-outline" onclick="resetNotifs()" style="flex:1;justify-content:center;font-size:11.5px;gap:7px;padding:9px 14px;border-color:rgba(0,0,0,0.12);color:var(--muted)">
+            <span style="font-size:13px">🔄</span> Réinitialiser
+          </button>
+          <button class="btn btn-gold" onclick="markAllNotifsRead()" style="flex:2;justify-content:center;font-size:11.5px;gap:7px;padding:9px 14px">
+            <span style="font-size:13px">✓</span> Tout marquer comme lu
+          </button>
         </div>
       </div>
     </div><!-- /card notifications -->
@@ -3387,9 +3391,9 @@ function applyLogin(){
   if(canModify()){
     el("nav-admin").style.display="flex";
     const ditAdmin=el("ditem-admin");if(ditAdmin)ditAdmin.style.display="flex";
-    ["btn-new-annonce","btn-new-dossier","btn-new-operation","btn-new-sanction","btn-export-cand","btn-export-sanctions"].forEach(id=>{const e=el(id);if(e)e.style.display="inline-flex"});
+    ["btn-new-annonce","btn-new-dossier","btn-new-operation","btn-new-sanction"].forEach(id=>{const e=el(id);if(e)e.style.display="inline-flex"});
     // Boutons export visibles uniquement pour les admins
-    if(isAdmin()){document.querySelectorAll('[data-export-btn]').forEach(b=>b.style.display="inline-flex");}
+    if(isAdmin()){document.querySelectorAll('[data-export-btn]').forEach(b=>b.style.display="inline-flex");["btn-export-cand","btn-export-sanctions"].forEach(id=>{const e=el(id);if(e)e.style.display="inline-flex";});}
     el("comm-pencil").style.display="inline";
     el("sanction-del-th").style.display="";
   }
@@ -6533,6 +6537,7 @@ function gsSearch() {
     { label:'Effectifs', icon:'&#128110;', page:'effectifs', keywords:'effectifs membres agents policiers' },
     { label:'Sanctions / Promo', icon:'&#9878;&#65039;', page:'sanctions', keywords:'sanctions promotions felicitations avertissement exclusion' },
     { label:'Hiérarchie', icon:'&#127963;&#65039;', page:'hierarchie', keywords:'hierarchie organigramme grades gerant cogerant sergent officier stagiaire' },
+    { label:'Messagerie', icon:'&#128172;', page:'messagerie', keywords:'messagerie messages chat conversations communications interne' },
     { label:'Panel Admin', icon:'&#9881;&#65039;', page:'admin', keywords:'admin administration comptes utilisateurs' }
   ];
   GS_PAGES.filter(function(p){
