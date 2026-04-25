@@ -2259,10 +2259,10 @@ document.addEventListener('DOMContentLoaded',function(){if(localStorage.getItem(
           </div>
         </div>
         <div style="display:flex;gap:10px;flex-wrap:wrap;padding-top:4px;border-top:1px solid rgba(180,140,20,0.12);margin-top:4px">
-          <button class="btn btn-outline" onclick="resetNotifs()" style="flex:1;justify-content:center;font-size:11.5px;gap:7px;padding:9px 14px;border-color:rgba(0,0,0,0.12);color:var(--muted)">
+          <button class="btn btn-outline" onclick="resetNotifs()" style="flex:1;justify-content:center;font-size:11.5px;gap:7px;padding:9px 14px;border-color:rgba(180,140,20,0.3);color:var(--gold2)">
             <span style="font-size:13px">🔄</span> Réinitialiser
           </button>
-          <button class="btn btn-gold" onclick="markAllNotifsRead()" style="flex:2;justify-content:center;font-size:11.5px;gap:7px;padding:9px 14px">
+          <button class="btn btn-gold" onclick="markAllNotifsRead()" style="flex:1;justify-content:center;font-size:11.5px;gap:7px;padding:9px 14px">
             <span style="font-size:13px">✓</span> Tout marquer comme lu
           </button>
         </div>
@@ -4299,6 +4299,13 @@ function savePlainte(){
 function viewPlainte(id){
   id=parseInt(id);
   const p=DB.plaintes.find(x=>String(x.id)===String(id));if(!p){console.warn("viewPlainte: introuvable id="+id);return;}
+  // Si le modal n'existe pas encore dans le DOM, on le crée à la volée
+  if(!el("modal-view-plainte")){
+    const m=document.createElement("div");m.className="modal-overlay";m.id="modal-view-plainte";
+    m.innerHTML='<div class="modal"><div class="modal-header"><h3 id="vp-ref">Plainte</h3><span class="modal-close" onclick="closeModal(\'modal-view-plainte\')">✕</span></div><div class="modal-body" id="vp-body"></div><div class="modal-footer" id="vp-footer"></div></div>';
+    document.body.appendChild(m);
+    m.addEventListener("click",function(e){if(e.target===m)m.classList.remove("open");});
+  }
   if(!el("vp-ref")||!el("vp-body")||!el("vp-footer")){console.error("viewPlainte: modal manquant");return;}
   el("vp-ref").textContent=`Plainte #${p.id}`;
   // Chercher dossier & recensé correspondant à l'accusé
