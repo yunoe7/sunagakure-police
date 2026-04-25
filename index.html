@@ -6,6 +6,7 @@
 <meta http-equiv="Content-Security-Policy" content="default-src 'self' https://fonts.googleapis.com https://fonts.gstatic.com https://*.firebaseio.com https://*.googleapis.com https://www.gstatic.com; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.gstatic.com https://*.googleapis.com https://cdn.jsdelivr.net https://*.firebasedatabase.app; img-src 'self' data: blob: https:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; connect-src https://*.firebaseio.com https://*.googleapis.com wss://*.firebaseio.com https://www.gstatic.com https://*.firebasedatabase.app wss://*.firebasedatabase.app https://cdn.jsdelivr.net https://api.ipify.org; frame-src 'none'">
 <title>Police — Sunagakure Intranet</title>
 <meta name="theme-color" content="#1a1c2e">
+<link rel="icon" href="data:,">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Police Suna">
@@ -2342,6 +2343,13 @@ document.addEventListener('DOMContentLoaded',function(){if(localStorage.getItem(
         <span>⚠️</span><h3 style="color:#dc2626">Zone de danger</h3>
       </div>
       <div class="card-body">
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:14px;padding-bottom:14px;border-bottom:1px solid rgba(180,140,20,0.1)">
+          <div>
+            <div style="font-size:13px;font-weight:600;color:#0e7490;margin-bottom:3px">🔄 Forcer la synchronisation Firebase</div>
+            <div style="font-size:11px;color:var(--muted)">Recharge les données depuis Firebase. Utile si un compte a disparu.</div>
+          </div>
+          <button class="btn" style="background:#0e7490;color:#fff" onclick="forceFbSync()">🔄 Synchroniser</button>
+        </div>
         <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px">
           <div>
             <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:3px">Réinitialiser toutes les données</div>
@@ -2920,9 +2928,23 @@ async function _flushSaveQueue(){
   const toSave=_fbSaveQueue;
   _fbSaveQueue=null;
   try{
-    // Fusionner les users locaux avec _lastFbArrays
+    // ── FIX RACE CONDITION : GET frais des users Firebase avant chaque écriture ──
+    // Sans ça, si deux utilisateurs sauvegardent en même temps, l'un peut écraser
+    // les users de l'autre (car _lastFbArrays peut être obsolète).
+    let liveFbUsers=Array.isArray(_lastFbArrays.users)?[..._lastFbArrays.users]:[];
+    if(window._fbGet&&window._fbRef&&window._fbDB){
+      try{
+        const _snap=await window._fbGet(window._fbRef(window._fbDB,'sunagakure/users'));
+        const _liveArr=_snap.val();
+        if(Array.isArray(_liveArr)&&_liveArr.length>0){
+          liveFbUsers=_liveArr.filter(Boolean);
+          _lastFbArrays.users=JSON.parse(JSON.stringify(liveFbUsers));
+        }
+      }catch(_e){/* on garde liveFbUsers = _lastFbArrays si le GET échoue */}
+    }
+    // Fusionner les users locaux avec la liste fraîche Firebase
     const localUsers=Array.isArray(toSave.users)?toSave.users:[];
-    const fbUsers=Array.isArray(_lastFbArrays.users)?[..._lastFbArrays.users]:[];
+    const fbUsers=liveFbUsers;
     const fbUserIds=new Set(fbUsers.map(u=>u&&u.id));
     const newUsers=localUsers.filter(u=>u&&u.id&&!fbUserIds.has(u.id));
     const localUserById={};localUsers.forEach(u=>{if(u&&u.id)localUserById[u.id]=u;});
@@ -3027,6 +3049,16 @@ function initFirebaseSync(){
         if(!merged.hasOwnProperty(key))merged[key]=data[key];
       }
       DB=merged;
+      // ── FIX : initialiser les listes __known dès le premier chargement ──
+      // Sans ça, __known est vide et toute suppression échoue car l'item
+      // est réinséré depuis Firebase (confondu avec un "nouvel élément distant").
+      const _INIT_KEYS=['plaintes','dossiers','annonces','candidatures','operations','sanctions','recenses','infractions','timeline','users'];
+      _INIT_KEYS.forEach(function(k){
+        if(Array.isArray(data[k])&&data[k].length>0){
+          _lastFbArrays[k]=JSON.parse(JSON.stringify(data[k]));
+          _lastFbArrays[k+'__known']=data[k].map(function(x){return x&&String(x.id);}).filter(Boolean);
+        }
+      });
       }
       // Migration des mots de passe en clair reçus depuis Firebase
       // Détecter aussi les mots de passe corrompus (hash de "__PENDING_HASH__" au lieu du vrai mot de passe)
@@ -3780,6 +3812,43 @@ function renderAdminTimeline(){
   e.innerHTML='<div class="timeline">'+items.map(t=>`<div class="timeline-item"><div class="t-time">${fmtDate(t.date)}</div><div class="t-text">${esc(t.text)}</div></div>`).join("")+'</div>';
 }
 function resetAllData(){emergencyReset();}
+
+// Force une relecture complète depuis Firebase (utile si un compte a disparu)
+async function forceFbSync(){
+  if(!window._fbGet||!window._fbRef||!window._fbDB){
+    showToast("Firebase non disponible — impossible de synchroniser.","error");return;
+  }
+  showToast("🔄 Synchronisation en cours...","info");
+  try{
+    const snap=await window._fbGet(window._fbRef(window._fbDB,"sunagakure"));
+    const data=snap.val();
+    if(!data||typeof data!=="object"){showToast("❌ Aucune donnée Firebase trouvée.","error");return;}
+    // Fusionner sans jamais supprimer d'utilisateurs existants en local
+    const localUserById={};(DB.users||[]).forEach(u=>{if(u&&u.id)localUserById[u.id]=u;});
+    const fbUsers=Array.isArray(data.users)?data.users.filter(Boolean):[];
+    fbUsers.forEach(u=>{if(u&&u.id&&!localUserById[u.id])localUserById[u.id]=u;});
+    data.users=Object.values(localUserById);
+    // Initialiser __known pour éviter les bugs de suppression
+    const _KEYS=['plaintes','dossiers','annonces','candidatures','operations','sanctions','recenses','infractions','timeline','users'];
+    _KEYS.forEach(k=>{
+      if(Array.isArray(data[k])){
+        _lastFbArrays[k]=JSON.parse(JSON.stringify(data[k]));
+        _lastFbArrays[k+'__known']=data[k].map(x=>x&&String(x.id)).filter(Boolean);
+      }
+    });
+    const def=defaultData();
+    const merged={};
+    for(const key of Object.keys(def)){merged[key]=data.hasOwnProperty(key)?data[key]:def[key];}
+    for(const key of Object.keys(data)){if(!merged.hasOwnProperty(key))merged[key]=data[key];}
+    DB=merged;
+    try{localStorage.setItem(STORE,JSON.stringify(DB));}catch(e){}
+    // Rafraîchir les pages affichées
+    renderAdmin();updateStats();renderAnnonces();
+    showToast("✅ Synchronisation réussie — "+DB.users.length+" membres chargés.","success");
+  }catch(err){
+    showToast("❌ Erreur lors de la synchronisation : "+(err.message||err),"error");
+  }
+}
 
 // ANNONCES
 let _annFilter="all";
@@ -5387,7 +5456,7 @@ function closeModal(id){
   el(id).classList.remove("open");
   if(document.activeElement&&document.activeElement.blur)document.activeElement.blur();
 }
-document.querySelectorAll(".modal-overlay").forEach(m=>m.addEventListener("click",e=>{if(e.target===m)m.classList.remove("open")}));
+document.querySelectorAll(".modal-overlay").forEach(m=>m.addEventListener("click",e=>{if(e.target===m){m.classList.remove("open");if(m.id==="modal-confirm"){_confirmCb=null;}}}));
 function el(id){return document.getElementById(id)}
 function v(id,raw){const e=el(id);if(!e)return"";return raw?e.value:e.value.trim()}
 function clearForm(ids){ids.forEach(id=>{const e=el(id);if(e)e.value=""})}
