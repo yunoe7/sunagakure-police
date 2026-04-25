@@ -4064,12 +4064,23 @@ function removeRecensePhoto(ev){
 function viewRecense(id){
   id=parseInt(id);
   const r=DB.recenses.find(x=>String(x.id)===String(id));if(!r){console.warn("viewRecense: introuvable id="+id);return;}
-  if(!el("vr-title")||!el("vr-body")){console.error("viewRecense: modal manquant");return;}
-  el("vr-title").textContent=`Fiche — ${r.prenom} ${r.nom}`;
+  // Recréer le modal si absent OU si ses éléments internes ont disparu
+  var existingRecModal=document.getElementById("modal-view-recense");
+  if(!existingRecModal||!document.getElementById("vr-title")||!document.getElementById("vr-body")){
+    if(existingRecModal)existingRecModal.remove();
+    const m=document.createElement("div");m.className="modal-overlay";m.id="modal-view-recense";
+    m.innerHTML='<div class="modal"><div class="modal-header"><h3 id="vr-title">Fiche joueur</h3><span class="modal-close" onclick="closeModal(\'modal-view-recense\')">✕</span></div><div class="modal-body" id="vr-body"></div><div class="modal-footer"><button class="btn btn-outline btn-sm" onclick="closeModal(\'modal-view-recense\')">Fermer</button></div></div>';
+    document.body.appendChild(m);
+    m.addEventListener("click",function(e){if(e.target===m)m.classList.remove("open");});
+  }
+  const vrTitle=document.getElementById("vr-title");
+  const vrBody=document.getElementById("vr-body");
+  if(!vrTitle||!vrBody){console.error("viewRecense: modal manquant même après recréation");return;}
+  vrTitle.textContent=`Fiche — ${r.prenom} ${r.nom}`;
   const isCrim=r.rang==="Criminel recherché";
   const avatarStyle=isCrim?"background:rgba(220,38,38,0.25);border:2px solid var(--red)":r.rang==="Kage"?"background:rgba(180,140,20,0.15);border:2px solid var(--gold)":"background:linear-gradient(135deg,rgba(224,92,26,0.25),rgba(212,160,23,0.15));border:2px solid rgba(180,140,20,0.3)";
   const photoBlock=r.photo&&safeImgSrc(r.photo)?`<div style="display:flex;justify-content:center;margin-bottom:16px"><div style="width:90px;height:90px;border-radius:50%;overflow:hidden;border:3px solid rgba(180,140,20,0.4);box-shadow:0 4px 16px rgba(0,0,0,0.12)"><img src="${safeImgSrc(r.photo)}" style="width:100%;height:100%;object-fit:cover"></div></div>`:'';
-  el("vr-body").innerHTML=`${photoBlock}<div class="grid grid-2"><div class="form-group"><label class="form-label">Prénom</label><div style="font-size:14px;font-weight:600">${esc(r.prenom)}</div></div><div class="form-group"><label class="form-label">Nom</label><div style="font-size:14px;font-weight:600">${esc(r.nom)}</div></div><div class="form-group"><label class="form-label">Âge</label><div>${esc(r.age)} ans</div></div><div class="form-group"><label class="form-label">Sexe</label><div>${esc(r.sexe)}</div></div></div><div class="form-group"><label class="form-label">Faction / Village</label><div style="font-size:13.5px">${esc(r.faction)||"—"}</div></div><div class="form-group"><label class="form-label">Rang</label><span class="badge badge-orange">${esc(r.rang)}</span></div><div class="form-group"><label class="form-label">Compétences</label><div style="font-size:12.5px;color:#555">${esc(r.competences)||"—"}</div></div>${r.natures&&r.natures.length?`<div class="form-group"><label class="form-label">Natures & Maîtrises</label><div class="nature-bar">${r.natures.map(n=>`<span class="badge ${NATURE_BADGE[n]||"badge-gray"}">${esc(n)}</span>`).join("")}</div></div>`:""}<div class="form-group"><label class="form-label">Notes</label><div style="font-size:12.5px;color:#555;line-height:1.65;white-space:pre-wrap">${esc(r.notes)||"—"}</div></div><div class="form-group"><label class="form-label">Recensé par</label><div style="font-size:11px;color:var(--muted)">${esc(r.auteur)} — ${fmtDate(r.date)}</div></div>`;
+  vrBody.innerHTML=`${photoBlock}<div class="grid grid-2"><div class="form-group"><label class="form-label">Prénom</label><div style="font-size:14px;font-weight:600">${esc(r.prenom)}</div></div><div class="form-group"><label class="form-label">Nom</label><div style="font-size:14px;font-weight:600">${esc(r.nom)}</div></div><div class="form-group"><label class="form-label">Âge</label><div>${esc(r.age)} ans</div></div><div class="form-group"><label class="form-label">Sexe</label><div>${esc(r.sexe)}</div></div></div><div class="form-group"><label class="form-label">Faction / Village</label><div style="font-size:13.5px">${esc(r.faction)||"—"}</div></div><div class="form-group"><label class="form-label">Rang</label><span class="badge badge-orange">${esc(r.rang)}</span></div><div class="form-group"><label class="form-label">Compétences</label><div style="font-size:12.5px;color:#555">${esc(r.competences)||"—"}</div></div>${r.natures&&r.natures.length?`<div class="form-group"><label class="form-label">Natures & Maîtrises</label><div class="nature-bar">${r.natures.map(n=>`<span class="badge ${NATURE_BADGE[n]||"badge-gray"}">${esc(n)}</span>`).join("")}</div></div>`:""}<div class="form-group"><label class="form-label">Notes</label><div style="font-size:12.5px;color:#555;line-height:1.65;white-space:pre-wrap">${esc(r.notes)||"—"}</div></div><div class="form-group"><label class="form-label">Recensé par</label><div style="font-size:11px;color:var(--muted)">${esc(r.auteur)} — ${fmtDate(r.date)}</div></div>`;
   openModal("modal-view-recense");
 }
 function deleteRecense(id){id=parseInt(id);askDelete("Supprimer cette fiche de recensement ?",()=>{DB.recenses=DB.recenses.filter(r=>String(r.id)!==String(id));saveData();renderRecensement();syncDashboard()})}
@@ -4299,28 +4310,33 @@ function savePlainte(){
 function viewPlainte(id){
   id=parseInt(id);
   const p=DB.plaintes.find(x=>String(x.id)===String(id));if(!p){console.warn("viewPlainte: introuvable id="+id);return;}
-  // Si le modal n'existe pas encore dans le DOM, on le crée à la volée
-  if(!el("modal-view-plainte")){
+  // Recréer le modal si absent OU si ses éléments internes ont disparu
+  var existingModal=document.getElementById("modal-view-plainte");
+  if(!existingModal||!document.getElementById("vp-ref")||!document.getElementById("vp-body")||!document.getElementById("vp-footer")){
+    if(existingModal)existingModal.remove();
     const m=document.createElement("div");m.className="modal-overlay";m.id="modal-view-plainte";
     m.innerHTML='<div class="modal"><div class="modal-header"><h3 id="vp-ref">Plainte</h3><span class="modal-close" onclick="closeModal(\'modal-view-plainte\')">✕</span></div><div class="modal-body" id="vp-body"></div><div class="modal-footer" id="vp-footer"></div></div>';
     document.body.appendChild(m);
     m.addEventListener("click",function(e){if(e.target===m)m.classList.remove("open");});
   }
-  if(!el("vp-ref")||!el("vp-body")||!el("vp-footer")){console.error("viewPlainte: modal manquant");return;}
-  el("vp-ref").textContent=`Plainte #${p.id}`;
+  const vpRef=document.getElementById("vp-ref");
+  const vpBody=document.getElementById("vp-body");
+  const vpFooter=document.getElementById("vp-footer");
+  if(!vpRef||!vpBody||!vpFooter){console.error("viewPlainte: modal manquant même après recréation");return;}
+  vpRef.textContent=`Plainte #${p.id}`;
   // Chercher dossier & recensé correspondant à l'accusé
   const dossierAcc=(DB.dossiers||[]).find(d=>(d.nom||"").toLowerCase().includes((p.accuse||"").toLowerCase())&&p.accuse&&p.accuse.length>2);
   const recenseAcc=(DB.recenses||[]).find(r=>((r.prenom||"")+" "+(r.nom||"")).toLowerCase().includes((p.accuse||"").toLowerCase())&&p.accuse&&p.accuse.length>2);
   const liensDossier=dossierAcc?`<div style="margin-top:10px;padding:10px 13px;background:rgba(220,38,38,0.06);border:1px solid rgba(220,38,38,0.2);border-radius:9px;font-size:12px;display:flex;align-items:center;gap:8px">🗂️ <span>Dossier criminel trouvé :</span><button class="btn btn-danger btn-sm" onclick="closeModal('modal-view-plainte');showPage('dossiers');setTimeout(()=>{const s=el('search-dossier');if(s){s.value='${esc(p.accuse||'')}';renderDossiers();}},150)">Voir le dossier</button></div>`:"";
   const liensRecense=recenseAcc?`<div style="margin-top:8px;padding:10px 13px;background:rgba(109,40,217,0.06);border:1px solid rgba(109,40,217,0.2);border-radius:9px;font-size:12px;display:flex;align-items:center;gap:8px">📝 <span>Fiche de recensement trouvée</span><button class="btn btn-purple btn-sm" onclick="closeModal('modal-view-plainte');showPage('recensement');setTimeout(()=>{const s=el('search-recense');if(s){s.value='${esc(p.accuse||'')}';renderRecensement();}},150)">Voir la fiche</button></div>`:"";
   const photoAccuseHTML=p.photoAccuse&&safeImgSrc(p.photoAccuse)?`<div class="form-group"><label class="form-label" style="display:flex;align-items:center;gap:6px">📸 Photo de l'accusé</label><div style="display:flex;justify-content:center;padding:6px 0"><img src="${safeImgSrc(p.photoAccuse)}" alt="Photo accusé" style="max-width:180px;max-height:180px;border-radius:10px;object-fit:cover;border:2px solid rgba(180,140,20,0.25);box-shadow:0 4px 16px rgba(0,0,0,0.18)"></div></div>`:"";
-  el("vp-body").innerHTML=`${photoAccuseHTML}<div class="form-group"><label class="form-label">Plaignant</label><div style="font-size:13.5px">${esc(p.plaignant)}</div></div><div class="form-group"><label class="form-label">Accusé</label><div style="font-size:13.5px">${esc(p.accuse)}</div></div><div class="form-group"><label class="form-label">Type</label><div>${esc(p.type)}</div></div><div class="form-group"><label class="form-label">Description</label><div style="font-size:12.5px;color:#555;line-height:1.65;white-space:pre-wrap">${esc(p.desc)}</div></div><div class="form-group"><label class="form-label">Date des faits</label><div>${esc(p.dateFaits)||"—"}</div></div><div class="form-group"><label class="form-label">Statut</label><span class="badge ${statutPlainte(p.statut)}">${fmtStatut(p.statut)}</span></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:8px"><div class="form-group" style="margin:0"><label class="form-label">Déposée par</label><div style="font-size:12px;font-weight:600">${esc(p.auteur||p.plaignant||"—")}</div></div><div class="form-group" style="margin:0"><label class="form-label">Agent en charge</label><div style="font-size:12px;font-weight:600;color:${p.agent?"var(--green)":"var(--muted)"}">${esc(p.agent||"Non assigné")}</div></div></div>${liensDossier}${liensRecense}`;
-  const footer=el("vp-footer");footer.innerHTML="";
+  vpBody.innerHTML=`${photoAccuseHTML}<div class="form-group"><label class="form-label">Plaignant</label><div style="font-size:13.5px">${esc(p.plaignant)}</div></div><div class="form-group"><label class="form-label">Accusé</label><div style="font-size:13.5px">${esc(p.accuse)}</div></div><div class="form-group"><label class="form-label">Type</label><div>${esc(p.type)}</div></div><div class="form-group"><label class="form-label">Description</label><div style="font-size:12.5px;color:#555;line-height:1.65;white-space:pre-wrap">${esc(p.desc)}</div></div><div class="form-group"><label class="form-label">Date des faits</label><div>${esc(p.dateFaits)||"—"}</div></div><div class="form-group"><label class="form-label">Statut</label><span class="badge ${statutPlainte(p.statut)}">${fmtStatut(p.statut)}</span></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:8px"><div class="form-group" style="margin:0"><label class="form-label">Déposée par</label><div style="font-size:12px;font-weight:600">${esc(p.auteur||p.plaignant||"—")}</div></div><div class="form-group" style="margin:0"><label class="form-label">Agent en charge</label><div style="font-size:12px;font-weight:600;color:${p.agent?"var(--green)":"var(--muted)"}">${esc(p.agent||"Non assigné")}</div></div></div>${liensDossier}${liensRecense}`;
+  vpFooter.innerHTML="";
   if(canModify()){
-    if(p.statut==="ouverte")footer.innerHTML+=`<button class="btn btn-primary btn-sm" onclick="setPlainteStatut(${p.id},'en_cours')">Prendre en charge</button>`;
-    if(p.statut==="en_cours")footer.innerHTML+=`<button class="btn btn-success btn-sm" onclick="setPlainteStatut(${p.id},'fermee')">Clôturer</button>`;
+    if(p.statut==="ouverte")vpFooter.innerHTML+=`<button class="btn btn-primary btn-sm" onclick="setPlainteStatut(${p.id},'en_cours')">Prendre en charge</button>`;
+    if(p.statut==="en_cours")vpFooter.innerHTML+=`<button class="btn btn-success btn-sm" onclick="setPlainteStatut(${p.id},'fermee')">Clôturer</button>`;
   }
-  footer.innerHTML+=`<button class="btn btn-outline btn-sm" onclick="closeModal('modal-view-plainte')">Fermer</button>`;
+  vpFooter.innerHTML+=`<button class="btn btn-outline btn-sm" onclick="closeModal('modal-view-plainte')">Fermer</button>`;
   openModal("modal-view-plainte");
 }
 function setPlainteStatut(id,statut){
@@ -5458,9 +5474,10 @@ function renderHierarchie(){
 
 function canModify(){return currentUser&&(currentUser.role==="admin"||currentUser.role==="gerant"||currentUser.role==="cogerant"||currentUser.role==="sergent"||currentUser.role==="officier")}
 function isAdmin(){return currentUser&&currentUser.role==="admin"}
-function openModal(id){el(id).classList.add("open")}
+function openModal(id){var m=document.getElementById(id);if(m)m.classList.add("open");else console.error("openModal: element introuvable #"+id);}
 function closeModal(id){
-  el(id).classList.remove("open");
+  var m=document.getElementById(id);
+  if(m)m.classList.remove("open");
   if(document.activeElement&&document.activeElement.blur)document.activeElement.blur();
 }
 document.querySelectorAll(".modal-overlay").forEach(m=>m.addEventListener("click",e=>{if(e.target===m){m.classList.remove("open");if(m.id==="modal-confirm"){_confirmCb=null;}}}));
