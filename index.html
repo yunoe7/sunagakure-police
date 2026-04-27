@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, interactive-widget=resizes-visual">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self' https://fonts.googleapis.com https://fonts.gstatic.com https://*.firebaseio.com https://*.googleapis.com https://www.gstatic.com; script-src 'self' 'unsafe-inline' https://www.gstatic.com https://*.googleapis.com https://cdn.jsdelivr.net https://*.firebasedatabase.app; img-src 'self' data: blob: https:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; connect-src https://*.firebaseio.com https://*.googleapis.com wss://*.firebaseio.com https://www.gstatic.com https://*.firebasedatabase.app wss://*.firebasedatabase.app https://cdn.jsdelivr.net https://api.ipify.org https://api.anthropic.com; frame-src 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self' https://fonts.googleapis.com https://fonts.gstatic.com https://*.firebaseio.com https://*.googleapis.com https://www.gstatic.com; script-src 'self' 'unsafe-inline' https://www.gstatic.com https://*.googleapis.com https://cdn.jsdelivr.net https://*.firebasedatabase.app; img-src 'self' data: blob: https:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; connect-src https://*.firebaseio.com https://*.googleapis.com wss://*.firebaseio.com https://www.gstatic.com https://*.firebasedatabase.app wss://*.firebasedatabase.app https://cdn.jsdelivr.net https://api.ipify.org https://api.anthropic.com https://ip-api.com https://ipwho.is; frame-src 'none'">
 <title>Police — Sunagakure Intranet</title>
 <meta name="theme-color" content="#1a1c2e">
 <link rel="icon" href="data:,">
@@ -5833,7 +5833,7 @@ function lhShowIPDetail(ip){
 
   openModal('modal-ip-detail');
 
-  // Géolocalisation (avec cache)
+  // Géolocalisation avec cache + fallback
   if(_lhGeoCache[ip]){
     lhShowGeo(_lhGeoCache[ip]);
   } else {
@@ -5844,13 +5844,36 @@ function lhShowIPDetail(ip){
           _lhGeoCache[ip]=d;
           lhShowGeo(d);
         } else {
-          var geo=document.getElementById('lh-geo-result');
-          if(geo) geo.textContent='Localisation indisponible';
+          // Fallback : ipwho.is
+          return fetch('https://ipwho.is/'+encodeURIComponent(ip))
+            .then(function(r2){return r2.json();})
+            .then(function(d2){
+              if(d2.success){
+                var mapped={country:d2.country,regionName:d2.region,city:d2.city,isp:d2.connection&&d2.connection.isp,mobile:false,proxy:d2.security&&(d2.security.proxy||d2.security.vpn)};
+                _lhGeoCache[ip]=mapped;
+                lhShowGeo(mapped);
+              } else { throw new Error('fail'); }
+            });
         }
       })
       .catch(function(){
-        var geo=document.getElementById('lh-geo-result');
-        if(geo) geo.textContent='Localisation indisponible';
+        // Second fallback : ipwho.is
+        fetch('https://ipwho.is/'+encodeURIComponent(ip))
+          .then(function(r){return r.json();})
+          .then(function(d){
+            if(d.success){
+              var mapped={country:d.country,regionName:d.region,city:d.city,isp:d.connection&&d.connection.isp,mobile:false,proxy:d.security&&(d.security.proxy||d.security.vpn)};
+              _lhGeoCache[ip]=mapped;
+              lhShowGeo(mapped);
+            } else {
+              var geo=document.getElementById('lh-geo-result');
+              if(geo) geo.textContent='🌐 Localisation indisponible pour cette IP.';
+            }
+          })
+          .catch(function(){
+            var geo=document.getElementById('lh-geo-result');
+            if(geo) geo.textContent='🌐 Localisation indisponible.';
+          });
       });
   }
 }
