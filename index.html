@@ -3046,6 +3046,9 @@ let _fbSaveRunning=false;
 function saveData(){
   // Sauvegarde locale immédiate (fallback offline)
   try{localStorage.setItem(STORE,JSON.stringify(DB))}catch(e){}
+  // Invalider le cache d'empreinte de la page active → forcer re-render au prochain refreshAll
+  const _ap=document.querySelector(".page-content.active");
+  if(_ap){window['_rfp_'+_ap.id.replace("page-","")]=null;}
   if(!window._fbDB||!window._fbRef||!window._fbUpdate){return;}
   _fbSaveQueue=JSON.parse(JSON.stringify(DB));
   if(_fbSaveRunning)return;
@@ -3563,7 +3566,7 @@ function applyLogin(){
   const isAdminUser=currentUser&&currentUser.role==="admin";
   const isMember=!isVisiteur();
   document.querySelectorAll('[data-admin-only="true"]').forEach(item=>{
-    item.style.display=isMember?'':'none';
+    item.style.display=canModify()?'':'none';
   });
   const dsecOps=document.getElementById('dsec-ops');
   if(dsecOps)dsecOps.style.display=isMember?'':'none';
@@ -3788,22 +3791,57 @@ function refreshAll(){
   const activePage=document.querySelector(".page-content.active");
   if(!activePage)return;
   const name=activePage.id.replace("page-","");
-  // Re-render la page active quelle qu'elle soit
+  // Calculer une empreinte légère des données de la page active
+  // pour éviter un re-render complet si rien n'a changé
+  var _fpKey = '_rfp_'+name;
+  var _relevantData = {
+    dashboard: function(){ return (DB.annonces||[]).length+'|'+(DB.plaintes||[]).length+'|'+(DB.timeline||[]).length+'|'+(DB.operations||[]).length; },
+    annonces:  function(){ return (DB.annonces||[]).length+'|'+((DB.annonces||[])[0]||{}).date; },
+    plaintes:  function(){ return (DB.plaintes||[]).length+'|'+((DB.plaintes||[])[0]||{}).date; },
+    dossiers:  function(){ return (DB.dossiers||[]).length+'|'+((DB.dossiers||[])[0]||{}).date; },
+    recensement:function(){return (DB.recenses||[]).length+'|'+((DB.recenses||[])[0]||{}).date;},
+    recrutement:function(){return (DB.candidatures||[]).length+'|'+((DB.candidatures||[])[0]||{}).date;},
+    operations:function(){ return (DB.operations||[]).length+'|'+((DB.operations||[])[0]||{}).statut; },
+    sanctions: function(){ return (DB.sanctions||[]).length+'|'+((DB.sanctions||[])[0]||{}).date; },
+    effectifs: function(){ return (DB.users||[]).length+'|'+((DB.users||[])[0]||{}).statut; },
+    admin:     function(){ return (DB.users||[]).length+'|'+(DB.loginHistory||[]).length; }
+  };
+  var fpFn = _relevantData[name];
+  var fp = fpFn ? fpFn() : null;
+  if(fp !== null && window[_fpKey] === fp) return; // données inchangées → skip
+  if(fp !== null) window[_fpKey] = fp;
   renderPage(name);
 }
 // Appelé après chaque modification de données pour mettre à jour le dashboard en temps réel
-function syncDashboard(){updateStats();updateBadges();syncBottomNavBadges();const a=document.querySelector(".page-content.active");if(a&&a.id==="page-dashboard")renderDashboard();}
+function syncDashboard(){
+  // Invalider le cache de la page active pour forcer le prochain refreshAll à re-render
+  const _ap=document.querySelector(".page-content.active");
+  if(_ap){const _n=_ap.id.replace("page-","");window['_rfp_'+_n]=null;}
+  updateStats();updateBadges();syncBottomNavBadges();
+  const a=document.querySelector(".page-content.active");if(a&&a.id==="page-dashboard")renderDashboard();
+}
 
 // DASHBOARD
+var _statCache = {}; // cache des dernières valeurs affichées — évite les repaint inutiles
 function updateStats(){
-  const _set=(id,val)=>{const e=el(id);if(e)e.textContent=val;};
+  const _set=(id,val)=>{
+    if(_statCache[id]===val) return; // skip si inchangé
+    _statCache[id]=val;
+    const e=el(id);if(e)e.textContent=val;
+  };
   _set("stat-effectifs",(DB.users||[]).filter(u=>u.statut==="Actif").length);
   _set("stat-recenses",(DB.recenses||[]).length);
   _set("stat-plaintes",(DB.plaintes||[]).filter(p=>p.statut==="ouverte").length);
   _set("stat-operations",(DB.operations||[]).filter(o=>o.statut==="Active").length);
-  // Synchro stats admin — toujours mise à jour peu importe la page active + fix repaint iOS
+  // Synchro stats admin
   const users=DB.users||[];
-  const setAdm=(id,val)=>{const e=el(id);if(!e)return;e.textContent=val;e.style.transform='translateZ(0)';requestAnimationFrame(()=>{e.style.transform='';});};
+  const setAdm=(id,val)=>{
+    if(_statCache[id]===val) return;
+    _statCache[id]=val;
+    const e=el(id);if(!e)return;
+    e.textContent=val;e.style.transform='translateZ(0)';
+    requestAnimationFrame(()=>{e.style.transform='';});
+  };
   setAdm("adm-stat-total",users.length);
   setAdm("adm-stat-actif",users.filter(u=>u.statut==="Actif").length);
   setAdm("adm-stat-inactif",users.filter(u=>u.statut!=="Actif").length);
@@ -4029,10 +4067,9 @@ function saveAnnonce(){
   const photo=_annoncePhoto||"";
   DB.annonces.push({id:Date.now(),titre,cat:v("a-cat"),contenu,photo,auteur:currentUser.nom,pin:v("a-pin")==="true",date:now()});
   addTimeline(`Annonce publiée : "${titre}"`);
-  // Store old read time before saving so we can show "Nouveau" badge
   localStorage.setItem("suna_read_annonces_prev", localStorage.getItem("suna_read_annonces")||"0");
-  saveData();closeModal("modal-annonce");renderAnnonces();syncDashboard();updateBadges();clearForm(["a-titre","a-contenu"]);
-  removeAnnoncePhoto();
+  flashSubmitSuccess(document.querySelector('#modal-annonce .modal-footer .btn-primary'), 'Annonce publiée');
+  setTimeout(function(){ saveData();closeModal("modal-annonce");renderAnnonces();syncDashboard();updateBadges();clearForm(["a-titre","a-contenu"]);removeAnnoncePhoto(); }, 600);
 }
 let _annoncePhoto="";
 function loadAnnoncePhoto(input){
@@ -4409,9 +4446,13 @@ function setCandidature(id,statut){
         }
         saveData();
         renderCandidatures();renderRecrues();renderEffectifs();syncDashboard();
-        // Double-save silencieuse — attend que _flushSaveQueue soit libre
+        // Double-save silencieuse — attend que _flushSaveQueue soit vraiment terminé
         setTimeout(async()=>{
-          if(_fbSaveRunning) await new Promise(r=>setTimeout(r,1000));
+          const _waitIdle=(tries)=>new Promise(r=>{
+            const chk=(n)=>{if(n<=0||!_fbSaveRunning){r();}else{setTimeout(()=>chk(n-1),200);}};
+            chk(tries);
+          });
+          await _waitIdle(10);
           if(window._fbDB&&window._fbRef&&window._fbUpdate) saveData();
         },1200);
       })();
@@ -4452,8 +4493,7 @@ function removePlaintePhoto(ev){
   el("p-photo-input").value="";
 }
 document.addEventListener('paste', function(ev){
-  if(!el('modal-plainte') || el('modal-plainte').style.display==='none' && !el('modal-plainte').classList.contains('active')) return;
-  if(document.querySelector('#modal-plainte') && document.querySelector('#modal-plainte').style.display!=='flex') return;
+  if(!document.querySelector('#modal-plainte.open')) return;
   const items=ev.clipboardData&&ev.clipboardData.items;
   if(!items) return;
   for(let i=0;i<items.length;i++){
@@ -4477,8 +4517,8 @@ function savePlainte(){
   DB.plaintes.push({id:Date.now(),plaignant:pl,accuse:ac,type:v("p-type"),desc,dateFaits:v("p-date"),statut:"ouverte",auteur:currentUser?currentUser.nom:"Anonyme",agent:null,date:now(),photoAccuse:_plaintePhoto||""});
   addTimeline(`Plainte déposée par ${pl} contre ${ac}`);
   _plaintePhoto="";
-  saveData();closeModal("modal-plainte");renderPlaintes();syncDashboard();clearForm(["p-plaignant","p-accuse","p-desc","p-date"]);
-  removePlaintePhoto();
+  flashSubmitSuccess(document.querySelector('#modal-plainte .modal-footer .btn-primary'), 'Plainte enregistrée');
+  setTimeout(function(){ saveData();closeModal("modal-plainte");renderPlaintes();syncDashboard();clearForm(["p-plaignant","p-accuse","p-desc","p-date"]);removePlaintePhoto(); }, 600);
 }
 function viewPlainte(id){
   id=parseInt(id);
@@ -4786,7 +4826,8 @@ function saveOperation(){
   const nom=v("op-nom");if(!nom)return;
   DB.operations.push({id:Date.now(),nom,type:v("op-type"),statut:v("op-statut"),resp:v("op-resp"),dateOp:v("op-date"),desc:v("op-desc"),date:now()});
   addTimeline(`Opération "${nom}" créée`);
-  saveData();closeModal("modal-operation");renderOperations();syncDashboard();clearForm(["op-nom","op-resp","op-desc","op-date"]);
+  flashSubmitSuccess(document.querySelector('#modal-operation .modal-footer .btn-primary'), 'Opération créée');
+  setTimeout(function(){ saveData();closeModal("modal-operation");renderOperations();syncDashboard();clearForm(["op-nom","op-resp","op-desc","op-date"]); }, 600);
 }
 function deleteOperation(id){id=parseInt(id);askDelete("Supprimer cette opération ?",()=>{DB.operations=DB.operations.filter(o=>String(o.id)!==String(id));saveData();renderOperations();syncDashboard()})}
 
@@ -5242,7 +5283,8 @@ function saveSanction(){
   const cible=v("s-cible"),motif=v("s-motif");if(!cible||!motif)return;
   DB.sanctions.push({id:Date.now(),type:v("s-type"),cible,motif,auteur:currentUser.nom,date:now()});
   addTimeline(`${v("s-type")} : ${cible}`);
-  saveData();closeModal("modal-sanction");renderSanctions();syncDashboard();clearForm(["s-cible","s-motif"]);
+  flashSubmitSuccess(document.querySelector('#modal-sanction .modal-footer .btn-primary'), 'Enregistré');
+  setTimeout(function(){ saveData();closeModal("modal-sanction");renderSanctions();syncDashboard();clearForm(["s-cible","s-motif"]); }, 600);
 }
 function deleteSanction(id){id=parseInt(id);askDelete("Supprimer cette entrée ?",()=>{DB.sanctions=DB.sanctions.filter(s=>String(s.id)!==String(id));saveData();renderSanctions();syncDashboard()})}
 
@@ -6078,6 +6120,9 @@ function openModal(id){
   _lastFocusedEl = document.activeElement;
   m.classList.add("open");
   m.removeAttribute("aria-hidden");
+  // Réinitialiser l'état du bouton de soumission si on rouvre le modal
+  const submitBtn = m.querySelector('.modal-footer .btn-primary');
+  if(submitBtn && submitBtn._origHTML){ submitBtn.innerHTML = submitBtn._origHTML; submitBtn.disabled = false; delete submitBtn._origHTML; }
   // Focus sur le premier élément focalisable de la modale
   requestAnimationFrame(()=>{
     const focusable = m.querySelector('button,input,select,textarea,[tabindex]:not([tabindex="-1"])');
@@ -6086,6 +6131,23 @@ function openModal(id){
     m._keyHandler = (e)=>{ if(e.key==="Escape") closeModal(id); };
     document.addEventListener("keydown", m._keyHandler);
   });
+}
+
+// Feedback visuel de succès sur un bouton de soumission (spinner → coche → reset)
+function flashSubmitSuccess(btnEl, label) {
+  if(!btnEl) return;
+  if(!btnEl._origHTML) btnEl._origHTML = btnEl.innerHTML;
+  btnEl.disabled = true;
+  btnEl.innerHTML = '<span style="display:inline-flex;align-items:center;gap:6px">✅ ' + (label||'Enregistré') + '</span>';
+  btnEl.style.background = 'linear-gradient(135deg,#15803d,#166534)';
+  btnEl.style.boxShadow = '0 3px 14px rgba(21,128,61,0.35)';
+  setTimeout(function(){
+    btnEl.innerHTML = btnEl._origHTML || btnEl.innerHTML;
+    btnEl.disabled = false;
+    btnEl.style.background = '';
+    btnEl.style.boxShadow = '';
+    delete btnEl._origHTML;
+  }, 1800);
 }
 function closeModal(id){
   const m = document.getElementById(id);
@@ -7338,23 +7400,7 @@ function gsSearch() {
     msgs.slice(0,3).forEach(function(item){ R.membres.push(item); }); // réutilise section membres
   }
 
-    // Index messages privés de l'utilisateur connecté
-  if(!isVisiteur()&&currentUser){
-    var _dbMsgs=DB.messages||{};
-    var _msgResults=[];
-    Object.keys(_dbMsgs).forEach(function(key){
-      if(key.indexOf(String(currentUser.id))<0) return;
-      var thread=_dbMsgs[key]||{};
-      Object.values(thread).forEach(function(m){
-        if(((m.text||'')+(m.senderNom||'')).toLowerCase().indexOf(q)>=0){
-          var otherId=key.split('_').find(function(id){return parseInt(id)!==currentUser.id;});
-          var other=(DB.users||[]).find(function(u){return u.id===parseInt(otherId);});
-          _msgResults.push({icon:'&#128172;',title:(m.text||'').slice(0,55)+(m.text&&m.text.length>55?'…':''),sub:'Message · '+_gsEsc(m.senderNom||'?')+(other?' ↔ '+_gsEsc(other.nom):''),page:'messagerie',q:q});
-        }
-      });
-    });
-    _msgResults.slice(0,3).forEach(function(item){R.membres.push(item);});
-  }
+
 
     (DB.infractions||[]).filter(function(i){ return ((i.nom||'')+(i.cat||'')+(i.notes||'')).toLowerCase().indexOf(q) >= 0; }).slice(0,4).forEach(function(i){
     var catLabel = {violet:'Petit délit',vert:'Moyen délit',rouge:'Gros délit',jaune:'Crime'}[i.cat]||i.cat||'';
@@ -8364,8 +8410,8 @@ if(isMobile){
     var active=document.querySelector('.page-content.active');
     var page=active?active.id.replace('page-',''):'';
     var show=!!FAB_MAP[page]&&checkFabBtn(page);
-    if(show){ fab.classList.add('visible'); }
-    else { fab.classList.remove('visible'); fab.style.display='none'; }
+    if(show){ fab.style.display=''; fab.classList.add('visible'); document.body.classList.add('has-action-fab'); }
+    else { fab.classList.remove('visible'); fab.style.display='none'; document.body.classList.remove('has-action-fab'); }
   }
 
   fab.addEventListener('click',function(){
@@ -9015,12 +9061,12 @@ function doChangePass(){
   var oldP=document.getElementById('cp-old').value;
   var newP=document.getElementById('cp-new').value;
   var conf=document.getElementById('cp-confirm').value;
-  var alert=document.getElementById('cp-alert');
-  if(!oldP||!newP||!conf){alert.textContent='Tous les champs sont requis.';alert.style.display='block';return;}
-  if(newP.length<6){alert.textContent='Le nouveau mot de passe doit faire au moins 6 caractères.';alert.style.display='block';return;}
-  if(newP!==conf){alert.textContent='Les mots de passe ne correspondent pas.';alert.style.display='block';return;}
+  var cpAlert=document.getElementById('cp-alert');
+  if(!oldP||!newP||!conf){cpAlert.textContent='Tous les champs sont requis.';cpAlert.style.display='block';return;}
+  if(newP.length<6){cpAlert.textContent='Le nouveau mot de passe doit faire au moins 6 caractères.';cpAlert.style.display='block';return;}
+  if(newP!==conf){cpAlert.textContent='Les mots de passe ne correspondent pas.';cpAlert.style.display='block';return;}
   hashPass(oldP).then(function(oldH){
-    if(oldH!==currentUser.pass){alert.textContent='Mot de passe actuel incorrect.';alert.style.display='block';return;}
+    if(oldH!==currentUser.pass){cpAlert.textContent='Mot de passe actuel incorrect.';cpAlert.style.display='block';return;}
     hashPass(newP).then(function(newH){
       var u=(DB.users||[]).find(function(u){return u.id===currentUser.id;});
       if(!u) return;
@@ -9029,7 +9075,7 @@ function doChangePass(){
       try{var s=JSON.parse(localStorage.getItem('suna_session')||'{}');s.passHash=newH;localStorage.setItem('suna_session',JSON.stringify(s));}catch(e){}
       saveData();
       closeModal('modal-change-pass');
-      alert.style.display='none';
+      cpAlert.style.display='none';
       document.getElementById('cp-old').value='';
       document.getElementById('cp-new').value='';
       document.getElementById('cp-confirm').value='';
@@ -9276,9 +9322,9 @@ function getFilter(page, key, defaultVal) {
       _origFC(f, el);
     };
     // Restaurer les filtres au changement de page
-    var _origRenderPage = window.renderPage;
-    window.renderPage = function(name) {
-      _origRenderPage(name);
+    var _origShowPageFilters = window.showPage;
+    window.showPage = function(name) {
+      if(typeof _origShowPageFilters === 'function') _origShowPageFilters(name);
       // Restaurer le filtre de recherche texte
       var searchIds = {
         plaintes: 'search-plaintes', annonces: 'search-annonces',
@@ -10017,9 +10063,17 @@ document.addEventListener('keydown', function(e) {
 }
 /* Décaler le FAB sur mobile pour éviter la bottom nav */
 @media(max-width:768px){
-  #yuno-fab{bottom:80px}
-  #yuno-config-banner{bottom:144px}
-  #yuno-chat-panel{bottom:80px}
+  /* YUNO FAB : au-dessus de la bottom nav + espace pour le FAB action (52px) */
+  #yuno-fab{bottom:calc(80px + 60px + env(safe-area-inset-bottom,0px))}
+  #yuno-config-banner{bottom:calc(80px + 60px + 60px + env(safe-area-inset-bottom,0px))}
+  #yuno-chat-panel{bottom:calc(80px + env(safe-area-inset-bottom,0px))}
+}
+/* Quand le FAB action est caché (absent de la plupart des pages), YUNO redescend */
+body:not(.has-action-fab) #yuno-fab{
+  bottom:calc(80px + env(safe-area-inset-bottom,0px)) !important;
+}
+body:not(.has-action-fab) #yuno-config-banner{
+  bottom:calc(148px + env(safe-area-inset-bottom,0px)) !important;
 }
 
 /* ── YUNO CHAT PANEL ── */
@@ -10238,11 +10292,69 @@ document.addEventListener('keydown', function(e) {
 //  YUNO — Système IA intégré — Sunagakure Police Department
 // ============================================================
 (function(){
-  var YUNO_KEY_STORAGE = 'yuno_api_key';
+  var YUNO_KEY_STORAGE = 'yuno_api_key_v2';
   var YUNO_HIST_STORAGE = 'yuno_chat_history';
   var chatOpen = false;
   var isThinking = false;
   var chatHistory = [];
+
+  // ── Chiffrement AES-GCM de la clé API ──
+  // Dérive une clé symétrique depuis un sel propre au navigateur (stocké en localStorage)
+  // La clé API n'est jamais stockée en clair.
+  function _getBrowserSalt() {
+    var s = localStorage.getItem('_yuno_salt');
+    if (!s) {
+      var arr = new Uint8Array(16);
+      crypto.getRandomValues(arr);
+      s = Array.from(arr).map(function(b){return b.toString(16).padStart(2,'0');}).join('');
+      localStorage.setItem('_yuno_salt', s);
+    }
+    return s;
+  }
+  async function _deriveKey(salt) {
+    var enc = new TextEncoder();
+    var keyMat = await crypto.subtle.importKey('raw', enc.encode(salt + navigator.userAgent.slice(0,32)), 'PBKDF2', false, ['deriveKey']);
+    return crypto.subtle.deriveKey(
+      { name:'PBKDF2', salt:enc.encode(salt), iterations:100000, hash:'SHA-256' },
+      keyMat, { name:'AES-GCM', length:256 }, false, ['encrypt','decrypt']
+    );
+  }
+  async function _encryptKey(plaintext) {
+    try {
+      var salt = _getBrowserSalt();
+      var key = await _deriveKey(salt);
+      var iv = crypto.getRandomValues(new Uint8Array(12));
+      var enc = new TextEncoder();
+      var cipherBuf = await crypto.subtle.encrypt({ name:'AES-GCM', iv:iv }, key, enc.encode(plaintext));
+      var combined = new Uint8Array(iv.byteLength + cipherBuf.byteLength);
+      combined.set(iv, 0);
+      combined.set(new Uint8Array(cipherBuf), iv.byteLength);
+      return btoa(String.fromCharCode.apply(null, combined));
+    } catch(e) { return null; }
+  }
+  async function _decryptKey(b64) {
+    try {
+      var salt = _getBrowserSalt();
+      var key = await _deriveKey(salt);
+      var combined = Uint8Array.from(atob(b64), function(c){return c.charCodeAt(0);});
+      var iv = combined.slice(0, 12);
+      var cipher = combined.slice(12);
+      var plainBuf = await crypto.subtle.decrypt({ name:'AES-GCM', iv:iv }, key, cipher);
+      return new TextDecoder().decode(plainBuf);
+    } catch(e) { return null; }
+  }
+
+  function getKey() {
+    // Retourne '' immédiatement — la clé déchiffrée est mise en cache après premier appel
+    return _yunoKeyCache || '';
+  }
+  var _yunoKeyCache = '';
+  // Déchiffrer la clé au chargement et la mettre en cache mémoire (jamais relue en clair depuis le storage)
+  (function loadCachedKey() {
+    var stored = localStorage.getItem(YUNO_KEY_STORAGE);
+    if (!stored) return;
+    _decryptKey(stored).then(function(k) { if(k) _yunoKeyCache = k; });
+  })();
 
   // ── Système Prompt YUNO ──
   function yunoSystemPrompt(){
@@ -10317,16 +10429,19 @@ document.addEventListener('keydown', function(e) {
   window.yunoSaveKey = function(){
     var k = document.getElementById('yuno-api-key-input').value.trim();
     if(!k){showToast('Clé API vide !','error');return;}
-    localStorage.setItem(YUNO_KEY_STORAGE, k);
-    document.getElementById('yuno-config-banner').classList.remove('open');
-    showToast('✅ Clé YUNO sauvegardée !','success');
-    // Ouvrir le chat
-    setTimeout(function(){
-      if(!chatOpen) window.yunoToggleChat();
-    },300);
+    _encryptKey(k).then(function(encrypted) {
+      if (!encrypted) { showToast('Erreur de chiffrement. Réessayez.', 'error'); return; }
+      localStorage.setItem(YUNO_KEY_STORAGE, encrypted);
+      _yunoKeyCache = k;
+      document.getElementById('yuno-config-banner').classList.remove('open');
+      showToast('✅ Clé YUNO sauvegardée (chiffrée) !','success');
+      setTimeout(function(){
+        if(!chatOpen) window.yunoToggleChat();
+      },300);
+    });
   };
 
-  function getKey(){ return localStorage.getItem(YUNO_KEY_STORAGE)||''; }
+  // getKey() est défini plus haut via le cache mémoire _yunoKeyCache
 
   // ── Messages ──
   function yunoAppend(role, text, actions){
