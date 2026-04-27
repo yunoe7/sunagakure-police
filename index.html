@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, interactive-widget=resizes-visual">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self' https://fonts.googleapis.com https://fonts.gstatic.com https://*.firebaseio.com https://*.googleapis.com https://www.gstatic.com; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.gstatic.com https://*.googleapis.com https://cdn.jsdelivr.net https://*.firebasedatabase.app; img-src 'self' data: blob: https:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; connect-src https://*.firebaseio.com https://*.googleapis.com wss://*.firebaseio.com https://www.gstatic.com https://*.firebasedatabase.app wss://*.firebasedatabase.app https://cdn.jsdelivr.net https://api.ipify.org; frame-src 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self' https://fonts.googleapis.com https://fonts.gstatic.com https://*.firebaseio.com https://*.googleapis.com https://www.gstatic.com; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.gstatic.com https://*.googleapis.com https://cdn.jsdelivr.net https://*.firebasedatabase.app; img-src 'self' data: blob: https:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; connect-src https://*.firebaseio.com https://*.googleapis.com wss://*.firebaseio.com https://www.gstatic.com https://*.firebasedatabase.app wss://*.firebasedatabase.app https://cdn.jsdelivr.net https://api.ipify.org https://api.anthropic.com; frame-src 'none'">
 <title>Police — Sunagakure Intranet</title>
 <meta name="theme-color" content="#1a1c2e">
 <link rel="icon" href="data:,">
@@ -575,9 +575,16 @@ textarea.form-control{resize:vertical;min-height:80px}
   /* ============================================
      LAYOUT PRINCIPAL
      ============================================ */
-  body{overflow:hidden;height:100vh;height:100dvh;position:fixed;width:100%;
+  body{
+    overflow:hidden;
+    height:100vh;height:100dvh;
+    /* position:fixed cause des bugs de scroll sur iOS Safari — on utilise height+overflow à la place */
+    width:100%;
     /* Désactiver la sélection de texte accidentelle au toucher */
-    -webkit-user-select:none;user-select:none}
+    -webkit-user-select:none;user-select:none;
+    /* Forcer le rendu GPU */
+    -webkit-transform:translateZ(0);transform:translateZ(0);
+  }
   /* Réactiver la sélection dans les champs */
   input,textarea{-webkit-user-select:text;user-select:text}
 
@@ -602,6 +609,10 @@ textarea.form-control{resize:vertical;min-height:80px}
     /* Réserver l'espace pour topbar (56px) + bottom-nav (64px + safe-area) */
     padding-top:0;
     padding-bottom:0;
+    /* Fix Safari : forcer les dimensions */
+    width:100%;
+    max-width:100%;
+    position:relative;
   }
 
   .topbar{
@@ -622,7 +633,8 @@ textarea.form-control{resize:vertical;min-height:80px}
   #main > [id^="page-"]{
     flex:1;
     min-height:0; /* CRITIQUE : permet au flex child de scroller correctement */
-    overflow-y:auto;overflow-x:hidden;
+    overflow-y:auto;
+    overflow-x:hidden;
     -webkit-overflow-scrolling:touch;
     overscroll-behavior-y:contain;
     scroll-behavior:smooth;
@@ -630,6 +642,17 @@ textarea.form-control{resize:vertical;min-height:80px}
     will-change:scroll-position;
     transform:translateZ(0);
     order:1;
+    /* Largeur max = viewport, pas de débordement body */
+    max-width:100vw;
+    box-sizing:border-box;
+  }
+
+  /* Les wrappers de tableaux scrollent horizontalement */
+  .table-scroll-wrapper{
+    overflow-x:auto !important;
+    -webkit-overflow-scrolling:touch !important;
+    overscroll-behavior-x:contain;
+    max-width:100%;
   }
 
   /* Padding bas pour ne pas être sous la bottom nav */
@@ -9440,6 +9463,667 @@ document.addEventListener('keydown', function(e) {
       };
     });
   }, 400);
+})();
+</script>
+
+<!-- ============================================================
+     YUNO — Intelligence Artificielle intégrée — Sunagakure PD
+     ============================================================ -->
+<style>
+/* ── YUNO CONFIG BANNER ── */
+#yuno-config-banner{
+  position:fixed;bottom:80px;right:16px;z-index:8000;
+  background:linear-gradient(135deg,#1a1c2e,#111220);
+  border:1px solid rgba(180,140,20,0.4);border-radius:14px;
+  padding:14px 16px;width:300px;max-width:calc(100vw - 32px);
+  box-shadow:0 8px 32px rgba(0,0,0,0.4);
+  animation:yunoSlideIn 0.3s cubic-bezier(0.32,0.72,0,1) both;
+  display:none;
+}
+#yuno-config-banner.open{display:block}
+.yuno-config-title{font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:#d4b44a;margin-bottom:10px;display:flex;align-items:center;gap:7px}
+.yuno-api-input{width:100%;background:rgba(255,255,255,0.07);border:1px solid rgba(180,140,20,0.3);border-radius:8px;padding:9px 12px;color:#fff;font-family:'Share Tech Mono',monospace;font-size:11px;outline:none;margin-bottom:9px}
+.yuno-api-input:focus{border-color:rgba(180,140,20,0.7)}
+.yuno-api-input::placeholder{color:rgba(255,255,255,0.25)}
+.yuno-save-btn{width:100%;background:linear-gradient(135deg,#c0410e,#8a2c08);color:#fff;border:none;border-radius:8px;padding:9px;font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:700;letter-spacing:1.5px;cursor:pointer;transition:all 0.2s}
+.yuno-save-btn:hover{transform:translateY(-1px);box-shadow:0 4px 16px rgba(192,65,14,0.4)}
+.yuno-config-note{font-size:9.5px;color:rgba(255,255,255,0.3);font-family:'Share Tech Mono',monospace;margin-top:8px;line-height:1.5}
+
+/* ── YUNO FAB BUTTON ── */
+#yuno-fab{
+  position:fixed;bottom:16px;right:16px;z-index:8001;
+  width:52px;height:52px;border-radius:50%;
+  background:linear-gradient(135deg,#c0410e,#8a2c08);
+  border:2px solid rgba(180,140,20,0.5);
+  box-shadow:0 4px 20px rgba(192,65,14,0.5),0 0 0 0 rgba(192,65,14,0.3);
+  cursor:pointer;display:flex;align-items:center;justify-content:center;
+  font-size:22px;transition:all 0.25s;
+  animation:yunoPulse 3s ease-in-out infinite;
+}
+#yuno-fab:hover{transform:scale(1.08);box-shadow:0 6px 28px rgba(192,65,14,0.7)}
+#yuno-fab:active{transform:scale(0.92)}
+@keyframes yunoPulse{
+  0%,100%{box-shadow:0 4px 20px rgba(192,65,14,0.5),0 0 0 0 rgba(192,65,14,0.3)}
+  50%{box-shadow:0 4px 20px rgba(192,65,14,0.5),0 0 0 8px rgba(192,65,14,0)}
+}
+/* Décaler le FAB sur mobile pour éviter la bottom nav */
+@media(max-width:768px){
+  #yuno-fab{bottom:80px}
+  #yuno-config-banner{bottom:144px}
+  #yuno-chat-panel{bottom:80px}
+}
+
+/* ── YUNO CHAT PANEL ── */
+#yuno-chat-panel{
+  position:fixed;bottom:80px;right:16px;z-index:7999;
+  width:360px;max-width:calc(100vw - 24px);
+  height:520px;max-height:calc(100vh - 160px);
+  background:linear-gradient(180deg,#1a1c2e 0%,#0d0e1a 100%);
+  border:1px solid rgba(180,140,20,0.3);border-radius:18px;
+  display:none;flex-direction:column;
+  box-shadow:0 20px 60px rgba(0,0,0,0.6),0 0 0 1px rgba(180,140,20,0.1);
+  animation:yunoSlideIn 0.3s cubic-bezier(0.32,0.72,0,1) both;
+  overflow:hidden;
+}
+#yuno-chat-panel.open{display:flex}
+@keyframes yunoSlideIn{
+  from{opacity:0;transform:translateY(16px) scale(0.97)}
+  to{opacity:1;transform:translateY(0) scale(1)}
+}
+
+/* Header YUNO */
+.yuno-header{
+  padding:14px 16px 12px;
+  border-bottom:1px solid rgba(180,140,20,0.15);
+  background:linear-gradient(90deg,rgba(192,65,14,0.12),rgba(180,140,20,0.06));
+  display:flex;align-items:center;gap:10px;flex-shrink:0;
+}
+.yuno-avatar{
+  width:36px;height:36px;border-radius:50%;
+  background:linear-gradient(135deg,#c0410e,#d4b44a);
+  display:flex;align-items:center;justify-content:center;
+  font-size:16px;flex-shrink:0;
+  box-shadow:0 2px 10px rgba(192,65,14,0.4);
+  border:2px solid rgba(180,140,20,0.4);
+}
+.yuno-header-info{flex:1;min-width:0}
+.yuno-name{font-family:'Cinzel',serif;font-size:14px;font-weight:700;color:#d4b44a;letter-spacing:1px}
+.yuno-status{font-size:9px;color:rgba(255,255,255,0.4);font-family:'Share Tech Mono',monospace;letter-spacing:1.5px;display:flex;align-items:center;gap:5px}
+.yuno-status-dot{width:5px;height:5px;border-radius:50%;background:#22c55e;animation:blink 2s infinite;flex-shrink:0}
+.yuno-header-btns{display:flex;gap:6px}
+.yuno-hbtn{background:none;border:none;color:rgba(255,255,255,0.35);cursor:pointer;font-size:14px;padding:4px;border-radius:6px;transition:all 0.18s;line-height:1}
+.yuno-hbtn:hover{color:#fff;background:rgba(255,255,255,0.08)}
+
+/* Quick actions */
+.yuno-quick-bar{
+  padding:10px 12px 6px;
+  display:flex;gap:6px;flex-wrap:wrap;
+  border-bottom:1px solid rgba(180,140,20,0.1);
+  flex-shrink:0;
+}
+.yuno-chip{
+  padding:4px 10px;border-radius:20px;font-size:10px;font-weight:600;
+  font-family:'Share Tech Mono',monospace;letter-spacing:0.5px;cursor:pointer;
+  border:1px solid rgba(180,140,20,0.3);color:rgba(255,255,255,0.6);
+  background:rgba(180,140,20,0.07);transition:all 0.18s;white-space:nowrap;
+}
+.yuno-chip:hover{background:rgba(180,140,20,0.2);color:#d4b44a;border-color:rgba(180,140,20,0.6)}
+
+/* Messages */
+#yuno-messages{
+  flex:1;overflow-y:auto;padding:12px;
+  display:flex;flex-direction:column;gap:10px;
+  scroll-behavior:smooth;
+}
+#yuno-messages::-webkit-scrollbar{width:3px}
+#yuno-messages::-webkit-scrollbar-thumb{background:rgba(180,140,20,0.2);border-radius:2px}
+
+.yuno-msg{display:flex;gap:8px;max-width:100%;animation:msgIn 0.2s ease}
+@keyframes msgIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+.yuno-msg.user{flex-direction:row-reverse}
+.yuno-msg-bubble{
+  padding:9px 12px;border-radius:14px;font-size:12.5px;line-height:1.6;
+  max-width:82%;word-break:break-word;
+}
+.yuno-msg.yuno .yuno-msg-bubble{
+  background:rgba(255,255,255,0.07);color:rgba(255,255,255,0.88);
+  border:1px solid rgba(180,140,20,0.15);border-radius:4px 14px 14px 14px;
+}
+.yuno-msg.user .yuno-msg-bubble{
+  background:linear-gradient(135deg,rgba(192,65,14,0.35),rgba(180,140,20,0.2));
+  color:#fff;border:1px solid rgba(192,65,14,0.3);
+  border-radius:14px 4px 14px 14px;
+}
+.yuno-msg-icon{width:26px;height:26px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:13px;margin-top:2px}
+.yuno-msg.yuno .yuno-msg-icon{background:linear-gradient(135deg,#c0410e,#d4b44a)}
+.yuno-msg.user .yuno-msg-icon{background:rgba(255,255,255,0.1);font-size:11px}
+
+/* Action buttons in message */
+.yuno-action-btn{
+  display:inline-block;margin-top:7px;padding:5px 11px;
+  background:rgba(180,140,20,0.15);border:1px solid rgba(180,140,20,0.35);
+  border-radius:8px;font-size:10.5px;color:#d4b44a;cursor:pointer;
+  font-family:'Share Tech Mono',monospace;transition:all 0.18s;
+}
+.yuno-action-btn:hover{background:rgba(180,140,20,0.3);color:#fff}
+
+/* Typing indicator */
+.yuno-typing{display:flex;gap:4px;align-items:center;padding:10px 14px}
+.yuno-dot{width:6px;height:6px;border-radius:50%;background:rgba(180,140,20,0.6);animation:dotBounce 1.2s ease-in-out infinite}
+.yuno-dot:nth-child(2){animation-delay:0.2s}
+.yuno-dot:nth-child(3){animation-delay:0.4s}
+@keyframes dotBounce{0%,80%,100%{transform:scale(0.7);opacity:0.4}40%{transform:scale(1.1);opacity:1}}
+
+/* Input bar */
+.yuno-input-bar{
+  padding:10px 12px;border-top:1px solid rgba(180,140,20,0.15);
+  display:flex;gap:8px;align-items:flex-end;flex-shrink:0;
+  background:rgba(0,0,0,0.2);
+}
+#yuno-input{
+  flex:1;background:rgba(255,255,255,0.07);border:1px solid rgba(180,140,20,0.25);
+  border-radius:10px;padding:9px 12px;color:#fff;font-family:'Barlow',sans-serif;
+  font-size:12.5px;outline:none;resize:none;max-height:80px;overflow-y:auto;
+  -webkit-user-select:text;user-select:text;
+  transition:border-color 0.2s;line-height:1.5;
+}
+#yuno-input:focus{border-color:rgba(180,140,20,0.6)}
+#yuno-input::placeholder{color:rgba(255,255,255,0.2)}
+#yuno-send-btn{
+  width:36px;height:36px;border-radius:50%;flex-shrink:0;
+  background:linear-gradient(135deg,#c0410e,#8a2c08);
+  border:none;color:#fff;font-size:15px;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  transition:all 0.2s;box-shadow:0 2px 8px rgba(192,65,14,0.3);
+}
+#yuno-send-btn:hover{transform:scale(1.08);box-shadow:0 4px 14px rgba(192,65,14,0.5)}
+#yuno-send-btn:active{transform:scale(0.9)}
+
+/* ── YUNO INLINE BUTTON (dans les formulaires) ── */
+.yuno-inline-btn{
+  display:inline-flex;align-items:center;gap:5px;
+  padding:5px 11px;border-radius:8px;font-size:10.5px;font-weight:700;
+  font-family:'Share Tech Mono',monospace;letter-spacing:0.5px;cursor:pointer;
+  background:linear-gradient(135deg,rgba(192,65,14,0.12),rgba(180,140,20,0.08));
+  border:1px solid rgba(192,65,14,0.3);color:#c9970a;
+  transition:all 0.18s;text-transform:uppercase;
+}
+.yuno-inline-btn:hover{background:linear-gradient(135deg,rgba(192,65,14,0.25),rgba(180,140,20,0.15));border-color:rgba(192,65,14,0.5);color:#d4b44a;transform:translateY(-1px)}
+.yuno-inline-btn:disabled{opacity:0.5;cursor:not-allowed;transform:none}
+.yuno-inline-btn .yuno-spin{animation:spin 1s linear infinite;display:inline-block}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* Notification badge sur FAB */
+#yuno-fab-badge{
+  position:absolute;top:-2px;right:-2px;
+  background:#dc2626;color:#fff;font-size:8px;font-weight:700;
+  width:16px;height:16px;border-radius:50%;display:none;
+  align-items:center;justify-content:center;
+  border:2px solid #0d0e1a;font-family:'Share Tech Mono',monospace;
+}
+#yuno-fab-badge.show{display:flex}
+</style>
+
+<!-- YUNO FAB -->
+<div id="yuno-fab" onclick="yunoToggleChat()" title="Parler à YUNO — IA">
+  🤖
+  <div id="yuno-fab-badge"></div>
+</div>
+
+<!-- YUNO CONFIG BANNER (clé API) -->
+<div id="yuno-config-banner">
+  <div class="yuno-config-title">🔑 Configurer YUNO</div>
+  <input class="yuno-api-input" type="password" id="yuno-api-key-input" placeholder="sk-ant-api03-...">
+  <button class="yuno-save-btn" onclick="yunoSaveKey()">💾 Enregistrer la clé API</button>
+  <div class="yuno-config-note">Ta clé Anthropic est sauvegardée localement.<br>Obtiens-la sur console.anthropic.com</div>
+</div>
+
+<!-- YUNO CHAT PANEL -->
+<div id="yuno-chat-panel">
+  <div class="yuno-header">
+    <div class="yuno-avatar">🤖</div>
+    <div class="yuno-header-info">
+      <div class="yuno-name">YUNO</div>
+      <div class="yuno-status"><span class="yuno-status-dot"></span>Intelligence Artificielle · Suna PD</div>
+    </div>
+    <div class="yuno-header-btns">
+      <button class="yuno-hbtn" onclick="yunoClearChat()" title="Effacer la conversation">🗑</button>
+      <button class="yuno-hbtn" onclick="yunoShowConfig()" title="Configurer la clé API">⚙️</button>
+      <button class="yuno-hbtn" onclick="yunoToggleChat()" title="Fermer">✕</button>
+    </div>
+  </div>
+  <div class="yuno-quick-bar" id="yuno-quick-bar">
+    <span class="yuno-chip" onclick="yunoQuick('resume_dossiers')">📊 Résumé dossiers</span>
+    <span class="yuno-chip" onclick="yunoQuick('suspects_dangereux')">⚠️ Suspects dangereux</span>
+    <span class="yuno-chip" onclick="yunoQuick('amendes_impayees')">💰 Amendes impayées</span>
+    <span class="yuno-chip" onclick="yunoQuick('stats_generales')">📈 Stats générales</span>
+    <span class="yuno-chip" onclick="yunoQuick('aide_redaction')">✍️ Aide rédaction</span>
+    <span class="yuno-chip" onclick="yunoQuick('conseil_procedure')">📜 Procédure</span>
+  </div>
+  <div id="yuno-messages"></div>
+  <div class="yuno-input-bar">
+    <textarea id="yuno-input" placeholder="Parler à YUNO..." rows="1" onkeydown="yunoInputKeydown(event)" oninput="yunoAutoResize(this)"></textarea>
+    <button id="yuno-send-btn" onclick="yunoSend()">➤</button>
+  </div>
+</div>
+
+<script>
+// ============================================================
+//  YUNO — Système IA intégré — Sunagakure Police Department
+// ============================================================
+(function(){
+  var YUNO_KEY_STORAGE = 'yuno_api_key';
+  var YUNO_HIST_STORAGE = 'yuno_chat_history';
+  var chatOpen = false;
+  var isThinking = false;
+  var chatHistory = [];
+
+  // ── Système Prompt YUNO ──
+  function yunoSystemPrompt(){
+    var stats = '';
+    try {
+      if(window.DB){
+        var db = window.DB;
+        stats += 'DONNÉES EN TEMPS RÉEL DU SYSTÈME :\n';
+        stats += '- Dossiers criminels : '+((db.dossiers||[]).length)+' dossiers\n';
+        var dangereux = (db.dossiers||[]).filter(function(d){return d.danger==='Élevé'||d.danger==='Extrême'});
+        stats += '- Suspects dangereux (Élevé/Extrême) : '+dangereux.length+'\n';
+        var recherches = (db.dossiers||[]).filter(function(d){return d.statut==='Recherché'});
+        stats += '- Suspects recherchés : '+recherches.length+'\n';
+        var amendesImpayees = (db.dossiers||[]).reduce(function(s,d){return s+(d.amendeImpayee||0)},0);
+        stats += '- Total amendes impayées : '+amendesImpayees.toLocaleString()+' Ryos\n';
+        stats += '- Plaintes ouvertes : '+((db.plaintes||[]).filter(function(p){return p.statut!=='traitee'}).length)+'\n';
+        stats += '- Effectifs : '+((db.membres||[]).length)+' membres\n';
+        if(dangereux.length>0){
+          stats += '\nSUSPECTS DANGEREUX :\n';
+          dangereux.slice(0,5).forEach(function(d){
+            stats += '• '+d.nom+' — '+d.danger+' — '+d.statut+' — infractions: '+(d.infractions||'—')+'\n';
+          });
+        }
+        if(recherches.length>0){
+          stats += '\nSUSPECTS RECHERCHÉS :\n';
+          recherches.slice(0,5).forEach(function(d){
+            stats += '• '+d.nom+' — '+(d.infractions||'—')+'\n';
+          });
+        }
+      }
+    } catch(e){}
+    return 'Tu es YUNO, l\'intelligence artificielle intégrée à l\'intranet de la Police de Sunagakure (serveur RP Naruto/ninja). Tu es précise, professionnelle, et tu parles en français. Tu connais le contexte du serveur : la monnaie s\'appelle les Ryos, le village est Sunagakure (village du sable), les officiers sont des shinobi policiers. Tu aides les officiers de police dans leurs tâches : rédaction de dossiers, analyse de suspects, procédures, etc. Sois concise et directe. Si on te demande de rédiger quelque chose, fournis directement le texte prêt à l\'emploi.\n\n'+stats;
+  }
+
+  // ── Toggle chat ──
+  window.yunoToggleChat = function(){
+    var panel = document.getElementById('yuno-chat-panel');
+    var config = document.getElementById('yuno-config-banner');
+    if(!getKey()){
+      // Pas de clé → afficher config
+      config.classList.toggle('open');
+      return;
+    }
+    config.classList.remove('open');
+    chatOpen = !chatOpen;
+    if(chatOpen){
+      panel.classList.add('open');
+      document.getElementById('yuno-fab-badge').classList.remove('show');
+      if(chatHistory.length===0) yunoWelcome();
+      setTimeout(function(){document.getElementById('yuno-input').focus();},200);
+    } else {
+      panel.classList.remove('open');
+    }
+  };
+
+  window.yunoShowConfig = function(){
+    var config = document.getElementById('yuno-config-banner');
+    config.classList.toggle('open');
+    var inp = document.getElementById('yuno-api-key-input');
+    var k = getKey(); if(k) inp.value=k;
+    inp.focus();
+  };
+
+  window.yunoSaveKey = function(){
+    var k = document.getElementById('yuno-api-key-input').value.trim();
+    if(!k){showToast('Clé API vide !','error');return;}
+    localStorage.setItem(YUNO_KEY_STORAGE, k);
+    document.getElementById('yuno-config-banner').classList.remove('open');
+    showToast('✅ Clé YUNO sauvegardée !','success');
+    // Ouvrir le chat
+    setTimeout(function(){
+      if(!chatOpen) window.yunoToggleChat();
+    },300);
+  };
+
+  function getKey(){ return localStorage.getItem(YUNO_KEY_STORAGE)||''; }
+
+  // ── Messages ──
+  function yunoAppend(role, text, actions){
+    var msgs = document.getElementById('yuno-messages');
+    var isYuno = role==='yuno';
+    var div = document.createElement('div');
+    div.className = 'yuno-msg '+(isYuno?'yuno':'user');
+
+    var icon = document.createElement('div');
+    icon.className = 'yuno-msg-icon';
+    icon.textContent = isYuno?'🤖':'👮';
+
+    var bubble = document.createElement('div');
+    bubble.className = 'yuno-msg-bubble';
+    // Formater le texte (gras **x**, sauts de ligne)
+    bubble.innerHTML = text
+      .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+      .replace(/\*\*(.*?)\*\*/g,'<b>$1</b>')
+      .replace(/\n/g,'<br>');
+
+    if(actions && actions.length){
+      actions.forEach(function(a){
+        var btn = document.createElement('div');
+        btn.className = 'yuno-action-btn';
+        btn.innerHTML = a.label;
+        btn.onclick = a.fn;
+        bubble.appendChild(document.createElement('br'));
+        bubble.appendChild(btn);
+      });
+    }
+
+    div.appendChild(icon);
+    div.appendChild(bubble);
+    msgs.appendChild(div);
+    msgs.scrollTop = msgs.scrollHeight;
+    return div;
+  }
+
+  function yunoTyping(){
+    var msgs = document.getElementById('yuno-messages');
+    var div = document.createElement('div');
+    div.className = 'yuno-msg yuno';
+    div.id = 'yuno-typing-indicator';
+    div.innerHTML = '<div class="yuno-msg-icon">🤖</div><div class="yuno-msg-bubble" style="padding:6px 14px"><div class="yuno-typing"><div class="yuno-dot"></div><div class="yuno-dot"></div><div class="yuno-dot"></div></div></div>';
+    msgs.appendChild(div);
+    msgs.scrollTop = msgs.scrollHeight;
+  }
+
+  function yunoRemoveTyping(){
+    var t = document.getElementById('yuno-typing-indicator');
+    if(t) t.remove();
+  }
+
+  function yunoWelcome(){
+    var name = '';
+    try{ name = (window.currentUser&&window.currentUser.nom)?' Officer '+window.currentUser.nom:''; } catch(e){}
+    yunoAppend('yuno', '👋 Bonjour'+name+' ! Je suis **YUNO**, votre assistante IA du Sunagakure PD.\n\nJe peux vous aider à :\n• Rédiger des dossiers criminels\n• Analyser les données de la base judiciaire\n• Vous guider sur les procédures\n• Répondre à vos questions\n\nQue puis-je faire pour vous ?');
+  }
+
+  // ── Send message ──
+  window.yunoSend = function(forceText){
+    if(isThinking) return;
+    var inp = document.getElementById('yuno-input');
+    var text = forceText || inp.value.trim();
+    if(!text) return;
+    if(!getKey()){ showToast('Configure d\'abord la clé API YUNO (⚙️)','error'); window.yunoShowConfig(); return; }
+
+    inp.value=''; inp.style.height='';
+    yunoAppend('user', text);
+    chatHistory.push({role:'user',content:text});
+    isThinking = true;
+    yunoTyping();
+
+    // Appel API Anthropic
+    fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{
+        'Content-Type':'application/json',
+        'x-api-key':getKey(),
+        'anthropic-version':'2023-06-01',
+        'anthropic-dangerous-direct-browser-access':'true'
+      },
+      body:JSON.stringify({
+        model:'claude-sonnet-4-20250514',
+        max_tokens:1000,
+        system:yunoSystemPrompt(),
+        messages:chatHistory.slice(-12)
+      })
+    })
+    .then(function(r){return r.json();})
+    .then(function(data){
+      yunoRemoveTyping();
+      isThinking = false;
+      if(data.error){
+        var msg = data.error.message||'Erreur API';
+        yunoAppend('yuno','❌ Erreur : '+msg);
+        if(msg.includes('API key')||msg.includes('auth')) window.yunoShowConfig();
+        return;
+      }
+      var reply = (data.content&&data.content[0]&&data.content[0].text)||'…';
+      chatHistory.push({role:'assistant',content:reply});
+      yunoAppend('yuno', reply);
+      // Sauvegarder historique
+      try{ localStorage.setItem(YUNO_HIST_STORAGE, JSON.stringify(chatHistory.slice(-20))); }catch(e){}
+    })
+    .catch(function(err){
+      yunoRemoveTyping();
+      isThinking = false;
+      yunoAppend('yuno','❌ Impossible de contacter YUNO. Vérifiez votre connexion et la clé API.');
+    });
+  };
+
+  // ── Quick actions ──
+  window.yunoQuick = function(type){
+    var prompts = {
+      resume_dossiers: 'Fais-moi un résumé rapide de l\'état des dossiers criminels : nombre, répartition par statut et dangerosité, suspects les plus préoccupants.',
+      suspects_dangereux: 'Liste-moi les suspects classés dangereux ou extrêmes et donne-moi une analyse des risques.',
+      amendes_impayees: 'Donne-moi un rapport sur les amendes impayées : montant total, liste des suspects concernés, priorité de recouvrement.',
+      stats_generales: 'Donne-moi des statistiques générales sur l\'activité du département de police de Sunagakure.',
+      aide_redaction: 'Comment rédiger un bon rapport de dossier criminel ? Donne-moi un modèle type pour Sunagakure.',
+      conseil_procedure: 'Quelles sont les procédures standard pour une interpellation et une mise en garde à vue à Sunagakure ?'
+    };
+    var text = prompts[type];
+    if(text){
+      if(!chatOpen) window.yunoToggleChat();
+      setTimeout(function(){ window.yunoSend(text); }, 100);
+    }
+  };
+
+  // ── Clear chat ──
+  window.yunoClearChat = function(){
+    chatHistory = [];
+    document.getElementById('yuno-messages').innerHTML = '';
+    try{ localStorage.removeItem(YUNO_HIST_STORAGE); }catch(e){}
+    yunoWelcome();
+  };
+
+  // ── Input helpers ──
+  window.yunoInputKeydown = function(e){
+    if(e.key==='Enter'&&!e.shiftKey){ e.preventDefault(); window.yunoSend(); }
+  };
+  window.yunoAutoResize = function(el){
+    el.style.height='auto';
+    el.style.height=Math.min(el.scrollHeight,80)+'px';
+  };
+
+  // ── Fonction appelable depuis les formulaires ──
+  // Génère les champs du formulaire "Nouveau dossier" avec l'IA
+  window.yunoRemplirDossier = function(){
+    var nom = (document.getElementById('d-nom')||{}).value||'';
+    var infractions = (document.getElementById('d-infractions')||{}).value||'';
+    if(!nom && !infractions){ showToast('Remplis au moins le nom ou les infractions d\'abord.','error'); return; }
+    if(!getKey()){ showToast('Configure la clé API YUNO (bouton 🤖)','error'); window.yunoShowConfig(); return; }
+
+    var btn = document.getElementById('yuno-dossier-btn');
+    if(btn){ btn.disabled=true; btn.innerHTML='<span class="yuno-spin">⏳</span> YUNO réfléchit...'; }
+
+    var prompt = 'Je crée un dossier criminel pour le suspect suivant.\nNom: '+nom+'\nInfractions mentionnées: '+(infractions||'non précisées')+'\n\nRéponds UNIQUEMENT en JSON valide avec ces champs:\n{"infractions":"texte clair des infractions","danger":"Faible|Modéré|Élevé|Extrême","statut":"Recherché|En garde à vue|Incarcéré|Libéré|Surveillé","notes":"résumé professionnel du dossier en 2-3 phrases"}\n\nAdapte le niveau de dangerosité aux infractions. Sois précis et professionnel.';
+
+    fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','x-api-key':getKey(),'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+      body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:400,system:'Tu es YUNO, IA de la Police de Sunagakure. Réponds toujours en JSON pur, sans markdown, sans texte avant ou après.',messages:[{role:'user',content:prompt}]})
+    })
+    .then(function(r){return r.json();})
+    .then(function(data){
+      if(btn){ btn.disabled=false; btn.innerHTML='🤖 YUNO — Remplir auto'; }
+      if(data.error){ showToast('YUNO: '+(data.error.message||'Erreur'),'error'); return; }
+      var text = (data.content&&data.content[0]&&data.content[0].text)||'{}';
+      try{
+        var clean = text.replace(/```json|```/g,'').trim();
+        var obj = JSON.parse(clean);
+        if(obj.infractions) document.getElementById('d-infractions').value=obj.infractions;
+        if(obj.danger){var sel=document.getElementById('d-danger');for(var o of sel.options)o.selected=(o.value===obj.danger||o.text===obj.danger);}
+        if(obj.statut){var sel2=document.getElementById('d-statut');for(var o2 of sel2.options)o2.selected=(o2.value===obj.statut||o2.text===obj.statut);}
+        if(obj.notes) document.getElementById('d-notes').value=obj.notes;
+        showToast('✅ YUNO a rempli le dossier !','success');
+        checkDoublonSuspect();
+      }catch(e){ showToast('YUNO: réponse invalide. Réessaie.','error'); }
+    })
+    .catch(function(){ if(btn){btn.disabled=false;btn.innerHTML='🤖 YUNO — Remplir auto';} showToast('Erreur connexion YUNO.','error'); });
+  };
+
+  // Génère/améliore la description d'une plainte
+  window.yunoRemplirPlainte = function(){
+    var plaignant = (document.getElementById('p-plaignant')||{}).value||'';
+    var accuse = (document.getElementById('p-accuse')||{}).value||'';
+    var type = (document.getElementById('p-type')||{}).value||'';
+    var desc = (document.getElementById('p-desc')||{}).value||'';
+    if(!accuse && !desc){ showToast('Remplis au moins l\'accusé ou une description.','error'); return; }
+    if(!getKey()){ showToast('Configure la clé API YUNO.','error'); window.yunoShowConfig(); return; }
+
+    var btn = document.getElementById('yuno-plainte-btn');
+    if(btn){ btn.disabled=true; btn.innerHTML='<span class="yuno-spin">⏳</span> YUNO rédige...'; }
+
+    var prompt = 'Rédige une description officielle et détaillée pour une plainte de police à Sunagakure.\nPlaignant: '+(plaignant||'non précisé')+'\nAccusé: '+(accuse||'non précisé')+'\nType: '+type+'\nDescription brute: '+(desc||'aucune')+'\n\nRéponds UNIQUEMENT en JSON: {"desc":"description officielle et professionnelle en 3-4 phrases"}\n\nUtilise un style juridique formel adapté à un village shinobi.';
+
+    fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','x-api-key':getKey(),'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+      body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:300,system:'Tu es YUNO, IA de la Police de Sunagakure. Réponds toujours en JSON pur sans markdown.',messages:[{role:'user',content:prompt}]})
+    })
+    .then(function(r){return r.json();})
+    .then(function(data){
+      if(btn){ btn.disabled=false; btn.innerHTML='🤖 YUNO — Améliorer le texte'; }
+      if(data.error){ showToast('YUNO: '+(data.error.message||'Erreur'),'error'); return; }
+      var text=(data.content&&data.content[0]&&data.content[0].text)||'{}';
+      try{
+        var clean=text.replace(/```json|```/g,'').trim();
+        var obj=JSON.parse(clean);
+        if(obj.desc){ document.getElementById('p-desc').value=obj.desc; showToast('✅ YUNO a rédigé la description !','success'); }
+      }catch(e){ showToast('YUNO: réponse invalide.','error'); }
+    })
+    .catch(function(){ if(btn){btn.disabled=false;btn.innerHTML='🤖 YUNO — Améliorer le texte';} showToast('Erreur connexion YUNO.','error'); });
+  };
+
+  // Résumé d'un dossier existant (appelé depuis le tableau)
+  window.yunoResumeDossier = function(id){
+    id=parseInt(id);
+    var d=(window.DB&&window.DB.dossiers||[]).find(function(x){return x.id===id;});
+    if(!d){showToast('Dossier introuvable.','error');return;}
+    if(!getKey()){showToast('Configure la clé API YUNO.','error');window.yunoShowConfig();return;}
+    if(!chatOpen) window.yunoToggleChat();
+    var prompt = 'Fais une fiche de synthèse complète pour ce suspect :\n\nNom: '+d.nom+'\nInfractions: '+(d.infractions||'—')+'\nDangerosité: '+(d.danger||'—')+'\nStatut: '+(d.statut||'—')+'\nNotes: '+(d.notes||'aucune')+'\nAmende payée: '+(d.amendePayee||0)+' Ryos\nAmende impayée: '+(d.amendeImpayee||0)+' Ryos\n\nInclus : profil du suspect, analyse des risques, recommandations pour les officiers.';
+    setTimeout(function(){ window.yunoSend(prompt); }, 150);
+  };
+
+  // ── Injecter boutons dans les formulaires (attendre que le DOM soit prêt) ──
+  function injectYunoButtons(){
+    // Bouton dans modal création dossier (après le champ infractions)
+    var infraField = document.getElementById('d-infractions');
+    if(infraField && !document.getElementById('yuno-dossier-btn')){
+      var wrap = infraField.closest('.form-group');
+      if(wrap){
+        var btn = document.createElement('button');
+        btn.type='button';
+        btn.id='yuno-dossier-btn';
+        btn.className='yuno-inline-btn';
+        btn.innerHTML='🤖 YUNO — Remplir auto';
+        btn.onclick=window.yunoRemplirDossier;
+        btn.style.marginTop='7px';
+        wrap.appendChild(btn);
+      }
+    }
+    // Bouton dans modal plainte (après description)
+    var descField = document.getElementById('p-desc');
+    if(descField && !document.getElementById('yuno-plainte-btn')){
+      var wrap2 = descField.closest('.form-group');
+      if(wrap2){
+        var btn2 = document.createElement('button');
+        btn2.type='button';
+        btn2.id='yuno-plainte-btn';
+        btn2.className='yuno-inline-btn';
+        btn2.innerHTML='🤖 YUNO — Améliorer le texte';
+        btn2.onclick=window.yunoRemplirPlainte;
+        btn2.style.marginTop='7px';
+        wrap2.appendChild(btn2);
+      }
+    }
+  }
+
+  // Ajouter colonne "YUNO" dans le tableau dossiers
+  function patchRenderDossiers(){
+    var _orig = window.renderDossiers;
+    if(typeof _orig!=='function') return false;
+    window.renderDossiers = function(){
+      _orig.apply(this,arguments);
+      // Ajouter en-tête si pas déjà là
+      var thead = document.querySelector('#page-dossiers .data-table thead tr');
+      if(thead && !thead.querySelector('.yuno-th')){
+        var th=document.createElement('th');
+        th.className='yuno-th';
+        th.style.cssText='color:#c9970a;font-size:9px';
+        th.textContent='🤖 IA';
+        thead.appendChild(th);
+      }
+      // Ajouter cellule sur chaque ligne
+      var rows = document.querySelectorAll('#dossiers-tbody tr');
+      rows.forEach(function(tr){
+        if(tr.querySelector('.yuno-td')) return;
+        var cells=tr.querySelectorAll('td');
+        // Récupérer l'ID depuis le bouton modifier
+        var editBtn=tr.querySelector('[onclick*="openEditDossier"]');
+        if(!editBtn) return;
+        var match=editBtn.getAttribute('onclick').match(/\d+/);
+        if(!match) return;
+        var id=match[0];
+        var td=document.createElement('td');
+        td.className='yuno-td';
+        td.innerHTML='<button class="yuno-inline-btn" onclick="yunoResumeDossier('+id+')" style="padding:3px 8px;font-size:9.5px">🤖</button>';
+        tr.appendChild(td);
+      });
+    };
+    return true;
+  }
+
+  // ── Init ──
+  function init(){
+    // Charger historique
+    try{
+      var h=localStorage.getItem(YUNO_HIST_STORAGE);
+      if(h) chatHistory=JSON.parse(h);
+    }catch(e){}
+
+    // Notification badge si clé pas configurée
+    if(!getKey()){
+      document.getElementById('yuno-fab-badge').classList.add('show');
+      document.getElementById('yuno-fab-badge').textContent='!';
+    }
+
+    // Injecter boutons
+    var tries=0;
+    var t=setInterval(function(){
+      tries++;
+      if(tries>40){clearInterval(t);return;}
+      injectYunoButtons();
+      if(patchRenderDossiers()){ clearInterval(t); }
+    },400);
+
+    // Sur mobile, décaler FAB au-dessus de la bottom nav
+    if(window.innerWidth<=768){
+      var fab=document.getElementById('yuno-fab');
+      if(fab) fab.style.bottom='80px';
+    }
+  }
+
+  if(document.readyState==='loading'){
+    document.addEventListener('DOMContentLoaded',init);
+  } else {
+    setTimeout(init,300);
+  }
 })();
 </script>
 
