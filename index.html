@@ -3,13 +3,15 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, interactive-widget=resizes-visual">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self' https://fonts.googleapis.com https://fonts.gstatic.com https://*.firebaseio.com https://*.googleapis.com https://www.gstatic.com; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.gstatic.com https://*.googleapis.com https://cdn.jsdelivr.net https://*.firebasedatabase.app; img-src 'self' data: blob: https:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; connect-src https://*.firebaseio.com https://*.googleapis.com wss://*.firebaseio.com https://www.gstatic.com https://*.firebasedatabase.app wss://*.firebasedatabase.app https://cdn.jsdelivr.net https://api.ipify.org https://api.anthropic.com; frame-src 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self' https://fonts.googleapis.com https://fonts.gstatic.com https://*.firebaseio.com https://*.googleapis.com https://www.gstatic.com; script-src 'self' 'unsafe-inline' https://www.gstatic.com https://*.googleapis.com https://cdn.jsdelivr.net https://*.firebasedatabase.app; img-src 'self' data: blob: https:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; connect-src https://*.firebaseio.com https://*.googleapis.com wss://*.firebaseio.com https://www.gstatic.com https://*.firebasedatabase.app wss://*.firebasedatabase.app https://cdn.jsdelivr.net https://api.ipify.org https://api.anthropic.com; frame-src 'none'">
 <title>Police — Sunagakure Intranet</title>
 <meta name="theme-color" content="#1a1c2e">
 <link rel="icon" href="data:,">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Police Suna">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;900&family=Barlow+Condensed:wght@400;600;700;900&family=Barlow:wght@300;400;500;600&family=Share+Tech+Mono&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -1516,24 +1518,24 @@ document.addEventListener('DOMContentLoaded',function(){if(localStorage.getItem(
     <h1>POLICE</h1>
     <span>SUNAGAKURE</span>
   </div>
-  <nav class="sidebar-nav">
+  <nav class="sidebar-nav" aria-label="Navigation principale">
     <div class="nav-section">Principal</div>
-    <div class="nav-item active" onclick="showPage('dashboard')" data-page="dashboard"><span class="icon">📊</span> Tableau de bord</div>
-    <div class="nav-item" onclick="showPage('annonces')" data-page="annonces"><span class="icon">📢</span> Annonces <span class="nav-badge" id="badge-annonces">0</span></div>
+    <div class="nav-item active" role="button" tabindex="0" aria-current="page" onclick="showPage('dashboard')" data-page="dashboard"><span class="icon">📊</span> Tableau de bord</div>
+    <div class="nav-item" role="button" tabindex="0" onclick="showPage('annonces')" data-page="annonces"><span class="icon">📢</span> Annonces <span class="nav-badge" id="badge-annonces">0</span></div>
     <div class="nav-section">Registres</div>
-    <div class="nav-item" onclick="showPage('recensement')" data-page="recensement"><span class="icon">📝</span> Recensement <span class="nav-badge" id="badge-recenses" style="background:var(--purple)">0</span></div>
-    <div class="nav-item" onclick="showPage('recrutement')" data-page="recrutement"><span class="icon">🎖️</span> Recrutement <span class="nav-badge" id="badge-recrutement" style="background:var(--cyan);display:none">0</span></div>
-    <div class="nav-item" onclick="showPage('plaintes')" data-page="plaintes"><span class="icon">📋</span> Plaintes <span class="nav-badge" id="badge-plaintes">0</span></div>
-    <div class="nav-item" onclick="showPage('dossiers')" data-page="dossiers" data-member-only="true"><span class="icon">🗂️</span> Dossiers criminels <span class="nav-badge" id="badge-dossiers" style="background:var(--purple);display:none">0</span></div>
-    <div class="nav-item" onclick="showPage('codepenal')" data-page="codepenal"><span class="icon">📜</span> Code Pénal</div>
-    <div class="nav-item" onclick="showPage('messagerie')" data-page="messagerie" data-member-only="true"><span class="icon">💬</span> Messagerie <span class="nav-badge" id="badge-messagerie" style="background:var(--cyan);display:none">0</span></div>
+    <div class="nav-item" role="button" tabindex="0" onclick="showPage('recensement')" data-page="recensement"><span class="icon">📝</span> Recensement <span class="nav-badge" id="badge-recenses" style="background:var(--purple)">0</span></div>
+    <div class="nav-item" role="button" tabindex="0" onclick="showPage('recrutement')" data-page="recrutement"><span class="icon">🎖️</span> Recrutement <span class="nav-badge" id="badge-recrutement" style="background:var(--cyan);display:none">0</span></div>
+    <div class="nav-item" role="button" tabindex="0" onclick="showPage('plaintes')" data-page="plaintes"><span class="icon">📋</span> Plaintes <span class="nav-badge" id="badge-plaintes">0</span></div>
+    <div class="nav-item" role="button" tabindex="0" onclick="showPage('dossiers')" data-page="dossiers" data-member-only="true"><span class="icon">🗂️</span> Dossiers criminels <span class="nav-badge" id="badge-dossiers" style="background:var(--purple);display:none">0</span></div>
+    <div class="nav-item" role="button" tabindex="0" onclick="showPage('codepenal')" data-page="codepenal"><span class="icon">📜</span> Code Pénal</div>
+    <div class="nav-item" role="button" tabindex="0" onclick="showPage('messagerie')" data-page="messagerie" data-member-only="true"><span class="icon">💬</span> Messagerie <span class="nav-badge" id="badge-messagerie" style="background:var(--cyan);display:none">0</span></div>
     <div class="nav-section" data-admin-only="true" style="display:none">Opérations</div>
-    <div class="nav-item" onclick="showPage('operations')" data-page="operations" data-admin-only="true" style="display:none"><span class="icon">🚨</span> Opérations <span class="nav-badge" id="badge-operations" style="background:var(--accent);display:none">0</span></div>
-    <div class="nav-item" onclick="showPage('effectifs')" data-page="effectifs" data-admin-only="true" style="display:none"><span class="icon">👮</span> Effectifs</div>
-    <div class="nav-item" onclick="showPage('sanctions')" data-page="sanctions" data-admin-only="true" style="display:none"><span class="icon">⚖️</span> Sanctions / Promo</div>
+    <div class="nav-item" role="button" tabindex="0" onclick="showPage('operations')" data-page="operations" data-admin-only="true" style="display:none"><span class="icon">🚨</span> Opérations <span class="nav-badge" id="badge-operations" style="background:var(--accent);display:none">0</span></div>
+    <div class="nav-item" role="button" tabindex="0" onclick="showPage('effectifs')" data-page="effectifs" data-admin-only="true" style="display:none"><span class="icon">👮</span> Effectifs</div>
+    <div class="nav-item" role="button" tabindex="0" onclick="showPage('sanctions')" data-page="sanctions" data-admin-only="true" style="display:none"><span class="icon">⚖️</span> Sanctions / Promo</div>
     <div class="nav-section" data-member-only="true">Administration</div>
-    <div class="nav-item" id="nav-admin" onclick="showPage('admin')" style="display:none"><span class="icon">⚙️</span> Panel Admin</div>
-    <div class="nav-item" onclick="showPage('profil')" data-page="profil"><span class="icon">👤</span> Mon profil</div>
+    <div class="nav-item" role="button" tabindex="0" id="nav-admin" onclick="showPage('admin')" style="display:none"><span class="icon">⚙️</span> Panel Admin</div>
+    <div class="nav-item" role="button" tabindex="0" onclick="showPage('profil')" data-page="profil"><span class="icon">👤</span> Mon profil</div>
   </nav>
   <div class="sidebar-footer">
     <div class="user-pill">
@@ -1542,17 +1544,17 @@ document.addEventListener('DOMContentLoaded',function(){if(localStorage.getItem(
         <div class="uname" id="user-name-display">—</div>
         <div class="urank" id="user-rank-display">—</div>
       </div>
-      <span class="logout-btn" onclick="doLogout()" title="Déconnexion">⏻</span>    </div>
+      <span class="logout-btn" onclick="doLogout()" title="Déconnexion" aria-label="Déconnexion" role="button" tabindex="0">⏻</span>    </div>
   </div>
 </div>
 
 <!-- MAIN -->
 <div id="main">
   <div class="topbar">
-    <div id="hamburger" onclick="toggleSidebar()">☰</div>
+    <div id="hamburger" onclick="toggleSidebar()" aria-label="Ouvrir le menu" aria-expanded="false">☰</div>
     <div class="topbar-title" id="topbar-title">Tableau de bord</div>
     <div class="topbar-path" id="topbar-path">Police Sunagakure / Dashboard</div>
-    <div class="status-dot"></div>
+    <div class="status-dot" aria-label="Connexion active" title="Connexion active"></div>
   </div>
 
   <!-- DASHBOARD -->
@@ -2388,9 +2390,9 @@ document.addEventListener('DOMContentLoaded',function(){if(localStorage.getItem(
 <!-- ===== MODALS ===== -->
 
 <!-- Annonce -->
-<div class="modal-overlay" id="modal-annonce">
+<div class="modal-overlay" role="dialog" aria-modal="true" id="modal-annonce">
   <div class="modal">
-    <div class="modal-header"><h3>📢 Nouvelle annonce</h3><span class="modal-close" onclick="closeModal('modal-annonce')">✕</span></div>
+    <div class="modal-header"><h3>📢 Nouvelle annonce</h3><span class="modal-close" aria-label="Fermer" onclick="closeModal('modal-annonce')">✕</span></div>
     <div class="modal-body">
       <div class="form-group"><label class="form-label">Titre</label><input type="text" id="a-titre" class="form-control" placeholder="Titre"></div>
       <div class="form-group"><label class="form-label">Catégorie</label>
@@ -2418,9 +2420,9 @@ document.addEventListener('DOMContentLoaded',function(){if(localStorage.getItem(
 </div>
 
 <!-- Recensement -->
-<div class="modal-overlay" id="modal-recense">
+<div class="modal-overlay" role="dialog" aria-modal="true" id="modal-recense">
   <div class="modal">
-    <div class="modal-header"><h3>📝 Recenser un joueur</h3><span class="modal-close" onclick="closeModal('modal-recense')">✕</span></div>
+    <div class="modal-header"><h3>📝 Recenser un joueur</h3><span class="modal-close" aria-label="Fermer" onclick="closeModal('modal-recense')">✕</span></div>
     <div class="modal-body">
       <div class="grid grid-2">
         <div class="form-group"><label class="form-label">Prénom RP</label><input type="text" id="r-prenom" class="form-control" placeholder="Prénom"></div>
@@ -2467,9 +2469,9 @@ document.addEventListener('DOMContentLoaded',function(){if(localStorage.getItem(
 </div>
 
 <!-- Candidature -->
-<div class="modal-overlay" id="modal-candidature">
+<div class="modal-overlay" role="dialog" aria-modal="true" id="modal-candidature">
   <div class="modal">
-    <div class="modal-header"><h3>🎖️ Déposer une candidature</h3><span class="modal-close" onclick="closeModal('modal-candidature')">✕</span></div>
+    <div class="modal-header"><h3>🎖️ Déposer une candidature</h3><span class="modal-close" aria-label="Fermer" onclick="closeModal('modal-candidature')">✕</span></div>
     <div class="modal-body">
       <div class="grid grid-2">
         <div class="form-group"><label class="form-label">Nom RP</label><input type="text" id="c-nom" class="form-control" placeholder="Prénom Nom"></div>
@@ -2484,9 +2486,9 @@ document.addEventListener('DOMContentLoaded',function(){if(localStorage.getItem(
 </div>
 
 <!-- Modifier Candidature (visiteur) -->
-<div class="modal-overlay" id="modal-edit-candidature">
+<div class="modal-overlay" role="dialog" aria-modal="true" id="modal-edit-candidature">
   <div class="modal">
-    <div class="modal-header"><h3>✏️ Modifier ma candidature</h3><span class="modal-close" onclick="closeModal('modal-edit-candidature')">✕</span></div>
+    <div class="modal-header"><h3>✏️ Modifier ma candidature</h3><span class="modal-close" aria-label="Fermer" onclick="closeModal('modal-edit-candidature')">✕</span></div>
     <div class="modal-body">
       <input type="hidden" id="ec-id">
       <div class="grid grid-2">
@@ -2505,11 +2507,11 @@ document.addEventListener('DOMContentLoaded',function(){if(localStorage.getItem(
 </div>
 
 <!-- Vue Candidature -->
-<div class="modal-overlay" id="modal-view-candidature">
+<div class="modal-overlay" role="dialog" aria-modal="true" id="modal-view-candidature">
   <div class="modal" style="max-width:580px">
     <div class="modal-header">
       <h3>🎖️ Détail de la candidature</h3>
-      <span class="modal-close" onclick="closeModal('modal-view-candidature')">✕</span>
+      <span class="modal-close" aria-label="Fermer" onclick="closeModal('modal-view-candidature')">✕</span>
     </div>
     <div class="modal-body" id="vc-body"></div>
     <div class="modal-footer" id="vc-footer"></div>
@@ -2517,11 +2519,11 @@ document.addEventListener('DOMContentLoaded',function(){if(localStorage.getItem(
 </div>
 
 <!-- Plainte -->
-<div class="modal-overlay" id="modal-plainte">
+<div class="modal-overlay" role="dialog" aria-modal="true" id="modal-plainte">
   <div class="modal" style="max-width:540px">
     <div class="modal-header">
       <h3>📋 Déposer une plainte</h3>
-      <span class="modal-close" onclick="closeModal('modal-plainte')">✕</span>
+      <span class="modal-close" aria-label="Fermer" onclick="closeModal('modal-plainte')">✕</span>
     </div>
     <div class="modal-body" style="padding:22px 24px">
       <div class="alert alert-info" style="margin-bottom:16px;font-size:11.5px">⚠️ Toute plainte abusive ou mensongère pourra entraîner des sanctions.</div>
@@ -2592,9 +2594,9 @@ document.addEventListener('DOMContentLoaded',function(){if(localStorage.getItem(
 </div>
 
 <!-- Dossier -->
-<div class="modal-overlay" id="modal-dossier">
+<div class="modal-overlay" role="dialog" aria-modal="true" id="modal-dossier">
   <div class="modal">
-    <div class="modal-header"><h3>🗂️ Nouveau dossier criminel</h3><span class="modal-close" onclick="closeModal('modal-dossier')">✕</span></div>
+    <div class="modal-header"><h3>🗂️ Nouveau dossier criminel</h3><span class="modal-close" aria-label="Fermer" onclick="closeModal('modal-dossier')">✕</span></div>
     <div class="modal-body">
       <!-- Alerte suspect existant -->
       <div id="d-doublon-alert" style="display:none;background:rgba(180,140,20,0.08);border:1px solid rgba(180,140,20,0.35);border-radius:10px;padding:12px 14px;margin-bottom:13px">
@@ -2666,9 +2668,9 @@ document.addEventListener('DOMContentLoaded',function(){if(localStorage.getItem(
 
 
 <!-- Modifier dossier -->
-<div class="modal-overlay" id="modal-edit-dossier">
+<div class="modal-overlay" role="dialog" aria-modal="true" id="modal-edit-dossier">
   <div class="modal">
-    <div class="modal-header"><h3>✏️ Modifier le dossier</h3><span class="modal-close" onclick="closeModal('modal-edit-dossier')">✕</span></div>
+    <div class="modal-header"><h3>✏️ Modifier le dossier</h3><span class="modal-close" aria-label="Fermer" onclick="closeModal('modal-edit-dossier')">✕</span></div>
     <div class="modal-body">
       <input type="hidden" id="ed-id">
       <div class="form-group"><label class="form-label">Nom RP du suspect</label><input type="text" id="ed-nom" class="form-control" placeholder="Prénom Nom"></div>
@@ -2727,9 +2729,9 @@ document.addEventListener('DOMContentLoaded',function(){if(localStorage.getItem(
 </div>
 
 <!-- Opération -->
-<div class="modal-overlay" id="modal-operation">
+<div class="modal-overlay" role="dialog" aria-modal="true" id="modal-operation">
   <div class="modal">
-    <div class="modal-header"><h3>🚨 Nouvelle opération</h3><span class="modal-close" onclick="closeModal('modal-operation')">✕</span></div>
+    <div class="modal-header"><h3>🚨 Nouvelle opération</h3><span class="modal-close" aria-label="Fermer" onclick="closeModal('modal-operation')">✕</span></div>
     <div class="modal-body">
       <div class="form-group"><label class="form-label">Nom de l'opération</label><input type="text" id="op-nom" class="form-control" placeholder="Opération [Code]"></div>
       <div class="grid grid-2">
@@ -2747,9 +2749,9 @@ document.addEventListener('DOMContentLoaded',function(){if(localStorage.getItem(
 </div>
 
 <!-- Sanction -->
-<div class="modal-overlay" id="modal-sanction">
+<div class="modal-overlay" role="dialog" aria-modal="true" id="modal-sanction">
   <div class="modal">
-    <div class="modal-header"><h3>⚖️ Sanction / Promotion</h3><span class="modal-close" onclick="closeModal('modal-sanction')">✕</span></div>
+    <div class="modal-header"><h3>⚖️ Sanction / Promotion</h3><span class="modal-close" aria-label="Fermer" onclick="closeModal('modal-sanction')">✕</span></div>
     <div class="modal-body">
       <div class="form-group"><label class="form-label">Type</label>
         <select id="s-type" class="form-control"><option>Promotion</option><option>Félicitation</option><option>Avertissement</option><option>Suspension</option><option>Rétrogradation</option><option>Exclusion</option></select></div>
@@ -2761,9 +2763,9 @@ document.addEventListener('DOMContentLoaded',function(){if(localStorage.getItem(
 </div>
 
 <!-- Add User -->
-<div class="modal-overlay" id="modal-adduser">
+<div class="modal-overlay" role="dialog" aria-modal="true" id="modal-adduser">
   <div class="modal">
-    <div class="modal-header"><h3>👮 Ajouter un membre</h3><span class="modal-close" onclick="closeModal('modal-adduser')">✕</span></div>
+    <div class="modal-header"><h3>👮 Ajouter un membre</h3><span class="modal-close" aria-label="Fermer" onclick="closeModal('modal-adduser')">✕</span></div>
     <div class="modal-body">
       <div class="grid grid-2">
         <div class="form-group"><label class="form-label">Identifiant (login)</label><input type="text" id="u-login" class="form-control" placeholder="badge123"></div>
@@ -2790,9 +2792,9 @@ document.addEventListener('DOMContentLoaded',function(){if(localStorage.getItem(
 </div>
 
 <!-- Edit User (admin) -->
-<div class="modal-overlay" id="modal-edituser">
+<div class="modal-overlay" role="dialog" aria-modal="true" id="modal-edituser">
   <div class="modal">
-    <div class="modal-header"><h3>✏️ Modifier le compte</h3><span class="modal-close" onclick="closeModal('modal-edituser')">✕</span></div>
+    <div class="modal-header"><h3>✏️ Modifier le compte</h3><span class="modal-close" aria-label="Fermer" onclick="closeModal('modal-edituser')">✕</span></div>
     <div class="modal-body">
       <input type="hidden" id="eu-id">
       <div class="form-group"><label class="form-label">Nom RP</label><input type="text" id="eu-nom" class="form-control"></div>
@@ -2824,27 +2826,27 @@ document.addEventListener('DOMContentLoaded',function(){if(localStorage.getItem(
 </div>
 
 <!-- View Plainte -->
-<div class="modal-overlay" id="modal-view-plainte">
+<div class="modal-overlay" role="dialog" aria-modal="true" id="modal-view-plainte">
   <div class="modal">
-    <div class="modal-header"><h3 id="vp-ref">Plainte</h3><span class="modal-close" onclick="closeModal('modal-view-plainte')">✕</span></div>
+    <div class="modal-header"><h3 id="vp-ref">Plainte</h3><span class="modal-close" aria-label="Fermer" onclick="closeModal('modal-view-plainte')">✕</span></div>
     <div class="modal-body" id="vp-body"></div>
     <div class="modal-footer" id="vp-footer"></div>
   </div>
 </div>
 
 <!-- View Recense -->
-<div class="modal-overlay" id="modal-view-recense">
+<div class="modal-overlay" role="dialog" aria-modal="true" id="modal-view-recense">
   <div class="modal">
-    <div class="modal-header"><h3 id="vr-title">Fiche joueur</h3><span class="modal-close" onclick="closeModal('modal-view-recense')">✕</span></div>
+    <div class="modal-header"><h3 id="vr-title">Fiche joueur</h3><span class="modal-close" aria-label="Fermer" onclick="closeModal('modal-view-recense')">✕</span></div>
     <div class="modal-body" id="vr-body"></div>
     <div class="modal-footer"><button class="btn btn-outline btn-sm" onclick="closeModal('modal-view-recense')">Fermer</button></div>
   </div>
 </div>
 
 <!-- Recrue action -->
-<div class="modal-overlay" id="modal-recrue-action">
+<div class="modal-overlay" role="dialog" aria-modal="true" id="modal-recrue-action">
   <div class="modal">
-    <div class="modal-header"><h3 id="ra-title">Action sur recrue</h3><span class="modal-close" onclick="closeModal('modal-recrue-action')">✕</span></div>
+    <div class="modal-header"><h3 id="ra-title">Action sur recrue</h3><span class="modal-close" aria-label="Fermer" onclick="closeModal('modal-recrue-action')">✕</span></div>
     <div class="modal-body">
       <input type="hidden" id="ra-id">
       <div class="form-group"><label class="form-label">Grade actuel</label><div id="ra-grade-cur" style="font-size:14px;font-weight:600;margin-bottom:10px"></div></div>
@@ -2862,7 +2864,7 @@ document.addEventListener('DOMContentLoaded',function(){if(localStorage.getItem(
 </div>
 
 <!-- Modal Notes Privées Admin -->
-<div class="modal-overlay" id="modal-notes">
+<div class="modal-overlay" role="dialog" aria-modal="true" id="modal-notes">
   <div class="modal" style="max-width:560px">
     <div class="modal-header">
       <div style="display:flex;align-items:center;gap:10px">
@@ -2872,7 +2874,7 @@ document.addEventListener('DOMContentLoaded',function(){if(localStorage.getItem(
           <div id="notes-modal-sub" style="font-size:10px;color:var(--muted);font-family:'Share Tech Mono',monospace;margin-top:1px;letter-spacing:1px">ADMIN SEULEMENT · NON VISIBLE PAR LE MEMBRE</div>
         </div>
       </div>
-      <span class="modal-close" onclick="closeModal('modal-notes')">✕</span>
+      <span class="modal-close" aria-label="Fermer" onclick="closeModal('modal-notes')">✕</span>
     </div>
     <div class="modal-body" style="padding:0">
       <div style="padding:16px 20px;border-bottom:1px solid rgba(180,140,20,0.1);background:rgba(180,140,20,0.03)">
@@ -4105,7 +4107,7 @@ function viewRecense(id){
   if(!existingRecModal||!document.getElementById("vr-title")||!document.getElementById("vr-body")){
     if(existingRecModal)existingRecModal.remove();
     const m=document.createElement("div");m.className="modal-overlay";m.id="modal-view-recense";
-    m.innerHTML='<div class="modal"><div class="modal-header"><h3 id="vr-title">Fiche joueur</h3><span class="modal-close" onclick="closeModal(\'modal-view-recense\')">✕</span></div><div class="modal-body" id="vr-body"></div><div class="modal-footer"><button class="btn btn-outline btn-sm" onclick="closeModal(\'modal-view-recense\')">Fermer</button></div></div>';
+    m.innerHTML='<div class="modal"><div class="modal-header"><h3 id="vr-title">Fiche joueur</h3><span class="modal-close" aria-label="Fermer" onclick="closeModal(\'modal-view-recense\')">✕</span></div><div class="modal-body" id="vr-body"></div><div class="modal-footer"><button class="btn btn-outline btn-sm" onclick="closeModal(\'modal-view-recense\')">Fermer</button></div></div>';
     document.body.appendChild(m);
     m.addEventListener("click",function(e){if(e.target===m)m.classList.remove("open");});
   }
@@ -4351,7 +4353,7 @@ function viewPlainte(id){
   if(!existingModal||!document.getElementById("vp-ref")||!document.getElementById("vp-body")||!document.getElementById("vp-footer")){
     if(existingModal)existingModal.remove();
     const m=document.createElement("div");m.className="modal-overlay";m.id="modal-view-plainte";
-    m.innerHTML='<div class="modal"><div class="modal-header"><h3 id="vp-ref">Plainte</h3><span class="modal-close" onclick="closeModal(\'modal-view-plainte\')">✕</span></div><div class="modal-body" id="vp-body"></div><div class="modal-footer" id="vp-footer"></div></div>';
+    m.innerHTML='<div class="modal"><div class="modal-header"><h3 id="vp-ref">Plainte</h3><span class="modal-close" aria-label="Fermer" onclick="closeModal(\'modal-view-plainte\')">✕</span></div><div class="modal-body" id="vp-body"></div><div class="modal-footer" id="vp-footer"></div></div>';
     document.body.appendChild(m);
     m.addEventListener("click",function(e){if(e.target===m)m.classList.remove("open");});
   }
@@ -5557,13 +5559,37 @@ function renderHierarchie(){
 
 function canModify(){return currentUser&&(currentUser.role==="admin"||currentUser.role==="gerant"||currentUser.role==="cogerant"||currentUser.role==="sergent"||currentUser.role==="officier")}
 function isAdmin(){return currentUser&&currentUser.role==="admin"}
-function openModal(id){var m=document.getElementById(id);if(m)m.classList.add("open");else console.error("openModal: element introuvable #"+id);}
-function closeModal(id){
-  var m=document.getElementById(id);
-  if(m)m.classList.remove("open");
-  if(document.activeElement&&document.activeElement.blur)document.activeElement.blur();
+// Garde une référence à l'élément qui avait le focus avant l'ouverture de la modale
+let _lastFocusedEl = null;
+
+function openModal(id){
+  const m = document.getElementById(id);
+  if(!m){ console.error("openModal: element introuvable #"+id); return; }
+  _lastFocusedEl = document.activeElement;
+  m.classList.add("open");
+  m.removeAttribute("aria-hidden");
+  // Focus sur le premier élément focalisable de la modale
+  requestAnimationFrame(()=>{
+    const focusable = m.querySelector('button,input,select,textarea,[tabindex]:not([tabindex="-1"])');
+    if(focusable) focusable.focus();
+    // Fermeture au clavier (Escape)
+    m._keyHandler = (e)=>{ if(e.key==="Escape") closeModal(id); };
+    document.addEventListener("keydown", m._keyHandler);
+  });
 }
-document.querySelectorAll(".modal-overlay").forEach(m=>m.addEventListener("click",e=>{if(e.target===m){m.classList.remove("open");if(m.id==="modal-confirm"){_confirmCb=null;}}}));
+function closeModal(id){
+  const m = document.getElementById(id);
+  if(!m) return;
+  m.classList.remove("open");
+  m.setAttribute("aria-hidden","true");
+  if(m._keyHandler){ document.removeEventListener("keydown", m._keyHandler); m._keyHandler = null; }
+  // Restituer le focus à l'élément d'origine
+  if(_lastFocusedEl && _lastFocusedEl.focus){ try{ _lastFocusedEl.focus(); }catch(e){} }
+}
+document.querySelectorAll(".modal-overlay").forEach(m=>{
+  m.setAttribute("aria-hidden","true");
+  m.addEventListener("click",e=>{if(e.target===m){m.classList.remove("open");m.setAttribute("aria-hidden","true");if(m.id==="modal-confirm"){_confirmCb=null;}}});
+});
 function el(id){return document.getElementById(id)}
 function v(id,raw){const e=el(id);if(!e)return"";return raw?e.value:e.value.trim()}
 function clearForm(ids){ids.forEach(id=>{const e=el(id);if(e)e.value=""})}
@@ -5802,11 +5828,11 @@ window.addEventListener("load",()=>{
 }); // fin window.onload
 </script>
 <!-- Custom Confirm Modal -->
-<div class="modal-overlay" id="modal-confirm">
+<div class="modal-overlay" role="dialog" aria-modal="true" id="modal-confirm">
   <div class="modal" style="max-width:400px">
     <div class="modal-header" style="background:rgba(220,38,38,0.08)">
       <h3 style="color:#991b1b">⚠️ Confirmation</h3>
-      <span class="modal-close" onclick="confirmNo()">✕</span>
+      <span class="modal-close" aria-label="Fermer" onclick="confirmNo()">✕</span>
     </div>
     <div class="modal-body" style="padding:22px">
       <p id="confirm-msg" style="font-size:14px;color:var(--text);line-height:1.6"></p>
@@ -6634,25 +6660,18 @@ function toggleDarkMode() {
 
 /* ======== INDICATEUR SYNC FIREBASE ======== */
 (function patchSave(){
-  var attempts = 0;
-  var tid = setInterval(function(){
-    attempts++;
-    if (typeof window.saveData === 'function') {
-      clearInterval(tid);
-      var orig = window.saveData;
-      window.saveData = function(){
-        var ind = document.getElementById('sync-indicator');
-        if (ind) ind.style.display = 'flex';
-        orig.apply(this, arguments);
-        clearTimeout(window._syncHideTimer);
-        window._syncHideTimer = setTimeout(function(){
-          var ind = document.getElementById('sync-indicator');
-          if (ind) ind.style.display = 'none';
-        }, 2200);
-      };
-    }
-    if (attempts > 50) clearInterval(tid);
-  }, 200);
+  var orig = window.saveData;
+  if (typeof orig !== 'function') return;
+  window.saveData = function(){
+    var ind = document.getElementById('sync-indicator');
+    if (ind) ind.style.display = 'flex';
+    orig.apply(this, arguments);
+    clearTimeout(window._syncHideTimer);
+    window._syncHideTimer = setTimeout(function(){
+      var ind2 = document.getElementById('sync-indicator');
+      if (ind2) ind2.style.display = 'none';
+    }, 2200);
+  };
 })();
 
 /* ======== RECHERCHE GLOBALE ======== */
@@ -6896,19 +6915,12 @@ function gsUpdateSel() {
 
 /* ======== BARRE ACTIONS RAPIDES DASHBOARD ======== */
 (function patchDash(){
-  var attempts = 0;
-  var tid = setInterval(function(){
-    attempts++;
-    if (typeof window.renderDashboard === 'function') {
-      clearInterval(tid);
-      var orig = window.renderDashboard;
-      window.renderDashboard = function(){
-        orig.apply(this, arguments);
-        _renderQuickBar();
-      };
-    }
-    if (attempts > 50) clearInterval(tid);
-  }, 300);
+  if (typeof window.renderDashboard !== 'function') return;
+  var orig = window.renderDashboard;
+  window.renderDashboard = function(){
+    orig.apply(this, arguments);
+    _renderQuickBar();
+  };
 })();
 
 function _renderQuickBar() {
@@ -8397,7 +8409,7 @@ function renderProfil(){
   var m=document.createElement('div');
   m.className='modal-overlay'; m.id='modal-change-pass';
   m.innerHTML='<div class="modal" style="max-width:420px">'
-    +'<div class="modal-header"><h3>🔒 Changer le mot de passe</h3><span class="modal-close" onclick="closeModal(\'modal-change-pass\')">✕</span></div>'
+    +'<div class="modal-header"><h3>🔒 Changer le mot de passe</h3><span class="modal-close" aria-label="Fermer" onclick="closeModal(\'modal-change-pass\')">✕</span></div>'
     +'<div class="modal-body">'
     +'<div class="form-group"><label class="form-label">Mot de passe actuel</label><input type="password" id="cp-old" class="form-control" placeholder="Mot de passe actuel"></div>'
     +'<div class="form-group"><label class="form-label">Nouveau mot de passe</label><input type="password" id="cp-new" class="form-control" placeholder="Au moins 6 caractères"></div>'
@@ -8413,7 +8425,7 @@ function renderProfil(){
   var m2=document.createElement('div');
   m2.className='modal-overlay'; m2.id='modal-new-msg';
   m2.innerHTML='<div class="modal" style="max-width:480px">'
-    +'<div class="modal-header"><h3>✉️ Nouveau message</h3><span class="modal-close" onclick="closeModal(\'modal-new-msg\')">✕</span></div>'
+    +'<div class="modal-header"><h3>✉️ Nouveau message</h3><span class="modal-close" aria-label="Fermer" onclick="closeModal(\'modal-new-msg\')">✕</span></div>'
     +'<div class="modal-body">'
     +'<div class="form-group"><label class="form-label">Destinataire</label>'
     +'<select id="msg-new-to" class="form-control"><option value="">— Choisir un membre —</option></select></div>'
@@ -8541,18 +8553,7 @@ window.initFirebaseSync=function(){
 /* ─── 8. PRINT ──────────────────────────────────────────────────── */
 function printPage(){window.print();}
 
-// Ajouter bouton impression dans la topbar (desktop uniquement)
-(function(){
-  var attempts=0;
-  var t=setInterval(function(){
-    attempts++;
-    var topbar=document.querySelector('.topbar');
-    if(topbar&&document.getElementById('btn-global-search')||attempts>30){
-      clearInterval(t);
-      // Pas de bouton print affiché — déjà disponible via window.print()
-    }
-  },300);
-})();
+// Impression disponible via window.print()
 
 /* ─── BADGE MESSAGERIE au chargement ───────────────────────────── */
 setTimeout(function(){
@@ -8715,14 +8716,7 @@ function getFilter(page, key, defaultVal) {
 
 // Patch des fonctions de filtre pour les rendre persistantes
 (function patchFilters() {
-  // Attendre que les fonctions soient définies
-  var attempts = 0;
-  var t = setInterval(function() {
-    attempts++;
-    if (attempts > 60) { clearInterval(t); return; }
-    if (typeof filterPlaintes !== 'function' || typeof filterAnnonces !== 'function') return;
-    clearInterval(t);
-    loadFilters();
+  loadFilters();
 
     var _origFP = window.filterPlaintes;
     window.filterPlaintes = function(f, el) {
@@ -8777,7 +8771,6 @@ function getFilter(page, key, defaultVal) {
         }
       });
     }, 2000);
-  }, 200);
 })();
 
 /* ── 4. ARIA ACCESSIBILITY ────────────────────────────────────── */
@@ -8845,12 +8838,7 @@ document.addEventListener('keydown', function(e) {
 
 /* ── 6. PATCH renderPlaintes / renderDossiers / renderCandidatures POUR LE TRI ── */
 (function patchRenderForSort() {
-  var attempts = 0;
-  var t = setInterval(function() {
-    attempts++;
-    if (attempts > 80) { clearInterval(t); return; }
-    if (typeof renderPlaintes !== 'function') return;
-    clearInterval(t);
+  if (typeof renderPlaintes !== 'function') return;
 
     // ── Patch renderPlaintes ──
     var _origRP = window.renderPlaintes;
@@ -8923,19 +8911,13 @@ document.addEventListener('keydown', function(e) {
       });
       rows.forEach(function(r) { tbody.appendChild(r); });
     };
-  }, 200);
 })();
 
 /* ── 7. INDICATEUR "VU PAR" sur les annonces (compteur de vues) ── */
 (function patchViewCount() {
   var _origRA = null;
   var _viewSaveTimer = null;
-  var attempts = 0;
-  var t = setInterval(function() {
-    attempts++;
-    if (attempts > 60) { clearInterval(t); return; }
-    if (typeof renderAnnonces !== 'function') return;
-    clearInterval(t);
+  if (typeof renderAnnonces !== 'function') return;
     _origRA = window.renderAnnonces;
     window.renderAnnonces = function() {
       // Enregistrer la vue de l'utilisateur courant
@@ -8954,7 +8936,6 @@ document.addEventListener('keydown', function(e) {
       }
       _origRA();
     };
-  }, 300);
 })();
 
 // ─── NOTIFICATIONS JOURNAL D'ACTIVITÉ ───────────────────────────────────
@@ -8988,11 +8969,11 @@ function sendNotifTimeline(){
 </script>
 
 <!-- Modal Notifier via Journal -->
-<div class="modal-overlay" id="modal-notif-timeline">
+<div class="modal-overlay" role="dialog" aria-modal="true" id="modal-notif-timeline">
   <div class="modal" style="max-width:500px">
     <div class="modal-header">
       <h3>🔔 Envoyer une notification</h3>
-      <span class="modal-close" onclick="closeModal('modal-notif-timeline')">✕</span>
+      <span class="modal-close" aria-label="Fermer" onclick="closeModal('modal-notif-timeline')">✕</span>
     </div>
     <div class="modal-body">
       <div class="form-group">
@@ -9061,11 +9042,11 @@ self.addEventListener('fetch',e=>{
 <!-- ══════════════════════════════════════════════════════════════
      MODAL AIDE RACCOURCIS CLAVIER  (Ctrl+?)
      ══════════════════════════════════════════════════════════════ -->
-<div class="modal-overlay" id="modal-shortcuts">
+<div class="modal-overlay" role="dialog" aria-modal="true" id="modal-shortcuts">
   <div class="modal" style="max-width:520px">
     <div class="modal-header">
       <h3>⌨️ Raccourcis clavier</h3>
-      <span class="modal-close" onclick="closeModal('modal-shortcuts')">✕</span>
+      <span class="modal-close" aria-label="Fermer" onclick="closeModal('modal-shortcuts')">✕</span>
     </div>
     <div class="modal-body" style="padding:20px 22px">
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
@@ -9247,9 +9228,7 @@ document.addEventListener('keydown', function(e) {
 
 // Patch save functions pour valider avant soumission
 (function patchSaveFunctions() {
-  var t = setInterval(function() {
-    if (typeof savePlainte !== 'function' || typeof saveCandidature !== 'function') return;
-    clearInterval(t);
+  if (typeof savePlainte !== 'function' || typeof saveCandidature !== 'function') return;
 
     var _sp = window.savePlainte;
     window.savePlainte = function() {
@@ -9304,7 +9283,6 @@ document.addEventListener('keydown', function(e) {
         e.classList.remove('show');
       });
     };
-  }, 400);
 })();
 
 // ══════════════════════════════════════════════════════════════
@@ -9423,12 +9401,7 @@ document.addEventListener('keydown', function(e) {
   }
 
   // Patch les render functions pour ajouter la pagination après chaque rendu
-  var attempts = 0;
-  var t = setInterval(function() {
-    attempts++;
-    if (attempts > 80) { clearInterval(t); return; }
-    if (typeof renderPlaintes !== 'function' || typeof renderDossiers !== 'function') return;
-    clearInterval(t);
+  if (typeof renderPlaintes !== 'function' || typeof renderDossiers !== 'function') return;
 
     var keys = ['plaintes', 'dossiers', 'candidatures', 'sanctions'];
     var fns  = ['renderPlaintes', 'renderDossiers', 'renderCandidatures', 'renderSanctions'];
@@ -9462,7 +9435,6 @@ document.addEventListener('keydown', function(e) {
         _orig.apply(this, arguments);
       };
     });
-  }, 400);
 })();
 </script>
 
@@ -9665,7 +9637,7 @@ document.addEventListener('keydown', function(e) {
 </style>
 
 <!-- YUNO FAB -->
-<div id="yuno-fab" onclick="yunoToggleChat()" title="Parler à YUNO — IA">
+<div id="yuno-fab" role="button" aria-label="Ouvrir YUNO — Intelligence Artificielle" aria-expanded="false" tabindex="0" onclick="yunoToggleChat()" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();yunoToggleChat();}" title="Parler à YUNO — IA">
   <svg width="52" height="52" viewBox="0 0 52 52" xmlns="http://www.w3.org/2000/svg">
     <circle cx="26" cy="26" r="26" fill="#0d0e1a"/>
     <circle cx="26" cy="26" r="24" fill="none" stroke="#c0410e" stroke-width="1.8"/>
@@ -9688,7 +9660,7 @@ document.addEventListener('keydown', function(e) {
 </div>
 
 <!-- YUNO CONFIG BANNER (clé API) -->
-<div id="yuno-config-banner">
+<div id="yuno-config-banner" role="dialog" aria-modal="true" aria-label="Configuration YUNO" aria-hidden="true">
   <div class="yuno-config-title">🔑 Configurer YUNO</div>
   <input class="yuno-api-input" type="password" id="yuno-api-key-input" placeholder="Clé d'accès YUNO...">
   <button class="yuno-save-btn" onclick="yunoSaveKey()">💾 Enregistrer la clé API</button>
@@ -9696,7 +9668,7 @@ document.addEventListener('keydown', function(e) {
 </div>
 
 <!-- YUNO CHAT PANEL -->
-<div id="yuno-chat-panel">
+<div id="yuno-chat-panel" role="dialog" aria-modal="true" aria-label="YUNO — Intelligence Artificielle" aria-hidden="true">
   <div class="yuno-header">
     <div class="yuno-avatar">🤖</div>
     <div class="yuno-header-info">
@@ -9704,9 +9676,9 @@ document.addEventListener('keydown', function(e) {
       <div class="yuno-status"><span class="yuno-status-dot"></span>Intelligence Artificielle · Suna PD</div>
     </div>
     <div class="yuno-header-btns">
-      <button class="yuno-hbtn" onclick="yunoClearChat()" title="Effacer la conversation">🗑</button>
-      <button class="yuno-hbtn" onclick="yunoShowConfig()" title="Configurer la clé API">⚙️</button>
-      <button class="yuno-hbtn" onclick="yunoToggleChat()" title="Fermer">✕</button>
+      <button class="yuno-hbtn" onclick="yunoClearChat()" title="Effacer la conversation" aria-label="Effacer la conversation">🗑</button>
+      <button class="yuno-hbtn" onclick="yunoShowConfig()" title="Configurer la clé API" aria-label="Configurer la clé API">⚙️</button>
+      <button class="yuno-hbtn" onclick="yunoToggleChat()" title="Fermer" aria-label="Fermer YUNO">✕</button>
     </div>
   </div>
   <div class="yuno-quick-bar" id="yuno-quick-bar">
@@ -9720,7 +9692,7 @@ document.addEventListener('keydown', function(e) {
   <div id="yuno-messages"></div>
   <div class="yuno-input-bar">
     <textarea id="yuno-input" placeholder="Parler à YUNO..." rows="1" onkeydown="yunoInputKeydown(event)" oninput="yunoAutoResize(this)"></textarea>
-    <button id="yuno-send-btn" onclick="yunoSend()">➤</button>
+    <button id="yuno-send-btn" onclick="yunoSend()" aria-label="Envoyer le message">➤</button>
   </div>
 </div>
 
@@ -9772,29 +9744,37 @@ document.addEventListener('keydown', function(e) {
   window.yunoToggleChat = function(){
     var panel = document.getElementById('yuno-chat-panel');
     var config = document.getElementById('yuno-config-banner');
+    var fab = document.getElementById('yuno-fab');
     if(!getKey()){
       // Pas de clé → afficher config
-      config.classList.toggle('open');
+      var configOpen = config.classList.toggle('open');
+      config.setAttribute('aria-hidden', configOpen ? 'false' : 'true');
       return;
     }
     config.classList.remove('open');
+    config.setAttribute('aria-hidden', 'true');
     chatOpen = !chatOpen;
     if(chatOpen){
       panel.classList.add('open');
+      panel.setAttribute('aria-hidden', 'false');
+      if(fab) fab.setAttribute('aria-expanded', 'true');
       document.getElementById('yuno-fab-badge').classList.remove('show');
       if(chatHistory.length===0) yunoWelcome();
       setTimeout(function(){document.getElementById('yuno-input').focus();},200);
     } else {
       panel.classList.remove('open');
+      panel.setAttribute('aria-hidden', 'true');
+      if(fab) fab.setAttribute('aria-expanded', 'false');
     }
   };
 
   window.yunoShowConfig = function(){
     var config = document.getElementById('yuno-config-banner');
-    config.classList.toggle('open');
+    var configOpen = config.classList.toggle('open');
+    config.setAttribute('aria-hidden', configOpen ? 'false' : 'true');
     var inp = document.getElementById('yuno-api-key-input');
     var k = getKey(); if(k) inp.value=k;
-    inp.focus();
+    if(configOpen) inp.focus();
   };
 
   window.yunoSaveKey = function(){
@@ -10120,14 +10100,13 @@ document.addEventListener('keydown', function(e) {
       document.getElementById('yuno-fab-badge').textContent='!';
     }
 
-    // Injecter boutons
-    var tries=0;
-    var t=setInterval(function(){
-      tries++;
-      if(tries>40){clearInterval(t);return;}
+    // Injecter boutons via MutationObserver (remplace le polling 40×400ms)
+    patchRenderDossiers();
+    injectYunoButtons();
+    var _yunoObserver = new MutationObserver(function() {
       injectYunoButtons();
-      if(patchRenderDossiers()){ clearInterval(t); }
-    },400);
+    });
+    _yunoObserver.observe(document.body, { childList: true, subtree: true });
 
     // Sur mobile, décaler FAB au-dessus de la bottom nav
     if(window.innerWidth<=768){
