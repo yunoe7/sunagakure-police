@@ -10660,5 +10660,570 @@ document.addEventListener('keydown', function(e) {
 })();
 </script>
 
+
+<!-- ════════════════════════════════════════════════════════════════════
+     NOUVELLES FONCTIONNALITÉS — ARCHIVAGE · COMMENTAIRES · PDF · PRÉSENCE · NOTIFS
+     ════════════════════════════════════════════════════════════════════ -->
+<style>
+/* ── ARCHIVAGE ── */
+.archive-toggle-btn{display:inline-flex;align-items:center;gap:5px;padding:5px 12px;border-radius:7px;border:1px solid rgba(107,114,128,0.22);background:rgba(107,114,128,0.06);color:var(--muted);font-size:11px;font-weight:600;cursor:pointer;transition:all 0.2s;font-family:'Barlow',sans-serif;flex-shrink:0}
+.archive-toggle-btn:hover{border-color:rgba(180,140,20,0.35);color:var(--gold2);background:rgba(180,140,20,0.07)}
+.archive-toggle-btn.showing{border-color:rgba(180,140,20,0.45);color:var(--gold2);background:rgba(180,140,20,0.12)}
+tr.archived-row{opacity:0.55}
+tr.archived-row td{background:rgba(107,114,128,0.04)!important;font-style:italic}
+body.dark tr.archived-row td{background:rgba(107,114,128,0.1)!important}
+.archived-label{display:inline-flex;align-items:center;gap:3px;padding:1px 7px;border-radius:4px;font-size:8.5px;font-weight:700;letter-spacing:0.5px;font-family:'Share Tech Mono',monospace;background:rgba(107,114,128,0.1);color:#6b7280;border:1px solid rgba(107,114,128,0.2);vertical-align:middle;margin-left:4px}
+
+/* ── COMMENTAIRES DOSSIERS ── */
+#comments-list::-webkit-scrollbar{width:3px}
+#comments-list::-webkit-scrollbar-thumb{background:rgba(180,140,20,0.2);border-radius:2px}
+.comment-item{padding:11px 14px;border:1px solid rgba(180,140,20,0.12);border-radius:10px;margin-bottom:8px;background:var(--bg3,#faf8f5);transition:all 0.18s}
+.comment-item:last-child{margin-bottom:0}
+.comment-item:hover{border-color:rgba(180,140,20,0.25)}
+.comment-header{display:flex;align-items:center;gap:7px;margin-bottom:5px;flex-wrap:wrap}
+.comment-avatar{width:22px;height:22px;border-radius:50%;background:linear-gradient(135deg,var(--accent),#b86010);display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:#fff;flex-shrink:0}
+.comment-author{font-size:11px;font-weight:600;color:var(--text)}
+.comment-date{font-size:9px;color:var(--muted);font-family:'Share Tech Mono',monospace;margin-left:auto}
+.comment-text{font-size:12.5px;color:#555;line-height:1.65;white-space:pre-wrap;word-break:break-word}
+body.dark .comment-item{background:var(--bg3)!important;border-color:rgba(180,140,20,0.12)!important}
+body.dark .comment-text{color:#94a3b8!important}
+.comment-count-btn{display:inline-flex;align-items:center;gap:3px;padding:2px 7px;border-radius:5px;border:1px solid rgba(180,140,20,0.18);background:rgba(180,140,20,0.04);color:var(--muted);font-size:9.5px;cursor:pointer;transition:all 0.15s;font-family:'Share Tech Mono',monospace;vertical-align:middle}
+.comment-count-btn:hover{border-color:rgba(180,140,20,0.4);color:var(--gold2);background:rgba(180,140,20,0.1)}
+.comment-count-btn.has-comments{color:var(--gold2);border-color:rgba(180,140,20,0.35);background:rgba(180,140,20,0.08);font-weight:700}
+
+/* ── EXTRA ROW BTNS ── */
+.extra-row-btns{display:inline-flex;gap:3px;vertical-align:middle;margin-left:3px}
+.extra-row-btns button{padding:2px 6px!important;font-size:9.5px!important;line-height:1.4}
+
+/* ── COMPTEUR EN LIGNE ── */
+#online-counter{
+  display:flex;align-items:center;gap:7px;padding:7px 14px;
+  margin:8px 10px;border-radius:8px;
+  border:1px solid rgba(21,128,61,0.2);background:rgba(21,128,61,0.06);
+  font-size:10px;color:var(--muted);cursor:default;
+  transition:all 0.2s;
+}
+#online-counter:hover{border-color:rgba(21,128,61,0.35);background:rgba(21,128,61,0.1)}
+#online-counter .oc-dot{width:7px;height:7px;border-radius:50%;background:var(--green);flex-shrink:0;animation:blink 2s infinite;box-shadow:0 0 5px rgba(21,128,61,0.5)}
+#online-counter .oc-label{font-family:'Share Tech Mono',monospace;font-size:9px;letter-spacing:0.5px;flex:1}
+#online-counter .oc-count{font-weight:700;color:var(--green);font-family:'Barlow Condensed',sans-serif;font-size:14px}
+body.dark #online-counter{border-color:rgba(21,128,61,0.22);background:rgba(21,128,61,0.07)}
+
+/* ── BADGE NOTIFICATION AMÉLIORÉ ── */
+#notif-new-badge{
+  position:fixed;top:64px;right:16px;z-index:1500;
+  background:linear-gradient(135deg,#c0410e,#a03408);
+  color:#fff;border-radius:11px;padding:10px 16px 10px 12px;
+  font-size:12.5px;font-family:'Barlow',sans-serif;font-weight:600;
+  box-shadow:0 4px 22px rgba(192,65,14,0.45),0 1px 4px rgba(0,0,0,0.15);
+  display:none;align-items:center;gap:9px;cursor:default;
+  animation:notifSlideIn 0.38s cubic-bezier(0.34,1.56,0.64,1);
+  max-width:300px;border:1px solid rgba(255,255,255,0.12);
+}
+@keyframes notifSlideIn{from{opacity:0;transform:translateX(24px) scale(0.93)}to{opacity:1;transform:translateX(0) scale(1)}}
+#notif-new-badge.show{display:flex}
+#notif-new-badge .nb-icon{font-size:18px;flex-shrink:0}
+#notif-new-badge .nb-text{flex:1;line-height:1.3}
+#notif-new-badge .nb-sub{font-size:10px;opacity:0.8;font-weight:500;margin-top:1px;display:block}
+#notif-new-badge .nb-close{cursor:pointer;opacity:0.65;font-size:16px;flex-shrink:0;line-height:1;padding:2px;border-radius:4px;transition:opacity 0.15s}
+#notif-new-badge .nb-close:hover{opacity:1}
+@media(max-width:768px){#notif-new-badge{top:auto;bottom:calc(76px + env(safe-area-inset-bottom,0px) + 12px);right:12px;left:12px;max-width:none}}
+</style>
+
+<!-- MODAL COMMENTAIRES DOSSIER -->
+<div class="modal-overlay" role="dialog" aria-modal="true" id="modal-comments">
+  <div class="modal" style="max-width:560px">
+    <div class="modal-header">
+      <div style="display:flex;align-items:center;gap:9px">
+        <span style="font-size:18px">💬</span>
+        <div>
+          <h3 style="margin:0">Commentaires de suivi</h3>
+          <div id="comments-dossier-name" style="font-size:10px;color:var(--muted);font-family:'Share Tech Mono',monospace;letter-spacing:1px;margin-top:1px"></div>
+        </div>
+      </div>
+      <span class="modal-close" aria-label="Fermer" onclick="closeModal('modal-comments')">✕</span>
+    </div>
+    <div class="modal-body" style="padding:0">
+      <div id="comments-list" style="max-height:320px;overflow-y:auto;padding:14px 18px;min-height:72px"></div>
+      <div style="padding:14px 18px;border-top:1px solid rgba(180,140,20,0.1);background:rgba(180,140,20,0.02)">
+        <div class="form-group" style="margin-bottom:9px">
+          <label class="form-label">Ajouter un commentaire</label>
+          <textarea id="comment-input" class="form-control" style="min-height:68px;resize:none" placeholder="Note de suivi, observation, mise à jour..."></textarea>
+        </div>
+        <div style="display:flex;justify-content:flex-end;gap:8px">
+          <button class="btn btn-outline btn-sm" onclick="closeModal('modal-comments')">Fermer</button>
+          <button class="btn btn-primary btn-sm" onclick="addDossierComment()">💬 Publier</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- BADGE NOUVEAUX ÉLÉMENTS -->
+<div id="notif-new-badge">
+  <span class="nb-icon">🔔</span>
+  <div class="nb-text">
+    <span id="notif-badge-title">Nouveaux éléments</span>
+    <span class="nb-sub" id="notif-badge-sub"></span>
+  </div>
+  <span class="nb-close" onclick="dismissNotifBadge()" title="Fermer">✕</span>
+</div>
+
+<script>
+/* ════════════════════════════════════════════════════════════════
+   1. ARCHIVAGE DES DOSSIERS
+   ════════════════════════════════════════════════════════════════ */
+var _showArchivedDossiers = false;
+
+function toggleArchivedDossiers() {
+  _showArchivedDossiers = !_showArchivedDossiers;
+  renderDossiers && renderDossiers();
+}
+
+function archiveDossier(id) {
+  id = parseInt(id);
+  var d = (DB.dossiers || []).find(function(x) { return x.id === id; });
+  if (!d) return;
+  var isArchived = !!d.archived;
+  askDelete(
+    isArchived ? 'Désarchiver ce dossier ? Il réapparaîtra dans la liste.' : 'Archiver ce dossier ? Il sera masqué par défaut.',
+    function() {
+      d.archived = !isArchived;
+      addTimeline((d.archived ? '📦 Dossier archivé : ' : '📂 Dossier désarchivé : ') + d.nom);
+      saveData();
+      if (typeof renderDossiers === 'function') renderDossiers();
+      showToast(d.archived ? '📦 Dossier archivé.' : '📂 Dossier désarchivé.', 'success');
+    },
+    isArchived ? '📂 Désarchiver' : '📦 Archiver'
+  );
+}
+
+/* ════════════════════════════════════════════════════════════════
+   2. COMMENTAIRES SUR LES DOSSIERS
+   ════════════════════════════════════════════════════════════════ */
+var _currentCommentsDossierId = null;
+
+function openDossierComments(id) {
+  id = parseInt(id);
+  _currentCommentsDossierId = id;
+  var d = (DB.dossiers || []).find(function(x) { return x.id === id; });
+  if (!d) return;
+  var nameEl = document.getElementById('comments-dossier-name');
+  if (nameEl) nameEl.textContent = 'DOSSIER — ' + (d.nom || '').toUpperCase();
+  var inp = document.getElementById('comment-input');
+  if (inp) inp.value = '';
+  renderDossierCommentsList();
+  openModal('modal-comments');
+}
+
+function renderDossierCommentsList() {
+  var id = _currentCommentsDossierId;
+  var d = id ? (DB.dossiers || []).find(function(x) { return x.id === id; }) : null;
+  var container = document.getElementById('comments-list');
+  if (!container) return;
+  var comments = (d && d.comments) || [];
+  if (!comments.length) {
+    container.innerHTML = '<div style="text-align:center;padding:30px 20px;color:var(--muted)"><div style="font-size:32px;margin-bottom:10px;opacity:0.3">💬</div><div style="font-size:12.5px">Aucun commentaire.<br><span style="font-size:11px;opacity:0.7">Soyez le premier à laisser une note de suivi.</span></div></div>';
+    return;
+  }
+  container.innerHTML = comments.slice().reverse().map(function(c) {
+    var dateStr = c.date ? new Date(c.date).toLocaleDateString('fr-FR', {day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}) : '—';
+    var isMine = currentUser && (c.authorId === currentUser.id || (typeof isAdmin === 'function' && isAdmin()));
+    return '<div class="comment-item">'
+      + '<div class="comment-header">'
+      + '<div class="comment-avatar">' + esc((c.author || '?').charAt(0).toUpperCase()) + '</div>'
+      + '<span class="comment-author">' + esc(c.author || 'Inconnu') + '</span>'
+      + '<span class="comment-date">' + dateStr + '</span>'
+      + (isMine ? '<button onclick="deleteDossierComment(' + c.id + ')" style="margin-left:6px;background:rgba(220,38,38,0.08);border:1px solid rgba(220,38,38,0.15);color:#dc2626;border-radius:5px;padding:1px 7px;font-size:9.5px;cursor:pointer;transition:all 0.15s" onmouseover="this.style.background=\'#dc2626\';this.style.color=\'#fff\'" onmouseout="this.style.background=\'rgba(220,38,38,0.08)\';this.style.color=\'#dc2626\'">✕</button>' : '')
+      + '</div>'
+      + '<div class="comment-text">' + esc(c.text) + '</div>'
+      + '</div>';
+  }).join('');
+}
+
+function addDossierComment() {
+  var id = _currentCommentsDossierId;
+  if (!id || !currentUser) return;
+  var text = ((document.getElementById('comment-input') || {}).value || '').trim();
+  if (!text) { showToast('Le commentaire ne peut pas être vide.', 'error'); return; }
+  var d = (DB.dossiers || []).find(function(x) { return x.id === id; });
+  if (!d) return;
+  if (!d.comments) d.comments = [];
+  d.comments.push({ id: Date.now(), text: text, author: currentUser.nom, authorId: currentUser.id, date: now() });
+  saveData();
+  document.getElementById('comment-input').value = '';
+  renderDossierCommentsList();
+  _patchDossierRows(); // Refresh comment counts in table
+  showToast('💬 Commentaire ajouté.', 'success');
+}
+
+function deleteDossierComment(commentId) {
+  var id = _currentCommentsDossierId;
+  var d = (DB.dossiers || []).find(function(x) { return x.id === id; });
+  if (!d || !d.comments) return;
+  askDelete('Supprimer ce commentaire ?', function() {
+    d.comments = d.comments.filter(function(c) { return String(c.id) !== String(commentId); });
+    saveData();
+    renderDossierCommentsList();
+    _patchDossierRows();
+  });
+}
+
+/* ════════════════════════════════════════════════════════════════
+   3. EXPORT PDF DOSSIER
+   ════════════════════════════════════════════════════════════════ */
+function exportDossierPDF(id) {
+  id = parseInt(id);
+  var d = (DB.dossiers || []).find(function(x) { return x.id === id; });
+  if (!d) { showToast('Dossier introuvable.', 'error'); return; }
+  var sanctions = (DB.sanctions || []).filter(function(s) { return s.cible === d.nom; });
+  var comments = d.comments || [];
+  var dangerColor = {Faible:'#15803d',Modéré:'#1d4ed8',Élevé:'#b8860b',Extrême:'#dc2626'}[d.danger] || '#6b7280';
+  var dangerBg = {Faible:'#f0fdf4',Modéré:'#eff6ff',Élevé:'#fffbeb',Extrême:'#fef2f2'}[d.danger] || '#f9fafb';
+
+  var html = '<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8">'
+    + '<title>Dossier — ' + d.nom + '</title>'
+    + '<style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:Georgia,serif;color:#1a1a2e;background:#fff;padding:0}@page{margin:16mm;size:A4}.page{max-width:none;padding:0}.header{display:flex;align-items:center;gap:18px;border-bottom:3px solid #c0410e;padding-bottom:16px;margin-bottom:22px}.ha{width:54px;height:54px;border-radius:50%;background:linear-gradient(135deg,#c0410e,#b86010);display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:700;color:#fff;flex-shrink:0}.ht{flex:1}.ht .sub{font-size:8px;letter-spacing:3px;color:#888;text-transform:uppercase;margin-bottom:4px}.ht h1{font-size:20px;letter-spacing:1px;text-transform:uppercase;color:#1a1a2e}.ht .badges{display:flex;gap:5px;margin-top:6px;flex-wrap:wrap}.hmeta{text-align:right;font-family:monospace;font-size:8.5px;color:#888;line-height:1.7}.badge{display:inline-block;padding:2px 9px;border-radius:4px;font-size:9px;font-weight:700;letter-spacing:0.5px;text-transform:uppercase;font-family:monospace}.bd{background:' + dangerBg + ';color:' + dangerColor + ';border:1px solid ' + dangerColor + '33}.bg{background:#f9fafb;color:#374151;border:1px solid #d1d5db}.section{margin-bottom:20px}.stitle{font-size:8.5px;letter-spacing:3px;color:#c0410e;text-transform:uppercase;font-weight:700;margin-bottom:9px;border-bottom:1px solid #f0ede8;padding-bottom:4px}.grid2{display:grid;grid-template-columns:1fr 1fr;gap:9px 20px}.field{margin-bottom:6px}.flbl{font-size:8px;letter-spacing:1.5px;color:#888;text-transform:uppercase;font-family:monospace;margin-bottom:2px}.fval{font-size:12.5px;color:#1a1a2e;font-weight:500}.sr{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid #f0ede8}.sr:last-child{border-bottom:none}.sr .t{font-size:11px;flex:1;color:#374151}.sr .d{font-family:monospace;font-size:9px;color:#888}.ci{border:1px solid #e5e7eb;border-radius:6px;padding:10px 12px;margin-bottom:8px}.ci:last-child{margin-bottom:0}.cmeta{font-size:8.5px;color:#888;font-family:monospace;margin-bottom:3px}.cbody{font-size:12px;color:#374151;line-height:1.6;white-space:pre-wrap}.footer{text-align:center;font-size:8px;color:#aaa;font-family:monospace;letter-spacing:1px;margin-top:24px;padding-top:12px;border-top:1px solid #f0ede8}</style></head><body>'
+    + '<div class="page">'
+    + '<div class="header">'
+    + '<div class="ha">' + esc(d.nom.charAt(0).toUpperCase()) + '</div>'
+    + '<div class="ht"><div class="sub">Police de Sunagakure — Dossier criminel confidentiel</div><h1>' + esc(d.nom) + '</h1><div class="badges">'
+    + (d.danger ? '<span class="badge bd">⚠ ' + esc(d.danger) + '</span>' : '')
+    + (d.statut ? '<span class="badge bg">' + esc(d.statut) + '</span>' : '')
+    + '</div></div>'
+    + '<div class="hmeta"><div>Réf : #' + d.id + '</div><div>Créé le : ' + (d.date ? new Date(d.date).toLocaleDateString('fr-FR') : new Date().toLocaleDateString('fr-FR')) + '</div><div>Imprimé le : ' + new Date().toLocaleDateString('fr-FR') + '</div><div style="margin-top:4px;font-weight:700;color:#c0410e">CONFIDENTIEL</div></div>'
+    + '</div>'
+
+    + '<div class="section"><div class="stitle">Informations générales</div><div class="grid2">'
+    + '<div class="field"><div class="flbl">Infractions</div><div class="fval">' + esc(d.infractions || '—') + '</div></div>'
+    + '<div class="field"><div class="flbl">Dangerosité</div><div class="fval">' + esc(d.danger || '—') + '</div></div>'
+    + '<div class="field"><div class="flbl">Statut judiciaire</div><div class="fval">' + esc(d.statut || '—') + '</div></div>'
+    + '<div class="field"><div class="flbl">Agent responsable</div><div class="fval">' + esc(d.agent || '—') + '</div></div>'
+    + '<div class="field"><div class="flbl">Amende payée</div><div class="fval">' + (d.amendePayee || 0) + ' Ryos</div></div>'
+    + '<div class="field"><div class="flbl">Amende impayée</div><div class="fval" style="color:#c0410e;font-weight:700">' + (d.amendeImpayee || 0) + ' Ryos</div></div>'
+    + '</div>'
+    + (d.notes ? '<div class="field" style="margin-top:10px"><div class="flbl">Notes & observations</div><div class="fval" style="line-height:1.7;white-space:pre-wrap;margin-top:2px">' + esc(d.notes) + '</div></div>' : '')
+    + '</div>'
+
+    + (sanctions.length ? '<div class="section"><div class="stitle">Sanctions liées (' + sanctions.length + ')</div>'
+    + sanctions.map(function(s) {
+        var icons = {Promotion:'↑',Félicitation:'★',Avertissement:'⚠',Suspension:'⏸',Rétrogradation:'↓',Exclusion:'✖'};
+        return '<div class="sr"><span style="font-size:13px">' + (icons[s.type] || '⚖') + '</span><span class="badge bg" style="flex-shrink:0">' + esc(s.type || '—') + '</span><span class="t">' + esc(s.motif || '—') + '</span><span class="d">' + (s.date ? new Date(s.date).toLocaleDateString('fr-FR') : '—') + ' · ' + esc(s.auteur || '—') + '</span></div>';
+      }).join('') + '</div>' : '')
+
+    + (comments.length ? '<div class="section"><div class="stitle">Commentaires de suivi (' + comments.length + ')</div>'
+    + comments.map(function(c) {
+        return '<div class="ci"><div class="cmeta">Par ' + esc(c.author || '—') + ' — ' + (c.date ? new Date(c.date).toLocaleDateString('fr-FR', {day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}) : '—') + '</div><div class="cbody">' + esc(c.text) + '</div></div>';
+      }).join('') + '</div>' : '')
+
+    + '<div class="footer">POLICE DE SUNAGAKURE · Document officiel généré le ' + new Date().toLocaleDateString('fr-FR') + ' · Usage interne uniquement · Ne pas diffuser</div>'
+    + '</div></body></html>';
+
+  var win = window.open('', '_blank', 'width=860,height=1000,scrollbars=yes');
+  if (!win) { showToast('⚠️ Autorisez les popups pour générer le PDF.', 'error'); return; }
+  win.document.write(html);
+  win.document.close();
+  win.focus();
+  setTimeout(function() {
+    try { win.print(); } catch(e) {}
+  }, 500);
+  showToast('📄 Fiche PDF ouverte — utilisez Ctrl+P pour imprimer.', 'success');
+}
+
+/* ════════════════════════════════════════════════════════════════
+   4. PATCH UNIQUE renderDossiers — archive + commentaires + PDF
+   ════════════════════════════════════════════════════════════════ */
+function _patchDossierRows() {
+  var tbody = document.getElementById('dossiers-tbody');
+  if (!tbody) return;
+
+  // ── Bouton toggle archive dans l'en-tête ──
+  var header = document.querySelector('#page-dossiers .section-header');
+  if (header && !document.getElementById('btn-toggle-archived-dossiers') && typeof canModify === 'function' && canModify()) {
+    var archToggle = document.createElement('button');
+    archToggle.id = 'btn-toggle-archived-dossiers';
+    archToggle.className = 'archive-toggle-btn';
+    archToggle.onclick = toggleArchivedDossiers;
+    header.appendChild(archToggle);
+  }
+
+  var archivedCount = (DB.dossiers || []).filter(function(d) { return d.archived; }).length;
+  var toggleBtn = document.getElementById('btn-toggle-archived-dossiers');
+  if (toggleBtn) {
+    toggleBtn.style.display = archivedCount > 0 ? '' : 'none';
+    toggleBtn.className = 'archive-toggle-btn' + (_showArchivedDossiers ? ' showing' : '');
+    toggleBtn.innerHTML = _showArchivedDossiers
+      ? '📂 Masquer les archives'
+      : '📦 Archives <span style="background:rgba(107,114,128,0.2);border-radius:10px;padding:0 6px;font-size:9px;font-weight:700;margin-left:2px">' + archivedCount + '</span>';
+  }
+
+  // ── Traitement des lignes ──
+  var rows = tbody.querySelectorAll('tr');
+  rows.forEach(function(tr) {
+    // Identifier le dossier de cette ligne
+    var editBtn = tr.querySelector('[onclick*="openEditDossier"]');
+    if (!editBtn) return;
+    var match = editBtn.getAttribute('onclick').match(/\d+/);
+    if (!match) return;
+    var dosId = parseInt(match[0]);
+    var dos = (DB.dossiers || []).find(function(d) { return d.id === dosId; });
+    if (!dos) return;
+
+    // Gestion archive : masquer/afficher
+    if (dos.archived) {
+      tr.classList.add('archived-row');
+      tr.style.display = _showArchivedDossiers ? '' : 'none';
+    } else {
+      tr.classList.remove('archived-row');
+      tr.style.display = '';
+    }
+
+    // Ne pas injecter deux fois
+    if (tr.querySelector('.extra-row-btns')) return;
+
+    var lastTd = tr.querySelector('td:last-child');
+    if (!lastTd) return;
+
+    var wrap = document.createElement('span');
+    wrap.className = 'extra-row-btns';
+
+    // Bouton commentaires
+    var commentCount = (dos.comments || []).length;
+    var commentBtn = document.createElement('button');
+    commentBtn.className = 'comment-count-btn' + (commentCount > 0 ? ' has-comments' : '');
+    commentBtn.title = commentCount > 0 ? commentCount + ' commentaire(s)' : 'Commenter';
+    commentBtn.innerHTML = '💬' + (commentCount > 0 ? '&nbsp;' + commentCount : '');
+    commentBtn.onclick = (function(id) { return function(e) { e.stopPropagation(); openDossierComments(id); }; })(dosId);
+    wrap.appendChild(commentBtn);
+
+    // Bouton PDF
+    var pdfBtn = document.createElement('button');
+    pdfBtn.className = 'btn btn-outline btn-sm';
+    pdfBtn.title = 'Exporter en PDF';
+    pdfBtn.innerHTML = '📄';
+    pdfBtn.onclick = (function(id) { return function(e) { e.stopPropagation(); exportDossierPDF(id); }; })(dosId);
+    wrap.appendChild(pdfBtn);
+
+    // Bouton archiver (admins/modérateurs uniquement)
+    if (typeof canModify === 'function' && canModify()) {
+      var archBtn = document.createElement('button');
+      archBtn.className = 'btn btn-outline btn-sm';
+      archBtn.title = dos.archived ? 'Désarchiver' : 'Archiver';
+      archBtn.innerHTML = dos.archived ? '📂' : '📦';
+      archBtn.onclick = (function(id) { return function(e) { e.stopPropagation(); archiveDossier(id); }; })(dosId);
+      wrap.appendChild(archBtn);
+    }
+
+    lastTd.appendChild(wrap);
+  });
+}
+
+// Hooker renderDossiers une fois avec MutationObserver (pas de chaîne de patches)
+(function() {
+  var observer = new MutationObserver(function(mutations) {
+    var hasRelevant = mutations.some(function(m) {
+      return m.target && (m.target.id === 'dossiers-tbody' || (m.target.closest && m.target.closest('#dossiers-tbody')));
+    });
+    if (hasRelevant) {
+      clearTimeout(observer._timer);
+      observer._timer = setTimeout(_patchDossierRows, 60);
+    }
+  });
+  var tbody = document.getElementById('dossiers-tbody');
+  if (tbody) {
+    observer.observe(tbody, { childList: true, subtree: true, characterData: false });
+  } else {
+    // Attendre que le DOM soit prêt
+    new MutationObserver(function(_, obs) {
+      var tb = document.getElementById('dossiers-tbody');
+      if (tb) {
+        obs.disconnect();
+        observer.observe(tb, { childList: true, subtree: true });
+        _patchDossierRows();
+      }
+    }).observe(document.body, { childList: true, subtree: true });
+  }
+  // Patch renderDossiers pour déclencher le MutationObserver + filtre archivé
+  window.addEventListener('load', function() {
+    var _origRD = window.renderDossiers;
+    if (typeof _origRD === 'function') {
+      window.renderDossiers = function() {
+        _origRD.apply(this, arguments);
+        setTimeout(_patchDossierRows, 80);
+      };
+    }
+  });
+})();
+
+/* ════════════════════════════════════════════════════════════════
+   5. COMPTEUR MEMBRES EN LIGNE — Firebase Presence (heartbeat)
+   ════════════════════════════════════════════════════════════════ */
+(function initPresence() {
+  var HEARTBEAT_INTERVAL = 25000; // 25 secondes
+  var STALE_THRESHOLD = 70000;    // 70 secondes = considéré hors ligne
+
+  function tryInit() {
+    if (!window._fbDB || !window._fbRef || !window._fbSet || !window._fbOnValue) {
+      setTimeout(tryInit, 2000);
+      return;
+    }
+    if (!currentUser) { setTimeout(tryInit, 1000); return; }
+
+    // Insérer le compteur dans la sidebar
+    var sidebarNav = document.querySelector('.sidebar-nav');
+    var footer = document.querySelector('.sidebar-footer');
+    if (sidebarNav && footer && !document.getElementById('online-counter')) {
+      var counter = document.createElement('div');
+      counter.id = 'online-counter';
+      counter.title = 'Membres connectés en ce moment';
+      counter.innerHTML = '<span class="oc-dot"></span><span class="oc-label">Membres en ligne</span><span class="oc-count" id="online-count">—</span>';
+      footer.parentNode.insertBefore(counter, footer);
+    }
+
+    var userId = String(currentUser.id);
+    var presencePath = 'presence/' + userId;
+    var presenceRef = window._fbRef(window._fbDB, presencePath);
+    var allPresenceRef = window._fbRef(window._fbDB, 'presence');
+
+    // Écriture de la présence
+    function writePresence() {
+      try {
+        window._fbSet(presenceRef, {
+          nom: currentUser.nom,
+          grade: currentUser.grade || '',
+          ts: Date.now()
+        });
+      } catch(e) {}
+    }
+
+    // Heartbeat régulier
+    writePresence();
+    var heartbeatTimer = setInterval(writePresence, HEARTBEAT_INTERVAL);
+
+    // Retirer au départ
+    window.addEventListener('beforeunload', function() {
+      clearInterval(heartbeatTimer);
+      try {
+        // Effacement synchrone via sendBeacon ou fetch keepalive
+        var url = 'https://suna-police-default-rtdb.europe-west1.firebasedatabase.app/presence/' + userId + '.json?auth=';
+        navigator.sendBeacon && navigator.sendBeacon(url, 'null');
+      } catch(e) {}
+    });
+
+    // Écoute de tous les utilisateurs en ligne
+    window._fbOnValue(allPresenceRef, function(snap) {
+      var data = snap && snap.val ? snap.val() : null;
+      var countEl = document.getElementById('online-count');
+      if (!countEl) return;
+      if (!data) { countEl.textContent = '1'; return; }
+      var now = Date.now();
+      var active = Object.values(data).filter(function(u) {
+        return u && u.ts && (now - u.ts) < STALE_THRESHOLD;
+      });
+      countEl.textContent = Math.max(1, active.length);
+    });
+
+    // Aussi mettre à jour le dashboard si visible
+    window.addEventListener('focus', writePresence);
+    document.addEventListener('visibilitychange', function() {
+      if (!document.hidden) writePresence();
+    });
+  }
+
+  setTimeout(tryInit, 3000);
+})();
+
+/* ════════════════════════════════════════════════════════════════
+   6. BADGE DE NOTIFICATION AMÉLIORÉ — compteur "X nouveaux"
+   ════════════════════════════════════════════════════════════════ */
+var _pendingNotifItems = [];
+var _notifBadgeTimer = null;
+
+function showNotifBadge(items) {
+  var badge = document.getElementById('notif-new-badge');
+  var titleEl = document.getElementById('notif-badge-title');
+  var subEl = document.getElementById('notif-badge-sub');
+  if (!badge || !titleEl || !subEl) return;
+
+  var count = items.length;
+  var plaintes = items.filter(function(i) { return i.type === 'plainte'; }).length;
+  var annonces = items.filter(function(i) { return i.type === 'annonce'; }).length;
+  var operations = items.filter(function(i) { return i.type === 'operation'; }).length;
+  var recenses = items.filter(function(i) { return i.type === 'recense'; }).length;
+
+  var parts = [];
+  if (annonces > 0) parts.push(annonces + ' annonce' + (annonces > 1 ? 's' : ''));
+  if (plaintes > 0) parts.push(plaintes + ' plainte' + (plaintes > 1 ? 's' : ''));
+  if (operations > 0) parts.push(operations + ' opération' + (operations > 1 ? 's' : ''));
+  if (recenses > 0) parts.push(recenses + ' recensement' + (recenses > 1 ? 's' : ''));
+
+  titleEl.textContent = count === 1 ? '1 nouvel élément' : count + ' nouveaux éléments';
+  subEl.textContent = parts.join(' · ');
+
+  badge.classList.add('show');
+  clearTimeout(_notifBadgeTimer);
+  _notifBadgeTimer = setTimeout(dismissNotifBadge, 8000);
+}
+
+function dismissNotifBadge() {
+  var badge = document.getElementById('notif-new-badge');
+  if (badge) {
+    badge.style.transition = 'opacity 0.3s, transform 0.3s';
+    badge.style.opacity = '0';
+    badge.style.transform = 'translateX(14px)';
+    setTimeout(function() {
+      badge.classList.remove('show');
+      badge.style.cssText = '';
+    }, 300);
+  }
+  _pendingNotifItems = [];
+  clearTimeout(_notifBadgeTimer);
+}
+
+// Remplacer _checkRealtimeNotifs par une version améliorée
+(function enhanceNotifs() {
+  // Attendre que _checkRealtimeNotifs et _notifReady soient définis
+  var interval = setInterval(function() {
+    if (typeof _prevCounts === 'undefined') return;
+    clearInterval(interval);
+
+    // Surcharger la fonction existante
+    window._checkRealtimeNotifs = function() {
+      if (!currentUser || (typeof isVisiteur === 'function' && isVisiteur())) return;
+      var prefs = JSON.parse(localStorage.getItem('suna_notifs') || '{}');
+      var nP = (DB.plaintes || []).length;
+      var nA = (DB.annonces || []).length;
+      var nO = (DB.operations || []).filter(function(o) { return o.statut === 'Active'; }).length;
+      var nR = (DB.recenses || []).length;
+      if (_notifReady) {
+        var newItems = [];
+        if (prefs.plaintes !== false && nP > _prevCounts.plaintes) {
+          for (var i = 0; i < nP - _prevCounts.plaintes; i++) newItems.push({ type: 'plainte' });
+        }
+        if (prefs.annonces !== false && nA > _prevCounts.annonces) {
+          for (var j = 0; j < nA - _prevCounts.annonces; j++) newItems.push({ type: 'annonce' });
+        }
+        if (prefs.operations !== false && nO > _prevCounts.operations) {
+          for (var k = 0; k < nO - _prevCounts.operations; k++) newItems.push({ type: 'operation' });
+        }
+        if (prefs.recenses !== false && nR > _prevCounts.recenses) {
+          for (var l = 0; l < nR - _prevCounts.recenses; l++) newItems.push({ type: 'recense' });
+        }
+        if (newItems.length > 0) {
+          _pendingNotifItems = _pendingNotifItems.concat(newItems);
+          showNotifBadge(_pendingNotifItems);
+          // Aussi afficher le toast classique pour compatibilité
+          newItems.forEach(function(item) {
+            var msgs = { plainte: '📋 Nouvelle plainte !', annonce: '📢 Nouvelle annonce !', operation: '🚨 Nouvelle opération active !', recense: '📝 Nouveau recensement !' };
+            if (typeof showToast === 'function') showToast(msgs[item.type] || '🔔 Mise à jour', 'info');
+          });
+        }
+      }
+      _prevCounts = { plaintes: nP, annonces: nA, operations: nO, recenses: nR };
+      setTimeout(function() { _notifReady = true; }, 500);
+    };
+  }, 400);
+})();
+</script>
 </body>
 </html>
