@@ -2573,7 +2573,16 @@ document.addEventListener('DOMContentLoaded',function(){if(localStorage.getItem(
   <div class="modal">
     <div class="modal-header"><h3>🗂️ Nouveau dossier criminel</h3><span class="modal-close" onclick="closeModal('modal-dossier')">✕</span></div>
     <div class="modal-body">
-      <div class="form-group"><label class="form-label">Nom RP du suspect</label><input type="text" id="d-nom" class="form-control" placeholder="Prénom Nom"></div>
+      <!-- Alerte suspect existant -->
+      <div id="d-doublon-alert" style="display:none;background:rgba(180,140,20,0.08);border:1px solid rgba(180,140,20,0.35);border-radius:10px;padding:12px 14px;margin-bottom:13px">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+          <span style="font-size:16px">⚠️</span>
+          <span style="font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;letter-spacing:1px;color:#854d0e;text-transform:uppercase" id="d-doublon-titre">Suspect déjà fiché</span>
+        </div>
+        <div id="d-doublon-body" style="font-size:12px;color:#6b4c00;margin-bottom:10px;line-height:1.6"></div>
+        <div id="d-doublon-btns" style="display:flex;flex-wrap:wrap;gap:7px"></div>
+      </div>
+      <div class="form-group"><label class="form-label">Nom RP du suspect</label><input type="text" id="d-nom" class="form-control" placeholder="Prénom Nom" oninput="checkDoublonSuspect()"></div>
       <div class="form-group"><label class="form-label">Infractions reprochées</label><input type="text" id="d-infractions" class="form-control" placeholder="Vol, agression..."></div>
       <div class="grid grid-2">
         <div class="form-group"><label class="form-label">Dangerosité</label>
@@ -2624,7 +2633,11 @@ document.addEventListener('DOMContentLoaded',function(){if(localStorage.getItem(
         <input type="hidden" id="d-photo-data" value="">
       </div>
     </div>
-    <div class="modal-footer"><button class="btn btn-outline" onclick="closeModal('modal-dossier')">Annuler</button><button class="btn btn-primary" onclick="saveDossier()">Créer</button></div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('modal-dossier')">Annuler</button>
+      <button class="btn btn-gold btn-sm" id="d-btn-forcer" onclick="saveDossier(true)" style="display:none" title="Créer quand même un nouveau dossier séparé">➕ Nouveau dossier quand même</button>
+      <button class="btn btn-primary" onclick="saveDossier()">Créer</button>
+    </div>
   </div>
 </div>
 
@@ -4378,8 +4391,49 @@ function renderDossiers(){
     </tr>`;
   }).join("")||`<tr><td colspan="8" style="text-align:center;color:var(--muted);padding:18px">Aucun dossier</td></tr>`;
 }
-function saveDossier(){
+function checkDoublonSuspect(){
+  const nom=(el("d-nom").value||"").trim().toLowerCase();
+  const alertEl=el("d-doublon-alert");
+  const btnForcer=el("d-btn-forcer");
+  if(!alertEl)return;
+  if(!nom){alertEl.style.display="none";if(btnForcer)btnForcer.style.display="none";return;}
+  const matches=DB.dossiers.filter(d=>(d.nom||"").trim().toLowerCase()===nom);
+  if(matches.length===0){alertEl.style.display="none";if(btnForcer)btnForcer.style.display="none";return;}
+  // Afficher l'alerte
+  alertEl.style.display="";
+  if(btnForcer)btnForcer.style.display="";
+  el("d-doublon-titre").textContent=matches.length===1?"⚠️ Suspect déjà fiché — "+matches.length+" dossier existant":"⚠️ Suspect déjà fiché — "+matches.length+" dossiers existants";
+  var html="Ce suspect a déjà <b>"+matches.length+" dossier"+(matches.length>1?"s":"")+"</b> ouvert"+(matches.length>1?"s":"")+" :<br><br>";
+  matches.forEach(function(d){
+    html+="• <b>"+esc(d.infractions||"—")+"</b> · "+esc(d.statut||"—");
+    if(d.amendeImpayee>0)html+=" · <span style='color:#991b1b'>❌ "+Number(d.amendeImpayee).toLocaleString()+" Ryos impayés</span>";
+    html+="<br>";
+  });
+  el("d-doublon-body").innerHTML=html;
+  // Boutons "Modifier" pour chaque dossier existant
+  var btnsEl=el("d-doublon-btns");
+  btnsEl.innerHTML="";
+  matches.forEach(function(d){
+    var label=matches.length>1?"✏️ Modifier : "+esc(d.infractions||"Dossier #"+d.id):"✏️ Ajouter des charges à ce dossier";
+    var btn=document.createElement("button");
+    btn.className="btn btn-gold btn-sm";
+    btn.innerHTML=label;
+    btn.onclick=function(){closeModal("modal-dossier");openEditDossier(d.id);};
+    btnsEl.appendChild(btn);
+  });
+}
+function saveDossier(force){
   const nom=v("d-nom");if(!nom)return;
+  // Vérification doublon — si des dossiers existent déjà et que force n'est pas activé, bloquer
+  if(!force){
+    const matches=DB.dossiers.filter(d=>(d.nom||"").trim().toLowerCase()===nom.trim().toLowerCase());
+    if(matches.length>0){
+      // Mettre en surbrillance l'alerte
+      var alertEl=el("d-doublon-alert");
+      if(alertEl){alertEl.style.boxShadow="0 0 0 3px rgba(180,140,20,0.35)";setTimeout(function(){if(alertEl)alertEl.style.boxShadow="";},1200);}
+      return;
+    }
+  }
   const photo=el("d-photo-data")?el("d-photo-data").value:"";
   const amendePayee=parseInt(el("d-amende-payee").value)||0;
   const amendeImpayee=parseInt(el("d-amende-impayee").value)||0;
@@ -4388,6 +4442,9 @@ function saveDossier(){
   saveData();closeModal("modal-dossier");renderDossiers();syncDashboard();
   clearForm(["d-nom","d-infractions","d-notes","d-amende-payee","d-amende-impayee"]);
   clearDossierPhoto();
+  // Reset alerte doublon
+  var alertEl=el("d-doublon-alert");if(alertEl)alertEl.style.display="none";
+  var btnF=el("d-btn-forcer");if(btnF)btnF.style.display="none";
 }
 // Gestion photo dossier
 function loadDossierPhoto(input){
@@ -4428,6 +4485,9 @@ function clearDossierPhoto(){
   if(prev){prev.innerHTML='<span style="font-size:26px;opacity:0.3">👤</span><span style="font-size:9px;color:var(--muted);margin-top:4px;text-align:center;padding:0 4px">Cliquer ou coller</span>';prev.style.border="2px dashed rgba(180,140,20,0.35)";}
   if(el("d-photo-clear"))el("d-photo-clear").style.display="none";
   if(el("d-photo-input"))el("d-photo-input").value="";
+  // Reset alerte doublon
+  var alertEl=el("d-doublon-alert");if(alertEl)alertEl.style.display="none";
+  var btnF=el("d-btn-forcer");if(btnF)btnF.style.display="none";
 }
 function deleteDossier(id){id=parseInt(id);askDelete("Supprimer ce dossier criminel ?",()=>{DB.dossiers=DB.dossiers.filter(d=>String(d.id)!==String(id));saveData();renderDossiers();syncDashboard()})}
 
@@ -9188,12 +9248,12 @@ document.addEventListener('keydown', function(e) {
 
     var _sd = window.saveDossier;
     if (typeof _sd === 'function') {
-      window.saveDossier = function() {
+      window.saveDossier = function(force) {
         if (!window.validateFields(['d-nom'])) {
           showToast('Le nom du suspect est requis.','error');
           return;
         }
-        _sd();
+        _sd(force);
       };
     }
 
