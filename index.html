@@ -9492,12 +9492,12 @@ document.addEventListener('keydown', function(e) {
 /* ── YUNO FAB BUTTON ── */
 #yuno-fab{
   position:fixed;bottom:16px;right:16px;z-index:8001;
-  width:52px;height:52px;border-radius:50%;
-  background:linear-gradient(135deg,#c0410e,#8a2c08);
-  border:2px solid rgba(180,140,20,0.5);
+  width:56px;height:56px;border-radius:50%;
+  background:#0d0e1a;
+  border:none;
   box-shadow:0 4px 20px rgba(192,65,14,0.5),0 0 0 0 rgba(192,65,14,0.3);
   cursor:pointer;display:flex;align-items:center;justify-content:center;
-  font-size:22px;transition:all 0.25s;
+  padding:0;overflow:hidden;transition:all 0.25s;
   animation:yunoPulse 3s ease-in-out infinite;
 }
 #yuno-fab:hover{transform:scale(1.08);box-shadow:0 6px 28px rgba(192,65,14,0.7)}
@@ -9666,16 +9666,33 @@ document.addEventListener('keydown', function(e) {
 
 <!-- YUNO FAB -->
 <div id="yuno-fab" onclick="yunoToggleChat()" title="Parler à YUNO — IA">
-  🤖
+  <svg width="52" height="52" viewBox="0 0 52 52" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="26" cy="26" r="26" fill="#0d0e1a"/>
+    <circle cx="26" cy="26" r="24" fill="none" stroke="#c0410e" stroke-width="1.8"/>
+    <circle cx="26" cy="26" r="21" fill="none" stroke="#c0410e" stroke-width="0.5" opacity="0.3"/>
+    <path d="M26,8 L38,15 L38,28 Q38,40 26,44 Q14,40 14,28 L14,15 Z" fill="#c0410e" opacity="0.15"/>
+    <path d="M26,8 L38,15 L38,28 Q38,40 26,44 Q14,40 14,28 L14,15 Z" fill="none" stroke="#d4b44a" stroke-width="1.6"/>
+    <path d="M16,22 L36,22" stroke="#d4b44a" stroke-width="0.7" opacity="0.4"/>
+    <path d="M13,28 L39,28" stroke="#d4b44a" stroke-width="0.7" opacity="0.25"/>
+    <line x1="18" y1="12" x2="26" y2="22" stroke="#d4b44a" stroke-width="2.8" stroke-linecap="round"/>
+    <line x1="34" y1="12" x2="26" y2="22" stroke="#d4b44a" stroke-width="2.8" stroke-linecap="round"/>
+    <line x1="26" y1="22" x2="26" y2="36" stroke="#d4b44a" stroke-width="2.8" stroke-linecap="round"/>
+    <circle cx="6" cy="18" r="1.8" fill="#d4b44a" opacity="0.7"/>
+    <circle cx="46" cy="18" r="1.8" fill="#d4b44a" opacity="0.7"/>
+    <circle cx="6" cy="36" r="1.8" fill="#d4b44a" opacity="0.7"/>
+    <circle cx="46" cy="36" r="1.8" fill="#d4b44a" opacity="0.7"/>
+    <rect x="15" y="43" width="22" height="7" rx="2" fill="#c0410e"/>
+    <text x="26" y="49" text-anchor="middle" fill="#fff" font-size="5" font-weight="700" font-family="monospace" letter-spacing="2">YUNO</text>
+  </svg>
   <div id="yuno-fab-badge"></div>
 </div>
 
 <!-- YUNO CONFIG BANNER (clé API) -->
 <div id="yuno-config-banner">
   <div class="yuno-config-title">🔑 Configurer YUNO</div>
-  <input class="yuno-api-input" type="password" id="yuno-api-key-input" placeholder="sk-ant-api03-...">
+  <input class="yuno-api-input" type="password" id="yuno-api-key-input" placeholder="Clé d'accès YUNO...">
   <button class="yuno-save-btn" onclick="yunoSaveKey()">💾 Enregistrer la clé API</button>
-  <div class="yuno-config-note">Ta clé Anthropic est sauvegardée localement.<br>Obtiens-la sur console.anthropic.com</div>
+  <div class="yuno-config-note">Ta clé YUNO est sauvegardée localement.<br>Obtiens-la sur <a href="https://console.anthropic.com" target="_blank" style="color:#d4b44a;text-decoration:none">portail YUNO</a></div>
 </div>
 
 <!-- YUNO CHAT PANEL -->
