@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, interactive-widget=resizes-visual">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self' https://fonts.googleapis.com https://fonts.gstatic.com https://*.firebaseio.com https://*.googleapis.com https://www.gstatic.com; script-src 'self' 'unsafe-inline' https://www.gstatic.com https://*.googleapis.com https://cdn.jsdelivr.net https://*.firebasedatabase.app; img-src 'self' data: blob: https:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; connect-src https://*.firebaseio.com https://*.googleapis.com wss://*.firebaseio.com https://www.gstatic.com https://*.firebasedatabase.app wss://*.firebasedatabase.app https://cdn.jsdelivr.net https://api.ipify.org https://api.anthropic.com https://freeipapi.com https://ipapi.co; frame-src 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self' https://fonts.googleapis.com https://fonts.gstatic.com https://*.firebaseio.com https://*.googleapis.com https://www.gstatic.com; script-src 'self' 'unsafe-inline' https://www.gstatic.com https://*.googleapis.com https://cdn.jsdelivr.net https://*.firebasedatabase.app; img-src 'self' data: blob: https:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; connect-src https://*.firebaseio.com https://*.googleapis.com wss://*.firebaseio.com https://www.gstatic.com https://*.firebasedatabase.app wss://*.firebasedatabase.app https://cdn.jsdelivr.net https://api.ipify.org https://api.anthropic.com https://ipapi.co https://geolocation-db.com; frame-src 'none'">
 <title>Police — Sunagakure Intranet</title>
 <meta name="theme-color" content="#1a1c2e">
 <link rel="icon" href="data:,">
@@ -5837,37 +5837,23 @@ function lhShowIPDetail(ip){
   if(_lhGeoCache[ip]){
     lhShowGeo(_lhGeoCache[ip]);
   } else {
-    // Primaire : freeipapi.com (HTTPS gratuit, pas de clé, 60 req/min)
-    fetch('https://freeipapi.com/api/json/'+encodeURIComponent(ip))
+    // Primaire : ipapi.co — CORS natif, 1000 req/jour gratuit
+    fetch('https://ipapi.co/'+encodeURIComponent(ip)+'/json/')
       .then(function(r){ if(!r.ok) throw new Error(r.status); return r.json(); })
       .then(function(d){
-        if(d && d.countryName){
-          var mapped = {
-            country: d.countryName,
-            regionName: d.regionName||'',
-            city: d.cityName||'',
-            isp: d.ipType||'',
-            mobile: false,
-            proxy: false
-          };
+        if(d && d.country_name && !d.error){
+          var mapped = {country:d.country_name, regionName:d.region||'', city:d.city||'', isp:d.org||'', mobile:false, proxy:false};
           _lhGeoCache[ip] = mapped;
           lhShowGeo(mapped);
-        } else { throw new Error('no data'); }
+        } else { throw new Error(d.reason||'no data'); }
       })
       .catch(function(){
-        // Fallback : ipapi.co (HTTPS gratuit, 1000 req/jour)
-        fetch('https://ipapi.co/'+encodeURIComponent(ip)+'/json/')
+        // Fallback : geolocation-db.com — CORS natif, gratuit illimité
+        fetch('https://geolocation-db.com/json/'+encodeURIComponent(ip))
           .then(function(r){ if(!r.ok) throw new Error(r.status); return r.json(); })
           .then(function(d){
-            if(d && d.country_name && !d.error){
-              var mapped = {
-                country: d.country_name,
-                regionName: d.region||'',
-                city: d.city||'',
-                isp: d.org||'',
-                mobile: false,
-                proxy: false
-              };
+            if(d && d.country_name && d.country_name !== 'Not found'){
+              var mapped = {country:d.country_name, regionName:d.state||'', city:d.city||'', isp:'', mobile:false, proxy:false};
               _lhGeoCache[ip] = mapped;
               lhShowGeo(mapped);
             } else { throw new Error('no data'); }
