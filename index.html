@@ -762,6 +762,7 @@ textarea.form-control{resize:vertical;min-height:80px}
     overscroll-behavior-x:contain;
     scrollbar-width:none;
     border-radius:0 0 16px 16px;
+    touch-action:pan-x pan-y; /* laisse le navigateur gérer le scroll horizontal */
   }
   .table-scroll-wrapper::-webkit-scrollbar{display:none}
   .data-table{
@@ -774,6 +775,31 @@ textarea.form-control{resize:vertical;min-height:80px}
     font-size:13px !important;
   }
   .data-table th,.data-table td{padding:10px 11px;font-size:11px}
+  /* Filtres admin scrollables horizontalement sur mobile */
+  #page-admin .card-header{flex-wrap:wrap;gap:8px}
+  .admin-filters-row{
+    overflow-x:auto !important;
+    -webkit-overflow-scrolling:touch;
+    touch-action:pan-x pan-y;
+    flex-wrap:nowrap !important;
+    padding-bottom:4px;
+    scrollbar-width:none;
+    max-width:100%;
+  }
+  .admin-filters-row::-webkit-scrollbar{display:none}
+  .admin-filters-row .form-control{
+    flex-shrink:0;
+    min-width:120px;
+  }
+  /* Barre de filtres historique connexions */
+  #card-login-history [style*="display:flex"][style*="flex-wrap:wrap"]{
+    overflow-x:auto;
+    flex-wrap:nowrap !important;
+    -webkit-overflow-scrolling:touch;
+    touch-action:pan-x pan-y;
+    padding-bottom:6px;
+    scrollbar-width:none;
+  }
 
   /* ============================================
      MODALS — bottom-sheet natif
@@ -814,7 +840,7 @@ textarea.form-control{resize:vertical;min-height:80px}
   /* ============================================
      TABS — scroll horizontal
      ============================================ */
-  .tab-row{gap:5px;padding:4px;overflow-x:auto;flex-wrap:nowrap;scrollbar-width:none}
+  .tab-row{gap:5px;padding:4px;overflow-x:auto;flex-wrap:nowrap;scrollbar-width:none;touch-action:pan-x pan-y;-webkit-overflow-scrolling:touch}
   .tab-row::-webkit-scrollbar{display:none}
   .tab-btn{flex:0 0 auto;padding:10px 14px;font-size:9px;border-radius:8px;white-space:nowrap;
     /* Zone tactile confortable */
@@ -2299,7 +2325,7 @@ document.addEventListener('DOMContentLoaded',function(){if(localStorage.getItem(
     <div class="card" style="overflow:visible">
       <div class="card-header" style="flex-wrap:wrap;gap:10px">
         <div style="display:flex;align-items:center;gap:10px"><span>👮</span><h3>Membres du département</h3></div>
-        <div style="display:flex;gap:8px;align-items:center;margin-left:auto;flex-wrap:wrap">
+        <div class="admin-filters-row" style="display:flex;gap:8px;align-items:center;margin-left:auto;flex-wrap:wrap">
           <!-- Filtre rôle -->
           <select id="admin-role-filter" class="form-control" style="max-width:140px;padding:6px 10px;font-size:11px;margin:0" onchange="renderAdmin()">
             <option value="">Tous les rôles</option>
@@ -3417,7 +3443,7 @@ function checkRememberMe(){
     const user=DB.users.find(u=>u.id===s.id&&u.pass===s.passHash&&u.statut!=="Désactivé");
     // Sécurité supplémentaire : ne jamais auto-connecter un compte visiteur via "Se souvenir de moi".
     // Les visiteurs doivent toujours se connecter manuellement.
-    if(user){currentUser=user;applyLogin();return true}
+    if(user&&user.role!=="visiteur"){currentUser=user;applyLogin();return true}
   }catch(e){}
   localStorage.removeItem("suna_session");
   return false;
@@ -3534,7 +3560,7 @@ function applyLogin(){
     else if(/Mac/.test(ua))device="macOS";
     else if(/Linux/.test(ua))device="Linux";
     var isMobile=/Mobi|Android|iPhone|iPad/.test(ua);
-    var entry={userId:currentUser.id,nom:currentUser.nom,grade:currentUser.grade,date:now(),device:device+(isMobile?" (Mobile)":" (Bureau)"),ip:"...",type:"connexion"};
+    var entry={userId:currentUser.id,nom:currentUser.nom,grade:currentUser.grade,role:currentUser.role||'visiteur',date:now(),device:device+(isMobile?" (Mobile)":" (Bureau)"),ip:"...",type:"connexion"};
     DB.loginHistory.push(entry);
     if(DB.loginHistory.length>200)DB.loginHistory=DB.loginHistory.slice(-200);
     // Récupérer l'IP publique de manière asynchrone
@@ -3724,8 +3750,9 @@ function renderPage(name){
             _lastFbArrays.users=JSON.parse(JSON.stringify(fbData.users));
             if(JSON.stringify(DB.users)!==prevUsers)usersChanged=true;
           }
-          var arrays=['plaintes','dossiers','annonces','candidatures','operations','sanctions','recenses','infractions','timeline'];
-          arrays.forEach(function(k){if(Array.isArray(fbData[k])&&fbData[k].length>0){DB[k]=fbData[k];_lastFbArrays[k]=JSON.parse(JSON.stringify(fbData[k]));}}); 
+          // Ne PAS écraser les autres collections ici : elles sont gérées par onValue
+          // en temps réel et un écrasement ici pourrait effacer des modifications locales
+          // non encore sauvegardées sur Firebase.
           if(usersChanged){renderAdmin();renderAdminTimeline();renderAuditLog();renderLoginHistory();}
         }
       }).catch(function(){});
@@ -3794,16 +3821,17 @@ function refreshAll(){
   // Calculer une empreinte légère des données de la page active
   // pour éviter un re-render complet si rien n'a changé
   var _fpKey = '_rfp_'+name;
+  var _last = function(arr){ return arr&&arr.length ? arr[arr.length-1] : {}; };
   var _relevantData = {
     dashboard: function(){ return (DB.annonces||[]).length+'|'+(DB.plaintes||[]).length+'|'+(DB.timeline||[]).length+'|'+(DB.operations||[]).length; },
-    annonces:  function(){ return (DB.annonces||[]).length+'|'+((DB.annonces||[])[0]||{}).date; },
-    plaintes:  function(){ return (DB.plaintes||[]).length+'|'+((DB.plaintes||[])[0]||{}).date; },
-    dossiers:  function(){ return (DB.dossiers||[]).length+'|'+((DB.dossiers||[])[0]||{}).date; },
-    recensement:function(){return (DB.recenses||[]).length+'|'+((DB.recenses||[])[0]||{}).date;},
-    recrutement:function(){return (DB.candidatures||[]).length+'|'+((DB.candidatures||[])[0]||{}).date;},
-    operations:function(){ return (DB.operations||[]).length+'|'+((DB.operations||[])[0]||{}).statut; },
-    sanctions: function(){ return (DB.sanctions||[]).length+'|'+((DB.sanctions||[])[0]||{}).date; },
-    effectifs: function(){ return (DB.users||[]).length+'|'+((DB.users||[])[0]||{}).statut; },
+    annonces:  function(){ var a=DB.annonces||[]; return a.length+'|'+(_last(a).date||''); },
+    plaintes:  function(){ var a=DB.plaintes||[]; return a.length+'|'+(_last(a).date||''); },
+    dossiers:  function(){ var a=DB.dossiers||[]; return a.length+'|'+(_last(a).date||''); },
+    recensement:function(){ var a=DB.recenses||[]; return a.length+'|'+(_last(a).date||''); },
+    recrutement:function(){ var a=DB.candidatures||[]; return a.length+'|'+(_last(a).date||'')+'|'+(_last(a).statut||''); },
+    operations:function(){ var a=DB.operations||[]; return a.length+'|'+(_last(a).statut||'')+'|'+(_last(a).date||''); },
+    sanctions: function(){ var a=DB.sanctions||[]; return a.length+'|'+(_last(a).date||''); },
+    effectifs: function(){ var a=DB.users||[]; return a.length+'|'+(_last(a).statut||''); },
     admin:     function(){ return (DB.users||[]).length+'|'+(DB.loginHistory||[]).length; }
   };
   var fpFn = _relevantData[name];
@@ -5711,7 +5739,9 @@ function renderLoginHistory(){
       var durHtml = '<span class="lh-duration">'+(c._duration?lhFmtDuration(c._duration):(isDeconn?'—':'...'))+'</span>';
       var rowClass = c._isAlert ? ' class="lh-row-alert"' : '';
 
-      var memberHtml = '<b class="lh-member-link" onclick="lhFilterByMember(\''+c.userId+'\')" title="Filtrer ce membre">'+esc(c.nom||'')+'</b>';
+      var isVisiteurEntry = c.role === 'visiteur';
+      var memberHtml = '<b class="lh-member-link" onclick="lhFilterByMember(\''+c.userId+'\')" title="Filtrer ce membre">'+esc(c.nom||'')+'</b>'
+        + (isVisiteurEntry ? ' <span style="font-size:9px;background:rgba(29,78,216,0.12);color:#3b82f6;border:1px solid rgba(59,130,246,0.3);border-radius:4px;padding:1px 5px;font-family:\'Share Tech Mono\',monospace;vertical-align:middle">VISITEUR</span>' : '');
 
       return '<tr'+rowClass+'>'
         +'<td class="mono" style="font-size:11px">'+fmtDate(c.date)+'</td>'
@@ -8201,11 +8231,26 @@ if(isMobile){
   var NAV_PAGES=['dashboard','annonces','recensement','plaintes'];
   var pg_sx=0,pg_sy=0,pg_t0=0,pg_sbWas=false;
 
+  // Vérifie si l'élément touché est scrollable horizontalement
+  function _isHScrollable(el){
+    while(el && el !== document.body){
+      var style = window.getComputedStyle(el);
+      var overflowX = style.overflowX;
+      if((overflowX==='auto'||overflowX==='scroll') && el.scrollWidth > el.clientWidth+4) return true;
+      // Aussi : table-scroll-wrapper, tab-row, lh-hour-chart, etc.
+      if(el.classList && (el.classList.contains('table-scroll-wrapper')||el.classList.contains('tab-row')||el.classList.contains('tab-scroll-wrap'))) return true;
+      el = el.parentElement;
+    }
+    return false;
+  }
+
   var $main=document.getElementById('main');
   if($main){
     $main.addEventListener('touchstart',function(e){
       if($sidebar&&$sidebar.classList.contains('open')) return;
       if(document.querySelector('.modal-overlay.open')) return;
+      // Ne pas capturer si l'élément touché est dans un conteneur scrollable horizontalement
+      if(_isHScrollable(e.target)) { pg_sx=0; return; }
       pg_sx=e.touches[0].clientX; pg_sy=e.touches[0].clientY;
       pg_t0=Date.now(); pg_sbWas=false;
     },{passive:true});
@@ -8213,6 +8258,7 @@ if(isMobile){
     $main.addEventListener('touchend',function(e){
       if($sidebar&&$sidebar.classList.contains('open')) return;
       if(document.querySelector('.modal-overlay.open')) return;
+      if(!pg_sx) return; // touchstart a été annulé (élément scrollable)
       var dx=e.changedTouches[0].clientX-pg_sx;
       var dy=e.changedTouches[0].clientY-pg_sy;
       var dt=Date.now()-pg_t0;
@@ -8227,7 +8273,7 @@ if(isMobile){
       if(!active) return;
       var cur=active.id.replace('page-','');
       var idx=NAV_PAGES.indexOf(cur);
-      if(idx===-1) return;
+      if(idx===-1) return; // page hors bottom-nav (ex: admin) → laisser le scroll libre
       var next=dx<0?idx+1:idx-1;
       if(next<0||next>=NAV_PAGES.length) return;
       slideToPage(NAV_PAGES[next], dx<0?'left':'right');
