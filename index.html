@@ -1855,7 +1855,7 @@ document.addEventListener('DOMContentLoaded',function(){if(localStorage.getItem(
           </div>
           <div class="form-group" style="margin-bottom:10px"><label class="form-label">Notes / Précisions</label><input type="text" id="cp-notes" class="form-control" placeholder="Circonstances aggravantes, conditions..."></div>
           <button class="btn btn-primary" onclick="saveInfraction()">+ Ajouter au code pénal</button>
-          <button class="btn btn-outline btn-sm" style="margin-left:8px" onclick="if(confirm('Réimporter le Code Pénal officiel de Sunagakure ? Cela écrasera toutes les infractions actuelles.')){DB.infractions=[];localStorage.removeItem(\'suna_cp_seeded\');seedCodePenal();showToast(\'✅ Code Pénal importé !\',\'success\');}">📜 Réimporter Code Pénal officiel</button>
+          <button class="btn btn-outline btn-sm" style="margin-left:8px" onclick="doReimportCP()">📜 Réimporter Code Pénal officiel</button>
         </div>
       </div>
     </div>
@@ -5533,6 +5533,13 @@ function saveInfraction(){
   DB.infractions.push({id:Date.now(),nom,cat:v("cp-cat"),amende:v("cp-amende"),prison:v("cp-prison"),duree:v("cp-duree"),notes:v("cp-notes")});
   addTimeline(`Infraction ajoutée au code pénal : ${nom}`);
   saveData();renderCodePenal();clearForm(["cp-nom","cp-amende","cp-duree","cp-notes"]);
+}
+function doReimportCP(){
+  if(!confirm('Réimporter le Code Pénal officiel de Sunagakure ?\nCela écrasera toutes les infractions actuelles.')) return;
+  DB.infractions=[];
+  localStorage.removeItem('suna_cp_seeded');
+  seedCodePenal(true);
+  if(typeof showToast==='function') showToast('Code Pénal importé avec succès !','success');
 }
 function doDeleteInfraction(id){
   id=parseInt(id);
