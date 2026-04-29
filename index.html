@@ -3122,18 +3122,26 @@ async function _flushSaveQueue(){
       }catch(_e){/* on garde liveFbUsers = _lastFbArrays si le GET échoue */}
     }
     // Fusionner les users locaux avec la liste fraîche Firebase
+    // LOCAL fait autorité : les suppressions locales sont respectées.
+    // On n'ajoute depuis Firebase que les users INCONNUS (créés par un autre admin).
     const localUsers=Array.isArray(toSave.users)?toSave.users:[];
     const fbUsers=liveFbUsers;
-    const fbUserIds=new Set(fbUsers.map(u=>u&&u.id));
-    const newUsers=localUsers.filter(u=>u&&u.id&&!fbUserIds.has(u.id));
-    const localUserById={};localUsers.forEach(u=>{if(u&&u.id)localUserById[u.id]=u;});
-    const updatedUsers=fbUsers.map(u=>{
-      if(!u||!u.id||!localUserById[u.id])return u;
-      return JSON.stringify(u)!==JSON.stringify(localUserById[u.id])?localUserById[u.id]:u;
+    const localUserIds=new Set(localUsers.map(u=>u&&u.id));
+    const prevKnownUsers=Array.isArray(_lastFbArrays['users__known'])?_lastFbArrays['users__known']:[];
+    const knownFbUserIds=new Set(prevKnownUsers.map(String));
+    // Nouveaux users distants = présents dans Firebase, absents en local, ET pas connus avant (créés par un autre admin)
+    const remoteNewUsers=fbUsers.filter(u=>u&&u.id&&!localUserIds.has(u.id)&&!knownFbUserIds.has(String(u.id)));
+    // Mettre à jour les users locaux existants avec les données Firebase si elles ont changé
+    const fbUserById={};fbUsers.forEach(u=>{if(u&&u.id)fbUserById[u.id]=u;});
+    const updatedLocalUsers=localUsers.map(u=>{
+      if(!u||!u.id||!fbUserById[u.id])return u;
+      // Garder la version locale (qui peut avoir des modifs non encore sauvegardées)
+      return u;
     });
-    const mergedUsers=[...updatedUsers,...newUsers];
+    const mergedUsers=[...updatedLocalUsers,...remoteNewUsers];
     toSave.users=mergedUsers;
     _lastFbArrays.users=JSON.parse(JSON.stringify(mergedUsers));
+    _lastFbArrays['users__known']=fbUsers.map(u=>u&&String(u.id)).filter(Boolean);
 
     // Fusionner les autres tableaux
     // LOCAL fait autorite : si supprime localement, reste supprime.
