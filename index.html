@@ -4934,6 +4934,7 @@ function viewDossier(id){
     </div>
     <div class="form-group"><label class="form-label">Infractions</label><div style="font-size:12.5px;white-space:pre-wrap">${esc(d.infractions)}</div></div>
     ${d.notes?`<div class="form-group"><label class="form-label">Notes</label><div style="font-size:12px;color:var(--muted);white-space:pre-wrap">${esc(d.notes)}</div></div>`:""}
+    ${(d.tags&&d.tags.length)?`<div class="form-group"><label class="form-label" style="color:rgba(109,40,217,0.85)">🏷 Tags</label><div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:4px">${d.tags.map(tid=>{const t=DOSSIER_TAGS.find(x=>x.id===tid);return t?`<span class="tag-pill" style="background:${t.bg};color:${t.color};border:1px solid ${t.border}">${t.label}</span>`:`<span class="tag-pill" style="background:rgba(109,40,217,0.08);color:#5b21b6;border:1px solid rgba(109,40,217,0.22)">${esc(tid)}</span>`;}).join('')}</div></div>`:""}
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
       ${(d.amendePayee||0)>0?`<div class="form-group" style="margin:0"><label class="form-label">Amende payée</label><div style="color:#166534;font-family:'Share Tech Mono',monospace;font-weight:700">✅ ${Number(d.amendePayee).toLocaleString()} Ryos</div></div>`:""}
       ${(d.amendeImpayee||0)>0?`<div class="form-group" style="margin:0"><label class="form-label">Amende impayée</label><div style="color:#991b1b;font-family:'Share Tech Mono',monospace;font-weight:700">❌ ${Number(d.amendeImpayee).toLocaleString()} Ryos</div></div>`:""}
@@ -11479,36 +11480,33 @@ body:not(.has-action-fab) #yuno-config-banner{
     }
   }
 
-  // Ajouter colonne "YUNO" dans le tableau dossiers
+  // Ajouter colonne "YUNO" dans le tableau dossiers — insérée avant la colonne Actions
   function patchRenderDossiers(){
     var _orig = window.renderDossiers;
     if(typeof _orig!=='function') return false;
     window.renderDossiers = function(){
       _orig.apply(this,arguments);
-      // Ajouter en-tête si pas déjà là
+      // En-tête : insérer avant le dernier th (Actions)
       var thead = document.querySelector('#page-dossiers .data-table thead tr');
       if(thead && !thead.querySelector('.yuno-th')){
         var th=document.createElement('th');
         th.className='yuno-th';
-        th.style.cssText='color:#c9970a;font-size:9px;letter-spacing:2px;opacity:0.7';
+        th.style.cssText='color:#c9970a;font-size:9px;letter-spacing:2px;opacity:0.7;white-space:nowrap';
         th.innerHTML='🔒 IA <span style="font-size:7px;background:rgba(192,65,14,0.2);color:#e05c1a;border:1px solid rgba(192,65,14,0.3);border-radius:3px;padding:1px 4px;letter-spacing:1px;vertical-align:middle">SOON</span>';
-        thead.appendChild(th);
+        var lastTh = thead.querySelector('th:last-child');
+        if(lastTh) thead.insertBefore(th, lastTh);
+        else thead.appendChild(th);
       }
-      // Ajouter cellule sur chaque ligne
+      // Cellules : insérer avant le dernier td (Actions) de chaque ligne
       var rows = document.querySelectorAll('#dossiers-tbody tr');
       rows.forEach(function(tr){
         if(tr.querySelector('.yuno-td')) return;
-        var cells=tr.querySelectorAll('td');
-        // Récupérer l'ID depuis le bouton modifier
-        var editBtn=tr.querySelector('[onclick*="openEditDossier"]');
-        if(!editBtn) return;
-        var match=editBtn.getAttribute('onclick').match(/\d+/);
-        if(!match) return;
-        var id=match[0];
         var td=document.createElement('td');
         td.className='yuno-td';
-        td.innerHTML='<div title="Fonctionnalité IA bientôt disponible" style="display:flex;align-items:center;justify-content:center"><span style="font-size:14px;opacity:0.35;filter:grayscale(1);cursor:not-allowed" title="Bientôt disponible">🤖</span><span style="display:block;width:16px;height:2px;background:linear-gradient(90deg,rgba(220,38,38,0.5),rgba(192,65,14,0.3));border-radius:1px;margin-left:3px"></span></div>';
-        tr.appendChild(td);
+        td.innerHTML='<div title="Fonctionnalité IA bientôt disponible" style="display:flex;align-items:center;justify-content:center"><span style="font-size:14px;opacity:0.35;filter:grayscale(1);cursor:not-allowed">🤖</span><span style="display:block;width:16px;height:2px;background:linear-gradient(90deg,rgba(220,38,38,0.5),rgba(192,65,14,0.3));border-radius:1px;margin-left:3px"></span></div>';
+        var lastTd = tr.querySelector('td:last-child');
+        if(lastTd) tr.insertBefore(td, lastTd);
+        else tr.appendChild(td);
       });
     };
     return true;
