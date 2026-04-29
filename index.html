@@ -11415,56 +11415,204 @@ function exportDossierPDF(id) {
   if (!d) { showToast('Dossier introuvable.', 'error'); return; }
   var sanctions = (DB.sanctions || []).filter(function(s) { return s.cible === d.nom; });
   var comments = d.comments || [];
-  var dangerColor = {Faible:'#15803d',Modéré:'#1d4ed8',Élevé:'#b8860b',Extrême:'#dc2626'}[d.danger] || '#6b7280';
-  var dangerBg = {Faible:'#f0fdf4',Modéré:'#eff6ff',Élevé:'#fffbeb',Extrême:'#fef2f2'}[d.danger] || '#f9fafb';
+
+  var dangerMap = {
+    Faible:   { col:'#22c55e', bg:'rgba(34,197,94,0.12)',  border:'rgba(34,197,94,0.4)',  label:'FAIBLE'   },
+    Modéré:   { col:'#3b82f6', bg:'rgba(59,130,246,0.12)', border:'rgba(59,130,246,0.4)', label:'MODÉRÉ'   },
+    Élevé:    { col:'#f59e0b', bg:'rgba(245,158,11,0.12)', border:'rgba(245,158,11,0.4)', label:'ÉLEVÉ'    },
+    Extrême:  { col:'#ef4444', bg:'rgba(239,68,68,0.12)',  border:'rgba(239,68,68,0.4)',  label:'EXTRÊME'  }
+  };
+  var dInfo = dangerMap[d.danger] || { col:'#9ca3af', bg:'rgba(156,163,175,0.12)', border:'rgba(156,163,175,0.3)', label: d.danger || '—' };
+
+  var isWanted = (d.statut || '').toLowerCase() === 'recherché';
+  var photoHTML = d.photo
+    ? '<img src="' + d.photo + '" style="width:100%;height:100%;object-fit:cover;display:block">'
+    : '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:8px;color:rgba(212,180,74,0.3)"><svg width="52" height="52" viewBox="0 0 24 24" fill="currentColor"><path d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z"/></svg><span style="font-size:9px;letter-spacing:2px;font-family:monospace">PHOTO</span></div>';
+
+  var wantedStamp = isWanted ? '<div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%) rotate(-18deg);border:5px solid rgba(239,68,68,0.85);border-radius:8px;padding:8px 18px;text-align:center;pointer-events:none;white-space:nowrap"><div style="font-family:\'Arial Black\',sans-serif;font-size:28px;font-weight:900;color:rgba(239,68,68,0.85);letter-spacing:4px;text-shadow:0 0 20px rgba(239,68,68,0.5)">RECHERCHÉ</div></div>' : '';
+
+  var sanctionIcons = {Promotion:'▲',Félicitation:'★',Avertissement:'⚠',Suspension:'⏸',Rétrogradation:'▼',Exclusion:'✖'};
 
   var html = '<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8">'
     + '<title>Dossier — ' + d.nom + '</title>'
-    + '<style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:Georgia,serif;color:#1a1a2e;background:#fff;padding:0}@page{margin:16mm;size:A4}.page{max-width:none;padding:0}.header{display:flex;align-items:center;gap:18px;border-bottom:3px solid #c0410e;padding-bottom:16px;margin-bottom:22px}.ha{width:54px;height:54px;border-radius:50%;background:linear-gradient(135deg,#c0410e,#b86010);display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:700;color:#fff;flex-shrink:0}.ht{flex:1}.ht .sub{font-size:8px;letter-spacing:3px;color:#888;text-transform:uppercase;margin-bottom:4px}.ht h1{font-size:20px;letter-spacing:1px;text-transform:uppercase;color:#1a1a2e}.ht .badges{display:flex;gap:5px;margin-top:6px;flex-wrap:wrap}.hmeta{text-align:right;font-family:monospace;font-size:8.5px;color:#888;line-height:1.7}.badge{display:inline-block;padding:2px 9px;border-radius:4px;font-size:9px;font-weight:700;letter-spacing:0.5px;text-transform:uppercase;font-family:monospace}.bd{background:' + dangerBg + ';color:' + dangerColor + ';border:1px solid ' + dangerColor + '33}.bg{background:#f9fafb;color:#374151;border:1px solid #d1d5db}.section{margin-bottom:20px}.stitle{font-size:8.5px;letter-spacing:3px;color:#c0410e;text-transform:uppercase;font-weight:700;margin-bottom:9px;border-bottom:1px solid #f0ede8;padding-bottom:4px}.grid2{display:grid;grid-template-columns:1fr 1fr;gap:9px 20px}.field{margin-bottom:6px}.flbl{font-size:8px;letter-spacing:1.5px;color:#888;text-transform:uppercase;font-family:monospace;margin-bottom:2px}.fval{font-size:12.5px;color:#1a1a2e;font-weight:500}.sr{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid #f0ede8}.sr:last-child{border-bottom:none}.sr .t{font-size:11px;flex:1;color:#374151}.sr .d{font-family:monospace;font-size:9px;color:#888}.ci{border:1px solid #e5e7eb;border-radius:6px;padding:10px 12px;margin-bottom:8px}.ci:last-child{margin-bottom:0}.cmeta{font-size:8.5px;color:#888;font-family:monospace;margin-bottom:3px}.cbody{font-size:12px;color:#374151;line-height:1.6;white-space:pre-wrap}.footer{text-align:center;font-size:8px;color:#aaa;font-family:monospace;letter-spacing:1px;margin-top:24px;padding-top:12px;border-top:1px solid #f0ede8}</style></head><body>'
+    + '<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&family=Barlow+Condensed:wght@400;600;700;900&family=Barlow:wght@300;400;500;600&family=Share+Tech+Mono&display=swap" rel="stylesheet">'
+    + '<style>'
+    + '*{margin:0;padding:0;box-sizing:border-box}'
+    + '@page{margin:0;size:A4}'
+    + 'html,body{width:210mm;min-height:297mm;background:#0f1020}'
+    + 'body{font-family:"Barlow",sans-serif;color:#e8e2d0;-webkit-print-color-adjust:exact;print-color-adjust:exact}'
+    + '.page{width:210mm;min-height:297mm;background:linear-gradient(160deg,#0d0f1e 0%,#111428 40%,#0a0c18 100%);position:relative;overflow:hidden;padding:0}'
+
+    /* ── Texture / grain overlay ── */
+    + '.page::before{content:"";position:absolute;inset:0;background-image:url("data:image/svg+xml,%3Csvg width=\'200\' height=\'200\' viewBox=\'0 0 200 200\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cfilter id=\'noise\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.9\' numOctaves=\'4\' stitchTiles=\'stitch\'/%3E%3C/filter%3E%3Crect width=\'100%25\' height=\'100%25\' filter=\'url(%23noise)\' opacity=\'0.04\'/%3E%3C/svg%3E");pointer-events:none;z-index:0}'
+
+    /* ── Accent lines ── */
+    + '.accent-bar-top{position:absolute;top:0;left:0;right:0;height:5px;background:linear-gradient(90deg,#b8860b,#c0410e,#b8860b);z-index:2}'
+    + '.accent-bar-bot{position:absolute;bottom:0;left:0;right:0;height:4px;background:linear-gradient(90deg,#b8860b,#c0410e,#b8860b);z-index:2}'
+    + '.side-accent{position:absolute;top:0;bottom:0;width:3px;background:linear-gradient(180deg,transparent,rgba(184,134,11,0.5),transparent);z-index:2}'
+    + '.side-accent.left{left:0}.side-accent.right{right:0}'
+
+    /* ── Corner ornaments ── */
+    + '.corner{position:absolute;width:30px;height:30px;z-index:3}'
+    + '.corner.tl{top:10px;left:10px;border-top:2px solid rgba(184,134,11,0.6);border-left:2px solid rgba(184,134,11,0.6)}'
+    + '.corner.tr{top:10px;right:10px;border-top:2px solid rgba(184,134,11,0.6);border-right:2px solid rgba(184,134,11,0.6)}'
+    + '.corner.bl{bottom:10px;left:10px;border-bottom:2px solid rgba(184,134,11,0.6);border-left:2px solid rgba(184,134,11,0.6)}'
+    + '.corner.br{bottom:10px;right:10px;border-bottom:2px solid rgba(184,134,11,0.6);border-right:2px solid rgba(184,134,11,0.6)}'
+
+    /* ── Background glow ── */
+    + '.glow{position:absolute;pointer-events:none;border-radius:50%;z-index:0}'
+    + '.glow.g1{width:400px;height:400px;top:-100px;right:-80px;background:radial-gradient(ellipse,rgba(192,65,14,0.07) 0%,transparent 70%)}'
+    + '.glow.g2{width:350px;height:350px;bottom:-80px;left:-60px;background:radial-gradient(ellipse,rgba(184,134,11,0.06) 0%,transparent 70%)}'
+
+    /* ── Inner layout ── */
+    + '.inner{position:relative;z-index:1;padding:22mm 18mm 18mm}'
+
+    /* ── HEADER ── */
+    + '.doc-super{font-family:"Share Tech Mono",monospace;font-size:7.5px;letter-spacing:4px;color:rgba(184,134,11,0.7);text-align:center;text-transform:uppercase;margin-bottom:10px}'
+    + '.header{display:grid;grid-template-columns:auto 1fr auto;gap:20px;align-items:center;padding-bottom:18px;margin-bottom:20px;border-bottom:1px solid rgba(184,134,11,0.2);position:relative}'
+    + '.header::after{content:"";position:absolute;bottom:-1px;left:0;width:80px;height:2px;background:linear-gradient(90deg,#c0410e,transparent)}'
+
+    /* Photo */
+    + '.photo-frame{width:88px;height:110px;border:2px solid rgba(184,134,11,0.5);background:rgba(184,134,11,0.05);position:relative;flex-shrink:0;overflow:hidden}'
+    + '.photo-corner{position:absolute;width:10px;height:10px}'
+    + '.photo-corner.tl{top:-1px;left:-1px;border-top:2px solid #d4b44a;border-left:2px solid #d4b44a}'
+    + '.photo-corner.tr{top:-1px;right:-1px;border-top:2px solid #d4b44a;border-right:2px solid #d4b44a}'
+    + '.photo-corner.bl{bottom:-1px;left:-1px;border-bottom:2px solid #d4b44a;border-left:2px solid #d4b44a}'
+    + '.photo-corner.br{bottom:-1px;right:-1px;border-bottom:2px solid #d4b44a;border-right:2px solid #d4b44a}'
+
+    /* Title block */
+    + '.title-block{text-align:left}'
+    + '.name-sub{font-family:"Share Tech Mono",monospace;font-size:8px;letter-spacing:3px;color:rgba(192,65,14,0.8);margin-bottom:5px;text-transform:uppercase}'
+    + '.name-main{font-family:"Cinzel",serif;font-size:36px;font-weight:900;color:#f0e8d0;letter-spacing:3px;text-transform:uppercase;line-height:1;text-shadow:0 2px 20px rgba(192,65,14,0.3)}'
+    + '.badge-row{display:flex;align-items:center;gap:8px;margin-top:10px;flex-wrap:wrap}'
+    + '.pill{display:inline-flex;align-items:center;gap:5px;padding:3px 12px;border-radius:3px;font-family:"Share Tech Mono",monospace;font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase}'
+    + '.pill-danger{background:' + dInfo.bg + ';color:' + dInfo.col + ';border:1px solid ' + dInfo.border + '}'
+    + '.pill-statut{background:rgba(239,68,68,0.1);color:#f87171;border:1px solid rgba(239,68,68,0.3)}'
+    + '.pill-statut.libre{background:rgba(34,197,94,0.08);color:#4ade80;border:1px solid rgba(34,197,94,0.25)}'
+
+    /* Meta */
+    + '.meta-block{text-align:right;font-family:"Share Tech Mono",monospace;font-size:8px;color:rgba(255,255,255,0.3);line-height:2}'
+    + '.meta-block .conf{font-size:10px;font-weight:700;color:#c0410e;letter-spacing:2px;margin-top:6px}'
+
+    /* ── SECTIONS ── */
+    + '.section{margin-bottom:18px}'
+    + '.section-title{font-family:"Barlow Condensed",sans-serif;font-size:9px;letter-spacing:4px;color:rgba(184,134,11,0.8);text-transform:uppercase;font-weight:700;margin-bottom:10px;display:flex;align-items:center;gap:8px}'
+    + '.section-title::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,rgba(184,134,11,0.2),transparent)}'
+
+    + '.grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px 28px}'
+    + '.field{}'
+    + '.flbl{font-family:"Share Tech Mono",monospace;font-size:7px;letter-spacing:2.5px;color:rgba(255,255,255,0.25);text-transform:uppercase;margin-bottom:3px}'
+    + '.fval{font-family:"Barlow",sans-serif;font-size:13px;font-weight:500;color:#e8e2d0;line-height:1.4}'
+    + '.fval.red{color:#f87171;font-weight:700}'
+    + '.fval.green{color:#4ade80;font-weight:600}'
+
+    /* Divider */
+    + '.divider{height:1px;background:linear-gradient(90deg,transparent,rgba(184,134,11,0.2),transparent);margin:16px 0}'
+
+    /* Sanctions rows */
+    + '.sanction-row{display:flex;align-items:center;gap:10px;padding:7px 10px;border:1px solid rgba(184,134,11,0.1);border-radius:4px;margin-bottom:5px;background:rgba(255,255,255,0.02)}'
+    + '.sanction-icon{font-size:12px;flex-shrink:0;width:18px;text-align:center;color:rgba(184,134,11,0.7)}'
+    + '.sanction-type{font-family:"Share Tech Mono",monospace;font-size:8px;letter-spacing:1px;color:rgba(184,134,11,0.7);flex-shrink:0}'
+    + '.sanction-motif{font-size:11px;color:#c8bfa0;flex:1}'
+    + '.sanction-date{font-family:"Share Tech Mono",monospace;font-size:8px;color:rgba(255,255,255,0.25);flex-shrink:0}'
+
+    /* Comments */
+    + '.comment-item{border-left:2px solid rgba(184,134,11,0.25);padding:7px 12px;margin-bottom:8px}'
+    + '.comment-meta{font-family:"Share Tech Mono",monospace;font-size:7.5px;color:rgba(255,255,255,0.25);margin-bottom:3px}'
+    + '.comment-text{font-size:11.5px;color:#b8b0a0;line-height:1.6;white-space:pre-wrap}'
+
+    /* ── FOOTER ── */
+    + '.footer{position:relative;margin-top:20px;padding-top:12px;border-top:1px solid rgba(184,134,11,0.1);display:flex;justify-content:space-between;align-items:center}'
+    + '.footer-text{font-family:"Share Tech Mono",monospace;font-size:7px;letter-spacing:1.5px;color:rgba(255,255,255,0.15);text-transform:uppercase}'
+    + '.footer-logo{font-family:"Cinzel",serif;font-size:9px;font-weight:700;color:rgba(184,134,11,0.3);letter-spacing:2px}'
+
+    /* ── Stamp ── */
+    + '.stamp-wrap{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%) rotate(-20deg);pointer-events:none;text-align:center;border:4px solid rgba(239,68,68,0.75);border-radius:6px;padding:7px 20px}'
+    + '.stamp-text{font-family:"Cinzel",serif;font-size:26px;font-weight:900;color:rgba(239,68,68,0.75);letter-spacing:5px;text-shadow:0 0 30px rgba(239,68,68,0.4)}'
+    + '</style></head><body>'
+
     + '<div class="page">'
+    + '<div class="accent-bar-top"></div>'
+    + '<div class="accent-bar-bot"></div>'
+    + '<div class="side-accent left"></div>'
+    + '<div class="side-accent right"></div>'
+    + '<div class="corner tl"></div><div class="corner tr"></div><div class="corner bl"></div><div class="corner br"></div>'
+    + '<div class="glow g1"></div><div class="glow g2"></div>'
+
+    + '<div class="inner">'
+
+    /* ── Super ── */
+    + '<div class="doc-super">Police de Sunagakure — Dossier criminel confidentiel</div>'
+
+    /* ── Header ── */
     + '<div class="header">'
-    + '<div class="ha">' + esc(d.nom.charAt(0).toUpperCase()) + '</div>'
-    + '<div class="ht"><div class="sub">Police de Sunagakure — Dossier criminel confidentiel</div><h1>' + esc(d.nom) + '</h1><div class="badges">'
-    + (d.danger ? '<span class="badge bd">⚠ ' + esc(d.danger) + '</span>' : '')
-    + (d.statut ? '<span class="badge bg">' + esc(d.statut) + '</span>' : '')
-    + '</div></div>'
-    + '<div class="hmeta"><div>Réf : #' + d.id + '</div><div>Créé le : ' + (d.date ? new Date(d.date).toLocaleDateString('fr-FR') : new Date().toLocaleDateString('fr-FR')) + '</div><div>Imprimé le : ' + new Date().toLocaleDateString('fr-FR') + '</div><div style="margin-top:4px;font-weight:700;color:#c0410e">CONFIDENTIEL</div></div>'
+    + '<div class="photo-frame">'
+    + '<div class="photo-corner tl"></div><div class="photo-corner tr"></div><div class="photo-corner bl"></div><div class="photo-corner br"></div>'
+    + photoHTML
+    + '</div>'
+    + '<div class="title-block">'
+    + '<div class="name-sub">Suspect identifié</div>'
+    + '<div class="name-main">' + esc(d.nom) + '</div>'
+    + '<div class="badge-row">'
+    + (d.danger ? '<span class="pill pill-danger">⚠ ' + dInfo.label + '</span>' : '')
+    + (d.statut ? '<span class="pill pill-statut' + ((d.statut.toLowerCase()==='libéré'||d.statut.toLowerCase()==='libre')?' libre':'') + '">' + esc(d.statut) + '</span>' : '')
+    + '</div>'
+    + '</div>'
+    + '<div class="meta-block">'
+    + '<div>Réf&nbsp;: <span style="color:rgba(184,134,11,0.6)">#' + d.id + '</span></div>'
+    + '<div>Créé&nbsp;le&nbsp;: ' + (d.date ? new Date(d.date).toLocaleDateString('fr-FR') : new Date().toLocaleDateString('fr-FR')) + '</div>'
+    + '<div>Imprimé&nbsp;: ' + new Date().toLocaleDateString('fr-FR') + '</div>'
+    + '<div class="conf">CONFIDENTIEL</div>'
+    + '</div>'
     + '</div>'
 
-    + '<div class="section"><div class="stitle">Informations générales</div><div class="grid2">'
+    /* ── Informations générales ── */
+    + '<div class="section">'
+    + '<div class="section-title">Informations générales</div>'
+    + '<div class="grid2">'
     + '<div class="field"><div class="flbl">Infractions</div><div class="fval">' + esc(d.infractions || '—') + '</div></div>'
-    + '<div class="field"><div class="flbl">Dangerosité</div><div class="fval">' + esc(d.danger || '—') + '</div></div>'
-    + '<div class="field"><div class="flbl">Statut judiciaire</div><div class="fval">' + esc(d.statut || '—') + '</div></div>'
-    + '<div class="field"><div class="flbl">Agent responsable</div><div class="fval">' + esc(d.agent || '—') + '</div></div>'
-    + '<div class="field"><div class="flbl">Amende payée</div><div class="fval">' + (d.amendePayee || 0) + ' Ryos</div></div>'
-    + '<div class="field"><div class="flbl">Amende impayée</div><div class="fval" style="color:#c0410e;font-weight:700">' + (d.amendeImpayee || 0) + ' Ryos</div></div>'
+    + '<div class="field"><div class="flbl">Dangerosité</div><div class="fval" style="color:' + dInfo.col + '">' + esc(d.danger || '—') + '</div></div>'
+    + '<div class="field" style="margin-top:10px"><div class="flbl">Statut judiciaire</div><div class="fval">' + esc(d.statut || '—') + '</div></div>'
+    + '<div class="field" style="margin-top:10px"><div class="flbl">Agent responsable</div><div class="fval">' + esc(d.agent || d.auteur || '—') + '</div></div>'
+    + '<div class="field" style="margin-top:10px"><div class="flbl">Amende payée</div><div class="fval green">' + (d.amendePayee || 0) + ' Ryos</div></div>'
+    + '<div class="field" style="margin-top:10px"><div class="flbl">Amende impayée</div><div class="fval red">' + (d.amendeImpayee || 0) + ' Ryos</div></div>'
     + '</div>'
-    + (d.notes ? '<div class="field" style="margin-top:10px"><div class="flbl">Notes & observations</div><div class="fval" style="line-height:1.7;white-space:pre-wrap;margin-top:2px">' + esc(d.notes) + '</div></div>' : '')
+    + (d.notes ? '<div class="field" style="margin-top:14px;padding:12px;border:1px solid rgba(184,134,11,0.1);border-radius:4px;background:rgba(255,255,255,0.02)"><div class="flbl" style="margin-bottom:5px">Notes &amp; observations</div><div class="fval" style="line-height:1.7;white-space:pre-wrap;font-size:12px;color:#c8bfa0">' + esc(d.notes) + '</div></div>' : '')
     + '</div>'
 
-    + (sanctions.length ? '<div class="section"><div class="stitle">Sanctions liées (' + sanctions.length + ')</div>'
+    /* ── Sanctions ── */
+    + (sanctions.length ? '<div class="divider"></div><div class="section"><div class="section-title">Sanctions liées (' + sanctions.length + ')</div>'
     + sanctions.map(function(s) {
-        var icons = {Promotion:'↑',Félicitation:'★',Avertissement:'⚠',Suspension:'⏸',Rétrogradation:'↓',Exclusion:'✖'};
-        return '<div class="sr"><span style="font-size:13px">' + (icons[s.type] || '⚖') + '</span><span class="badge bg" style="flex-shrink:0">' + esc(s.type || '—') + '</span><span class="t">' + esc(s.motif || '—') + '</span><span class="d">' + (s.date ? new Date(s.date).toLocaleDateString('fr-FR') : '—') + ' · ' + esc(s.auteur || '—') + '</span></div>';
+        return '<div class="sanction-row"><span class="sanction-icon">' + (sanctionIcons[s.type]||'⚖') + '</span><span class="sanction-type">' + esc(s.type||'—') + '</span><span class="sanction-motif">' + esc(s.motif||'—') + '</span><span class="sanction-date">' + (s.date?new Date(s.date).toLocaleDateString('fr-FR'):'—') + ' · ' + esc(s.auteur||'—') + '</span></div>';
       }).join('') + '</div>' : '')
 
-    + (comments.length ? '<div class="section"><div class="stitle">Commentaires de suivi (' + comments.length + ')</div>'
+    /* ── Commentaires ── */
+    + (comments.length ? '<div class="divider"></div><div class="section"><div class="section-title">Commentaires de suivi (' + comments.length + ')</div>'
     + comments.map(function(c) {
-        return '<div class="ci"><div class="cmeta">Par ' + esc(c.author || '—') + ' — ' + (c.date ? new Date(c.date).toLocaleDateString('fr-FR', {day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}) : '—') + '</div><div class="cbody">' + esc(c.text) + '</div></div>';
+        return '<div class="comment-item"><div class="comment-meta">Par ' + esc(c.author||'—') + ' — ' + (c.date?new Date(c.date).toLocaleDateString('fr-FR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}):'—') + '</div><div class="comment-text">' + esc(c.text) + '</div></div>';
       }).join('') + '</div>' : '')
 
-    + '<div class="footer">POLICE DE SUNAGAKURE · Document officiel généré le ' + new Date().toLocaleDateString('fr-FR') + ' · Usage interne uniquement · Ne pas diffuser</div>'
-    + '</div></body></html>';
+    /* ── Footer ── */
+    + '<div class="footer">'
+    + '<div class="footer-text">Police de Sunagakure · Usage interne uniquement · Ne pas diffuser</div>'
+    + '<div class="footer-logo">SUNAGAKURE</div>'
+    + '<div class="footer-text">Généré le ' + new Date().toLocaleDateString('fr-FR') + '</div>'
+    + '</div>'
 
-  var win = window.open('', '_blank', 'width=860,height=1000,scrollbars=yes');
+    /* ── Wanted stamp overlay ── */
+    + (isWanted ? '<div style="position:absolute;top:42%;left:50%;transform:translate(-50%,-50%) rotate(-18deg);pointer-events:none;text-align:center;border:5px solid rgba(239,68,68,0.75);border-radius:8px;padding:8px 24px"><div style="font-family:Georgia,serif;font-size:30px;font-weight:900;color:rgba(239,68,68,0.75);letter-spacing:6px;text-shadow:0 0 30px rgba(239,68,68,0.5)">RECHERCHÉ</div></div>' : '')
+
+    + '</div></div></body></html>';
+
+  var win = window.open('', '_blank', 'width=900,height=1100,scrollbars=yes');
   if (!win) { showToast('⚠️ Autorisez les popups pour générer le PDF.', 'error'); return; }
   win.document.write(html);
   win.document.close();
   win.focus();
   setTimeout(function() {
     try { win.print(); } catch(e) {}
-  }, 500);
-  showToast('📄 Fiche PDF ouverte — utilisez Ctrl+P pour imprimer.', 'success');
+  }, 600);
+  showToast('📄 Fiche PDF ouverte — utilisez Ctrl+P pour imprimer/sauvegarder.', 'success');
 }
 
 /* ════════════════════════════════════════════════════════════════
