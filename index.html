@@ -4827,6 +4827,35 @@ function setPlainteStatut(id,statut){
 function deletePlainte(id){id=parseInt(id);askDelete("Supprimer cette plainte ?",()=>{DB.plaintes=DB.plaintes.filter(p=>String(p.id)!==String(id));saveData();renderPlaintes();syncDashboard()})}
 
 // DOSSIERS
+function viewDossier(id){
+  id=parseInt(id);
+  const d=DB.dossiers.find(x=>String(x.id)===String(id));if(!d)return;
+  var m=document.getElementById("modal-view-dossier");
+  if(!m){
+    m=document.createElement("div");m.className="modal-overlay";m.id="modal-view-dossier";
+    m.innerHTML='<div class="modal"><div class="modal-header"><h3 id="vd-title">Dossier</h3><span class="modal-close" aria-label="Fermer" onclick="closeModal(\'modal-view-dossier\')">✕</span></div><div class="modal-body" id="vd-body"></div><div class="modal-footer"><button class="btn btn-outline" onclick="closeModal(\'modal-view-dossier\')">Fermer</button></div></div>';
+    document.body.appendChild(m);
+    m.addEventListener("click",function(e){if(e.target===m)m.classList.remove("open");});
+  }
+  document.getElementById("vd-title").textContent="🗂️ Dossier — "+d.nom;
+  const photoHTML=d.photo&&safeImgSrc(d.photo)?`<div style="display:flex;justify-content:center;margin-bottom:14px"><img src="${safeImgSrc(d.photo)}" style="max-width:120px;max-height:150px;border-radius:10px;object-fit:cover;border:2px solid rgba(180,140,20,0.25)"></div>`:"";
+  document.getElementById("vd-body").innerHTML=`${photoHTML}
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
+      <div class="form-group" style="margin:0"><label class="form-label">Suspect</label><div style="font-weight:700;font-size:14px">${esc(d.nom)}</div></div>
+      <div class="form-group" style="margin:0"><label class="form-label">Dangerosité</label><span class="badge ${dangerBadge(d.danger)}">${esc(d.danger)}</span></div>
+      <div class="form-group" style="margin:0"><label class="form-label">Statut</label><span class="badge ${dossierStatutBadge(d.statut)}">${esc(d.statut)}</span></div>
+      <div class="form-group" style="margin:0"><label class="form-label">Agent</label><div style="font-size:12px;font-weight:600">${esc(d.auteur||"—")}</div></div>
+    </div>
+    <div class="form-group"><label class="form-label">Infractions</label><div style="font-size:12.5px;white-space:pre-wrap">${esc(d.infractions)}</div></div>
+    ${d.notes?`<div class="form-group"><label class="form-label">Notes</label><div style="font-size:12px;color:var(--muted);white-space:pre-wrap">${esc(d.notes)}</div></div>`:""}
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      ${(d.amendePayee||0)>0?`<div class="form-group" style="margin:0"><label class="form-label">Amende payée</label><div style="color:#166534;font-family:'Share Tech Mono',monospace;font-weight:700">✅ ${Number(d.amendePayee).toLocaleString()} Ryos</div></div>`:""}
+      ${(d.amendeImpayee||0)>0?`<div class="form-group" style="margin:0"><label class="form-label">Amende impayée</label><div style="color:#991b1b;font-family:'Share Tech Mono',monospace;font-weight:700">❌ ${Number(d.amendeImpayee).toLocaleString()} Ryos</div></div>`:""}
+    </div>
+    <div class="form-group" style="margin-top:8px"><label class="form-label">Créé le</label><div style="font-size:11px;color:var(--muted);font-family:'Share Tech Mono',monospace">${fmtDate(d.date)}</div></div>`;
+  openModal("modal-view-dossier");
+}
+
 function renderDossiers(){
   const q=(el("search-dossier")?.value||"").toLowerCase();
   let list=DB.dossiers;if(q)list=list.filter(d=>(d.nom+" "+d.infractions).toLowerCase().includes(q));
@@ -4847,10 +4876,11 @@ function renderDossiers(){
       </td>
       <td style="font-size:11.5px">${esc(d.auteur)}</td>
       <td style="white-space:nowrap">
+        <button class="btn btn-outline btn-sm" onclick="viewDossier(${d.id})" title="Voir le dossier">👁</button>
         ${canModify()?`
-          <button class="btn btn-gold btn-sm" onclick="openEditDossier(${d.id})" style="margin-right:4px">✏️</button>
-          <button class="btn btn-danger btn-sm" onclick="deleteDossier(${d.id})">🗑</button>
-        `:"—"}
+          <button class="btn btn-gold btn-sm" onclick="openEditDossier(${d.id})" style="margin-left:4px" title="Modifier">✏️</button>
+          <button class="btn btn-danger btn-sm" onclick="deleteDossier(${d.id})" style="margin-left:4px">🗑</button>
+        `:""}
       </td>
     </tr>`;
   }).join("")||`<tr><td colspan="8" style="text-align:center;color:var(--muted);padding:18px">Aucun dossier</td></tr>`;
