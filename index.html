@@ -11413,340 +11413,360 @@ function exportDossierPDF(id) {
   id = parseInt(id);
   var d = (DB.dossiers || []).find(function(x) { return x.id === id; });
   if (!d) { showToast('Dossier introuvable.', 'error'); return; }
-  var sanctions  = (DB.sanctions || []).filter(function(s) { return s.cible === d.nom; });
-  var comments   = d.comments || [];
-  var isWanted   = (d.statut || '').toLowerCase() === 'recherché';
-  var isGav      = (d.statut || '').toLowerCase() === 'en garde à vue';
-  var isIncarc   = (d.statut || '').toLowerCase() === 'incarcéré';
+  var sanctions = (DB.sanctions || []).filter(function(s) { return s.cible === d.nom; });
+  var comments  = d.comments || [];
 
-  /* ── Danger palette ── */
-  var dPalette = {
-    Faible:  { c:'#22c55e', bg:'rgba(22,163,74,0.13)',  border:'rgba(22,163,74,0.4)',  dot:'#22c55e' },
-    Modéré:  { c:'#60a5fa', bg:'rgba(59,130,246,0.13)', border:'rgba(59,130,246,0.4)', dot:'#60a5fa' },
-    Élevé:   { c:'#fbbf24', bg:'rgba(245,158,11,0.13)', border:'rgba(245,158,11,0.4)', dot:'#fbbf24' },
-    Extrême: { c:'#f87171', bg:'rgba(239,68,68,0.15)',  border:'rgba(239,68,68,0.5)',  dot:'#f87171' }
-  };
-  var dp = dPalette[d.danger] || { c:'#94a3b8', bg:'rgba(148,163,184,0.1)', border:'rgba(148,163,184,0.3)', dot:'#94a3b8' };
+  /* ── Palettes ── */
+  var dp = {
+    Faible:  {c:'#4ade80',dark:'#16a34a',bg:'rgba(74,222,128,0.1)', border:'rgba(74,222,128,0.35)', lvl:1},
+    Modéré:  {c:'#60a5fa',dark:'#2563eb',bg:'rgba(96,165,250,0.1)', border:'rgba(96,165,250,0.35)', lvl:2},
+    Élevé:   {c:'#fbbf24',dark:'#d97706',bg:'rgba(251,191,36,0.1)', border:'rgba(251,191,36,0.35)', lvl:3},
+    Extrême: {c:'#f87171',dark:'#dc2626',bg:'rgba(248,113,113,0.1)',border:'rgba(248,113,113,0.35)',lvl:4}
+  }[d.danger] || {c:'#94a3b8',dark:'#475569',bg:'rgba(148,163,184,0.08)',border:'rgba(148,163,184,0.2)',lvl:0};
 
-  /* ── Statut pill ── */
-  var statutPill = (function() {
-    if (isWanted) return 'background:rgba(239,68,68,0.15);color:#f87171;border:1px solid rgba(239,68,68,0.45)';
-    if (isGav)    return 'background:rgba(251,191,36,0.15);color:#fbbf24;border:1px solid rgba(251,191,36,0.4)';
-    if (isIncarc) return 'background:rgba(99,102,241,0.15);color:#a5b4fc;border:1px solid rgba(99,102,241,0.4)';
-    return 'background:rgba(148,163,184,0.1);color:#94a3b8;border:1px solid rgba(148,163,184,0.25)';
-  })();
+  var statutStyle = {
+    'Recherché':     {c:'#f87171',bg:'rgba(239,68,68,0.14)',b:'rgba(239,68,68,0.4)'},
+    'En garde à vue':{c:'#fbbf24',bg:'rgba(251,191,36,0.12)',b:'rgba(251,191,36,0.35)'},
+    'Incarcéré':     {c:'#a78bfa',bg:'rgba(139,92,246,0.12)',b:'rgba(139,92,246,0.35)'},
+    'Libéré':        {c:'#4ade80',bg:'rgba(74,222,128,0.1)',b:'rgba(74,222,128,0.3)'},
+    'Surveillé':     {c:'#fb923c',bg:'rgba(251,146,60,0.12)',b:'rgba(251,146,60,0.35)'}
+  }[d.statut] || {c:'#94a3b8',bg:'rgba(148,163,184,0.08)',b:'rgba(148,163,184,0.2)'};
 
-  /* ── Photo block ── */
-  var photoBlock = d.photo
-    ? '<img src="' + d.photo + '" style="width:100%;height:100%;object-fit:cover;display:block;border-radius:2px">'
-    : '<div style="width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px">'
-      + '<div style="font-family:\'Cinzel\',Georgia,serif;font-size:52px;font-weight:900;color:rgba(212,180,74,0.25);line-height:1">' + esc((d.nom||'?').charAt(0).toUpperCase()) + '</div>'
-      + '<div style="font-family:monospace;font-size:7px;letter-spacing:3px;color:rgba(255,255,255,0.1);text-transform:uppercase">Photo</div>'
-      + '</div>';
+  var isWanted  = (d.statut||'') === 'Recherché';
+  var isGav     = (d.statut||'') === 'En garde à vue';
+  var isIncarc  = (d.statut||'') === 'Incarcéré';
 
-  /* ── Wanted / statut overlay stamp ── */
-  var stampHTML = '';
-  if (isWanted) {
-    stampHTML = '<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;z-index:10">'
-      + '<div style="transform:rotate(-22deg);border:4px solid rgba(239,68,68,0.7);border-radius:6px;padding:6px 16px;text-align:center">'
-      + '<div style="font-family:\'Cinzel\',Georgia,serif;font-size:22px;font-weight:900;color:rgba(239,68,68,0.75);letter-spacing:5px;line-height:1;text-shadow:0 0 20px rgba(239,68,68,0.3)">RECHERCHÉ</div>'
-      + '</div></div>';
-  } else if (isGav) {
-    stampHTML = '<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;z-index:10">'
-      + '<div style="transform:rotate(-22deg);border:4px solid rgba(251,191,36,0.65);border-radius:6px;padding:6px 16px">'
-      + '<div style="font-family:\'Cinzel\',Georgia,serif;font-size:13px;font-weight:900;color:rgba(251,191,36,0.75);letter-spacing:4px;text-shadow:0 0 15px rgba(251,191,36,0.3)">GARDE À VUE</div>'
-      + '</div></div>';
+  /* ── Danger segments (4 bars) ── */
+  var dangerBars = '';
+  for (var bi=1; bi<=4; bi++) {
+    dangerBars += '<div style="height:5px;border-radius:1px;margin-bottom:3px;background:'+(bi<=dp.lvl?dp.c:'rgba(255,255,255,0.07)')+'"></div>';
   }
 
-  /* ── Sanctions rows ── */
-  var sIcons = { Promotion:'▲', Félicitation:'★', Avertissement:'⚠', Suspension:'⏸', Rétrogradation:'▼', Exclusion:'✖' };
-  var sanctionsHTML = sanctions.length
-    ? sanctions.map(function(s) {
-        return '<div style="display:flex;align-items:center;gap:10px;padding:8px 12px;border-bottom:1px solid rgba(255,255,255,0.04)">'
-          + '<span style="font-size:11px;color:rgba(212,180,74,0.6);flex-shrink:0;width:16px;text-align:center">' + (sIcons[s.type]||'⚖') + '</span>'
-          + '<span style="font-family:monospace;font-size:8px;letter-spacing:1px;color:rgba(212,180,74,0.55);flex-shrink:0;min-width:80px;text-transform:uppercase">' + esc(s.type||'—') + '</span>'
-          + '<span style="font-size:11px;color:#b8b0a0;flex:1">' + esc(s.motif||'—') + '</span>'
-          + '<span style="font-family:monospace;font-size:8px;color:rgba(255,255,255,0.2);flex-shrink:0">' + (s.date?new Date(s.date).toLocaleDateString('fr-FR'):'—') + '</span>'
-          + '</div>';
-      }).join('')
-    : '';
+  /* ── Photo block ── */
+  var photoInner = d.photo
+    ? '<img src="'+d.photo+'" style="width:100%;height:100%;object-fit:cover;display:block">'
+    : '<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center">'
+      +'<div style="font-family:\'Cinzel\',serif;font-size:58px;font-weight:900;color:rgba(212,168,67,0.18);user-select:none">'+esc((d.nom||'?').charAt(0).toUpperCase())+'</div>'
+      +'</div>';
 
-  /* ── Comments ── */
-  var commentsHTML = comments.length
-    ? comments.map(function(c) {
-        return '<div style="padding:10px 0;border-bottom:1px solid rgba(255,255,255,0.04)">'
-          + '<div style="font-family:monospace;font-size:7.5px;color:rgba(255,255,255,0.22);margin-bottom:4px;letter-spacing:0.5px">PAR ' + esc(c.author||'—').toUpperCase() + ' — ' + (c.date?new Date(c.date).toLocaleDateString('fr-FR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}):'—') + '</div>'
-          + '<div style="font-size:11.5px;color:#a8a09a;line-height:1.65;white-space:pre-wrap">' + esc(c.text) + '</div>'
-          + '</div>';
-      }).join('')
-    : '';
+  /* ── Targeting reticle SVG ── */
+  var reticle = '<svg style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none" viewBox="0 0 130 168" xmlns="http://www.w3.org/2000/svg">'
+    +'<line x1="65" y1="0" x2="65" y2="58" stroke="rgba(212,168,67,0.35)" stroke-width="0.6"/>'
+    +'<line x1="65" y1="110" x2="65" y2="168" stroke="rgba(212,168,67,0.35)" stroke-width="0.6"/>'
+    +'<line x1="0" y1="84" x2="43" y2="84" stroke="rgba(212,168,67,0.35)" stroke-width="0.6"/>'
+    +'<line x1="87" y1="84" x2="130" y2="84" stroke="rgba(212,168,67,0.35)" stroke-width="0.6"/>'
+    +'<circle cx="65" cy="84" r="24" fill="none" stroke="rgba(212,168,67,0.28)" stroke-width="0.8"/>'
+    +'<circle cx="65" cy="84" r="3" fill="none" stroke="rgba(212,168,67,0.5)" stroke-width="0.8"/>'
+    +'<circle cx="65" cy="84" r="1.5" fill="rgba(212,168,67,0.4)"/>'
+    +'<rect x="3" y="3" width="18" height="18" fill="none" stroke="rgba(212,168,67,0.5)" stroke-width="1.2"/>'
+    +'<rect x="109" y="3" width="18" height="18" fill="none" stroke="rgba(212,168,67,0.5)" stroke-width="1.2"/>'
+    +'<rect x="3" y="147" width="18" height="18" fill="none" stroke="rgba(212,168,67,0.5)" stroke-width="1.2"/>'
+    +'<rect x="109" y="147" width="18" height="18" fill="none" stroke="rgba(212,168,67,0.5)" stroke-width="1.2"/>'
+    +'</svg>';
 
-  /* ══════════════════════════════════════════
-     HTML COMPLET
-  ══════════════════════════════════════════ */
-  var html = '<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8">'
-    + '<title>Dossier — ' + esc(d.nom) + '</title>'
-    + '<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;900&family=Barlow+Condensed:wght@300;400;600;700;900&family=Barlow:wght@300;400;500;600&family=Share+Tech+Mono&display=swap" rel="stylesheet">'
-    + '<style>'
-    + '*{margin:0;padding:0;box-sizing:border-box}'
-    + 'html,body{width:210mm;background:#0b0d1a}'
-    + 'body{font-family:"Barlow",Georgia,sans-serif;-webkit-print-color-adjust:exact;print-color-adjust:exact}'
-    + '@page{size:A4;margin:0}'
+  /* ── Stamp overlay ── */
+  var stampSVG = '';
+  if (isWanted) {
+    stampSVG = '<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;z-index:5">'
+      +'<div style="transform:rotate(-24deg);border:3.5px solid rgba(239,68,68,0.8);border-radius:5px;padding:5px 13px;background:rgba(0,0,0,0.25)">'
+      +'<div style="font-family:\'Cinzel\',serif;font-size:19px;font-weight:900;color:rgba(239,68,68,0.85);letter-spacing:5px;line-height:1;text-shadow:0 0 15px rgba(239,68,68,0.5)">RECHERCHÉ</div>'
+      +'</div></div>';
+  } else if (isGav) {
+    stampSVG = '<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;z-index:5">'
+      +'<div style="transform:rotate(-24deg);border:3px solid rgba(251,191,36,0.75);border-radius:5px;padding:5px 10px">'
+      +'<div style="font-family:\'Cinzel\',serif;font-size:12px;font-weight:900;color:rgba(251,191,36,0.8);letter-spacing:3px">GARDE À VUE</div>'
+      +'</div></div>';
+  } else if (isIncarc) {
+    stampSVG = '<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;z-index:5">'
+      +'<div style="transform:rotate(-24deg);border:3px solid rgba(139,92,246,0.75);border-radius:5px;padding:5px 13px">'
+      +'<div style="font-family:\'Cinzel\',serif;font-size:14px;font-weight:900;color:rgba(139,92,246,0.8);letter-spacing:4px">INCARCÉRÉ</div>'
+      +'</div></div>';
+  }
 
-    /* ── Page wrapper ── */
-    + '.page{'
-    +   'width:210mm;min-height:297mm;'
-    +   'background:linear-gradient(170deg,#0d0f1e 0%,#0f1224 35%,#0b0d18 70%,#0d0f1e 100%);'
-    +   'position:relative;overflow:hidden;'
-    + '}'
+  /* ── Fake barcode ── */
+  var barcode = (function() {
+    var seed = d.id; var out = '';
+    var widths = [1,1,2,1,3,1,2,1,1,2,3,1,1,2,1,1,3,2,1,1,2,1,3,1,1,2,1,3,1,2];
+    var x = 0;
+    for (var i=0; i<widths.length; i++) {
+      var w = widths[i]; var fill = i%2===0?'rgba(255,255,255,0.6)':'transparent';
+      out += '<rect x="'+x+'" y="0" width="'+w+'" height="20" fill="'+fill+'"/>';
+      x += w + 1;
+    }
+    return '<svg width="'+x+'" height="20" viewBox="0 0 '+x+' 20" xmlns="http://www.w3.org/2000/svg">'+out+'</svg>';
+  })();
 
-    /* ── Subtle grid pattern ── */
-    + '.page::before{'
-    +   'content:"";position:absolute;inset:0;pointer-events:none;'
-    +   'background-image:'
-    +     'linear-gradient(rgba(184,134,11,0.04) 1px,transparent 1px),'
-    +     'linear-gradient(90deg,rgba(184,134,11,0.04) 1px,transparent 1px);'
-    +   'background-size:28px 28px;'
-    + '}'
+  /* ── Sanctions & Comments ── */
+  var sIcons = {Promotion:'▲',Félicitation:'★',Avertissement:'⚠',Suspension:'⏸',Rétrogradation:'▼',Exclusion:'✖'};
+  var sHTML = sanctions.map(function(s) {
+    return '<div style="display:flex;align-items:flex-start;gap:10px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.04)">'
+      +'<span style="font-size:10px;color:'+dp.c+';flex-shrink:0;margin-top:1px;width:12px">'+( sIcons[s.type]||'⚖')+'</span>'
+      +'<span style="font-family:\'Share Tech Mono\',monospace;font-size:7.5px;letter-spacing:1px;color:rgba(255,255,255,0.3);flex-shrink:0;width:74px;text-transform:uppercase;padding-top:1px">'+esc(s.type||'—')+'</span>'
+      +'<span style="font-size:11px;color:#b0a898;flex:1;line-height:1.4">'+esc(s.motif||'—')+'</span>'
+      +'<span style="font-family:\'Share Tech Mono\',monospace;font-size:8px;color:rgba(255,255,255,0.2);flex-shrink:0">'+( s.date?new Date(s.date).toLocaleDateString('fr-FR'):'—')+'</span>'
+      +'</div>';
+  }).join('');
+  var cHTML = comments.map(function(c) {
+    return '<div style="padding:9px 0;border-bottom:1px solid rgba(255,255,255,0.04)">'
+      +'<div style="font-family:\'Share Tech Mono\',monospace;font-size:7px;color:rgba(255,255,255,0.2);margin-bottom:4px;letter-spacing:1px">PAR '+esc((c.author||'—').toUpperCase())+' · '+(c.date?new Date(c.date).toLocaleDateString('fr-FR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}):'—')+'</div>'
+      +'<div style="font-size:11.5px;color:#9a9088;line-height:1.65;white-space:pre-wrap">'+esc(c.text)+'</div>'
+      +'</div>';
+  }).join('');
 
-    /* ── Ambient glows ── */
-    + '.glow-red{position:absolute;top:-120px;right:-80px;width:480px;height:480px;'
-    +   'background:radial-gradient(ellipse,rgba(192,65,14,0.09) 0%,transparent 65%);pointer-events:none}'
-    + '.glow-gold{position:absolute;bottom:-100px;left:-60px;width:400px;height:400px;'
-    +   'background:radial-gradient(ellipse,rgba(184,134,11,0.07) 0%,transparent 65%);pointer-events:none}'
+  /* ══════════════ BUILD HTML ══════════════ */
+  var css = [
+    '*{margin:0;padding:0;box-sizing:border-box}',
+    'html,body{width:210mm;background:#08091a}',
+    'body{font-family:"Barlow",Georgia,sans-serif;-webkit-print-color-adjust:exact;print-color-adjust:exact}',
+    '@page{size:A4;margin:0}',
 
-    /* ── TOP BAND ── */
-    + '.top-band{'
-    +   'position:relative;z-index:2;'
-    +   'background:linear-gradient(90deg,#c0410e 0%,#a03408 50%,#8b2c08 100%);'
-    +   'padding:9px 28px;'
-    +   'display:flex;align-items:center;justify-content:space-between;'
-    +   'border-bottom:2px solid rgba(184,134,11,0.6);'
-    + '}'
-    + '.top-band-left{font-family:"Cinzel",Georgia,serif;font-size:10px;font-weight:700;'
-    +   'letter-spacing:4px;color:rgba(255,255,255,0.9);text-transform:uppercase}'
-    + '.top-band-right{font-family:"Share Tech Mono",monospace;font-size:8px;'
-    +   'letter-spacing:2px;color:rgba(255,255,255,0.55)}'
+    /* Page */
+    '.page{width:210mm;min-height:297mm;display:flex;flex-direction:column;',
+      'background:linear-gradient(155deg,#08091a 0%,#0c0e20 100%);',
+      'position:relative;overflow:hidden}',
 
-    /* ── MAIN INNER PADDING ── */
-    + '.inner{position:relative;z-index:1;padding:24px 28px 22px}'
+    /* Dot-matrix background */
+    '.page::before{content:"";position:absolute;inset:0;pointer-events:none;',
+      'background-image:radial-gradient(circle,rgba(212,168,67,0.07) 1px,transparent 1px);',
+      'background-size:18px 18px}',
 
-    /* ── HERO SECTION (photo + name) ── */
-    + '.hero{display:flex;gap:24px;align-items:flex-start;margin-bottom:22px;padding-bottom:22px;'
-    +   'border-bottom:1px solid rgba(184,134,11,0.15);position:relative}'
+    /* Top accent bar */
+    '.topbar{flex-shrink:0;height:11px;',
+      'background:repeating-linear-gradient(90deg,#c0410e 0px,#c0410e 20px,#a03008 20px,#a03008 22px,#c0410e 22px,#c0410e 42px,#7a1e00 42px,#7a1e00 44px);',
+      'opacity:0.95}',
 
-    /* Photo frame */
-    + '.photo-wrap{position:relative;flex-shrink:0;width:110px}'
-    + '.photo-frame{'
-    +   'width:110px;height:145px;'
-    +   'background:rgba(184,134,11,0.05);'
-    +   'border:1px solid rgba(184,134,11,0.3);'
-    +   'overflow:hidden;position:relative;'
-    +   'box-shadow:0 0 0 4px rgba(184,134,11,0.06),0 8px 32px rgba(0,0,0,0.5);'
-    + '}'
-    /* Corner ticks on photo */
-    + '.photo-frame::before,.photo-frame::after,'
-    + '.photo-frame .corner-br,.photo-frame .corner-bl{'
-    +   'content:"";position:absolute;width:12px;height:12px;z-index:5'
-    + '}'
-    + '.photo-frame::before{top:0;left:0;border-top:2px solid #d4a843;border-left:2px solid #d4a843}'
-    + '.photo-frame::after{top:0;right:0;border-top:2px solid #d4a843;border-right:2px solid #d4a843}'
-    + '.photo-frame .corner-br{bottom:0;right:0;border-bottom:2px solid #d4a843;border-right:2px solid #d4a843}'
-    + '.photo-frame .corner-bl{bottom:0;left:0;border-bottom:2px solid #d4a843;border-left:2px solid #d4a843}'
-    + '.photo-label{font-family:"Share Tech Mono",monospace;font-size:7px;letter-spacing:2px;'
-    +   'color:rgba(184,134,11,0.4);text-align:center;margin-top:5px;text-transform:uppercase}'
+    /* Header strip */
+    '.hstrip{flex-shrink:0;background:rgba(0,0,0,0.45);border-bottom:1px solid rgba(212,168,67,0.2);',
+      'padding:7px 18px;display:flex;align-items:center;justify-content:space-between}',
+    '.hstrip-l{font-family:"Cinzel",serif;font-size:8px;font-weight:700;letter-spacing:4px;color:rgba(212,168,67,0.75);text-transform:uppercase}',
+    '.hstrip-r{font-family:"Share Tech Mono",monospace;font-size:8px;letter-spacing:2px;color:rgba(255,255,255,0.25)}',
 
-    /* Name / identity block */
-    + '.identity{flex:1;padding-top:4px}'
-    + '.id-kicker{font-family:"Share Tech Mono",monospace;font-size:7.5px;letter-spacing:4px;'
-    +   'color:rgba(192,65,14,0.75);text-transform:uppercase;margin-bottom:8px}'
-    + '.id-name{font-family:"Cinzel",Georgia,serif;font-size:42px;font-weight:900;'
-    +   'color:#f0e8d4;letter-spacing:3px;text-transform:uppercase;line-height:0.95;'
-    +   'text-shadow:0 0 60px rgba(192,65,14,0.25);margin-bottom:14px}'
-    + '.id-pills{display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin-bottom:16px}'
-    + '.pill{display:inline-flex;align-items:center;gap:5px;padding:4px 12px;border-radius:4px;'
-    +   'font-family:"Share Tech Mono",monospace;font-size:8.5px;font-weight:700;'
-    +   'letter-spacing:1px;text-transform:uppercase}'
-    + '.pill-sep{width:1px;height:14px;background:rgba(255,255,255,0.1)}'
+    /* Two-col layout */
+    '.body{display:flex;flex:1}',
 
-    /* Meta info (ref / dates) */
-    + '.id-meta{display:flex;gap:20px}'
-    + '.meta-item{}'
-    + '.meta-lbl{font-family:"Share Tech Mono",monospace;font-size:6.5px;letter-spacing:2px;'
-    +   'color:rgba(255,255,255,0.2);text-transform:uppercase;margin-bottom:2px}'
-    + '.meta-val{font-family:"Share Tech Mono",monospace;font-size:10px;color:rgba(255,255,255,0.5)}'
+    /* LEFT SIDEBAR */
+    '.sidebar{width:68mm;flex-shrink:0;',
+      'background:linear-gradient(180deg,#060710 0%,#07081a 100%);',
+      'border-right:1px solid rgba(212,168,67,0.15);',
+      'padding:18px 14px;display:flex;flex-direction:column;gap:16px;position:relative;overflow:hidden}',
 
-    /* ── SECTION BLOCK ── */
-    + '.section{margin-bottom:18px}'
-    + '.section-head{'
-    +   'display:flex;align-items:center;gap:10px;margin-bottom:12px'
-    + '}'
-    + '.section-head-line{flex:1;height:1px;background:linear-gradient(90deg,rgba(184,134,11,0.25),transparent)}'
-    + '.section-title{'
-    +   'font-family:"Barlow Condensed",sans-serif;font-size:8px;font-weight:700;'
-    +   'letter-spacing:4px;color:rgba(184,134,11,0.65);text-transform:uppercase;flex-shrink:0'
-    + '}'
-    + '.section-title-left{flex-shrink:0}'
-    + '.section-head-line-left{width:16px;height:1px;background:rgba(184,134,11,0.3);flex-shrink:0}'
+    /* Sidebar diagonal lines */
+    '.sidebar::after{content:"";position:absolute;inset:0;pointer-events:none;',
+      'background-image:repeating-linear-gradient(135deg,transparent,transparent 8px,rgba(212,168,67,0.015) 8px,rgba(212,168,67,0.015) 9px);',
+      '}',
 
-    /* ── DATA GRID ── */
-    + '.data-grid{display:grid;grid-template-columns:1fr 1fr;gap:0}'
-    + '.data-cell{'
-    +   'padding:10px 14px;'
-    +   'border-bottom:1px solid rgba(255,255,255,0.04);'
-    +   'border-right:1px solid rgba(255,255,255,0.04);'
-    + '}'
-    + '.data-cell:nth-child(even){border-right:none}'
-    + '.data-lbl{font-family:"Share Tech Mono",monospace;font-size:6.5px;letter-spacing:2.5px;'
-    +   'color:rgba(255,255,255,0.2);text-transform:uppercase;margin-bottom:4px}'
-    + '.data-val{font-family:"Barlow",sans-serif;font-size:13px;font-weight:500;color:#d4cfc5;line-height:1.4}'
-    + '.data-val.accent{font-weight:700}'
+    /* Vertical CONFIDENTIEL text */
+    '.sidebar-vtext{position:absolute;right:-28px;top:50%;transform:translateY(-50%) rotate(90deg);',
+      'font-family:"Share Tech Mono",monospace;font-size:7px;letter-spacing:5px;color:rgba(192,65,14,0.2);',
+      'text-transform:uppercase;white-space:nowrap;pointer-events:none}',
 
-    /* notes block */
-    + '.notes-block{padding:12px 14px;background:rgba(255,255,255,0.02);'
-    +   'border:1px solid rgba(255,255,255,0.05);border-radius:3px;margin-top:10px}'
-    + '.notes-text{font-size:12px;color:#a09890;line-height:1.7;white-space:pre-wrap}'
-
-    /* ── BOTTOM BAND ── */
-    + '.bottom-band{'
-    +   'position:relative;z-index:2;margin-top:auto;'
-    +   'background:rgba(0,0,0,0.3);'
-    +   'border-top:2px solid rgba(192,65,14,0.5);'
-    +   'padding:8px 28px;'
-    +   'display:flex;align-items:center;justify-content:space-between;'
-    + '}'
-    + '.bottom-left{font-family:"Share Tech Mono",monospace;font-size:7px;'
-    +   'letter-spacing:2px;color:rgba(255,255,255,0.18);text-transform:uppercase}'
-    + '.bottom-center{font-family:"Cinzel",Georgia,serif;font-size:9px;font-weight:700;'
-    +   'letter-spacing:3px;color:rgba(192,65,14,0.5)'
-    + '}'
-    + '.bottom-right{font-family:"Share Tech Mono",monospace;font-size:7px;'
-    +   'letter-spacing:1.5px;color:rgba(255,255,255,0.18);text-transform:uppercase}'
-
-    /* ── DIAMOND WATERMARK ── */
-    + '.watermark{'
-    +   'position:absolute;top:50%;left:50%;'
-    +   'transform:translate(-50%,-50%) rotate(-35deg);'
-    +   'font-family:"Cinzel",Georgia,serif;font-size:88px;font-weight:900;'
-    +   'color:rgba(192,65,14,0.03);letter-spacing:8px;white-space:nowrap;'
-    +   'pointer-events:none;z-index:0;text-transform:uppercase;'
-    + '}'
-
-    + '</style></head><body>'
-    + '<div class="page">'
-
-    /* Glows */
-    + '<div class="glow-red"></div>'
-    + '<div class="glow-gold"></div>'
-
-    /* Watermark */
-    + '<div class="watermark">CONFIDENTIEL</div>'
-
-    /* ── TOP BAND ── */
-    + '<div class="top-band">'
-    +   '<div class="top-band-left">Police de Sunagakure &nbsp;·&nbsp; Dossier Criminel</div>'
-    +   '<div class="top-band-right">RÉF #' + d.id + ' &nbsp;·&nbsp; CONFIDENTIEL</div>'
-    + '</div>'
-
-    /* ── INNER ── */
-    + '<div class="inner">'
-
-    /* ── HERO ── */
-    + '<div class="hero">'
+    /* Village seal */
+    '.seal{text-align:center;padding-bottom:14px;border-bottom:1px solid rgba(212,168,67,0.1)}',
+    '.seal-ring{width:44px;height:44px;border-radius:50%;border:1.5px solid rgba(212,168,67,0.4);',
+      'background:rgba(212,168,67,0.05);display:flex;align-items:center;justify-content:center;',
+      'margin:0 auto 6px;box-shadow:0 0 0 4px rgba(212,168,67,0.04)}',
+    '.seal-letter{font-family:"Cinzel",serif;font-size:18px;font-weight:900;color:rgba(212,168,67,0.6)}',
+    '.seal-name{font-family:"Share Tech Mono",monospace;font-size:6.5px;letter-spacing:3px;color:rgba(212,168,67,0.4);text-transform:uppercase}',
 
     /* Photo */
-    + '<div class="photo-wrap">'
-    +   '<div class="photo-frame" style="position:relative">'
-    +     '<div class="corner-br"></div>'
-    +     '<div class="corner-bl"></div>'
-    +     photoBlock
-    +     stampHTML
-    +   '</div>'
-    +   '<div class="photo-label">Photo d\'identité</div>'
-    + '</div>'
+    '.photo-wrap{position:relative;width:100%}',
+    '.photo-frame{width:100%;aspect-ratio:130/168;background:rgba(212,168,67,0.04);',
+      'border:1px solid rgba(212,168,67,0.25);overflow:hidden;position:relative;',
+      'box-shadow:0 4px 24px rgba(0,0,0,0.5)}',
 
-    /* Identity */
-    + '<div class="identity">'
-    +   '<div class="id-kicker">Suspect identifié — Dossier actif</div>'
-    +   '<div class="id-name">' + esc(d.nom) + '</div>'
-    +   '<div class="id-pills">'
-    +   (d.danger ? '<span class="pill" style="' + dp.bg.replace('background:','') + 'background:' + dp.bg + ';color:' + dp.c + ';border:1px solid ' + dp.border + '">⚠ ' + esc(d.danger) + '</span>' : '')
-    +   (d.danger && d.statut ? '<span class="pill-sep"></span>' : '')
-    +   (d.statut ? '<span class="pill" style="' + statutPill + '">' + esc(d.statut) + '</span>' : '')
-    +   '</div>'
-    +   '<div class="id-meta">'
-    +     '<div class="meta-item"><div class="meta-lbl">Réf. dossier</div><div class="meta-val">#' + d.id + '</div></div>'
-    +     '<div class="meta-item"><div class="meta-lbl">Créé le</div><div class="meta-val">' + (d.date ? new Date(d.date).toLocaleDateString('fr-FR') : new Date().toLocaleDateString('fr-FR')) + '</div></div>'
-    +     '<div class="meta-item"><div class="meta-lbl">Imprimé le</div><div class="meta-val">' + new Date().toLocaleDateString('fr-FR') + '</div></div>'
-    +   '</div>'
-    + '</div>'
+    /* Sidebar sections */
+    '.sb-section{padding-top:12px;border-top:1px solid rgba(212,168,67,0.08)}',
+    '.sb-label{font-family:"Share Tech Mono",monospace;font-size:6.5px;letter-spacing:3px;',
+      'color:rgba(212,168,67,0.4);text-transform:uppercase;margin-bottom:8px}',
 
-    + '</div>' /* /hero */
+    /* Danger bars */
+    '.danger-bar{height:5px;border-radius:1px;margin-bottom:3px}',
 
-    /* ── SECTION : Informations générales ── */
-    + '<div class="section">'
-    +   '<div class="section-head">'
-    +     '<div class="section-head-line-left"></div>'
-    +     '<div class="section-title section-title-left">Informations générales</div>'
-    +     '<div class="section-head-line"></div>'
-    +   '</div>'
-    +   '<div style="border:1px solid rgba(255,255,255,0.06);border-radius:4px;overflow:hidden">'
-    +     '<div class="data-grid">'
-    +       '<div class="data-cell"><div class="data-lbl">Infractions</div><div class="data-val">' + esc(d.infractions||'—') + '</div></div>'
-    +       '<div class="data-cell"><div class="data-lbl">Dangerosité</div><div class="data-val accent" style="color:' + dp.c + '">' + esc(d.danger||'—') + '</div></div>'
-    +       '<div class="data-cell"><div class="data-lbl">Statut judiciaire</div><div class="data-val">' + esc(d.statut||'—') + '</div></div>'
-    +       '<div class="data-cell"><div class="data-lbl">Agent responsable</div><div class="data-val">' + esc(d.agent||d.auteur||'—') + '</div></div>'
-    +       '<div class="data-cell" style="border-bottom:none"><div class="data-lbl">Amende payée</div><div class="data-val accent" style="color:#4ade80">' + Number(d.amendePayee||0).toLocaleString('fr-FR') + ' Ryos</div></div>'
-    +       '<div class="data-cell" style="border-bottom:none"><div class="data-lbl">Amende impayée</div><div class="data-val accent" style="color:#f87171">' + Number(d.amendeImpayee||0).toLocaleString('fr-FR') + ' Ryos</div></div>'
-    +     '</div>'
-    +   '</div>'
-    +   (d.notes ? '<div class="notes-block"><div class="data-lbl" style="margin-bottom:6px">Notes &amp; observations</div><div class="notes-text">' + esc(d.notes) + '</div></div>' : '')
-    + '</div>'
+    /* Status pill sidebar */
+    '.sb-status{display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:3px;',
+      'font-family:"Share Tech Mono",monospace;font-size:8px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase}',
 
-    /* ── SECTION : Sanctions ── */
-    + (sanctions.length
-        ? '<div class="section">'
-        +   '<div class="section-head">'
-        +     '<div class="section-head-line-left"></div>'
-        +     '<div class="section-title section-title-left">Sanctions liées (' + sanctions.length + ')</div>'
-        +     '<div class="section-head-line"></div>'
-        +   '</div>'
-        +   '<div style="border:1px solid rgba(255,255,255,0.06);border-radius:4px;overflow:hidden">'
-        +     sanctionsHTML
-        +   '</div>'
-        + '</div>'
-        : '')
+    /* Meta rows */
+    '.sb-meta-row{display:flex;justify-content:space-between;align-items:baseline;padding:3px 0;',
+      'border-bottom:1px solid rgba(255,255,255,0.04)}',
+    '.sb-meta-k{font-family:"Share Tech Mono",monospace;font-size:6.5px;letter-spacing:1.5px;',
+      'color:rgba(255,255,255,0.2);text-transform:uppercase}',
+    '.sb-meta-v{font-family:"Share Tech Mono",monospace;font-size:9px;color:rgba(255,255,255,0.45)}',
 
-    /* ── SECTION : Commentaires ── */
-    + (comments.length
-        ? '<div class="section">'
-        +   '<div class="section-head">'
-        +     '<div class="section-head-line-left"></div>'
-        +     '<div class="section-title section-title-left">Commentaires de suivi (' + comments.length + ')</div>'
-        +     '<div class="section-head-line"></div>'
-        +   '</div>'
-        +   '<div style="padding:0 4px">' + commentsHTML + '</div>'
-        + '</div>'
-        : '')
+    /* RIGHT CONTENT */
+    '.content{flex:1;padding:20px 22px;display:flex;flex-direction:column;gap:18px;overflow:hidden}',
 
-    + '</div>' /* /inner */
+    /* Name hero */
+    '.name-zone{padding-bottom:16px;border-bottom:1px solid rgba(212,168,67,0.12);position:relative}',
+    '.name-kicker{font-family:"Share Tech Mono",monospace;font-size:7px;letter-spacing:5px;',
+      'color:rgba(192,65,14,0.7);text-transform:uppercase;margin-bottom:10px;display:flex;align-items:center;gap:8px}',
+    '.name-kicker::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,rgba(192,65,14,0.3),transparent)}',
+    '.name-main{font-family:"Cinzel",serif;font-size:38px;font-weight:900;color:#f0e8d4;',
+      'letter-spacing:4px;text-transform:uppercase;line-height:0.92;',
+      'text-shadow:2px 2px 0 rgba(0,0,0,0.5),0 0 50px rgba(192,65,14,0.2)}',
+    '.name-sub{font-family:"Barlow Condensed",sans-serif;font-size:10px;font-weight:300;',
+      'letter-spacing:6px;color:rgba(255,255,255,0.2);text-transform:uppercase;margin-top:6px}',
+    '.name-meta{display:flex;gap:16px;margin-top:12px}',
+    '.nm-item{padding:5px 10px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:3px}',
+    '.nm-lbl{font-family:"Share Tech Mono",monospace;font-size:6px;letter-spacing:2px;color:rgba(255,255,255,0.18);text-transform:uppercase;margin-bottom:2px}',
+    '.nm-val{font-family:"Share Tech Mono",monospace;font-size:9px;color:rgba(255,255,255,0.5)}',
 
-    /* ── BOTTOM BAND ── */
-    + '<div class="bottom-band">'
-    +   '<div class="bottom-left">Police de Sunagakure &nbsp;·&nbsp; Usage interne uniquement &nbsp;·&nbsp; Ne pas diffuser</div>'
-    +   '<div class="bottom-center">SUNAGAKURE</div>'
-    +   '<div class="bottom-right">Généré le ' + new Date().toLocaleDateString('fr-FR') + '</div>'
-    + '</div>'
+    /* Data section */
+    '.ds-title{font-family:"Share Tech Mono",monospace;font-size:7px;letter-spacing:4px;',
+      'color:rgba(212,168,67,0.5);text-transform:uppercase;margin-bottom:10px;',
+      'display:flex;align-items:center;gap:8px}',
+    '.ds-title::before{content:"◆";font-size:5px;color:rgba(212,168,67,0.4)}',
+    '.ds-title::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,rgba(212,168,67,0.15),transparent)}',
 
-    + '</div></body></html>';
+    /* Data rows — dotted leader style */
+    '.dr{display:flex;align-items:baseline;padding:7px 0;border-bottom:1px dotted rgba(255,255,255,0.06)}',
+    '.dr:last-child{border-bottom:none}',
+    '.dr-k{font-family:"Share Tech Mono",monospace;font-size:7px;letter-spacing:2px;',
+      'color:rgba(255,255,255,0.22);text-transform:uppercase;flex-shrink:0;width:96px}',
+    '.dr-dots{flex:1;border-bottom:1px dotted rgba(255,255,255,0.07);margin:0 6px;margin-bottom:3px;min-width:10px}',
+    '.dr-v{font-family:"Barlow",sans-serif;font-size:12.5px;font-weight:500;color:#d4cfc5;',
+      'text-align:right;flex-shrink:0;max-width:200px;line-height:1.3}',
 
-  var win = window.open('', '_blank', 'width=920,height=1100,scrollbars=yes');
+    /* Notes block */
+    '.notes{padding:10px 12px;background:rgba(255,255,255,0.02);',
+      'border-left:2px solid rgba(212,168,67,0.25);margin-top:8px;border-radius:0 3px 3px 0}',
+    '.notes-lbl{font-family:"Share Tech Mono",monospace;font-size:6.5px;letter-spacing:2px;',
+      'color:rgba(212,168,67,0.4);text-transform:uppercase;margin-bottom:5px}',
+    '.notes-text{font-size:11px;color:#958d85;line-height:1.7;white-space:pre-wrap}',
+
+    /* Bottom bar */
+    '.botbar{flex-shrink:0;background:rgba(0,0,0,0.5);border-top:1px solid rgba(192,65,14,0.4);',
+      'padding:7px 18px;display:flex;align-items:center;justify-content:space-between;gap:12px}',
+    '.bot-l{font-family:"Share Tech Mono",monospace;font-size:6.5px;letter-spacing:2px;',
+      'color:rgba(255,255,255,0.15);text-transform:uppercase}',
+    '.bot-c{font-family:"Cinzel",serif;font-size:8.5px;font-weight:700;letter-spacing:3px;color:rgba(192,65,14,0.45)}',
+    '.bot-r{font-family:"Share Tech Mono",monospace;font-size:6.5px;letter-spacing:1px;color:rgba(255,255,255,0.15)}',
+
+    /* Red bottom accent */
+    '.botstrip{flex-shrink:0;height:5px;background:linear-gradient(90deg,rgba(192,65,14,0.9),rgba(184,134,11,0.6),rgba(192,65,14,0.5))}',
+  ].join('');
+
+  var html = '<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8">'
+    +'<title>Dossier — '+esc(d.nom)+'</title>'
+    +'<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;900&family=Barlow+Condensed:wght@300;400;600;700;900&family=Barlow:wght@300;400;500;600&family=Share+Tech+Mono&display=swap" rel="stylesheet">'
+    +'<style>'+css+'</style></head><body>'
+
+    +'<div class="page">'
+
+    /* ── TOP STRIPE ── */
+    +'<div class="topbar"></div>'
+
+    /* ── HEADER STRIP ── */
+    +'<div class="hstrip">'
+    +'<div class="hstrip-l">Police de Sunagakure &nbsp;/&nbsp; Dossier Criminel</div>'
+    +'<div class="hstrip-r">CLASSIFIÉ &nbsp;·&nbsp; RÉF #'+d.id+'</div>'
+    +'</div>'
+
+    /* ══ BODY ══ */
+    +'<div class="body">'
+
+    /* ── SIDEBAR ── */
+    +'<div class="sidebar">'
+    +'<div class="sidebar-vtext">CONFIDENTIEL &nbsp; · &nbsp; USAGE INTERNE</div>'
+
+    /* Seal */
+    +'<div class="seal">'
+    +'<div class="seal-ring"><div class="seal-letter">S</div></div>'
+    +'<div class="seal-name">Sunagakure</div>'
+    +'</div>'
+
+    /* Photo */
+    +'<div class="photo-wrap">'
+    +'<div class="photo-frame">'
+    +photoInner
+    +reticle
+    +stampSVG
+    +'</div>'
+    +'</div>'
+
+    /* Status */
+    +'<div class="sb-section">'
+    +'<div class="sb-label">Statut judiciaire</div>'
+    +'<div class="sb-status" style="background:'+statutStyle.bg+';color:'+statutStyle.c+';border:1px solid '+statutStyle.b+'">'+esc(d.statut||'—')+'</div>'
+    +'</div>'
+
+    /* Dangerosité */
+    +'<div class="sb-section">'
+    +'<div class="sb-label">Niveau de dangerosité</div>'
+    +dangerBars
+    +'<div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:'+dp.c+';letter-spacing:2px;text-transform:uppercase;margin-top:2px">'+esc(d.danger||'—')+'</div>'
+    +'</div>'
+
+    /* Meta */
+    +'<div class="sb-section">'
+    +'<div class="sb-meta-row"><span class="sb-meta-k">Réf.</span><span class="sb-meta-v">#'+d.id+'</span></div>'
+    +'<div class="sb-meta-row"><span class="sb-meta-k">Créé</span><span class="sb-meta-v">'+(d.date?new Date(d.date).toLocaleDateString('fr-FR'):new Date().toLocaleDateString('fr-FR'))+'</span></div>'
+    +'<div class="sb-meta-row"><span class="sb-meta-k">Imprimé</span><span class="sb-meta-v">'+new Date().toLocaleDateString('fr-FR')+'</span></div>'
+    +'<div class="sb-meta-row"><span class="sb-meta-k">Agent</span><span class="sb-meta-v">'+esc(d.auteur||'—')+'</span></div>'
+    +'</div>'
+
+    +'</div>' /* /sidebar */
+
+    /* ── RIGHT CONTENT ── */
+    +'<div class="content">'
+
+    /* Name hero */
+    +'<div class="name-zone">'
+    +'<div class="name-kicker">Suspect identifié</div>'
+    +'<div class="name-main">'+esc(d.nom)+'</div>'
+    +'<div class="name-sub">Dossier criminel confidentiel</div>'
+    +'<div class="name-meta">'
+    +(d.danger?'<div class="nm-item"><div class="nm-lbl">Dangerosité</div><div class="nm-val" style="color:'+dp.c+'">'+esc(d.danger)+'</div></div>':'')
+    +(d.statut?'<div class="nm-item"><div class="nm-lbl">Statut</div><div class="nm-val" style="color:'+statutStyle.c+'">'+esc(d.statut)+'</div></div>':'')
+    +(d.agent||d.auteur?'<div class="nm-item"><div class="nm-lbl">Agent</div><div class="nm-val">'+esc(d.agent||d.auteur||'—')+'</div></div>':'')
+    +'</div>'
+    +'</div>'
+
+    /* Informations */
+    +'<div>'
+    +'<div class="ds-title">Informations générales</div>'
+    +'<div class="dr"><span class="dr-k">Infractions</span><span class="dr-dots"></span><span class="dr-v">'+esc(d.infractions||'—')+'</span></div>'
+    +'<div class="dr"><span class="dr-k">Statut jud.</span><span class="dr-dots"></span><span class="dr-v" style="color:'+statutStyle.c+'">'+esc(d.statut||'—')+'</span></div>'
+    +'<div class="dr"><span class="dr-k">Dangerosité</span><span class="dr-dots"></span><span class="dr-v" style="color:'+dp.c+'">'+esc(d.danger||'—')+'</span></div>'
+    +'<div class="dr"><span class="dr-k">Amende payée</span><span class="dr-dots"></span><span class="dr-v" style="color:#4ade80">'+Number(d.amendePayee||0).toLocaleString('fr-FR')+' Ryos</span></div>'
+    +'<div class="dr"><span class="dr-k">Amende due</span><span class="dr-dots"></span><span class="dr-v" style="color:#f87171">'+Number(d.amendeImpayee||0).toLocaleString('fr-FR')+' Ryos</span></div>'
+    +(d.notes?'<div class="notes"><div class="notes-lbl">Notes &amp; observations</div><div class="notes-text">'+esc(d.notes)+'</div></div>':'')
+    +'</div>'
+
+    /* Sanctions */
+    +(sanctions.length
+      ?'<div><div class="ds-title">Sanctions ('+sanctions.length+')</div>'+sHTML+'</div>'
+      :'')
+
+    /* Commentaires */
+    +(comments.length
+      ?'<div><div class="ds-title">Commentaires de suivi ('+comments.length+')</div>'+cHTML+'</div>'
+      :'')
+
+    +'</div>' /* /content */
+    +'</div>' /* /body */
+
+    /* ── BOTTOM BAR ── */
+    +'<div class="botbar">'
+    +'<div class="bot-l">Police de Sunagakure &nbsp;·&nbsp; Usage interne uniquement &nbsp;·&nbsp; Ne pas diffuser</div>'
+    +'<div class="bot-c">SUNAGAKURE</div>'
+    +'<div style="display:flex;align-items:center;gap:10px">'
+    +barcode
+    +'<div class="bot-r">'+new Date().toLocaleDateString('fr-FR')+'</div>'
+    +'</div>'
+    +'</div>'
+    +'<div class="botstrip"></div>'
+
+    +'</div>' /* /page */
+    +'</body></html>';
+
+  var win = window.open('','_blank','width=940,height=1120,scrollbars=yes');
   if (!win) { showToast('⚠️ Autorisez les popups pour générer le PDF.', 'error'); return; }
   win.document.write(html);
   win.document.close();
   win.focus();
-  setTimeout(function() { try { win.print(); } catch(e) {} }, 700);
-  showToast('📄 Fiche PDF ouverte — Ctrl+P pour sauvegarder en PDF.', 'success');
+  setTimeout(function(){ try { win.print(); } catch(e){} }, 700);
+  showToast('📄 Fiche PDF ouverte — Ctrl+P pour sauvegarder.', 'success');
 }
 
 /* ════════════════════════════════════════════════════════════════
