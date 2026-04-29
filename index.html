@@ -1810,6 +1810,7 @@ document.addEventListener('DOMContentLoaded',function(){if(localStorage.getItem(
             <th class="sortable-th" onclick="sortTable('dossiers','statut',this)" aria-sort="none">Statut <span class="sort-icon">⇅</span></th>
             <th>💰 Amendes</th>
             <th class="sortable-th" onclick="sortTable('dossiers','agent',this)" aria-sort="none">Agent <span class="sort-icon">⇅</span></th>
+            <th style="color:rgba(109,40,217,0.6);font-size:8.5px;letter-spacing:1px;white-space:nowrap">🏷 Tags <span style="font-size:7px;background:rgba(192,65,14,0.12);color:#e05c1a;border:1px solid rgba(192,65,14,0.2);border-radius:3px;padding:1px 4px;vertical-align:middle">SOON</span></th>
             <th>Actions</th>
           </tr></thead>
           <tbody id="dossiers-tbody"></tbody>
@@ -1921,6 +1922,22 @@ document.addEventListener('DOMContentLoaded',function(){if(localStorage.getItem(
       </div>
     </div>
     <div class="grid grid-3" id="operations-grid"></div>
+
+    <!-- TEASER CARTE INTERACTIVE -->
+    <div style="margin-top:16px;border:1px dashed rgba(180,140,20,0.25);border-radius:12px;padding:18px 20px;background:rgba(180,140,20,0.02);display:flex;align-items:center;gap:16px;cursor:not-allowed" title="Fonctionnalité bientôt disponible">
+      <div style="width:48px;height:48px;border-radius:10px;background:rgba(180,140,20,0.07);border:1px solid rgba(180,140,20,0.2);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;filter:grayscale(0.5);opacity:0.6">🗺️</div>
+      <div style="flex:1;min-width:0">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+          <span style="font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text);opacity:0.5">Carte tactique des opérations</span>
+          <span style="font-size:8px;background:rgba(192,65,14,0.15);color:#e05c1a;border:1px solid rgba(192,65,14,0.25);border-radius:3px;padding:2px 6px;letter-spacing:1.5px;font-family:'Share Tech Mono',monospace">BIENTÔT</span>
+        </div>
+        <div style="font-size:10px;color:var(--muted);font-family:'Share Tech Mono',monospace;letter-spacing:0.5px">Visualisez et placez vos opérations sur une carte interactive de Sunagakure</div>
+        <div style="margin-top:8px;height:4px;background:rgba(0,0,0,0.06);border-radius:2px;overflow:hidden">
+          <div style="height:100%;width:35%;background:linear-gradient(90deg,transparent,rgba(180,140,20,0.4),transparent);border-radius:2px;animation:yunoTeaserScan 2.5s ease-in-out infinite"></div>
+        </div>
+      </div>
+    </div>
+
     <!-- Vue calendrier opérations -->
     <div id="operations-calendar" style="display:none">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
@@ -4366,7 +4383,16 @@ function renderRecensement(){
     const avatarContent=r.photo&&safeImgSrc(r.photo)?`<img src="${safeImgSrc(r.photo)}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`:`${initials}`;
     const _taxeBadge=r.taxePayee?`<span style="background:rgba(21,128,61,0.12);color:#15803d;font-size:8.5px;font-family:'Share Tech Mono',monospace;padding:2px 6px;border-radius:10px;border:1px solid rgba(21,128,61,0.25)">✓ TAXE</span>`:`<span style="background:rgba(220,38,38,0.1);color:#dc2626;font-size:8.5px;font-family:'Share Tech Mono',monospace;padding:2px 6px;border-radius:10px;border:1px solid rgba(220,38,38,0.2)">✗ TAXE</span>`;
     const _taxeRow=`<div class="recense-row"><span class="lbl">Taxation</span><span class="val">${_taxeBadge}${r.taxeMontantTotal?` <span style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--gold2)">${r.taxeMontantTotal} ꩜</span>`:''}</span></div>`;
-    return `<div class="recense-card"><div class="recense-card-header"><div class="recense-avatar" style="${avatarStyle}${r.photo?';padding:0;overflow:hidden':''}">${avatarContent}</div><div style="flex:1;min-width:0"><div style="font-weight:700;font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(r.prenom)} ${esc(r.nom)}</div><div style="font-size:9.5px;color:var(--muted);font-family:'Share Tech Mono',monospace">${esc(r.faction)||"—"}</div></div><span class="badge ${rangBadge(r.rang)}" style="flex-shrink:0">${esc(r.rang)}</span></div><div class="recense-card-body"><div class="recense-row"><span class="lbl">Âge / Sexe</span><span class="val">${esc(r.age)} ans · ${esc(r.sexe)}</span></div><div class="recense-row"><span class="lbl">Compétences</span><span class="val" style="font-size:10.5px;max-width:140px">${esc(r.competences)||"—"}</span></div>${_taxeRow}${r.natures&&r.natures.length?`<div style="margin-top:7px"><div class="nature-bar">${r.natures.map(n=>`<span class="badge ${NATURE_BADGE[n]||"badge-gray"}">${esc(n)}</span>`).join("")}</div></div>`:""}<div class="flex gap-2 mt-4"><button class="btn btn-outline btn-sm" onclick="viewRecense(${r.id})">👁 Fiche</button>${canModify()?`<button class="btn btn-gold btn-sm" onclick="openEditRecense(${r.id})" title="Modifier la fiche">✏️</button><button class="btn btn-danger btn-sm" onclick="deleteRecense(${r.id})">🗑</button>`:""}</div></div></div>`;
+    return `<div class="recense-card"><div class="recense-card-header"><div class="recense-avatar" style="${avatarStyle}${r.photo?';padding:0;overflow:hidden':''}">${avatarContent}</div><div style="flex:1;min-width:0"><div style="font-weight:700;font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(r.prenom)} ${esc(r.nom)}</div><div style="font-size:9.5px;color:var(--muted);font-family:'Share Tech Mono',monospace">${esc(r.faction)||"—"}</div></div><span class="badge ${rangBadge(r.rang)}" style="flex-shrink:0">${esc(r.rang)}</span></div><div class="recense-card-body"><div class="recense-row"><span class="lbl">Âge / Sexe</span><span class="val">${esc(r.age)} ans · ${esc(r.sexe)}</span></div><div class="recense-row"><span class="lbl">Compétences</span><span class="val" style="font-size:10.5px;max-width:140px">${esc(r.competences)||"—"}</span></div>${_taxeRow}${r.natures&&r.natures.length?`<div style="margin-top:7px"><div class="nature-bar">${r.natures.map(n=>`<span class="badge ${NATURE_BADGE[n]||"badge-gray"}">${esc(n)}</span>`).join("")}</div></div>`:""}
+<div style="margin-top:9px;padding:7px 10px;background:rgba(192,65,14,0.05);border:1px solid rgba(192,65,14,0.18);border-radius:7px;display:flex;align-items:center;gap:8px;cursor:not-allowed" title="Fonctionnalité bientôt disponible">
+  <span style="font-size:13px;opacity:0.5;filter:grayscale(1)">⚡</span>
+  <div style="flex:1;min-width:0">
+    <div style="font-family:'Share Tech Mono',monospace;font-size:8px;color:var(--muted);letter-spacing:1.5px;text-transform:uppercase">Niveau de menace</div>
+    <div style="display:flex;gap:2px;margin-top:3px">${[1,2,3,4,5].map(i=>`<div style="height:5px;flex:1;border-radius:2px;background:rgba(0,0,0,0.08)"></div>`).join("")}</div>
+  </div>
+  <span style="font-size:8px;background:rgba(192,65,14,0.15);color:#e05c1a;border:1px solid rgba(192,65,14,0.25);border-radius:3px;padding:1px 5px;letter-spacing:1px;font-family:'Share Tech Mono',monospace;white-space:nowrap">BIENTÔT</span>
+</div>
+<div class="flex gap-2 mt-4"><button class="btn btn-outline btn-sm" onclick="viewRecense(${r.id})">👁 Fiche</button>${canModify()?`<button class="btn btn-gold btn-sm" onclick="openEditRecense(${r.id})" title="Modifier la fiche">✏️</button><button class="btn btn-danger btn-sm" onclick="deleteRecense(${r.id})">🗑</button>`:""}</div></div></div>`;
   }).join("")||'<div style="grid-column:1/-1;text-align:center;color:var(--muted);padding:40px">Aucun joueur recensé.</div>';
 }
 var _recenseEditId = null; // null = création, number = édition
@@ -4907,6 +4933,12 @@ function renderDossiers(){
         ${(!d.amendePayee&&!d.amendeImpayee)?`<span style="color:var(--muted);font-size:10px">—</span>`:""}
       </td>
       <td style="font-size:11.5px">${esc(d.auteur)}</td>
+      <td>
+        <div title="Étiquettes — bientôt disponible" style="display:flex;gap:3px;align-items:center;cursor:not-allowed;opacity:0.5">
+          <div style="height:14px;width:28px;border-radius:3px;background:rgba(109,40,217,0.15);border:1px dashed rgba(109,40,217,0.3)"></div>
+          <div style="height:14px;width:20px;border-radius:3px;background:rgba(14,116,144,0.15);border:1px dashed rgba(14,116,144,0.3)"></div>
+        </div>
+      </td>
       <td style="white-space:nowrap">
         <button class="btn btn-outline btn-sm" onclick="viewDossier(${d.id})" title="Voir le dossier">👁</button>
         ${canModify()?`
@@ -4915,7 +4947,7 @@ function renderDossiers(){
         `:""}
       </td>
     </tr>`;
-  }).join("")||`<tr><td colspan="8" style="text-align:center;color:var(--muted);padding:18px">Aucun dossier</td></tr>`;
+  }).join("")||`<tr><td colspan="9" style="text-align:center;color:var(--muted);padding:18px">Aucun dossier</td></tr>`;
 }
 function checkDoublonSuspect(){
   const nom=(el("d-nom").value||"").trim().toLowerCase();
@@ -11024,6 +11056,27 @@ body:not(.has-action-fab) #yuno-config-banner{
       if(fab) fab.setAttribute('aria-expanded', 'false');
     }
   };
+
+  // Fermer YUNO en cliquant en dehors
+  document.addEventListener('click', function(e){
+    var panel = document.getElementById('yuno-chat-panel');
+    var config = document.getElementById('yuno-config-banner');
+    var fab = document.getElementById('yuno-fab');
+    if(!panel || !config || !fab) return;
+    var clickedInside = panel.contains(e.target) || config.contains(e.target) || fab.contains(e.target);
+    if(!clickedInside){
+      if(chatOpen){
+        chatOpen = false;
+        panel.classList.remove('open');
+        panel.setAttribute('aria-hidden','true');
+        fab.setAttribute('aria-expanded','false');
+      }
+      if(config.classList.contains('open')){
+        config.classList.remove('open');
+        config.setAttribute('aria-hidden','true');
+      }
+    }
+  });
 
   window.yunoShowConfig = function(){
     var config = document.getElementById('yuno-config-banner');
