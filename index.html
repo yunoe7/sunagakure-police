@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, interactive-widget=resizes-visual">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self' https://fonts.googleapis.com https://fonts.gstatic.com https://*.firebaseio.com https://*.googleapis.com https://www.gstatic.com; script-src 'self' 'unsafe-inline' https://www.gstatic.com https://*.googleapis.com https://cdn.jsdelivr.net https://*.firebasedatabase.app; img-src 'self' data: blob: https:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; connect-src https://*.firebaseio.com https://*.googleapis.com wss://*.firebaseio.com https://www.gstatic.com https://*.firebasedatabase.app wss://*.firebasedatabase.app https://cdn.jsdelivr.net https://api.anthropic.com https://freeipapi.com https://ipinfo.io https://geolocation-db.com; frame-src 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self' https://fonts.googleapis.com https://fonts.gstatic.com https://*.firebaseio.com https://*.googleapis.com https://www.gstatic.com; script-src 'self' 'unsafe-inline' https://www.gstatic.com https://*.googleapis.com https://cdn.jsdelivr.net https://*.firebasedatabase.app; img-src 'self' data: blob: https:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; connect-src https://*.firebaseio.com https://*.googleapis.com wss://*.firebaseio.com https://www.gstatic.com https://*.firebasedatabase.app wss://*.firebasedatabase.app https://cdn.jsdelivr.net https://api.anthropic.com https://ipinfo.io https://geolocation-db.com; frame-src 'none'">
 <title>Police — Sunagakure Intranet</title>
 <meta name="theme-color" content="#1a1c2e">
 <link rel="icon" href="data:,">
@@ -3582,32 +3582,22 @@ var _sessionGeoPromise = null;
 function fetchSessionGeo(){
   if(_sessionGeo) return Promise.resolve(_sessionGeo);
   if(_sessionGeoPromise) return _sessionGeoPromise;
-  _sessionGeoPromise = fetch('https://freeipapi.com/api/json')
+  _sessionGeoPromise = fetch('https://ipinfo.io/json')
     .then(function(r){ return r.json(); })
     .then(function(d){
-      if(d && d.ipAddress){
-        _sessionGeo = {ip:d.ipAddress, country:d.countryName||'', countryCode:(d.countryCode||'').toLowerCase(), city:d.cityName||'', region:d.regionName||'', isp:''};
-        return _sessionGeo;
+      if(d && d.ip){
+        // ipinfo retourne country code ISO (ex: "FR") — on mappe vers le nom complet
+        var countryNames = {FR:'France',US:'États-Unis',GB:'Royaume-Uni',DE:'Allemagne',ES:'Espagne',IT:'Italie',BE:'Belgique',CH:'Suisse',CA:'Canada',JP:'Japon',CN:'Chine',RU:'Russie',BR:'Brésil',AU:'Australie',NL:'Pays-Bas',PT:'Portugal',PL:'Pologne',SE:'Suède',NO:'Norvège',DK:'Danemark',FI:'Finlande',AT:'Autriche',MX:'Mexique',AR:'Argentine',ZA:'Afrique du Sud',NG:'Nigéria',EG:'Égypte',MA:'Maroc',TN:'Tunisie',DZ:'Algérie',TR:'Turquie',SA:'Arabie saoudite',AE:'Émirats arabes unis',IN:'Inde',KR:'Corée du Sud',SG:'Singapour',TH:'Thaïlande',VN:'Viêt Nam',ID:'Indonésie',PH:'Philippines'};
+        var cc = (d.country||'').toUpperCase();
+        _sessionGeo = {ip:d.ip, country:countryNames[cc]||d.country||'', countryCode:cc.toLowerCase(), city:d.city||'', region:d.region||'', isp:d.org||''};
+      } else {
+        _sessionGeo = {ip:'Inconnue'};
       }
-      throw new Error('no data');
+      return _sessionGeo;
     })
     .catch(function(){
-      // Fallback : ipinfo.io
-      return fetch('https://ipinfo.io/json')
-        .then(function(r){ return r.json(); })
-        .then(function(d){
-          if(d && d.ip){
-            // ipinfo retourne un code pays ISO, on garde tel quel
-            _sessionGeo = {ip:d.ip, country:d.country||'', countryCode:(d.country||'').toLowerCase(), city:d.city||'', region:d.region||'', isp:d.org||''};
-          } else {
-            _sessionGeo = {ip:'Inconnue'};
-          }
-          return _sessionGeo;
-        })
-        .catch(function(){
-          _sessionGeo = {ip:'Inconnue'};
-          return _sessionGeo;
-        });
+      _sessionGeo = {ip:'Inconnue'};
+      return _sessionGeo;
     });
   return _sessionGeoPromise;
 }
