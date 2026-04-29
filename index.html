@@ -4412,13 +4412,21 @@ function renderRecensement(){
     const _taxeBadge=r.taxePayee?`<span style="background:rgba(21,128,61,0.12);color:#15803d;font-size:8.5px;font-family:'Share Tech Mono',monospace;padding:2px 6px;border-radius:10px;border:1px solid rgba(21,128,61,0.25)">✓ TAXE</span>`:`<span style="background:rgba(220,38,38,0.1);color:#dc2626;font-size:8.5px;font-family:'Share Tech Mono',monospace;padding:2px 6px;border-radius:10px;border:1px solid rgba(220,38,38,0.2)">✗ TAXE</span>`;
     const _taxeRow=`<div class="recense-row"><span class="lbl">Taxation</span><span class="val">${_taxeBadge}${r.taxeMontantTotal?` <span style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--gold2)">${r.taxeMontantTotal} ꩜</span>`:''}</span></div>`;
     return `<div class="recense-card"><div class="recense-card-header"><div class="recense-avatar" style="${avatarStyle}${r.photo?';padding:0;overflow:hidden':''}">${avatarContent}</div><div style="flex:1;min-width:0"><div style="font-weight:700;font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(r.prenom)} ${esc(r.nom)}</div><div style="font-size:9.5px;color:var(--muted);font-family:'Share Tech Mono',monospace">${esc(r.faction)||"—"}</div></div><span class="badge ${rangBadge(r.rang)}" style="flex-shrink:0">${esc(r.rang)}</span></div><div class="recense-card-body"><div class="recense-row"><span class="lbl">Âge / Sexe</span><span class="val">${esc(r.age)} ans · ${esc(r.sexe)}</span></div><div class="recense-row"><span class="lbl">Compétences</span><span class="val" style="font-size:10.5px;max-width:140px">${esc(r.competences)||"—"}</span></div>${_taxeRow}${r.natures&&r.natures.length?`<div style="margin-top:7px"><div class="nature-bar">${r.natures.map(n=>`<span class="badge ${NATURE_BADGE[n]||"badge-gray"}">${esc(n)}</span>`).join("")}</div></div>`:""}
-<div style="margin-top:9px;padding:7px 10px;background:rgba(192,65,14,0.05);border:1px solid rgba(192,65,14,0.18);border-radius:7px;display:flex;align-items:center;gap:8px;cursor:not-allowed" title="Fonctionnalité bientôt disponible">
-  <span style="font-size:13px;opacity:0.5;filter:grayscale(1)">⚡</span>
-  <div style="flex:1;min-width:0">
-    <div style="font-family:'Share Tech Mono',monospace;font-size:8px;color:var(--muted);letter-spacing:1.5px;text-transform:uppercase">Niveau de menace</div>
-    <div style="display:flex;gap:2px;margin-top:3px">${[1,2,3,4,5].map(i=>`<div style="height:5px;flex:1;border-radius:2px;background:rgba(0,0,0,0.08)"></div>`).join("")}</div>
+<div style="margin-top:9px;padding:9px 11px;background:linear-gradient(90deg,rgba(192,65,14,0.07),rgba(180,140,20,0.04));border:1px solid rgba(192,65,14,0.22);border-radius:8px;cursor:not-allowed;position:relative;overflow:hidden" title="Fonctionnalité bientôt disponible">
+  <div style="position:absolute;inset:0;background:repeating-linear-gradient(90deg,transparent,transparent 6px,rgba(192,65,14,0.025) 6px,rgba(192,65,14,0.025) 7px);pointer-events:none"></div>
+  <div style="display:flex;align-items:center;gap:7px;position:relative">
+    <span style="font-size:15px;opacity:0.4;filter:grayscale(0.6);flex-shrink:0;line-height:1">⚡</span>
+    <div style="flex:1;min-width:0">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:5px">
+        <span style="font-family:'Share Tech Mono',monospace;font-size:8px;color:rgba(192,65,14,0.6);letter-spacing:2px;text-transform:uppercase;font-weight:600">Niveau de menace</span>
+        <span style="font-size:7.5px;background:rgba(192,65,14,0.12);color:#c05010;border:1px solid rgba(192,65,14,0.3);border-radius:3px;padding:1px 5px;letter-spacing:1.5px;font-family:'Share Tech Mono',monospace">BIENTÔT</span>
+      </div>
+      <div style="display:flex;gap:3px;align-items:center">
+        ${[1,2,3,4,5].map(i=>`<div style="height:6px;flex:1;border-radius:3px;background:rgba(0,0,0,0.08);border:1px solid rgba(0,0,0,0.06);position:relative;overflow:hidden"><div style="position:absolute;inset:0;background:linear-gradient(90deg,rgba(255,255,255,0.05),transparent)"></div></div>`).join("")}
+      </div>
+      <div style="margin-top:4px;font-size:8px;color:rgba(0,0,0,0.2);font-family:'Share Tech Mono',monospace;letter-spacing:0.5px">— / —</div>
+    </div>
   </div>
-  <span style="font-size:8px;background:rgba(192,65,14,0.15);color:#e05c1a;border:1px solid rgba(192,65,14,0.25);border-radius:3px;padding:1px 5px;letter-spacing:1px;font-family:'Share Tech Mono',monospace;white-space:nowrap">BIENTÔT</span>
 </div>
 <div class="flex gap-2 mt-4"><button class="btn btn-outline btn-sm" onclick="viewRecense(${r.id})">👁 Fiche</button>${canModify()?`<button class="btn btn-gold btn-sm" onclick="openEditRecense(${r.id})" title="Modifier la fiche">✏️</button><button class="btn btn-danger btn-sm" onclick="deleteRecense(${r.id})">🗑</button>`:""}</div></div></div>`;
   }).join("")||'<div style="grid-column:1/-1;text-align:center;color:var(--muted);padding:40px">Aucun joueur recensé.</div>';
