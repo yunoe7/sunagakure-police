@@ -2602,7 +2602,7 @@ document.addEventListener('DOMContentLoaded',function(){if(localStorage.getItem(
         <input type="file" id="r-photo-input" accept="image/*" style="display:none" onchange="loadRecensePhoto(this)">
       </div>
     </div>
-    <div class="modal-footer"><button class="btn btn-outline" onclick="closeModal('modal-recense')">Annuler</button><button class="btn btn-purple" onclick="saveRecense()">✓ Enregistrer</button></div>
+    <div class="modal-footer"><button class="btn btn-outline" onclick="_recenseEditId=null;const h=document.querySelector('#modal-recense .modal-header h3');if(h)h.textContent='📝 Recenser un joueur';const sb=document.querySelector('#modal-recense .modal-footer .btn-purple');if(sb)sb.textContent='✓ Enregistrer';closeModal('modal-recense')">Annuler</button><button class="btn btn-purple" onclick="saveRecense()">✓ Enregistrer</button></div>
   </div>
 </div>
 
@@ -2725,7 +2725,7 @@ document.addEventListener('DOMContentLoaded',function(){if(localStorage.getItem(
       </div>
     </div>
     <div class="modal-footer">
-      <button class="btn btn-outline" onclick="closeModal('modal-plainte')">Annuler</button>
+      <button class="btn btn-outline" onclick="_resetPlainteModal();closeModal('modal-plainte')">Annuler</button>
       <button class="btn btn-primary" onclick="savePlainte()">📋 Déposer la plainte</button>
     </div>
   </div>
@@ -4334,15 +4334,82 @@ function renderRecensement(){
     const avatarContent=r.photo&&safeImgSrc(r.photo)?`<img src="${safeImgSrc(r.photo)}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`:`${initials}`;
     const _taxeBadge=r.taxePayee?`<span style="background:rgba(21,128,61,0.12);color:#15803d;font-size:8.5px;font-family:'Share Tech Mono',monospace;padding:2px 6px;border-radius:10px;border:1px solid rgba(21,128,61,0.25)">✓ TAXE</span>`:`<span style="background:rgba(220,38,38,0.1);color:#dc2626;font-size:8.5px;font-family:'Share Tech Mono',monospace;padding:2px 6px;border-radius:10px;border:1px solid rgba(220,38,38,0.2)">✗ TAXE</span>`;
     const _taxeRow=`<div class="recense-row"><span class="lbl">Taxation</span><span class="val">${_taxeBadge}${r.taxeMontantTotal?` <span style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--gold2)">${r.taxeMontantTotal} ꩜</span>`:''}</span></div>`;
-    return `<div class="recense-card"><div class="recense-card-header"><div class="recense-avatar" style="${avatarStyle}${r.photo?';padding:0;overflow:hidden':''}">${avatarContent}</div><div style="flex:1;min-width:0"><div style="font-weight:700;font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(r.prenom)} ${esc(r.nom)}</div><div style="font-size:9.5px;color:var(--muted);font-family:'Share Tech Mono',monospace">${esc(r.faction)||"—"}</div></div><span class="badge ${rangBadge(r.rang)}" style="flex-shrink:0">${esc(r.rang)}</span></div><div class="recense-card-body"><div class="recense-row"><span class="lbl">Âge / Sexe</span><span class="val">${esc(r.age)} ans · ${esc(r.sexe)}</span></div><div class="recense-row"><span class="lbl">Compétences</span><span class="val" style="font-size:10.5px;max-width:140px">${esc(r.competences)||"—"}</span></div>${_taxeRow}${r.natures&&r.natures.length?`<div style="margin-top:7px"><div class="nature-bar">${r.natures.map(n=>`<span class="badge ${NATURE_BADGE[n]||"badge-gray"}">${esc(n)}</span>`).join("")}</div></div>`:""}<div class="flex gap-2 mt-4"><button class="btn btn-outline btn-sm" onclick="viewRecense(${r.id})">👁 Fiche</button>${canModify()?`<button class="btn btn-danger btn-sm" onclick="deleteRecense(${r.id})">🗑</button>`:""}</div></div></div>`;
+    return `<div class="recense-card"><div class="recense-card-header"><div class="recense-avatar" style="${avatarStyle}${r.photo?';padding:0;overflow:hidden':''}">${avatarContent}</div><div style="flex:1;min-width:0"><div style="font-weight:700;font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(r.prenom)} ${esc(r.nom)}</div><div style="font-size:9.5px;color:var(--muted);font-family:'Share Tech Mono',monospace">${esc(r.faction)||"—"}</div></div><span class="badge ${rangBadge(r.rang)}" style="flex-shrink:0">${esc(r.rang)}</span></div><div class="recense-card-body"><div class="recense-row"><span class="lbl">Âge / Sexe</span><span class="val">${esc(r.age)} ans · ${esc(r.sexe)}</span></div><div class="recense-row"><span class="lbl">Compétences</span><span class="val" style="font-size:10.5px;max-width:140px">${esc(r.competences)||"—"}</span></div>${_taxeRow}${r.natures&&r.natures.length?`<div style="margin-top:7px"><div class="nature-bar">${r.natures.map(n=>`<span class="badge ${NATURE_BADGE[n]||"badge-gray"}">${esc(n)}</span>`).join("")}</div></div>`:""}<div class="flex gap-2 mt-4"><button class="btn btn-outline btn-sm" onclick="viewRecense(${r.id})">👁 Fiche</button>${canModify()?`<button class="btn btn-gold btn-sm" onclick="openEditRecense(${r.id})" title="Modifier la fiche">✏️</button><button class="btn btn-danger btn-sm" onclick="deleteRecense(${r.id})">🗑</button>`:""}</div></div></div>`;
   }).join("")||'<div style="grid-column:1/-1;text-align:center;color:var(--muted);padding:40px">Aucun joueur recensé.</div>';
 }
+var _recenseEditId = null; // null = création, number = édition
+
+function openEditRecense(id){
+  if(!canModify()){showToast("Accès réservé aux admins.","error");return;}
+  const r = DB.recenses.find(x=>String(x.id)===String(id));
+  if(!r) return;
+  _recenseEditId = r.id;
+  // Pré-remplir le formulaire
+  el("r-prenom").value = r.prenom||"";
+  el("r-nom").value = r.nom||"";
+  el("r-age").value = r.age||"";
+  const sexeSel = el("r-sexe"); if(sexeSel) sexeSel.value = r.sexe||"Masculin";
+  el("r-faction").value = r.faction||"";
+  const rangSel = el("r-rang"); if(rangSel) rangSel.value = r.rang||"Genin";
+  el("r-competences").value = r.competences||"";
+  el("r-notes").value = r.notes||"";
+  // Natures
+  buildNatureCheckboxes();
+  document.querySelectorAll("#nature-checkboxes input").forEach(c=>{c.checked=(r.natures||[]).includes(c.value);});
+  // Taxe
+  const taxeChk = document.getElementById("r-taxe-payee"); if(taxeChk) taxeChk.checked = !!r.taxePayee;
+  const taxeMontant = document.getElementById("r-taxe-montant"); if(taxeMontant) taxeMontant.value = r.taxeMontantTotal||0;
+  // Historique taxe
+  const histEl = document.getElementById("r-taxe-historique");
+  const histList = document.getElementById("r-taxe-hist-list");
+  if(histEl && histList && r.taxeHistorique && r.taxeHistorique.length){
+    histEl.style.display="block";
+    histList.innerHTML=r.taxeHistorique.map(h=>`<div style="font-size:10px;color:var(--muted)">${fmtDate(h.date)} — ${h.montant}꩜ par ${esc(h.auteur||'?')}</div>`).join("");
+  } else if(histEl){histEl.style.display="none";}
+  // Photo
+  _recensePhoto = r.photo||"";
+  const prev = document.getElementById("r-photo-avatar-preview");
+  const rem = document.getElementById("r-photo-remove");
+  if(prev) prev.innerHTML = r.photo ? `<img src="${safeImgSrc(r.photo)}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">` : '👤';
+  if(rem) rem.style.display = r.photo ? "inline-flex" : "none";
+  lhUpdateTaxeState();
+  // Changer le titre et bouton
+  const header = document.querySelector("#modal-recense .modal-header h3");
+  if(header) header.textContent = "✏️ Modifier la fiche";
+  const saveBtn = document.querySelector("#modal-recense .modal-footer .btn-purple");
+  if(saveBtn) saveBtn.textContent = "✓ Enregistrer les modifications";
+  openModal("modal-recense");
+}
+
 function saveRecense(){
   const prenom=v("r-prenom"),nom=v("r-nom");if(!prenom||!nom)return;
   const natures=[...document.querySelectorAll("#nature-checkboxes input:checked")].map(c=>c.value);
   const photo=_recensePhoto||"";
   const taxePayee=document.getElementById("r-taxe-payee")?.checked||false;
   const taxeMontant=parseFloat(document.getElementById("r-taxe-montant")?.value)||0;
+
+  if(_recenseEditId){
+    // ── Mode édition ──
+    const idx = DB.recenses.findIndex(x=>String(x.id)===String(_recenseEditId));
+    if(idx!==-1){
+      const old = DB.recenses[idx];
+      const taxeEntry = (taxePayee||taxeMontant>0) && taxeMontant !== (old.taxeMontantTotal||0) ? {date:now(),montant:taxeMontant,auteur:currentUser.nom} : null;
+      DB.recenses[idx] = Object.assign({},old,{prenom,nom,age:v("r-age"),sexe:v("r-sexe"),faction:v("r-faction"),rang:v("r-rang"),competences:v("r-competences"),natures,notes:v("r-notes"),photo,
+        taxePayee,taxeMontantTotal:taxeMontant,
+        taxeHistorique:taxeEntry?[...(old.taxeHistorique||[]),taxeEntry]:(old.taxeHistorique||[])
+      });
+      addTimeline(`Fiche modifiée : ${prenom} ${nom}`);
+      saveData();closeModal("modal-recense");renderRecensement();syncDashboard();
+      showToast("Fiche mise à jour.","success");
+    }
+    _recenseEditId=null;
+    // Remettre le titre original
+    const header=document.querySelector("#modal-recense .modal-header h3"); if(header) header.textContent="📝 Recenser un joueur";
+    const saveBtn=document.querySelector("#modal-recense .modal-footer .btn-purple"); if(saveBtn) saveBtn.textContent="✓ Enregistrer";
+    clearForm(["r-prenom","r-nom","r-age","r-faction","r-competences","r-notes","r-taxe-montant"]);
+    document.querySelectorAll("#nature-checkboxes input").forEach(c=>c.checked=false);
+    removeRecensePhoto(); return;
+  }
 
   // Construire l'historique des paiements
   const taxeEntry = (taxePayee||taxeMontant>0) ? {date:now(),montant:taxeMontant,auteur:currentUser.nom} : null;
@@ -4616,7 +4683,7 @@ function setCandidature(id,statut){
 function filterPlaintes(f,e){plaintesFilter=f;document.querySelectorAll("#page-plaintes .tab-btn").forEach(b=>b.classList.remove("active"));e.classList.add("active");renderPlaintes()}
 function renderPlaintes(){
   let list=DB.plaintes;if(plaintesFilter!=="all")list=list.filter(p=>p.statut===plaintesFilter);
-  el("plaintes-tbody").innerHTML=list.map(p=>`<tr><td class="mono">#${p.id}</td><td>${esc(p.plaignant)}</td><td>${esc(p.accuse)}</td><td>${esc(p.type)}</td><td><span class="badge ${statutPlainte(p.statut)}">${fmtStatut(p.statut)}</span></td><td class="mono">${fmtDate(p.date)}</td><td><button class="btn btn-outline btn-sm" onclick="viewPlainte(${p.id})">👁</button>${canModify()?` <button class="btn btn-danger btn-sm" onclick="deletePlainte(${p.id})">🗑</button>`:""}</td></tr>`).join("")||`<tr><td colspan="7" style="text-align:center;color:var(--muted);padding:18px">Aucune plainte</td></tr>`;
+  el("plaintes-tbody").innerHTML=list.map(p=>`<tr><td class="mono">#${p.id}</td><td>${esc(p.plaignant)}</td><td>${esc(p.accuse)}</td><td>${esc(p.type)}</td><td><span class="badge ${statutPlainte(p.statut)}">${fmtStatut(p.statut)}</span></td><td class="mono">${fmtDate(p.date)}</td><td><button class="btn btn-outline btn-sm" onclick="viewPlainte(${p.id})">👁</button>${canModify()?` <button class="btn btn-gold btn-sm" onclick="openEditPlainte(${p.id})" title="Modifier">✏️</button> <button class="btn btn-danger btn-sm" onclick="deletePlainte(${p.id})">🗑</button>`:""}</td></tr>`).join("")||`<tr><td colspan="7" style="text-align:center;color:var(--muted);padding:18px">Aucune plainte</td></tr>`;
 }
 let _plaintePhoto="";
 function loadPlaintePhoto(input){
@@ -4661,8 +4728,56 @@ function handlePlainteDrop(ev){
   const fakeInput={files:[file]};
   loadPlaintePhoto(fakeInput);
 }
+var _plainteEditId = null;
+
+function openEditPlainte(id){
+  if(!canModify()){showToast("Accès réservé aux admins.","error");return;}
+  const p = DB.plaintes.find(x=>String(x.id)===String(id));
+  if(!p) return;
+  _plainteEditId = p.id;
+  el("p-plaignant").value = p.plaignant||"";
+  el("p-accuse").value = p.accuse||"";
+  const typeSel = el("p-type"); if(typeSel) typeSel.value = p.type||"Abus de pouvoir";
+  el("p-date").value = p.date ? p.date.split("T")[0] : "";
+  el("p-desc").value = p.desc||"";
+  // Photo
+  _plaintePhoto = p.photo||"";
+  const av = document.getElementById("p-photo-avatar");
+  const rem = document.getElementById("p-photo-remove");
+  if(av) av.innerHTML = p.photo ? `<img src="${safeImgSrc(p.photo)}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">` : '👤';
+  if(rem) rem.style.display = p.photo ? "inline-flex" : "none";
+  const ph = document.getElementById("p-photo-placeholder");
+  if(ph) ph.style.display = p.photo ? "none" : "";
+  // Titre + bouton
+  const header = document.querySelector("#modal-plainte .modal-header h3");
+  if(header) header.textContent = "✏️ Modifier la plainte";
+  const saveBtn = document.querySelector("#modal-plainte .modal-footer .btn-primary");
+  if(saveBtn) saveBtn.textContent = "✓ Enregistrer les modifications";
+  openModal("modal-plainte");
+}
+
+function _resetPlainteModal(){
+  _plainteEditId=null;
+  const h=document.querySelector("#modal-plainte .modal-header h3"); if(h) h.textContent="📋 Déposer une plainte";
+  const b=document.querySelector("#modal-plainte .modal-footer .btn-primary"); if(b) b.textContent="📋 Déposer la plainte";
+}
+
 function savePlainte(){
   const pl=v("p-plaignant"),ac=v("p-accuse"),desc=v("p-desc");if(!pl||!ac||!desc)return;
+
+  if(_plainteEditId){
+    // ── Mode édition admin ──
+    const idx=DB.plaintes.findIndex(x=>String(x.id)===String(_plainteEditId));
+    if(idx!==-1){
+      DB.plaintes[idx]=Object.assign({},DB.plaintes[idx],{plaignant:pl,accuse:ac,type:v("p-type"),desc,dateFaits:v("p-date"),photoAccuse:_plaintePhoto||DB.plaintes[idx].photoAccuse||""});
+      addTimeline(`Plainte #${_plainteEditId} modifiée par ${currentUser.nom}`);
+      saveData();closeModal("modal-plainte");renderPlaintes();syncDashboard();
+      showToast("Plainte mise à jour.","success");
+      clearForm(["p-plaignant","p-accuse","p-desc","p-date"]);removePlaintePhoto();
+    }
+    _resetPlainteModal();
+    return;
+  }
   DB.plaintes.push({id:Date.now(),plaignant:pl,accuse:ac,type:v("p-type"),desc,dateFaits:v("p-date"),statut:"ouverte",auteur:currentUser?currentUser.nom:"Anonyme",agent:null,date:now(),photoAccuse:_plaintePhoto||""});
   addTimeline(`Plainte déposée par ${pl} contre ${ac}`);
   _plaintePhoto="";
