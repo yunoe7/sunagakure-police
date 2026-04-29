@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, interactive-widget=resizes-visual">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self' https://fonts.googleapis.com https://fonts.gstatic.com https://*.firebaseio.com https://*.googleapis.com https://www.gstatic.com; script-src 'self' 'unsafe-inline' https://www.gstatic.com https://*.googleapis.com https://cdn.jsdelivr.net https://*.firebasedatabase.app; img-src 'self' data: blob: https:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; connect-src https://*.firebaseio.com https://*.googleapis.com wss://*.firebaseio.com https://www.gstatic.com https://*.firebasedatabase.app wss://*.firebasedatabase.app https://cdn.jsdelivr.net https://api.anthropic.com https://ipwho.is https://geolocation-db.com; frame-src 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self' https://fonts.googleapis.com https://fonts.gstatic.com https://*.firebaseio.com https://*.googleapis.com https://www.gstatic.com; script-src 'self' 'unsafe-inline' https://www.gstatic.com https://*.googleapis.com https://cdn.jsdelivr.net https://*.firebasedatabase.app; img-src 'self' data: blob: https:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; connect-src https://*.firebaseio.com https://*.googleapis.com wss://*.firebaseio.com https://www.gstatic.com https://*.firebasedatabase.app wss://*.firebasedatabase.app https://cdn.jsdelivr.net https://api.anthropic.com https://freeipapi.com https://ipinfo.io https://geolocation-db.com; frame-src 'none'">
 <title>Police — Sunagakure Intranet</title>
 <meta name="theme-color" content="#1a1c2e">
 <link rel="icon" href="data:,">
@@ -3577,24 +3577,37 @@ function isVisiteur(){return currentUser&&currentUser.role==="visiteur"}
 var _loginSource='manual'; // 'manual' | 'auto' (Se souvenir de moi)
 
 // Fetch IP + géo une seule fois au démarrage, mis en cache pour toutes les entrées
-var _sessionGeo = null; // { ip, country, countryCode, city, region, isp }
+var _sessionGeo = null;
 var _sessionGeoPromise = null;
 function fetchSessionGeo(){
   if(_sessionGeo) return Promise.resolve(_sessionGeo);
   if(_sessionGeoPromise) return _sessionGeoPromise;
-  _sessionGeoPromise = fetch('https://ipwho.is/')
+  _sessionGeoPromise = fetch('https://freeipapi.com/api/json')
     .then(function(r){ return r.json(); })
     .then(function(d){
-      if(d && d.success && d.ip){
-        _sessionGeo = {ip:d.ip, country:d.country||'', countryCode:(d.country_code||'').toLowerCase(), city:d.city||'', region:d.region||'', isp:(d.connection&&d.connection.isp)||''};
-      } else {
-        _sessionGeo = {ip:'Inconnue'};
+      if(d && d.ipAddress){
+        _sessionGeo = {ip:d.ipAddress, country:d.countryName||'', countryCode:(d.countryCode||'').toLowerCase(), city:d.cityName||'', region:d.regionName||'', isp:''};
+        return _sessionGeo;
       }
-      return _sessionGeo;
+      throw new Error('no data');
     })
     .catch(function(){
-      _sessionGeo = {ip:'Inconnue'};
-      return _sessionGeo;
+      // Fallback : ipinfo.io
+      return fetch('https://ipinfo.io/json')
+        .then(function(r){ return r.json(); })
+        .then(function(d){
+          if(d && d.ip){
+            // ipinfo retourne un code pays ISO, on garde tel quel
+            _sessionGeo = {ip:d.ip, country:d.country||'', countryCode:(d.country||'').toLowerCase(), city:d.city||'', region:d.region||'', isp:d.org||''};
+          } else {
+            _sessionGeo = {ip:'Inconnue'};
+          }
+          return _sessionGeo;
+        })
+        .catch(function(){
+          _sessionGeo = {ip:'Inconnue'};
+          return _sessionGeo;
+        });
     });
   return _sessionGeoPromise;
 }
@@ -6142,12 +6155,12 @@ function lhShowIPDetail(ip){
   if(_lhGeoCache[ip]){
     lhShowGeo(_lhGeoCache[ip]);
   } else {
-    // ipwho.is — CORS natif, gratuit, pas de restriction par IP source
-    fetch('https://ipwho.is/'+encodeURIComponent(ip))
+    // freeipapi.com — CORS natif, gratuit, sans restriction d'origine
+    fetch('https://freeipapi.com/api/json/'+encodeURIComponent(ip))
       .then(function(r){ if(!r.ok) throw new Error(r.status); return r.json(); })
       .then(function(d){
-        if(d && d.success && d.country){
-          var mapped = {country:d.country, regionName:d.region||'', city:d.city||'', isp:d.connection&&d.connection.isp||'', mobile:false, proxy:d.type==='datacenter'};
+        if(d && d.ipAddress && d.countryName){
+          var mapped = {country:d.countryName, regionName:d.regionName||'', city:d.cityName||'', isp:'', mobile:false, proxy:false};
           _lhGeoCache[ip] = mapped;
           lhShowGeo(mapped);
         } else { throw new Error('no data'); }
