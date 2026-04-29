@@ -3074,6 +3074,22 @@ let _loginInProgress=false; // Anti double-submit
 // Dernières données reçues de Firebase — utilisées pour éviter d'écraser les données d'autres utilisateurs
 let _lastFbArrays={plaintes:[],dossiers:[],annonces:[],candidatures:[],operations:[],sanctions:[],recenses:[],infractions:[],timeline:[],users:[]};
 
+// IDs supprimés récemment — bloque la réinsertion par race condition Firebase
+// Structure : { "plaintes": { "42": timestamp, ... }, ... }
+let _deletedIds={};
+const _DELETED_TTL=30000; // 30 secondes de protection
+function _markDeleted(collection,id){
+  if(!_deletedIds[collection])_deletedIds[collection]={};
+  _deletedIds[collection][String(id)]=Date.now();
+}
+function _isDeletedProtected(collection,id){
+  if(!_deletedIds[collection])return false;
+  var ts=_deletedIds[collection][String(id)];
+  if(!ts)return false;
+  if(Date.now()-ts>_DELETED_TTL){delete _deletedIds[collection][String(id)];return false;}
+  return true;
+}
+
 // Fusionne deux tableaux en évitant les doublons (par id) — utilisé uniquement pour les users
 function _mergeArrayById(base, extra){
   if(!extra||!extra.length) return base||[];
@@ -3130,7 +3146,7 @@ async function _flushSaveQueue(){
     const prevKnownUsers=Array.isArray(_lastFbArrays['users__known'])?_lastFbArrays['users__known']:[];
     const knownFbUserIds=new Set(prevKnownUsers.map(String));
     // Nouveaux users distants = présents dans Firebase, absents en local, ET pas connus avant (créés par un autre admin)
-    const remoteNewUsers=fbUsers.filter(u=>u&&u.id&&!localUserIds.has(u.id)&&!knownFbUserIds.has(String(u.id)));
+    const remoteNewUsers=fbUsers.filter(u=>u&&u.id&&!localUserIds.has(u.id)&&!knownFbUserIds.has(String(u.id))&&!_isDeletedProtected("users",u.id));
     // Mettre à jour les users locaux existants avec les données Firebase si elles ont changé
     const fbUserById={};fbUsers.forEach(u=>{if(u&&u.id)fbUserById[u.id]=u;});
     const updatedLocalUsers=localUsers.map(u=>{
@@ -3156,7 +3172,8 @@ async function _flushSaveQueue(){
       const prevKnown=Array.isArray(_lastFbArrays[k+'__known'])?_lastFbArrays[k+'__known']:[];
       const knownFbIds=new Set(prevKnown.map(String));
       // Nouveaux elements distants = dans Firebase, absents en local, ET pas connus avant (=crees par autre user)
-      const remoteNew=fbArr.filter(x=>x&&x.id&&!localIds.has(String(x.id))&&!knownFbIds.has(String(x.id)));
+      // ET pas dans la liste des suppressions récentes (protection race condition)
+      const remoteNew=fbArr.filter(x=>x&&x.id&&!localIds.has(String(x.id))&&!knownFbIds.has(String(x.id))&&!_isDeletedProtected(k,x.id));
       // Resultat = local (suppressions respectees) + nouveaux distants
       toSave[k]=[...localArr,...remoteNew];
       _lastFbArrays[k]=JSON.parse(JSON.stringify(toSave[k]));
@@ -3213,7 +3230,7 @@ function initFirebaseSync(){
           const localIds=new Set((DB[k]||[]).map(x=>x&&String(x.id)).filter(Boolean));
           const prevKnown=Array.isArray(_lastFbArrays[k+'__known'])?_lastFbArrays[k+'__known']:[];
           const knownFbIds=new Set(prevKnown.map(String));
-          const remoteNew=data[k].filter(x=>x&&x.id&&!localIds.has(String(x.id))&&!knownFbIds.has(String(x.id)));
+          const remoteNew=data[k].filter(x=>x&&x.id&&!localIds.has(String(x.id))&&!knownFbIds.has(String(x.id))&&!_isDeletedProtected(k,x.id));
           if(remoteNew.length>0){
             DB[k]=[...(DB[k]||[]),...remoteNew];
           }
@@ -3714,6 +3731,8 @@ function applyLogin(){
   const dsecOps=document.getElementById('dsec-ops');
   if(dsecOps)dsecOps.style.display=isMember?'':'none';
   renderCommissaire();applyLogo();loadNotifPrefs();populateGradeSelects();refreshAll();const btnRec=el("btn-recenser");if(btnRec)btnRec.style.display=isVisiteur()?"none":"";
+  // Précharger les messages en arrière-plan dès la connexion
+  if(!isVisiteur()) setTimeout(function(){ _msgInitDone=false; initMessagingFirebase(); }, 2000);
   // Restaurer le dernier onglet visité, sinon afficher le tableau de bord
   let lastPage="dashboard";
   try{const lp=sessionStorage.getItem("suna_active_page");if(lp&&PAGES[lp]){if(!isVisiteur()||VISITOR_PAGES.includes(lp))lastPage=lp;}}catch(e){}
@@ -3756,6 +3775,10 @@ function doLogout(){
   }
   localStorage.removeItem("suna_session");
   currentUser=null;
+  _msgInitDone=false;
+  if(_msgAllUnsubscribe){_msgAllUnsubscribe();_msgAllUnsubscribe=null;}
+  if(_msgUnsubscribe){_msgUnsubscribe();_msgUnsubscribe=null;}
+  _currentMsgContact=null;
   // Vider la mémoire de la dernière page pour éviter qu'un visiteur atterrisse sur une page membre
   try{sessionStorage.removeItem("suna_active_page");}catch(e){}
   el("login-screen").style.display="flex";updateLoginStats();
@@ -3888,6 +3911,7 @@ function renderPage(name){
     }
   }
   if(name==="messagerie"){
+    initMessagingFirebase();
     renderMsgContacts();
     // Si une conversation était ouverte, la restaurer (header + thread + input)
     if(typeof _currentMsgContact !== 'undefined' && _currentMsgContact){
@@ -4258,7 +4282,7 @@ function removeAnnoncePhoto(ev){
   el("a-photo-remove").style.display="none";
   el("a-photo-input").value="";
 }
-function deleteAnnonce(id){id=parseInt(id);askDelete("Supprimer cette annonce ?",()=>{DB.annonces=DB.annonces.filter(a=>String(a.id)!==String(id));saveData();renderAnnonces();syncDashboard()})}
+function deleteAnnonce(id){id=parseInt(id);askDelete("Supprimer cette annonce ?",()=>{_markDeleted("annonces",id);DB.annonces=DB.annonces.filter(a=>String(a.id)!==String(id));saveData();renderAnnonces();syncDashboard()})}
 
 // ─── RÉACTIONS ANNONCES ─────────────────────────────────────────
 const REACTION_EMOJIS = ['👍','❤️','🔥','✅','👮'];
@@ -4517,7 +4541,7 @@ function viewRecense(id){
   vrBody.innerHTML=`${photoBlock}<div class="grid grid-2"><div class="form-group"><label class="form-label">Prénom</label><div style="font-size:14px;font-weight:600">${esc(r.prenom)}</div></div><div class="form-group"><label class="form-label">Nom</label><div style="font-size:14px;font-weight:600">${esc(r.nom)}</div></div><div class="form-group"><label class="form-label">Âge</label><div>${esc(r.age)} ans</div></div><div class="form-group"><label class="form-label">Sexe</label><div>${esc(r.sexe)}</div></div></div><div class="form-group"><label class="form-label">Faction / Village</label><div style="font-size:13.5px">${esc(r.faction)||"—"}</div></div><div class="form-group"><label class="form-label">Rang</label><span class="badge badge-orange">${esc(r.rang)}</span></div><div class="form-group"><label class="form-label">Compétences</label><div style="font-size:12.5px;color:#555">${esc(r.competences)||"—"}</div></div>${r.natures&&r.natures.length?`<div class="form-group"><label class="form-label">Natures & Maîtrises</label><div class="nature-bar">${r.natures.map(n=>`<span class="badge ${NATURE_BADGE[n]||"badge-gray"}">${esc(n)}</span>`).join("")}</div></div>`:""}<div class="form-group"><label class="form-label">Notes</label><div style="font-size:12.5px;color:#555;line-height:1.65;white-space:pre-wrap">${esc(r.notes)||"—"}</div></div><div class="form-group"><label class="form-label">Recensé par</label><div style="font-size:11px;color:var(--muted)">${esc(r.auteur)} — ${fmtDate(r.date)}</div></div><div class="form-group" style="border:1px solid rgba(180,140,20,0.2);border-radius:10px;padding:13px;background:rgba(180,140,20,0.03)"><label class="form-label">💰 Taxation</label><div style="display:flex;align-items:center;gap:8px;margin-bottom:${(r.taxeHistorique&&r.taxeHistorique.length)?'10px':'0'}">${r.taxePayee?'<span style="background:rgba(21,128,61,0.12);color:#15803d;font-size:11px;font-family:\'Share Tech Mono\',monospace;padding:3px 9px;border-radius:10px;border:1px solid rgba(21,128,61,0.25)">✓ PAYÉE</span>':'<span style="background:rgba(220,38,38,0.1);color:#dc2626;font-size:11px;font-family:\'Share Tech Mono\',monospace;padding:3px 9px;border-radius:10px;border:1px solid rgba(220,38,38,0.2)">✗ NON PAYÉE</span>'} ${r.taxeMontantTotal?`<span style="font-family:'Share Tech Mono',monospace;font-size:13px;color:var(--gold2);font-weight:700">${r.taxeMontantTotal} ꩜ Ryos</span>`:''}</div>${r.taxeHistorique&&r.taxeHistorique.length?`<div style="font-size:10px;color:var(--muted);margin-bottom:6px;font-family:'Share Tech Mono',monospace">HISTORIQUE DES PAIEMENTS</div><div style="display:flex;flex-direction:column;gap:4px">${r.taxeHistorique.map(e=>`<div style="display:flex;justify-content:space-between;background:var(--bg2);border-radius:6px;padding:5px 10px;font-size:11px"><span style="color:var(--gold2);font-family:'Share Tech Mono',monospace;font-weight:700">+${e.montant||0} ꩜</span><span style="color:var(--muted)">${fmtDate(e.date)}${e.auteur?' · '+esc(e.auteur):''}</span></div>`).join('')}</div>`:''}</div>`;
   openModal("modal-view-recense");
 }
-function deleteRecense(id){id=parseInt(id);askDelete("Supprimer cette fiche de recensement ?",()=>{DB.recenses=DB.recenses.filter(r=>String(r.id)!==String(id));saveData();renderRecensement();syncDashboard()})}
+function deleteRecense(id){id=parseInt(id);askDelete("Supprimer cette fiche de recensement ?",()=>{_markDeleted("recenses",id);DB.recenses=DB.recenses.filter(r=>String(r.id)!==String(id));saveData();renderRecensement();syncDashboard()})}
 
 // CANDIDATURES
 function filterCandidatures(f,e){candFilter=f;document.querySelectorAll("#page-recrutement .tab-btn").forEach(b=>b.classList.remove("active"));e.classList.add("active");renderCandidatures()}
@@ -4832,7 +4856,7 @@ function setPlainteStatut(id,statut){
   addTimeline(`Plainte #${id} → ${fmtStatut(statut)} par ${currentUser.nom}`);
   saveData();renderPlaintes();syncDashboard();closeModal("modal-view-plainte");
 }
-function deletePlainte(id){id=parseInt(id);askDelete("Supprimer cette plainte ?",()=>{DB.plaintes=DB.plaintes.filter(p=>String(p.id)!==String(id));saveData();renderPlaintes();syncDashboard()})}
+function deletePlainte(id){id=parseInt(id);askDelete("Supprimer cette plainte ?",()=>{_markDeleted("plaintes",id);DB.plaintes=DB.plaintes.filter(p=>String(p.id)!==String(id));saveData();renderPlaintes();syncDashboard()})}
 
 // DOSSIERS
 function viewDossier(id){
@@ -4991,7 +5015,7 @@ function clearDossierPhoto(){
   var alertEl=el("d-doublon-alert");if(alertEl)alertEl.style.display="none";
   var btnF=el("d-btn-forcer");if(btnF)btnF.style.display="none";
 }
-function deleteDossier(id){id=parseInt(id);askDelete("Supprimer ce dossier criminel ?",()=>{DB.dossiers=DB.dossiers.filter(d=>String(d.id)!==String(id));saveData();renderDossiers();syncDashboard()})}
+function deleteDossier(id){id=parseInt(id);askDelete("Supprimer ce dossier criminel ?",()=>{_markDeleted("dossiers",id);DB.dossiers=DB.dossiers.filter(d=>String(d.id)!==String(id));saveData();renderDossiers();syncDashboard()})}
 
 function openEditDossier(id){
   id=parseInt(id);
@@ -5131,7 +5155,7 @@ function saveOperation(){
   flashSubmitSuccess(document.querySelector('#modal-operation .modal-footer .btn-primary'), 'Opération créée');
   setTimeout(function(){ saveData();closeModal("modal-operation");renderOperations();syncDashboard();clearForm(["op-nom","op-resp","op-desc","op-date"]); }, 600);
 }
-function deleteOperation(id){id=parseInt(id);askDelete("Supprimer cette opération ?",()=>{DB.operations=DB.operations.filter(o=>String(o.id)!==String(id));saveData();renderOperations();syncDashboard()})}
+function deleteOperation(id){id=parseInt(id);askDelete("Supprimer cette opération ?",()=>{_markDeleted("operations",id);DB.operations=DB.operations.filter(o=>String(o.id)!==String(id));saveData();renderOperations();syncDashboard()})}
 
 // GRADES MANAGEMENT
 // Noms réservés aux rôles système — aucun grade ne peut utiliser ces noms ni les modifier
@@ -5588,7 +5612,7 @@ function saveSanction(){
   flashSubmitSuccess(document.querySelector('#modal-sanction .modal-footer .btn-primary'), 'Enregistré');
   setTimeout(function(){ saveData();closeModal("modal-sanction");renderSanctions();syncDashboard();clearForm(["s-cible","s-motif"]); }, 600);
 }
-function deleteSanction(id){id=parseInt(id);askDelete("Supprimer cette entrée ?",()=>{DB.sanctions=DB.sanctions.filter(s=>String(s.id)!==String(id));saveData();renderSanctions();syncDashboard()})}
+function deleteSanction(id){id=parseInt(id);askDelete("Supprimer cette entrée ?",()=>{_markDeleted("sanctions",id);DB.sanctions=DB.sanctions.filter(s=>String(s.id)!==String(id));saveData();renderSanctions();syncDashboard()})}
 
 // ADMIN (continued)
 function saveEditUser(){
@@ -5637,9 +5661,11 @@ function deleteUserById(){
   }
   closeModal("modal-edituser");
   askDelete(`Supprimer définitivement le compte de ${u.nom} ?`,()=>{
+    _markDeleted("users",id);
     DB.users=DB.users.filter(x=>x.id!==id);
     // Mettre à jour _lastFbArrays immédiatement pour que le merge ne remette pas le compte supprimé
     _lastFbArrays.users=DB.users.map(u=>JSON.parse(JSON.stringify(u)));
+    _lastFbArrays["users__known"]=_lastFbArrays.users.map(u=>String(u.id));
     addTimeline(`Compte de ${u.nom} supprimé par ${currentUser.nom}`);
     saveData();renderAdmin();renderEffectifs();syncDashboard();
   });
@@ -9170,6 +9196,42 @@ function exportCSV(type){
 /* ─── 3. MESSAGERIE INTERNE ────────────────────────────────────── */
 var _currentMsgContact = null;
 var _msgUnsubscribe = null;
+var _msgAllUnsubscribe = null; // listener global pour tous les threads
+var _msgInitDone = false;
+
+// Charge tous les messages depuis Firebase au démarrage de la messagerie
+// et souscrit aux mises à jour en temps réel sur tous les threads
+function initMessagingFirebase(){
+  if(_msgInitDone) return;
+  if(!window._fbDB||!window._fbRef||!window._fbOnValue||!currentUser) return;
+  _msgInitDone = true;
+  var fbRef = window._fbRef(window._fbDB, 'sunagakure/messages');
+  if(_msgAllUnsubscribe) _msgAllUnsubscribe();
+  _msgAllUnsubscribe = window._fbOnValue(fbRef, function(snap){
+    var data = snap && snap.val ? snap.val() : null;
+    if(!DB.messages) DB.messages = {};
+    if(data && typeof data === 'object'){
+      // Fusionner les threads reçus dans DB.messages sans écraser les messages locaux non encore envoyés
+      Object.keys(data).forEach(function(key){
+        // Garder uniquement les threads qui concernent l'utilisateur courant
+        if(!key.includes(String(currentUser.id))) return;
+        if(!DB.messages[key]) DB.messages[key] = {};
+        var thread = data[key];
+        if(thread && typeof thread === 'object'){
+          Object.keys(thread).forEach(function(msgId){
+            DB.messages[key][msgId] = thread[msgId];
+          });
+        }
+      });
+    }
+    // Sauvegarder en localStorage pour persistance offline
+    try{ localStorage.setItem(STORE, JSON.stringify(DB)); }catch(e){}
+    renderMsgContacts();
+    updateMsgBadge();
+    // Re-render le thread ouvert si besoin
+    if(_currentMsgContact) renderMsgThread();
+  });
+}
 
 function _msgKey(idA, idB){
   return [idA,idB].sort().join('_');
@@ -10474,6 +10536,99 @@ document.addEventListener('keydown', function(e) {
 .yuno-save-btn:hover{transform:translateY(-1px);box-shadow:0 4px 16px rgba(192,65,14,0.4)}
 .yuno-config-note{font-size:9.5px;color:rgba(255,255,255,0.3);font-family:'Share Tech Mono',monospace;margin-top:8px;line-height:1.5}
 
+/* ── YUNO LOCKED FIELD ── */
+.yuno-locked-field{
+  position:relative;width:100%;
+  background:rgba(0,0,0,0.35);
+  border:1px solid rgba(220,38,38,0.3);
+  border-radius:8px;padding:9px 12px;
+  margin-bottom:9px;overflow:hidden;
+  display:flex;align-items:center;gap:8px;
+  box-shadow:inset 0 0 16px rgba(220,38,38,0.06);
+}
+.yuno-locked-scanline{
+  position:absolute;inset:0;
+  background:repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(220,38,38,0.04) 2px,
+    rgba(220,38,38,0.04) 4px
+  );
+  pointer-events:none;border-radius:8px;
+}
+.yuno-locked-icon{font-size:12px;flex-shrink:0;filter:drop-shadow(0 0 4px rgba(220,38,38,0.6))}
+.yuno-locked-text{
+  font-family:'Share Tech Mono',monospace;font-size:10px;
+  color:rgba(220,38,38,0.7);letter-spacing:2px;
+  text-shadow:0 0 8px rgba(220,38,38,0.4);
+  flex:1;
+}
+.yuno-locked-dots{
+  display:flex;gap:3px;align-items:center;flex-shrink:0;
+}
+.yuno-locked-dots span{
+  width:5px;height:5px;border-radius:50%;
+  background:rgba(220,38,38,0.25);
+  animation:yunoDotPulse 1.8s ease-in-out infinite;
+}
+.yuno-locked-dots span:nth-child(2){animation-delay:0.15s}
+.yuno-locked-dots span:nth-child(3){animation-delay:0.3s}
+.yuno-locked-dots span:nth-child(4){animation-delay:0.45s}
+.yuno-locked-dots span:nth-child(5){animation-delay:0.6s}
+.yuno-locked-dots span:nth-child(6){animation-delay:0.75s}
+.yuno-locked-dots span:nth-child(7){animation-delay:0.9s}
+.yuno-locked-dots span:nth-child(8){animation-delay:1.05s}
+@keyframes yunoDotPulse{
+  0%,100%{background:rgba(220,38,38,0.15);transform:scale(1)}
+  50%{background:rgba(220,38,38,0.7);transform:scale(1.3);box-shadow:0 0 4px rgba(220,38,38,0.5)}
+}
+.yuno-save-disabled{opacity:0.35 !important;cursor:not-allowed !important;filter:grayscale(0.4)}
+.yuno-save-disabled:hover{transform:none !important;box-shadow:none !important}
+
+/* ── YUNO TEASER ── */
+.yuno-teaser-block{
+  margin-top:10px;
+  border:1px solid rgba(180,140,20,0.2);
+  border-radius:8px;
+  padding:10px 12px;
+  background:rgba(180,140,20,0.04);
+  position:relative;overflow:hidden;
+}
+.yuno-teaser-label{
+  font-family:'Share Tech Mono',monospace;
+  font-size:9px;letter-spacing:3px;
+  color:#d4b44a;
+  text-align:center;
+  margin-bottom:6px;
+  text-shadow:0 0 10px rgba(212,180,74,0.5);
+  animation:yunoTeaserGlow 2.5s ease-in-out infinite;
+}
+@keyframes yunoTeaserGlow{
+  0%,100%{opacity:0.7;text-shadow:0 0 8px rgba(212,180,74,0.3)}
+  50%{opacity:1;text-shadow:0 0 16px rgba(212,180,74,0.8)}
+}
+.yuno-teaser-text{
+  font-size:9.5px;color:rgba(255,255,255,0.45);
+  font-family:'Barlow',sans-serif;line-height:1.55;
+  text-align:center;
+}
+.yuno-teaser-bar{
+  margin-top:8px;height:2px;
+  background:rgba(180,140,20,0.1);
+  border-radius:2px;overflow:hidden;
+}
+.yuno-teaser-bar span{
+  display:block;height:100%;width:40%;
+  background:linear-gradient(90deg,transparent,#d4b44a,transparent);
+  border-radius:2px;
+  animation:yunoTeaserScan 2s ease-in-out infinite;
+}
+@keyframes yunoTeaserScan{
+  0%{transform:translateX(-150%)}
+  100%{transform:translateX(350%)}
+}
+
 /* ── YUNO FAB BUTTON ── */
 #yuno-fab{
   position:fixed;bottom:16px;right:16px;z-index:8001;
@@ -10643,6 +10798,25 @@ body:not(.has-action-fab) #yuno-config-banner{
 }
 .yuno-inline-btn:hover{background:linear-gradient(135deg,rgba(192,65,14,0.25),rgba(180,140,20,0.15));border-color:rgba(192,65,14,0.5);color:#d4b44a;transform:translateY(-1px)}
 .yuno-inline-btn:disabled{opacity:0.5;cursor:not-allowed;transform:none}
+.yuno-btn-locked{
+  opacity:0.55 !important;
+  cursor:not-allowed !important;
+  background:rgba(0,0,0,0.06) !important;
+  border-color:rgba(220,38,38,0.2) !important;
+  color:var(--muted) !important;
+  filter:grayscale(0.4);
+  position:relative;overflow:hidden;
+}
+.yuno-btn-locked::after{
+  content:'';position:absolute;top:0;left:0;right:0;bottom:0;
+  background:repeating-linear-gradient(
+    -45deg,
+    transparent,transparent 4px,
+    rgba(220,38,38,0.04) 4px,rgba(220,38,38,0.04) 5px
+  );
+  pointer-events:none;border-radius:inherit;
+}
+.yuno-btn-locked:hover{transform:none !important;box-shadow:none !important;background:rgba(0,0,0,0.06) !important;}
 .yuno-inline-btn .yuno-spin{animation:spin 1s linear infinite;display:inline-block}
 @keyframes spin{to{transform:rotate(360deg)}}
 
@@ -10660,22 +10834,16 @@ body:not(.has-action-fab) #yuno-config-banner{
 <!-- YUNO FAB -->
 <div id="yuno-fab" role="button" aria-label="Ouvrir YUNO — Intelligence Artificielle" aria-expanded="false" tabindex="0" onclick="yunoToggleChat()" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();yunoToggleChat();}" title="Parler à YUNO — IA">
   <svg width="52" height="52" viewBox="0 0 52 52" xmlns="http://www.w3.org/2000/svg">
-    <circle cx="26" cy="26" r="26" fill="#0d0e1a"/>
-    <circle cx="26" cy="26" r="24" fill="none" stroke="#c0410e" stroke-width="1.8"/>
-    <circle cx="26" cy="26" r="21" fill="none" stroke="#c0410e" stroke-width="0.5" opacity="0.3"/>
-    <path d="M26,8 L38,15 L38,28 Q38,40 26,44 Q14,40 14,28 L14,15 Z" fill="#c0410e" opacity="0.15"/>
-    <path d="M26,8 L38,15 L38,28 Q38,40 26,44 Q14,40 14,28 L14,15 Z" fill="none" stroke="#d4b44a" stroke-width="1.6"/>
-    <path d="M16,22 L36,22" stroke="#d4b44a" stroke-width="0.7" opacity="0.4"/>
-    <path d="M13,28 L39,28" stroke="#d4b44a" stroke-width="0.7" opacity="0.25"/>
-    <line x1="18" y1="12" x2="26" y2="22" stroke="#d4b44a" stroke-width="2.8" stroke-linecap="round"/>
-    <line x1="34" y1="12" x2="26" y2="22" stroke="#d4b44a" stroke-width="2.8" stroke-linecap="round"/>
-    <line x1="26" y1="22" x2="26" y2="36" stroke="#d4b44a" stroke-width="2.8" stroke-linecap="round"/>
-    <circle cx="6" cy="18" r="1.8" fill="#d4b44a" opacity="0.7"/>
-    <circle cx="46" cy="18" r="1.8" fill="#d4b44a" opacity="0.7"/>
-    <circle cx="6" cy="36" r="1.8" fill="#d4b44a" opacity="0.7"/>
-    <circle cx="46" cy="36" r="1.8" fill="#d4b44a" opacity="0.7"/>
-    <rect x="15" y="43" width="22" height="7" rx="2" fill="#c0410e"/>
-    <text x="26" y="49" text-anchor="middle" fill="#fff" font-size="5" font-weight="700" font-family="monospace" letter-spacing="2">YUNO</text>
+    <circle cx="26" cy="26" r="26" fill="#0a0b14"/>
+    <polygon points="26,4 44,14 44,38 26,48 8,38 8,14" fill="#0a0b14" stroke="#b8860b" stroke-width="1.2"/>
+    <polygon points="26,9 40,17 40,35 26,43 12,35 12,17" fill="#0f1020" stroke="#b8860b" stroke-width="0.5" opacity="0.7"/>
+    <line x1="26" y1="4" x2="26" y2="9" stroke="#d4b44a" stroke-width="1.5"/>
+    <line x1="44" y1="14" x2="40" y2="17" stroke="#d4b44a" stroke-width="1.5"/>
+    <line x1="44" y1="38" x2="40" y2="35" stroke="#d4b44a" stroke-width="1.5"/>
+    <line x1="26" y1="48" x2="26" y2="43" stroke="#d4b44a" stroke-width="1.5"/>
+    <line x1="8" y1="38" x2="12" y2="35" stroke="#d4b44a" stroke-width="1.5"/>
+    <line x1="8" y1="14" x2="12" y2="17" stroke="#d4b44a" stroke-width="1.5"/>
+    <text x="26" y="32" text-anchor="middle" fill="#d4b44a" font-size="20" font-family="serif" font-weight="400" dominant-baseline="middle">ワ</text>
   </svg>
   <div id="yuno-fab-badge"></div>
 </div>
@@ -10683,9 +10851,19 @@ body:not(.has-action-fab) #yuno-config-banner{
 <!-- YUNO CONFIG BANNER (clé API) -->
 <div id="yuno-config-banner" role="dialog" aria-modal="true" aria-label="Configuration YUNO" aria-hidden="true">
   <div class="yuno-config-title">🔑 Configurer YUNO</div>
-  <input class="yuno-api-input" type="password" id="yuno-api-key-input" placeholder="Clé d'accès YUNO...">
-  <button class="yuno-save-btn" onclick="yunoSaveKey()">💾 Enregistrer la clé API</button>
-  <div class="yuno-config-note">Ta clé YUNO est sauvegardée localement.<br>Obtiens-la sur <a href="https://console.anthropic.com" target="_blank" style="color:#d4b44a;text-decoration:none">portail YUNO</a></div>
+  <div class="yuno-locked-field">
+    <div class="yuno-locked-scanline"></div>
+    <span class="yuno-locked-icon">🔒</span>
+    <span class="yuno-locked-text">ACCÈS RESTREINT — BIENTÔT</span>
+    <div class="yuno-locked-dots"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+  </div>
+  <button class="yuno-save-btn yuno-save-disabled" disabled>💾 Enregistrer la clé API</button>
+  <div class="yuno-config-note">Ta clé YUNO est sauvegardée localement.<br>Obtiens-la sur <span style="color:rgba(212,180,74,0.35);text-decoration:line-through;cursor:not-allowed;pointer-events:none;filter:grayscale(1)" title="Indisponible pour le moment">portail YUNO</span></div>
+  <div class="yuno-teaser-block">
+    <div class="yuno-teaser-label">◈ PROCHAINEMENT ◈</div>
+    <div class="yuno-teaser-text">YUNO v2 arrive bientôt avec de nouvelles fonctionnalités exclusives pour la Police de Sunagakure.</div>
+    <div class="yuno-teaser-bar"><span></span></div>
+  </div>
 </div>
 
 <!-- YUNO CHAT PANEL -->
@@ -11109,9 +11287,11 @@ body:not(.has-action-fab) #yuno-config-banner{
         var btn = document.createElement('button');
         btn.type='button';
         btn.id='yuno-dossier-btn';
-        btn.className='yuno-inline-btn';
-        btn.innerHTML='🤖 YUNO — Remplir auto';
-        btn.onclick=window.yunoRemplirDossier;
+        btn.className='yuno-inline-btn yuno-btn-locked';
+        btn.innerHTML='🔒 YUNO — Remplir auto <span style="font-size:8px;background:rgba(192,65,14,0.2);color:#e05c1a;border:1px solid rgba(192,65,14,0.3);border-radius:3px;padding:1px 5px;margin-left:4px;letter-spacing:1px">BIENTÔT</span>';
+        btn.onclick=null;
+        btn.disabled=true;
+        btn.title='Fonctionnalité YUNO bientôt disponible';
         btn.style.marginTop='7px';
         wrap.appendChild(btn);
       }
@@ -11124,9 +11304,11 @@ body:not(.has-action-fab) #yuno-config-banner{
         var btn2 = document.createElement('button');
         btn2.type='button';
         btn2.id='yuno-plainte-btn';
-        btn2.className='yuno-inline-btn';
-        btn2.innerHTML='🤖 YUNO — Améliorer le texte';
-        btn2.onclick=window.yunoRemplirPlainte;
+        btn2.className='yuno-inline-btn yuno-btn-locked';
+        btn2.innerHTML='🔒 YUNO — Améliorer le texte <span style="font-size:8px;background:rgba(192,65,14,0.2);color:#e05c1a;border:1px solid rgba(192,65,14,0.3);border-radius:3px;padding:1px 5px;margin-left:4px;letter-spacing:1px">BIENTÔT</span>';
+        btn2.onclick=null;
+        btn2.disabled=true;
+        btn2.title='Fonctionnalité YUNO bientôt disponible';
         btn2.style.marginTop='7px';
         wrap2.appendChild(btn2);
       }
@@ -11144,8 +11326,8 @@ body:not(.has-action-fab) #yuno-config-banner{
       if(thead && !thead.querySelector('.yuno-th')){
         var th=document.createElement('th');
         th.className='yuno-th';
-        th.style.cssText='color:#c9970a;font-size:9px';
-        th.textContent='🤖 IA';
+        th.style.cssText='color:#c9970a;font-size:9px;letter-spacing:2px;opacity:0.7';
+        th.innerHTML='🔒 IA <span style="font-size:7px;background:rgba(192,65,14,0.2);color:#e05c1a;border:1px solid rgba(192,65,14,0.3);border-radius:3px;padding:1px 4px;letter-spacing:1px;vertical-align:middle">SOON</span>';
         thead.appendChild(th);
       }
       // Ajouter cellule sur chaque ligne
@@ -11161,7 +11343,7 @@ body:not(.has-action-fab) #yuno-config-banner{
         var id=match[0];
         var td=document.createElement('td');
         td.className='yuno-td';
-        td.innerHTML='<button class="yuno-inline-btn" onclick="yunoResumeDossier('+id+')" style="padding:3px 8px;font-size:9.5px">🤖</button>';
+        td.innerHTML='<div title="Fonctionnalité IA bientôt disponible" style="display:flex;align-items:center;justify-content:center"><span style="font-size:14px;opacity:0.35;filter:grayscale(1);cursor:not-allowed" title="Bientôt disponible">🤖</span><span style="display:block;width:16px;height:2px;background:linear-gradient(90deg,rgba(220,38,38,0.5),rgba(192,65,14,0.3));border-radius:1px;margin-left:3px"></span></div>';
         tr.appendChild(td);
       });
     };
