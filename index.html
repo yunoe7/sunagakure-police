@@ -6151,36 +6151,27 @@ function lhShowIPDetail(ip){
 
   openModal('modal-ip-detail');
 
-  // Géolocalisation avec cache + fallback
+  // Géolocalisation : d'abord depuis les données déjà stockées en DB, puis cache, puis sessionGeo si même IP
   if(_lhGeoCache[ip]){
     lhShowGeo(_lhGeoCache[ip]);
   } else {
-    // freeipapi.com — CORS natif, gratuit, sans restriction d'origine
-    fetch('https://freeipapi.com/api/json/'+encodeURIComponent(ip))
-      .then(function(r){ if(!r.ok) throw new Error(r.status); return r.json(); })
-      .then(function(d){
-        if(d && d.ipAddress && d.countryName){
-          var mapped = {country:d.countryName, regionName:d.regionName||'', city:d.cityName||'', isp:'', mobile:false, proxy:false};
-          _lhGeoCache[ip] = mapped;
-          lhShowGeo(mapped);
-        } else { throw new Error('no data'); }
-      })
-      .catch(function(){
-        // Fallback : geolocation-db.com
-        fetch('https://geolocation-db.com/json/'+encodeURIComponent(ip))
-          .then(function(r){ if(!r.ok) throw new Error(r.status); return r.json(); })
-          .then(function(d){
-            if(d && d.country_name && d.country_name !== 'Not found'){
-              var mapped = {country:d.country_name, regionName:d.state||'', city:d.city||'', isp:'', mobile:false, proxy:false};
-              _lhGeoCache[ip] = mapped;
-              lhShowGeo(mapped);
-            } else { throw new Error('no data'); }
-          })
-          .catch(function(){
-            var geo = document.getElementById('lh-geo-result');
-            if(geo) geo.textContent = '🌐 Localisation indisponible pour cette IP.';
-          });
-      });
+    // Chercher geo déjà fetchée dans les entrées de l'historique pour cette IP
+    var entryWithGeo = entries.find(function(c){ return c.geo && c.geo.country; });
+    if(entryWithGeo){
+      var g = entryWithGeo.geo;
+      var mapped = {country:g.country, regionName:g.region||'', city:g.city||'', isp:g.isp||'', mobile:false, proxy:false};
+      _lhGeoCache[ip] = mapped;
+      lhShowGeo(mapped);
+    } else if(_sessionGeo && _sessionGeo.ip === ip){
+      // C'est l'IP de la session courante — on a déjà tout
+      var mapped2 = {country:_sessionGeo.country, regionName:_sessionGeo.region||'', city:_sessionGeo.city||'', isp:_sessionGeo.isp||'', mobile:false, proxy:false};
+      _lhGeoCache[ip] = mapped2;
+      lhShowGeo(mapped2);
+    } else {
+      // Aucune donnée disponible
+      var geoEl = document.getElementById('lh-geo-result');
+      if(geoEl) geoEl.textContent = '🌐 Géolocalisation non disponible pour cette IP.';
+    }
   }
 }
 
