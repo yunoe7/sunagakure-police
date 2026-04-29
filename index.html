@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, interactive-widget=resizes-visual">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self' https://fonts.googleapis.com https://fonts.gstatic.com https://*.firebaseio.com https://*.googleapis.com https://www.gstatic.com; script-src 'self' 'unsafe-inline' https://www.gstatic.com https://*.googleapis.com https://cdn.jsdelivr.net https://*.firebasedatabase.app; img-src 'self' data: blob: https:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; connect-src https://*.firebaseio.com https://*.googleapis.com wss://*.firebaseio.com https://www.gstatic.com https://*.firebasedatabase.app wss://*.firebasedatabase.app https://cdn.jsdelivr.net https://api.ipify.org https://api.anthropic.com https://ipapi.co https://geolocation-db.com; frame-src 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self' https://fonts.googleapis.com https://fonts.gstatic.com https://*.firebaseio.com https://*.googleapis.com https://www.gstatic.com; script-src 'self' 'unsafe-inline' https://www.gstatic.com https://*.googleapis.com https://cdn.jsdelivr.net https://*.firebasedatabase.app; img-src 'self' data: blob: https:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; connect-src https://*.firebaseio.com https://*.googleapis.com wss://*.firebaseio.com https://www.gstatic.com https://*.firebasedatabase.app wss://*.firebasedatabase.app https://cdn.jsdelivr.net https://api.anthropic.com https://ipapi.co https://ipwho.is https://geolocation-db.com; frame-src 'none'">
 <title>Police — Sunagakure Intranet</title>
 <meta name="theme-color" content="#1a1c2e">
 <link rel="icon" href="data:,">
@@ -3616,9 +3616,13 @@ function logFailedAttempt(login){
   };
   DB.loginHistory.push(failEntry);
   if(DB.loginHistory.length>200)DB.loginHistory=DB.loginHistory.slice(-200);
-  fetch('https://api.ipify.org?format=json')
+  fetch('https://ipapi.co/json/')
     .then(function(r){return r.json();})
-    .then(function(d){failEntry.ip=d.ip||'Inconnue';renderLoginHistory();setTimeout(function(){saveData();},600);})
+    .then(function(g){
+      failEntry.ip=g.ip||'Inconnue';
+      if(g&&g.country_name&&!g.error) failEntry.geo={country:g.country_name,countryCode:(g.country_code||'').toLowerCase(),city:g.city||'',region:g.region||'',isp:g.org||''};
+      renderLoginHistory();setTimeout(function(){saveData();},600);
+    })
     .catch(function(){failEntry.ip='Inconnue';renderLoginHistory();setTimeout(function(){saveData();},600);});
   setTimeout(function(){saveData();},1200);
 }
@@ -3644,26 +3648,18 @@ function applyLogin(){
     };
     DB.loginHistory.push(entry);
     if(DB.loginHistory.length>200)DB.loginHistory=DB.loginHistory.slice(-200);
-    // Récupérer IP puis géolocalisation
-    fetch("https://api.ipify.org?format=json")
+    // Récupérer IP + géolocalisation en un seul appel (pas de CORS)
+    fetch('https://ipapi.co/json/')
       .then(function(r){return r.json();})
-      .then(function(d){
-        entry.ip=d.ip||"Inconnue";
-        renderLoginHistory();
-        // Géolocalisation en chaîne
-        if(entry.ip&&entry.ip!=="Inconnue"){
-          fetch('https://ipapi.co/'+encodeURIComponent(entry.ip)+'/json/')
-            .then(function(r2){return r2.json();})
-            .then(function(g){
-              if(g&&g.country_name&&!g.error){
-                entry.geo={country:g.country_name,countryCode:(g.country_code||'').toLowerCase(),city:g.city||'',region:g.region||'',isp:g.org||''};
-                renderLoginHistory();
-              }
-            }).catch(function(){});
+      .then(function(g){
+        entry.ip=g.ip||'Inconnue';
+        if(g&&g.country_name&&!g.error){
+          entry.geo={country:g.country_name,countryCode:(g.country_code||'').toLowerCase(),city:g.city||'',region:g.region||'',isp:g.org||''};
         }
+        renderLoginHistory();
         setTimeout(function(){saveData();},600);
       })
-      .catch(function(){entry.ip="Inconnue";renderLoginHistory();setTimeout(function(){saveData();},600);});
+      .catch(function(){entry.ip='Inconnue';renderLoginHistory();setTimeout(function(){saveData();},600);});
     // Délai pour laisser _flushSaveQueue (création de compte) se terminer avant ce save
     setTimeout(function(){saveData();}, 1200);
   }
@@ -6132,18 +6128,18 @@ function lhShowIPDetail(ip){
   if(_lhGeoCache[ip]){
     lhShowGeo(_lhGeoCache[ip]);
   } else {
-    // Primaire : ipapi.co — CORS natif, 1000 req/jour gratuit
-    fetch('https://ipapi.co/'+encodeURIComponent(ip)+'/json/')
+    // ipwho.is — CORS natif, gratuit, pas de restriction par IP source
+    fetch('https://ipwho.is/'+encodeURIComponent(ip))
       .then(function(r){ if(!r.ok) throw new Error(r.status); return r.json(); })
       .then(function(d){
-        if(d && d.country_name && !d.error){
-          var mapped = {country:d.country_name, regionName:d.region||'', city:d.city||'', isp:d.org||'', mobile:false, proxy:false};
+        if(d && d.success && d.country){
+          var mapped = {country:d.country, regionName:d.region||'', city:d.city||'', isp:d.connection&&d.connection.isp||'', mobile:false, proxy:d.type==='datacenter'};
           _lhGeoCache[ip] = mapped;
           lhShowGeo(mapped);
-        } else { throw new Error(d.reason||'no data'); }
+        } else { throw new Error('no data'); }
       })
       .catch(function(){
-        // Fallback : geolocation-db.com — CORS natif, gratuit illimité
+        // Fallback : geolocation-db.com
         fetch('https://geolocation-db.com/json/'+encodeURIComponent(ip))
           .then(function(r){ if(!r.ok) throw new Error(r.status); return r.json(); })
           .then(function(d){
