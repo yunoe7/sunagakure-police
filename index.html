@@ -117,6 +117,14 @@ body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:9997;
 .stat-card::after{content:'';position:absolute;bottom:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--card-accent,var(--gold)),transparent);opacity:0.6}
 .stat-card:hover{border-color:rgba(180,140,20,0.35);transform:translateY(-3px);box-shadow:0 10px 30px rgba(0,0,0,0.1)}
 .stat-value{font-family:'Barlow Condensed',sans-serif;font-size:42px;font-weight:900;color:var(--text);line-height:1;position:relative;-webkit-font-smoothing:antialiased;transform:translateZ(0)}
+/* ── TAGS DOSSIERS ── */
+.tag-pill{display:inline-flex;align-items:center;gap:3px;padding:2px 7px;border-radius:4px;font-size:9px;font-weight:700;letter-spacing:0.5px;font-family:'Share Tech Mono',monospace;white-space:nowrap;line-height:1.4}
+.tag-picker{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.tag-toggle{display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:5px;font-size:10px;font-family:'Share Tech Mono',monospace;font-weight:600;letter-spacing:0.4px;cursor:pointer;border:1px solid transparent;transition:all 0.15s;user-select:none;opacity:0.5}
+.tag-toggle.selected{opacity:1;transform:scale(1.04)}
+.tag-toggle:hover{opacity:0.85}
+.tag-custom-input{font-size:11px;padding:4px 9px;border-radius:5px;border:1px dashed rgba(109,40,217,0.3);background:rgba(109,40,217,0.04);color:var(--text);font-family:'Barlow',sans-serif;outline:none;width:130px}
+.tag-custom-input:focus{border-color:rgba(109,40,217,0.5);background:rgba(109,40,217,0.07)}
 /* ── NOTES PRIVÉES ── */
 #notes-list::-webkit-scrollbar{width:3px}
 #notes-list::-webkit-scrollbar-thumb{background:rgba(180,140,20,0.2);border-radius:2px}
@@ -1793,7 +1801,7 @@ document.addEventListener('DOMContentLoaded',function(){if(localStorage.getItem(
       <div><div class="section-title">Dossiers criminels</div><div class="section-sub">BASE DE DONNÉES JUDICIAIRE</div></div>
       <div style="display:flex;gap:8px;flex-wrap:wrap">
         <button class="btn btn-export" onclick="exportCSV('dossiers')" data-export-btn style="display:none">⬇️ Export CSV</button>
-        <button class="btn btn-primary" id="btn-new-dossier" onclick="clearDossierPhoto();openModal('modal-dossier')" style="display:none">+ Nouveau dossier</button>
+        <button class="btn btn-primary" id="btn-new-dossier" onclick="clearDossierPhoto();buildTagPicker('d',[]);openModal('modal-dossier')" style="display:none">+ Nouveau dossier</button>
       </div>
     </div>
     <div class="card mb-4"><div class="card-body">
@@ -1810,7 +1818,7 @@ document.addEventListener('DOMContentLoaded',function(){if(localStorage.getItem(
             <th class="sortable-th" onclick="sortTable('dossiers','statut',this)" aria-sort="none">Statut <span class="sort-icon">⇅</span></th>
             <th>💰 Amendes</th>
             <th class="sortable-th" onclick="sortTable('dossiers','agent',this)" aria-sort="none">Agent <span class="sort-icon">⇅</span></th>
-            <th style="color:rgba(109,40,217,0.6);font-size:8.5px;letter-spacing:1px;white-space:nowrap">🏷 Tags <span style="font-size:7px;background:rgba(192,65,14,0.12);color:#e05c1a;border:1px solid rgba(192,65,14,0.2);border-radius:3px;padding:1px 4px;vertical-align:middle">SOON</span></th>
+            <th style="color:rgba(109,40,217,0.75);font-size:8.5px;letter-spacing:1px;white-space:nowrap">🏷 Tags</th>
             <th>Actions</th>
           </tr></thead>
           <tbody id="dossiers-tbody"></tbody>
@@ -2791,12 +2799,17 @@ document.addEventListener('DOMContentLoaded',function(){if(localStorage.getItem(
           </div>
         </div>
       </div>
-      <!-- Photo du suspect -->
-      <div class="form-group" style="margin-bottom:0">
-        <label class="form-label">Photo du suspect</label>
-        <div style="display:flex;gap:14px;align-items:flex-start;flex-wrap:wrap;margin-top:4px">
-          <!-- Aperçu -->
-          <div id="d-photo-preview" style="width:80px;height:96px;border-radius:8px;border:2px dashed rgba(180,140,20,0.35);background:rgba(180,140,20,0.04);display:flex;flex-direction:column;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0;position:relative;cursor:pointer" onclick="el('d-photo-input').click()" title="Cliquer pour importer">
+      <!-- Tags -->
+      <div class="form-group" style="margin-bottom:13px">
+        <label class="form-label" style="color:rgba(109,40,217,0.85)">🏷 Tags</label>
+        <div class="tag-picker" id="d-tag-picker"></div>
+        <div style="display:flex;align-items:center;gap:7px;margin-top:8px">
+          <input type="text" id="d-tag-custom" class="tag-custom-input" placeholder="Tag personnalisé..." maxlength="20" onkeydown="if(event.key==='Enter'){event.preventDefault();addCustomTag('d');}">
+          <button type="button" class="btn btn-outline btn-sm" onclick="addCustomTag('d')" style="font-size:10px;padding:4px 9px">+ Ajouter</button>
+        </div>
+        <div id="d-custom-tags" style="display:flex;flex-wrap:wrap;gap:4px;margin-top:6px"></div>
+      </div>
+      <!-- Photo du suspect --> style="width:80px;height:96px;border-radius:8px;border:2px dashed rgba(180,140,20,0.35);background:rgba(180,140,20,0.04);display:flex;flex-direction:column;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0;position:relative;cursor:pointer" onclick="el('d-photo-input').click()" title="Cliquer pour importer">
             <span style="font-size:26px;opacity:0.3">👤</span>
             <span style="font-size:9px;color:var(--muted);margin-top:4px;text-align:center;padding:0 4px">Cliquer ou coller</span>
           </div>
@@ -2857,11 +2870,17 @@ document.addEventListener('DOMContentLoaded',function(){if(localStorage.getItem(
           </div>
         </div>
       </div>
-      <!-- Photo -->
-      <div class="form-group" style="margin-bottom:0">
-        <label class="form-label">Photo du suspect</label>
-        <div style="display:flex;gap:14px;align-items:flex-start;flex-wrap:wrap;margin-top:4px">
-          <div id="ed-photo-preview" style="width:80px;height:96px;border-radius:8px;border:2px dashed rgba(180,140,20,0.35);background:rgba(180,140,20,0.04);display:flex;flex-direction:column;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0;cursor:pointer" onclick="el('ed-photo-input').click()" title="Cliquer pour importer">
+      <!-- Tags -->
+      <div class="form-group" style="margin-bottom:13px">
+        <label class="form-label" style="color:rgba(109,40,217,0.85)">🏷 Tags</label>
+        <div class="tag-picker" id="ed-tag-picker"></div>
+        <div style="display:flex;align-items:center;gap:7px;margin-top:8px">
+          <input type="text" id="ed-tag-custom" class="tag-custom-input" placeholder="Tag personnalisé..." maxlength="20" onkeydown="if(event.key==='Enter'){event.preventDefault();addCustomTag('ed');}">
+          <button type="button" class="btn btn-outline btn-sm" onclick="addCustomTag('ed')" style="font-size:10px;padding:4px 9px">+ Ajouter</button>
+        </div>
+        <div id="ed-custom-tags" style="display:flex;flex-wrap:wrap;gap:4px;margin-top:6px"></div>
+      </div>
+      <!-- Photo --> style="width:80px;height:96px;border-radius:8px;border:2px dashed rgba(180,140,20,0.35);background:rgba(180,140,20,0.04);display:flex;flex-direction:column;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0;cursor:pointer" onclick="el('ed-photo-input').click()" title="Cliquer pour importer">
             <span style="font-size:26px;opacity:0.3">👤</span>
             <span style="font-size:9px;color:var(--muted);margin-top:4px;text-align:center;padding:0 4px">Cliquer ou coller</span>
           </div>
@@ -4933,10 +4952,11 @@ function renderDossiers(){
         ${(!d.amendePayee&&!d.amendeImpayee)?`<span style="color:var(--muted);font-size:10px">—</span>`:""}
       </td>
       <td style="font-size:11.5px">${esc(d.auteur)}</td>
-      <td>
-        <div title="Étiquettes — bientôt disponible" style="display:flex;gap:3px;align-items:center;cursor:not-allowed;opacity:0.5">
-          <div style="height:14px;width:28px;border-radius:3px;background:rgba(109,40,217,0.15);border:1px dashed rgba(109,40,217,0.3)"></div>
-          <div style="height:14px;width:20px;border-radius:3px;background:rgba(14,116,144,0.15);border:1px dashed rgba(14,116,144,0.3)"></div>
+      <td style="max-width:140px">
+        <div style="display:flex;flex-wrap:wrap;gap:3px;align-items:center">
+          ${(d.tags||[]).slice(0,3).map(tid=>{const t=DOSSIER_TAGS.find(x=>x.id===tid);return t?`<span class="tag-pill" style="background:${t.bg};color:${t.color};border:1px solid ${t.border}">${t.label}</span>`:tid?`<span class="tag-pill" style="background:rgba(109,40,217,0.08);color:#5b21b6;border:1px solid rgba(109,40,217,0.2)">${esc(tid)}</span>`:''}).join('')}
+          ${(d.tags||[]).length>3?`<span class="tag-pill" style="background:rgba(0,0,0,0.06);color:var(--muted);border:1px solid rgba(0,0,0,0.1)">+${(d.tags||[]).length-3}</span>`:''}
+          ${!(d.tags&&d.tags.length)&&canModify()?`<span style="font-size:9px;color:var(--muted);font-family:'Share Tech Mono',monospace;opacity:0.5">—</span>`:''}
         </div>
       </td>
       <td style="white-space:nowrap">
@@ -4980,6 +5000,85 @@ function checkDoublonSuspect(){
     btnsEl.appendChild(btn);
   });
 }
+/* ════════════════════════════════════════════════════════
+   TAGS DOSSIERS — palette, picker, sauvegarde
+   ════════════════════════════════════════════════════════ */
+var DOSSIER_TAGS=[
+  {id:'recidiviste', label:'Récidiviste', color:'#991b1b', bg:'rgba(220,38,38,0.1)',   border:'rgba(220,38,38,0.28)'},
+  {id:'dangereux',   label:'Dangereux',   color:'#9a3412', bg:'rgba(192,65,14,0.1)',   border:'rgba(192,65,14,0.28)'},
+  {id:'arme',        label:'Armé',        color:'#7c2d12', bg:'rgba(154,52,18,0.1)',   border:'rgba(154,52,18,0.28)'},
+  {id:'fugitif',     label:'Fugitif',     color:'#854d0e', bg:'rgba(180,140,20,0.12)', border:'rgba(180,140,20,0.3)'},
+  {id:'surveiller',  label:'À surveiller',color:'#b45309', bg:'rgba(217,119,6,0.1)',   border:'rgba(217,119,6,0.28)'},
+  {id:'complice',    label:'Complice',    color:'#5b21b6', bg:'rgba(109,40,217,0.1)',  border:'rgba(109,40,217,0.28)'},
+  {id:'gang',        label:'Gang',        color:'#6d28d9', bg:'rgba(109,40,217,0.08)', border:'rgba(109,40,217,0.22)'},
+  {id:'mineur',      label:'Mineur',      color:'#1e40af', bg:'rgba(29,78,216,0.1)',   border:'rgba(29,78,216,0.28)'},
+  {id:'informateur', label:'Informateur', color:'#0e7490', bg:'rgba(14,116,144,0.1)',  border:'rgba(14,116,144,0.28)'},
+  {id:'libere',      label:'En liberté',  color:'#15803d', bg:'rgba(21,128,61,0.1)',   border:'rgba(21,128,61,0.28)'},
+];
+
+var _dTagsSelected = { d: [], ed: [] };
+var _dTagsCustom   = { d: [], ed: [] };
+
+function buildTagPicker(prefix, selectedTags){
+  selectedTags = selectedTags || [];
+  var predefined = selectedTags.filter(function(t){ return DOSSIER_TAGS.find(function(x){return x.id===t;}); });
+  var custom     = selectedTags.filter(function(t){ return !DOSSIER_TAGS.find(function(x){return x.id===t;}); });
+  _dTagsSelected[prefix] = predefined.slice();
+  _dTagsCustom[prefix]   = custom.slice();
+  var picker = document.getElementById(prefix+'-tag-picker');
+  if(!picker) return;
+  picker.innerHTML = DOSSIER_TAGS.map(function(t){
+    var sel = _dTagsSelected[prefix].indexOf(t.id) !== -1;
+    return '<span class="tag-toggle'+(sel?' selected':'')+'" data-tag="'+t.id+'" data-prefix="'+prefix+'" '+
+      'style="background:'+(sel?t.bg:'rgba(0,0,0,0.04)')+';color:'+(sel?t.color:'var(--muted)')+';border-color:'+(sel?t.border:'rgba(0,0,0,0.1)')+';" '+
+      'onclick="toggleDossierTag(\''+t.id+'\',\''+prefix+'\')">'+t.label+'</span>';
+  }).join('');
+  renderCustomTags(prefix);
+}
+
+function toggleDossierTag(tagId, prefix){
+  var idx = _dTagsSelected[prefix].indexOf(tagId);
+  if(idx === -1) _dTagsSelected[prefix].push(tagId);
+  else _dTagsSelected[prefix].splice(idx, 1);
+  var t = DOSSIER_TAGS.find(function(x){return x.id===tagId;});
+  if(!t) return;
+  var el2 = document.querySelector('#'+prefix+'-tag-picker [data-tag="'+tagId+'"]');
+  if(!el2) return;
+  var sel = _dTagsSelected[prefix].indexOf(tagId) !== -1;
+  el2.style.background  = sel ? t.bg  : 'rgba(0,0,0,0.04)';
+  el2.style.color       = sel ? t.color : 'var(--muted)';
+  el2.style.borderColor = sel ? t.border : 'rgba(0,0,0,0.1)';
+  if(sel) el2.classList.add('selected'); else el2.classList.remove('selected');
+}
+
+function addCustomTag(prefix){
+  var inp = document.getElementById(prefix+'-tag-custom');
+  if(!inp) return;
+  var val = inp.value.trim();
+  if(!val || val.length > 20) return;
+  if(_dTagsCustom[prefix].indexOf(val) !== -1){ inp.value=''; return; }
+  _dTagsCustom[prefix].push(val);
+  inp.value = '';
+  renderCustomTags(prefix);
+}
+
+function removeCustomTag(prefix, idx){
+  _dTagsCustom[prefix].splice(idx, 1);
+  renderCustomTags(prefix);
+}
+
+function renderCustomTags(prefix){
+  var cont = document.getElementById(prefix+'-custom-tags');
+  if(!cont) return;
+  cont.innerHTML = _dTagsCustom[prefix].map(function(tag, i){
+    return '<span class="tag-pill" style="background:rgba(109,40,217,0.08);color:#5b21b6;border:1px solid rgba(109,40,217,0.22);cursor:pointer;" title="Supprimer" onclick="removeCustomTag(\''+prefix+'\','+i+')">'+esc(tag)+' ✕</span>';
+  }).join('');
+}
+
+function getAllTags(prefix){
+  return _dTagsSelected[prefix].concat(_dTagsCustom[prefix]);
+}
+
 function saveDossier(force){
   const nom=v("d-nom");if(!nom)return;
   // Vérification doublon — si des dossiers existent déjà et que force n'est pas activé, bloquer
@@ -4995,10 +5094,11 @@ function saveDossier(force){
   const photo=el("d-photo-data")?el("d-photo-data").value:"";
   const amendePayee=parseInt(el("d-amende-payee").value)||0;
   const amendeImpayee=parseInt(el("d-amende-impayee").value)||0;
-  DB.dossiers.push({id:Date.now(),nom,infractions:v("d-infractions"),danger:v("d-danger"),statut:v("d-statut"),notes:v("d-notes"),amendePayee,amendeImpayee,photo,auteur:currentUser.nom,date:now()});
+  DB.dossiers.push({id:Date.now(),nom,infractions:v("d-infractions"),danger:v("d-danger"),statut:v("d-statut"),notes:v("d-notes"),amendePayee,amendeImpayee,photo,auteur:currentUser.nom,date:now(),tags:getAllTags('d')});
   addTimeline(`Dossier ouvert sur ${nom}`);
   saveData();closeModal("modal-dossier");renderDossiers();syncDashboard();
   clearForm(["d-nom","d-infractions","d-notes","d-amende-payee","d-amende-impayee"]);
+  buildTagPicker('d',[]);
   clearDossierPhoto();
   // Reset alerte doublon
   var alertEl=el("d-doublon-alert");if(alertEl)alertEl.style.display="none";
@@ -5074,6 +5174,7 @@ function openEditDossier(id){
     el("ed-photo-clear").style.display="none";
   }
   openModal("modal-edit-dossier");
+  buildTagPicker('ed', d.tags||[]);
 }
 
 function updateDossier(){
@@ -5087,6 +5188,7 @@ function updateDossier(){
   d.amendePayee=parseInt(el("ed-amende-payee").value)||0;
   d.amendeImpayee=parseInt(el("ed-amende-impayee").value)||0;
   d.photo=el("ed-photo-data").value;
+  d.tags=getAllTags('ed');
   addTimeline(`Dossier de ${d.nom} modifié par ${currentUser.nom}`);
   saveData();renderDossiers();syncDashboard();closeModal("modal-edit-dossier");
   showToast("Dossier mis à jour.","success");
