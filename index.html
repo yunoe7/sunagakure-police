@@ -2809,7 +2809,12 @@ document.addEventListener('DOMContentLoaded',function(){if(localStorage.getItem(
         </div>
         <div id="d-custom-tags" style="display:flex;flex-wrap:wrap;gap:4px;margin-top:6px"></div>
       </div>
-      <!-- Photo du suspect --> style="width:80px;height:96px;border-radius:8px;border:2px dashed rgba(180,140,20,0.35);background:rgba(180,140,20,0.04);display:flex;flex-direction:column;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0;position:relative;cursor:pointer" onclick="el('d-photo-input').click()" title="Cliquer pour importer">
+      <!-- Photo du suspect -->
+      <div class="form-group" style="margin-bottom:0">
+        <label class="form-label">Photo du suspect</label>
+        <div style="display:flex;gap:14px;align-items:flex-start;flex-wrap:wrap;margin-top:4px">
+          <!-- Aperçu -->
+          <div id="d-photo-preview" style="width:80px;height:96px;border-radius:8px;border:2px dashed rgba(180,140,20,0.35);background:rgba(180,140,20,0.04);display:flex;flex-direction:column;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0;position:relative;cursor:pointer" onclick="el('d-photo-input').click()" title="Cliquer pour importer">
             <span style="font-size:26px;opacity:0.3">👤</span>
             <span style="font-size:9px;color:var(--muted);margin-top:4px;text-align:center;padding:0 4px">Cliquer ou coller</span>
           </div>
@@ -2880,7 +2885,11 @@ document.addEventListener('DOMContentLoaded',function(){if(localStorage.getItem(
         </div>
         <div id="ed-custom-tags" style="display:flex;flex-wrap:wrap;gap:4px;margin-top:6px"></div>
       </div>
-      <!-- Photo --> style="width:80px;height:96px;border-radius:8px;border:2px dashed rgba(180,140,20,0.35);background:rgba(180,140,20,0.04);display:flex;flex-direction:column;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0;cursor:pointer" onclick="el('ed-photo-input').click()" title="Cliquer pour importer">
+      <!-- Photo -->
+      <div class="form-group" style="margin-bottom:0">
+        <label class="form-label">Photo du suspect</label>
+        <div style="display:flex;gap:14px;align-items:flex-start;flex-wrap:wrap;margin-top:4px">
+          <div id="ed-photo-preview" style="width:80px;height:96px;border-radius:8px;border:2px dashed rgba(180,140,20,0.35);background:rgba(180,140,20,0.04);display:flex;flex-direction:column;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0;cursor:pointer" onclick="el('ed-photo-input').click()" title="Cliquer pour importer">
             <span style="font-size:26px;opacity:0.3">👤</span>
             <span style="font-size:9px;color:var(--muted);margin-top:4px;text-align:center;padding:0 4px">Cliquer ou coller</span>
           </div>
