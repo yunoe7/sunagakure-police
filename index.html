@@ -1472,7 +1472,7 @@ body.dark .profile-hero{background:linear-gradient(135deg,rgba(192,65,14,0.1),rg
 #ops-map-zoom-inner svg{position:absolute;inset:0;width:100%;height:100%;display:block}
 #ops-map-zoom-inner>svg{shape-rendering:geometricPrecision;image-rendering:optimizeQuality}
 #ops-map-overlay{position:absolute;inset:0;background:linear-gradient(180deg,rgba(13,14,26,0.55) 0%,transparent 22%,transparent 75%,rgba(13,14,26,0.6) 100%);pointer-events:none}
-#ops-map-pins{position:absolute;inset:0}
+#ops-map-pins{position:absolute;inset:0;z-index:10}
 #ops-map-header{position:absolute;top:0;left:0;right:0;padding:12px 16px;display:flex;align-items:center;gap:10px;z-index:2;pointer-events:none}
 #ops-map-header span.title{font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;color:#fff;text-shadow:0 1px 6px rgba(0,0,0,0.8)}
 #ops-map-legend{position:absolute;bottom:10px;left:14px;display:flex;gap:10px;z-index:2;pointer-events:none}
@@ -2028,7 +2028,7 @@ document.addEventListener('DOMContentLoaded',function(){if(localStorage.getItem(
       <div id="ops-map-img-wrap">
         <div id="ops-map-zoom-controls"><button class="ops-zoom-btn" onclick="opsZoom(1.2)" title="Zoom +">+</button><button class="ops-zoom-btn" onclick="opsZoom(0.833)" title="Zoom −">−</button><button class="ops-zoom-btn" id="ops-zoom-reset" onclick="opsZoomReset()" title="Réinitialiser">↺</button></div>
         <div id="ops-map-zoom-inner">
-        <div id="ops-map-svg-container" style="position:absolute;inset:0;width:100%;height:100%"></div>
+        <div id="ops-map-svg-container" style="position:absolute;inset:0;width:100%;height:100%;z-index:1"></div>
         <div id="ops-map-overlay"></div>
         <div id="ops-map-header">
           <span style="font-size:16px">🗺️</span>
@@ -5473,28 +5473,30 @@ function _opsLoadInlineSvg(){
   fetch(svgUrl)
     .then(function(r){ return r.text(); })
     .then(function(svgText){
-      // Nettoyer le SVG : supprimer déclaration XML et doctype si présents
       svgText = svgText.replace(/<\?xml[^?]*\?>/gi,'').replace(/<!DOCTYPE[^>]*>/gi,'').trim();
       container.innerHTML = svgText;
       var svg = container.querySelector('svg');
       if(svg){
-        svg.style.position = 'absolute';
-        svg.style.inset = '0';
-        svg.style.width = '100%';
-        svg.style.height = '100%';
+        // Récupérer viewBox existant ou le construire depuis width/height
+        var vb = svg.getAttribute('viewBox');
+        if(!vb){
+          var w = svg.getAttribute('width') || '1000';
+          var h = svg.getAttribute('height') || '1000';
+          svg.setAttribute('viewBox','0 0 '+parseFloat(w)+' '+parseFloat(h));
+        }
+        // Supprimer width/height fixes — le SVG s'adapte au conteneur via CSS
         svg.removeAttribute('width');
         svg.removeAttribute('height');
-        // S'assurer que le viewBox est présent
-        if(!svg.getAttribute('viewBox') && svg.getAttribute('width') && svg.getAttribute('height')){
-          svg.setAttribute('viewBox','0 0 '+svg.getAttribute('width')+' '+svg.getAttribute('height'));
-        }
+        svg.setAttribute('preserveAspectRatio','xMidYMid meet');
+        svg.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;display:block;shape-rendering:geometricPrecision;pointer-events:none';
       }
       _opsSvgLoaded = true;
+      renderOpsMap(); // Re-render pins une fois la carte chargée
     })
     .catch(function(){
-      // Fallback img si fetch échoue (ex: CORS)
       container.innerHTML = '<img src="'+svgUrl+'" alt="Carte de Sunagakure" draggable="false" style="position:absolute;inset:0;width:100%;height:100%;object-fit:contain">';
       _opsSvgLoaded = true;
+      renderOpsMap();
     });
 }
 
@@ -5828,7 +5830,7 @@ function togglePinPlaceMode(){
   if(_opsPinPlaceMode){ cancelPinPlace(); return; }
   // Chercher une opération à positionner (on ouvre un sélecteur simple)
   var ops = (DB.operations || []);
-  if(!ops.length){ showToast('Aucune opération à positionner','info'); return; }
+  if(!ops.length){ showToast('📋 Crée d\'abord une opération dans la liste ci-dessous', 'info'); return; }
   // Si une seule op, on la sélectionne direct, sinon on affiche un mini-select
   if(ops.length === 1){
     startPinPlace(ops[0]);
