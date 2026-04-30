@@ -1463,7 +1463,7 @@ body.dark .profile-hero{background:linear-gradient(135deg,rgba(192,65,14,0.1),rg
 #ops-map-wrap{margin-top:16px;border:1px solid rgba(180,140,20,0.3);border-radius:14px;overflow:hidden;position:relative;background:#0d0e1a;box-shadow:0 4px 24px rgba(0,0,0,0.18)}
 #ops-map-img-wrap{position:relative;width:100%;padding-bottom:72.6%;overflow:hidden;cursor:grab}
 #ops-map-img-wrap.dragging{cursor:grabbing}
-#ops-map-zoom-inner{position:absolute;left:0;top:0;width:100%;height:100%;transition:none}
+#ops-map-zoom-inner{position:absolute;left:0;top:0;width:100%;height:100%;transition:none;transform-origin:0 0;will-change:transform}
 #ops-map-zoom-controls{position:absolute;bottom:10px;right:10px;z-index:40;display:flex;flex-direction:column;gap:4px}
 .ops-zoom-btn{width:28px;height:28px;border-radius:6px;background:rgba(13,14,26,0.85);border:1px solid rgba(180,140,20,0.35);color:#d4b44a;font-size:16px;display:flex;align-items:center;justify-content:center;cursor:pointer;backdrop-filter:blur(4px);line-height:1;transition:background 0.15s}
 .ops-zoom-btn:hover{background:rgba(180,140,20,0.15)}
@@ -5428,16 +5428,17 @@ var _opsDragOriginX = 0;
 var _opsDragOriginY = 0;
 var _opsZoomInitDone = false;
 
+var _opsRafPending = false;
 function _opsApplyTransform(){
-  var inner = document.getElementById('ops-map-zoom-inner');
-  if(!inner) return;
-  // Resize directly instead of CSS transform — force SVG re-render at full resolution (no blur)
-  inner.style.width  = (_opsZoom * 100) + '%';
-  inner.style.height = (_opsZoom * 100) + '%';
-  inner.style.left   = _opsPanX + 'px';
-  inner.style.top    = _opsPanY + 'px';
-  // clear any previous transform
-  inner.style.transform = '';
+  if(_opsRafPending) return;
+  _opsRafPending = true;
+  requestAnimationFrame(function(){
+    _opsRafPending = false;
+    var inner = document.getElementById('ops-map-zoom-inner');
+    if(!inner) return;
+    // GPU-accelerated: transform évite le reflow de layout (no blur sur SVG)
+    inner.style.transform = 'translate(' + _opsPanX + 'px,' + _opsPanY + 'px) scale(' + _opsZoom + ')';
+  });
 }
 
 function opsZoom(factor){
@@ -5466,10 +5467,11 @@ function _opsClampPan(){
   if(!wrap) return;
   var w = wrap.clientWidth;
   var h = wrap.clientHeight;
+  // With translate+scale(origin 0 0): max pan is 0, min pan = w*(1-zoom)
   var maxX = 0;
-  var minX = w - w * _opsZoom;
+  var minX = w * (1 - _opsZoom);
   var maxY = 0;
-  var minY = h - h * _opsZoom;
+  var minY = h * (1 - _opsZoom);
   _opsPanX = Math.min(maxX, Math.max(minX, _opsPanX));
   _opsPanY = Math.min(maxY, Math.max(minY, _opsPanY));
 }
