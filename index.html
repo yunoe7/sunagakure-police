@@ -1469,6 +1469,8 @@ body.dark .profile-hero{background:linear-gradient(135deg,rgba(192,65,14,0.1),rg
 .ops-zoom-btn:hover{background:rgba(180,140,20,0.15)}
 #ops-zoom-reset{font-size:9px;letter-spacing:0.5px;font-family:'Share Tech Mono',monospace}
 #ops-map-img-wrap img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;display:block;opacity:1}
+#ops-map-zoom-inner svg{position:absolute;inset:0;width:100%;height:100%;display:block}
+#ops-map-zoom-inner>svg{shape-rendering:geometricPrecision;image-rendering:optimizeQuality}
 #ops-map-overlay{position:absolute;inset:0;background:linear-gradient(180deg,rgba(13,14,26,0.55) 0%,transparent 22%,transparent 75%,rgba(13,14,26,0.6) 100%);pointer-events:none}
 #ops-map-pins{position:absolute;inset:0}
 #ops-map-header{position:absolute;top:0;left:0;right:0;padding:12px 16px;display:flex;align-items:center;gap:10px;z-index:2;pointer-events:none}
@@ -1481,7 +1483,25 @@ body.dark .profile-hero{background:linear-gradient(135deg,rgba(192,65,14,0.1),rg
 .op-pin:hover{transform:translate(-50%,-100%) scale(1.18);z-index:20}
 .op-pin-dot{width:14px;height:14px;border-radius:50%;border:2px solid rgba(255,255,255,0.9);box-shadow:0 2px 8px rgba(0,0,0,0.5),0 0 0 3px rgba(255,255,255,0.15);transition:all 0.15s}
 .op-pin-line{width:2px;height:10px;margin:0 auto;border-radius:1px;opacity:0.8}
-.op-pin.active .op-pin-dot{background:#16a34a;border-color:#fff;box-shadow:0 2px 12px rgba(22,163,74,0.7),0 0 0 4px rgba(22,163,74,0.2)}
+.op-pin.active .op-pin-dot{background:#16a34a;border-color:#fff;box-shadow:0 2px 12px rgba(22,163,74,0.7),0 0 0 4px rgba(22,163,74,0.2);animation:pin-pulse 1.8s ease-in-out infinite}
+@keyframes pin-pulse{0%,100%{box-shadow:0 2px 12px rgba(22,163,74,0.7),0 0 0 4px rgba(22,163,74,0.2)}50%{box-shadow:0 2px 16px rgba(22,163,74,0.9),0 0 0 8px rgba(22,163,74,0.12)}}
+/* Filtres carte */
+#ops-map-filters{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px;margin-bottom:2px}
+.ops-filter-btn{display:inline-flex;align-items:center;gap:5px;padding:5px 11px;border-radius:6px;font-size:10px;font-weight:700;letter-spacing:0.8px;font-family:'Share Tech Mono',monospace;cursor:pointer;border:1px solid transparent;transition:all 0.18s;opacity:0.45;user-select:none}
+.ops-filter-btn.on{opacity:1}
+.ops-filter-btn.f-active{background:rgba(22,163,74,0.1);color:#16a34a;border-color:rgba(22,163,74,0.35)}
+.ops-filter-btn.f-active.on{background:rgba(22,163,74,0.2);box-shadow:0 0 10px rgba(22,163,74,0.2)}
+.ops-filter-btn.f-planifiee{background:rgba(29,78,216,0.1);color:#3b82f6;border-color:rgba(29,78,216,0.3)}
+.ops-filter-btn.f-planifiee.on{background:rgba(29,78,216,0.2);box-shadow:0 0 10px rgba(29,78,216,0.2)}
+.ops-filter-btn.f-terminee{background:rgba(107,114,128,0.1);color:#9ca3af;border-color:rgba(107,114,128,0.3)}
+.ops-filter-btn.f-terminee.on{background:rgba(107,114,128,0.2)}
+/* Bouton plein écran */
+#ops-fullscreen-btn{width:28px;height:28px;border-radius:6px;background:rgba(13,14,26,0.85);border:1px solid rgba(180,140,20,0.35);color:#d4b44a;font-size:13px;display:flex;align-items:center;justify-content:center;cursor:pointer;backdrop-filter:blur(4px);transition:background 0.15s;line-height:1}
+#ops-fullscreen-btn:hover{background:rgba(180,140,20,0.15)}
+/* Pin placement mode */
+#ops-map-img-wrap.placing{cursor:crosshair}
+#ops-place-banner{display:none;align-items:center;gap:8px;background:rgba(192,65,14,0.12);border:1px solid rgba(192,65,14,0.4);border-radius:8px;padding:8px 13px;margin-top:8px;font-size:11px;color:#e05c1a;font-family:'Share Tech Mono',monospace;letter-spacing:0.5px}
+#ops-place-banner.show{display:flex}
 .op-pin.planifiee .op-pin-dot{background:#1d4ed8;border-color:#fff;box-shadow:0 2px 12px rgba(29,78,216,0.7),0 0 0 4px rgba(29,78,216,0.2)}
 .op-pin.terminee .op-pin-dot{background:#6b7280;border-color:#d1d5db;box-shadow:0 2px 8px rgba(0,0,0,0.4)}
 .op-pin.active .op-pin-line{background:#16a34a}
@@ -1991,10 +2011,24 @@ document.addEventListener('DOMContentLoaded',function(){if(localStorage.getItem(
 
     <!-- CARTE TACTIQUE INTERACTIVE (activée quand ops-map-teaser masqué) -->
     <div id="ops-map-wrap" style="display:none">
+      <!-- Barre filtres + plein écran -->
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:6px">
+        <div id="ops-map-filters">
+          <div class="ops-filter-btn f-active on" onclick="toggleOpsFilter('active',this)" title="Afficher/masquer opérations actives"><span style="width:8px;height:8px;border-radius:50%;background:#16a34a;flex-shrink:0;display:inline-block"></span>Active</div>
+          <div class="ops-filter-btn f-planifiee on" onclick="toggleOpsFilter('planifiee',this)" title="Afficher/masquer opérations planifiées"><span style="width:8px;height:8px;border-radius:50%;background:#1d4ed8;flex-shrink:0;display:inline-block"></span>Planifiée</div>
+          <div class="ops-filter-btn f-terminee on" onclick="toggleOpsFilter('terminee',this)" title="Afficher/masquer opérations terminées"><span style="width:8px;height:8px;border-radius:50%;background:#6b7280;flex-shrink:0;display:inline-block"></span>Terminée</div>
+        </div>
+        <div style="display:flex;gap:5px;align-items:center">
+          <div id="ops-place-mode-btn" class="ops-zoom-btn" style="width:auto;padding:0 9px;font-size:10px;font-family:'Share Tech Mono',monospace;letter-spacing:0.5px;gap:5px;display:flex;align-items:center" onclick="togglePinPlaceMode()" title="Placer un pin sur la carte">📍 Placer</div>
+          <div id="ops-fullscreen-btn" onclick="opsFullscreen()" title="Plein écran">⛶</div>
+        </div>
+      </div>
+      <!-- Bannière mode placement -->
+      <div id="ops-place-banner">📍 Mode placement actif — Clique sur la carte pour positionner l'opération sélectionnée &nbsp;<span id="ops-place-name" style="color:#fff;font-weight:700"></span><span style="margin-left:auto;cursor:pointer;font-size:13px" onclick="cancelPinPlace()">✕ Annuler</span></div>
       <div id="ops-map-img-wrap">
         <div id="ops-map-zoom-controls"><button class="ops-zoom-btn" onclick="opsZoom(1.2)" title="Zoom +">+</button><button class="ops-zoom-btn" onclick="opsZoom(0.833)" title="Zoom −">−</button><button class="ops-zoom-btn" id="ops-zoom-reset" onclick="opsZoomReset()" title="Réinitialiser">↺</button></div>
         <div id="ops-map-zoom-inner">
-        <img src="https://raw.githubusercontent.com/yunoe7/sunagakure-police/main/cartographie-nrp.svg" alt="Carte de Sunagakure" draggable="false">
+        <div id="ops-map-svg-container" style="position:absolute;inset:0;width:100%;height:100%"></div>
         <div id="ops-map-overlay"></div>
         <div id="ops-map-header">
           <span style="font-size:16px">🗺️</span>
@@ -5427,6 +5461,42 @@ var _opsDragStartY = 0;
 var _opsDragOriginX = 0;
 var _opsDragOriginY = 0;
 var _opsZoomInitDone = false;
+var _opsSvgLoaded = false;
+
+function _opsLoadInlineSvg(){
+  if(_opsSvgLoaded) return;
+  var container = document.getElementById('ops-map-svg-container');
+  if(!container) return;
+  var svgUrl = 'https://raw.githubusercontent.com/yunoe7/sunagakure-police/main/cartographie-nrp.svg';
+  // Afficher un placeholder pendant le chargement
+  container.innerHTML = '<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,0.3);font-family:\'Share Tech Mono\',monospace;font-size:11px;letter-spacing:1px">Chargement de la carte…</div>';
+  fetch(svgUrl)
+    .then(function(r){ return r.text(); })
+    .then(function(svgText){
+      // Nettoyer le SVG : supprimer déclaration XML et doctype si présents
+      svgText = svgText.replace(/<\?xml[^?]*\?>/gi,'').replace(/<!DOCTYPE[^>]*>/gi,'').trim();
+      container.innerHTML = svgText;
+      var svg = container.querySelector('svg');
+      if(svg){
+        svg.style.position = 'absolute';
+        svg.style.inset = '0';
+        svg.style.width = '100%';
+        svg.style.height = '100%';
+        svg.removeAttribute('width');
+        svg.removeAttribute('height');
+        // S'assurer que le viewBox est présent
+        if(!svg.getAttribute('viewBox') && svg.getAttribute('width') && svg.getAttribute('height')){
+          svg.setAttribute('viewBox','0 0 '+svg.getAttribute('width')+' '+svg.getAttribute('height'));
+        }
+      }
+      _opsSvgLoaded = true;
+    })
+    .catch(function(){
+      // Fallback img si fetch échoue (ex: CORS)
+      container.innerHTML = '<img src="'+svgUrl+'" alt="Carte de Sunagakure" draggable="false" style="position:absolute;inset:0;width:100%;height:100%;object-fit:contain">';
+      _opsSvgLoaded = true;
+    });
+}
 
 var _opsRafPending = false;
 function _opsApplyTransform(){
@@ -5560,13 +5630,32 @@ function _opsInitZoomEvents(){
     if(e.touches.length<2) _lastTouchDist=null;
     if(e.touches.length===0){_lastTouchX=null;_lastTouchY=null;}
   });
+  // Clic pour placement de pin
+  wrap.addEventListener('click', function(e){
+    if(!_opsPinPlaceMode || !_opsPinPlaceTarget) return;
+    if(e.target.closest('.op-pin') || e.target.closest('#ops-map-tooltip')) return;
+    var rect = wrap.getBoundingClientRect();
+    var rawX = e.clientX - rect.left;
+    var rawY = e.clientY - rect.top;
+    var imgX = (rawX - _opsPanX) / _opsZoom;
+    var imgY = (rawY - _opsPanY) / _opsZoom;
+    var pct = function(v, total){ return Math.min(100, Math.max(0, (v / total * 100))); };
+    var px = pct(imgX, wrap.clientWidth);
+    var py = pct(imgY, wrap.clientHeight);
+    var op = _opsPinPlaceTarget;
+    op.mapX = Math.round(px * 10) / 10;
+    op.mapY = Math.round(py * 10) / 10;
+    saveData();
+    cancelPinPlace();
+    renderOpsMap();
+    showToast('📍 Pin de "' + op.nom + '" repositionné !', 'success');
+  });
 }
 
 function _syncTeaserBg(){
   var bg = document.getElementById('ops-teaser-bg');
-  var mapImg = document.querySelector('#ops-map-img-wrap img');
-  if(bg && mapImg && mapImg.src){
-    bg.style.backgroundImage = 'url("' + mapImg.src + '")';
+  if(bg){
+    bg.style.backgroundImage = 'url("https://raw.githubusercontent.com/yunoe7/sunagakure-police/main/cartographie-nrp.svg")';
   }
 }
 
@@ -5575,6 +5664,7 @@ function activateOpsMap(){
   var wrap   = document.getElementById('ops-map-wrap');
   if(teaser) teaser.style.display = 'none';
   if(wrap)   wrap.style.display   = '';
+  _opsLoadInlineSvg();
   renderOpsMap();
   setTimeout(_opsInitZoomEvents, 100);
 }
@@ -5651,6 +5741,8 @@ function renderOpsMap(){
     pin.style.top  = py + '%';
     pin.dataset.id = op.id;
     pin.innerHTML = '<div class="op-pin-dot"></div><div class="op-pin-line"></div>';
+    // Appliquer le filtre actif
+    if(!_opsFilters[cls]) pin.style.display = 'none';
     pin.addEventListener('click', function(e){
       e.stopPropagation();
       showOpsMapTooltip(op, px, py, pinsEl);
@@ -5691,6 +5783,99 @@ function closeOpsMapTooltip(){
   var tt = document.getElementById('ops-map-tooltip');
   if(tt) tt.classList.remove('show');
   _opsMapTooltipOpen = null;
+}
+
+/* ── FILTRES PINS ── */
+var _opsFilters = {active:true, planifiee:true, terminee:true};
+function toggleOpsFilter(type, btn){
+  _opsFilters[type] = !_opsFilters[type];
+  btn.classList.toggle('on', _opsFilters[type]);
+  // Afficher/masquer les pins correspondants
+  var pins = document.querySelectorAll('#ops-map-pins .op-pin');
+  pins.forEach(function(p){
+    if(p.classList.contains(type)){
+      p.style.display = _opsFilters[type] ? '' : 'none';
+    }
+  });
+}
+
+/* ── PLEIN ÉCRAN ── */
+function opsFullscreen(){
+  var el = document.getElementById('ops-map-img-wrap');
+  if(!el) return;
+  if(!document.fullscreenElement){
+    (el.requestFullscreen || el.webkitRequestFullscreen || el.mozRequestFullScreen).call(el);
+  } else {
+    (document.exitFullscreen || document.webkitExitFullscreen || document.mozCancelFullScreen).call(document);
+  }
+}
+document.addEventListener('fullscreenchange', function(){
+  var btn = document.getElementById('ops-fullscreen-btn');
+  if(btn) btn.textContent = document.fullscreenElement ? '✕' : '⛶';
+});
+
+/* ── PLACEMENT DES PINS PAR CLIC ── */
+var _opsPinPlaceMode = false;
+var _opsPinPlaceTarget = null;
+
+function togglePinPlaceMode(){
+  if(_opsPinPlaceMode){ cancelPinPlace(); return; }
+  // Chercher une opération à positionner (on ouvre un sélecteur simple)
+  var ops = (DB.operations || []);
+  if(!ops.length){ showToast('Aucune opération à positionner','info'); return; }
+  // Si une seule op, on la sélectionne direct, sinon on affiche un mini-select
+  if(ops.length === 1){
+    startPinPlace(ops[0]);
+  } else {
+    // Créer un menu déroulant rapide
+    var existing = document.getElementById('ops-pin-select-menu');
+    if(existing){ existing.remove(); return; }
+    var menu = document.createElement('div');
+    menu.id = 'ops-pin-select-menu';
+    menu.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:999;background:rgba(13,14,26,0.98);border:1px solid rgba(180,140,20,0.35);border-radius:12px;padding:16px;min-width:260px;box-shadow:0 20px 60px rgba(0,0,0,0.7);backdrop-filter:blur(12px)';
+    menu.innerHTML = '<div style="font-family:\'Barlow Condensed\',sans-serif;font-size:13px;font-weight:700;letter-spacing:1.5px;color:#d4b44a;margin-bottom:12px;text-transform:uppercase">Choisir l\'opération à placer</div>';
+    ops.forEach(function(op){
+      var item = document.createElement('div');
+      var cls = op.statut==='Active'?'#16a34a':op.statut==='Planifiée'?'#3b82f6':'#9ca3af';
+      item.style.cssText = 'padding:9px 12px;cursor:pointer;border-radius:7px;color:#fff;font-size:12px;display:flex;align-items:center;gap:8px;transition:background 0.15s';
+      item.innerHTML = '<span style="width:8px;height:8px;border-radius:50%;background:'+cls+';flex-shrink:0;display:inline-block"></span><span style="flex:1">'+op.nom+'</span><span style="font-size:9px;color:rgba(255,255,255,0.35);font-family:\'Share Tech Mono\',monospace">'+op.statut+'</span>';
+      item.onmouseover = function(){ this.style.background='rgba(255,255,255,0.07)'; };
+      item.onmouseout  = function(){ this.style.background=''; };
+      item.onclick = function(){ menu.remove(); startPinPlace(op); };
+      menu.appendChild(item);
+    });
+    var cancel = document.createElement('div');
+    cancel.style.cssText = 'margin-top:10px;padding:7px;text-align:center;cursor:pointer;color:rgba(255,255,255,0.35);font-size:11px;font-family:\'Share Tech Mono\',monospace;border-top:1px solid rgba(255,255,255,0.07)';
+    cancel.textContent = '✕ Annuler';
+    cancel.onclick = function(){ menu.remove(); };
+    menu.appendChild(cancel);
+    document.body.appendChild(menu);
+  }
+}
+
+function startPinPlace(op){
+  _opsPinPlaceMode = true;
+  _opsPinPlaceTarget = op;
+  var wrap = document.getElementById('ops-map-img-wrap');
+  var banner = document.getElementById('ops-place-banner');
+  var nameEl = document.getElementById('ops-place-name');
+  if(wrap) wrap.classList.add('placing');
+  if(banner) banner.classList.add('show');
+  if(nameEl) nameEl.textContent = op.nom;
+  var btn = document.getElementById('ops-place-mode-btn');
+  if(btn){ btn.style.background='rgba(192,65,14,0.3)'; btn.style.color='#ff6b35'; btn.style.borderColor='rgba(192,65,14,0.6)'; }
+  showToast('📍 Clique sur la carte pour placer "' + op.nom + '"','info');
+}
+
+function cancelPinPlace(){
+  _opsPinPlaceMode = false;
+  _opsPinPlaceTarget = null;
+  var wrap = document.getElementById('ops-map-img-wrap');
+  var banner = document.getElementById('ops-place-banner');
+  if(wrap) wrap.classList.remove('placing');
+  if(banner) banner.classList.remove('show');
+  var btn = document.getElementById('ops-place-mode-btn');
+  if(btn){ btn.style.background=''; btn.style.color=''; btn.style.borderColor=''; }
 }
 
 document.addEventListener('click', function(e){
