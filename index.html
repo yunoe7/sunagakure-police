@@ -2192,17 +2192,8 @@ document.addEventListener('DOMContentLoaded',function(){if(localStorage.getItem(
       <div class="bb-grid" id="bb-grid"></div>
     </div>
 
-    <!-- Modal dossier complet -->
-    <div class="modal-overlay" id="bb-dossier-modal">
-      <div class="modal" style="max-width:700px;padding:0;overflow:hidden">
-        <div class="modal-header" style="padding:14px 20px">
-          <h3 id="bb-modal-title" style="font-size:10px;letter-spacing:3px">DOSSIER NINJA</h3>
-          <span class="modal-close" onclick="bbCloseModal()">✕</span>
-        </div>
-        <div id="bb-modal-body" style="display:flex"></div>
-      </div>
-    </div>
-  </div>
+    <!-- Modal dossier complet — HORS du page-content pour éviter le bug will-change:transform -->
+  </div><!-- /page-bingobook -->
 
   <!-- OPÉRATIONS -->
   <div class="page-content" id="page-operations">
@@ -4432,6 +4423,7 @@ function renderPage(name){
       }).catch(function(){});
     }
   }
+  if(name==="bingobook")bbRender();
   if(name==="messagerie"){
     initMessagingFirebase();
     renderMsgContacts();
@@ -13783,8 +13775,11 @@ function bbOpenDossier(id) {
   var portrait = n.portrait
     ? '<img src="'+n.portrait+'" alt="portrait">'
     : '<div style="font-family:\'Cinzel\',serif;font-size:22px;color:rgba(100,70,20,0.4);font-style:italic;text-align:center">'+bbInitials(n.nom,n.prenom)+'<br><span style="font-size:9px;display:block;margin-top:4px">PORTRAIT</span></div>';
-  document.getElementById('bb-modal-title').textContent = '~ DOSSIER — '+n.nom.toUpperCase()+' '+n.prenom+' ~';
-  document.getElementById('bb-modal-body').innerHTML =
+  var _bbTitle = document.getElementById('bb-modal-title');
+  var _bbBody = document.getElementById('bb-modal-body');
+  if(!_bbTitle || !_bbBody) return;
+  _bbTitle.textContent = '~ DOSSIER — '+n.nom.toUpperCase()+' '+n.prenom+' ~';
+  _bbBody.innerHTML =
     '<div class="bb-dossier-left">'+
       '<div class="bb-dossier-portrait">'+portrait+'</div>'+
       '<div class="bb-dossier-nom">'+n.nom+'</div>'+
@@ -13823,7 +13818,8 @@ function bbHandleImageUpload(event) {
 function bbToggleAddPanel() {
   bbEditingId = null;
   _bbPortraitData = '';
-  document.getElementById('bb-form-title').textContent = 'Nouvelle fiche ninja';
+  var _fTitle = document.getElementById('bb-form-title');
+  if(_fTitle) _fTitle.textContent = 'Nouvelle fiche ninja';
   ['bb-nom','bb-prenom','bb-reward','bb-village','bb-vu','bb-desc'].forEach(function(id){
     var el=document.getElementById(id); if(el) el.value='';
   });
@@ -13845,7 +13841,8 @@ function bbOpenEdit(id) {
   if(!n) return;
   bbEditingId = id;
   _bbPortraitData = n.portrait || '';
-  document.getElementById('bb-form-title').textContent = 'Modifier — '+n.nom+' '+n.prenom;
+  var _fTitle2 = document.getElementById('bb-form-title');
+  if(_fTitle2) _fTitle2.textContent = 'Modifier — '+n.nom+' '+n.prenom;
   document.getElementById('bb-nom').value = n.nom;
   document.getElementById('bb-prenom').value = n.prenom==='—'?'':n.prenom;
   document.getElementById('bb-grade').value = n.grade;
@@ -13925,5 +13922,16 @@ document.addEventListener('DOMContentLoaded', function(){
   }
 });
 </script>
+<!-- BINGO BOOK — Modal dossier (hors page-content, sinon will-change:transform casse position:fixed) -->
+<div class="modal-overlay" id="bb-dossier-modal">
+  <div class="modal" style="max-width:700px;padding:0;overflow:hidden;background:#1a1108;border:1px solid rgba(180,140,20,0.2)">
+    <div class="modal-header" style="padding:14px 20px;background:rgba(180,140,20,0.06);border-bottom:1px solid rgba(180,140,20,0.15)">
+      <h3 id="bb-modal-title" style="font-size:10px;letter-spacing:3px;font-family:'Share Tech Mono',monospace;color:rgba(180,140,20,0.7)">DOSSIER NINJA</h3>
+      <span class="modal-close" onclick="bbCloseModal()">✕</span>
+    </div>
+    <div id="bb-modal-body" style="display:flex"></div>
+  </div>
+</div>
+
 </body>
 </html>
