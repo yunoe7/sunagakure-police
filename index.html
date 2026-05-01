@@ -1525,8 +1525,8 @@ body.dark .profile-hero{background:linear-gradient(135deg,rgba(192,65,14,0.1),rg
   transition:opacity 0.2s,transform 0.2s;
 }
 #ops-minimap:hover{opacity:1!important;transform:scale(1.04)}
-#ops-minimap-img{position:absolute;inset:0;width:100%;height:100%;opacity:0.7}
-#ops-minimap-img img{width:100%;height:100%;object-fit:cover;display:block}
+#ops-minimap-img{position:absolute;inset:0;width:100%;height:100%;opacity:0.7;background:#0d0e1a}
+#ops-minimap-img img{width:100%;height:100%;object-fit:contain;display:block}
 #ops-minimap-viewport{
   position:absolute;
   border:1.5px solid rgba(212,180,74,0.9);
@@ -3238,7 +3238,7 @@ document.addEventListener('DOMContentLoaded',function(){if(localStorage.getItem(
       <div class="form-group"><label class="form-label">Nom de l'opération</label><input type="text" id="op-nom" class="form-control" placeholder="Opération [Code]"></div>
       <div class="grid grid-2">
         <div class="form-group"><label class="form-label">Type</label>
-          <select id="op-type" class="form-control"><option>Surveillance</option><option>Arrestation</option><option>Perquisition</option><option>Intervention armée</option><option>Patrouille renforcée</option><option>Investigation</option></select></div>
+          <select id="op-type" class="form-control"><option>Surveillance</option><option>Arrestation</option><option>Perquisition</option><option>Intervention ninja</option><option>Patrouille renforcée</option><option>Investigation</option></select></div>
         <div class="form-group"><label class="form-label">Statut</label>
           <select id="op-statut" class="form-control"><option value="Active">Active</option><option value="Planifiée">Planifiée</option><option value="Terminée">Terminée</option></select></div>
       </div>
@@ -6014,31 +6014,40 @@ function _opsUpdateMinimap(){
 
   var mW = mini.clientWidth;
   var mH = mini.clientHeight;
-  var wW = wrap.clientWidth;
-  var wH = wrap.clientHeight;
-  if(!wW || !wH || !mW || !mH) return;
+  if(!mW || !mH) return;
 
-  // La minimap représente la carte à zoom=1
-  // Le viewport visible = (wW/zoom) x (wH/zoom) déplacé de (-panX/zoom, -panY/zoom)
-  var visW = wW / _opsZoom;
-  var visH = wH / _opsZoom;
-  var visX = -_opsPanX / _opsZoom;
-  var visY = -_opsPanY / _opsZoom;
-
-  // Ratio minimap / carte réelle
-  var rx = mW / wW;
-  var ry = mH / wH;
-
-  vp.style.left   = Math.max(0, visX * rx) + 'px';
-  vp.style.top    = Math.max(0, visY * ry) + 'px';
-  vp.style.width  = Math.min(mW, visW * rx) + 'px';
-  vp.style.height = Math.min(mH, visH * ry) + 'px';
+  if(_svgReady && _svgOrigVBw && _svgOrigVBh){
+    // Calcul via viewBox SVG — précis car lié au système de zoom vectoriel
+    var vpL = ((_svgVBx - _svgOrigVBx) / _svgOrigVBw) * mW;
+    var vpT = ((_svgVBy - _svgOrigVBy) / _svgOrigVBh) * mH;
+    var vpW = (_svgVBw / _svgOrigVBw) * mW;
+    var vpH = (_svgVBh / _svgOrigVBh) * mH;
+    vp.style.left   = Math.max(0, vpL) + 'px';
+    vp.style.top    = Math.max(0, vpT) + 'px';
+    vp.style.width  = Math.min(mW, vpW) + 'px';
+    vp.style.height = Math.min(mH, vpH) + 'px';
+  } else {
+    // Fallback si SVG pas encore chargé
+    var wW = wrap.clientWidth;
+    var wH = wrap.clientHeight;
+    if(!wW || !wH) return;
+    var visW = wW / _opsZoom;
+    var visH = wH / _opsZoom;
+    var visX = -_opsPanX / _opsZoom;
+    var visY = -_opsPanY / _opsZoom;
+    var rx = mW / wW;
+    var ry = mH / wH;
+    vp.style.left   = Math.max(0, visX * rx) + 'px';
+    vp.style.top    = Math.max(0, visY * ry) + 'px';
+    vp.style.width  = Math.min(mW, visW * rx) + 'px';
+    vp.style.height = Math.min(mH, visH * ry) + 'px';
+  }
 
   // Opacité : plus on zoom, plus la minimap est visible
   mini.style.opacity = _opsZoom > 1.2 ? '1' : '0.55';
 
   // Pins minimap
-  _opsRenderMinimapPins(mW, mH, wW, wH);
+  _opsRenderMinimapPins(mW, mH, wrap.clientWidth || mW, wrap.clientHeight || mH);
 }
 
 function _opsRenderMinimapPins(mW, mH, wW, wH){
@@ -6066,21 +6075,39 @@ function opsMinimapClick(e){
   var rect = mini.getBoundingClientRect();
   var mx = e.clientX - rect.left;
   var my = e.clientY - rect.top;
-  // Convertir position minimap → pan
   var mW = mini.clientWidth;
   var mH = mini.clientHeight;
   var wW = wrap.clientWidth;
   var wH = wrap.clientHeight;
-  var rx = mW / wW;
-  var ry = mH / wH;
-  // Centre la vue sur le point cliqué
-  var mapX = mx / rx; // position dans la carte réelle
-  var mapY = my / ry;
-  _opsPanX = wW/2 - mapX * _opsZoom;
-  _opsPanY = wH/2 - mapY * _opsZoom;
-  _opsClampPan();
-  _opsApplyTransform();
-  _opsUpdateMinimap();
+
+  if(_svgReady && _svgOrigVBw && _svgOrigVBh){
+    // Convertir clic minimap → position SVG units → nouveau viewBox centré
+    var svgClickX = _svgOrigVBx + (mx / mW) * _svgOrigVBw;
+    var svgClickY = _svgOrigVBy + (my / mH) * _svgOrigVBh;
+    var halfW = _svgVBw / 2;
+    var halfH = _svgVBh / 2;
+    // Centrer le viewBox sur le point cliqué
+    var newVBx = Math.max(_svgOrigVBx, Math.min(_svgOrigVBx + _svgOrigVBw - _svgVBw, svgClickX - halfW));
+    var newVBy = Math.max(_svgOrigVBy, Math.min(_svgOrigVBy + _svgOrigVBh - _svgVBh, svgClickY - halfH));
+    _svgVBx = newVBx; _svgVBy = newVBy;
+    // Synchroniser _opsPanX/_opsPanY pour cohérence
+    _opsPanX = -((_svgVBx - _svgOrigVBx) / _svgOrigVBw) * wW * _opsZoom;
+    _opsPanY = -((_svgVBy - _svgOrigVBy) / _svgOrigVBh) * wH * _opsZoom;
+    // Appliquer directement au SVG
+    var container = document.getElementById('ops-map-svg-container');
+    var svg = container ? container.querySelector('svg') : null;
+    if(svg) svg.setAttribute('viewBox', _svgVBx+' '+_svgVBy+' '+_svgVBw+' '+_svgVBh);
+    _opsUpdateMinimap();
+  } else {
+    var rx = mW / wW;
+    var ry = mH / wH;
+    var mapX = mx / rx;
+    var mapY = my / ry;
+    _opsPanX = wW/2 - mapX * _opsZoom;
+    _opsPanY = wH/2 - mapY * _opsZoom;
+    _opsClampPan();
+    _opsApplyTransform();
+  }
 }
 
 /* ══════════════════════════════════════════
