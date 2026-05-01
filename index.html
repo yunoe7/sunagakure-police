@@ -2050,102 +2050,156 @@ document.addEventListener('DOMContentLoaded',function(){if(localStorage.getItem(
   <!-- BINGO BOOK -->
   <div class="page-content" id="page-bingobook">
     <style>
-      .bb-grid-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:14px;margin-top:16px}
-      .bb-fiche{background:#fff;border:1px solid rgba(180,140,20,0.18);border-radius:10px;overflow:hidden;transition:all 0.2s ease;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,0.06)}
-      .bb-fiche:hover{border-color:rgba(180,140,20,0.45);transform:translateY(-3px);box-shadow:0 8px 24px rgba(0,0,0,0.1)}
-      .bb-fiche-top{display:flex;gap:10px;padding:12px;border-bottom:1px solid rgba(180,140,20,0.1)}
-      .bb-portrait{width:56px;height:68px;flex-shrink:0;border:1px solid rgba(180,140,20,0.2);border-radius:4px;overflow:hidden;display:flex;align-items:center;justify-content:center;background:rgba(180,140,20,0.05);font-family:'Cinzel',serif;font-size:12px;color:rgba(180,140,20,0.5);text-align:center;font-style:italic;line-height:1.3}
-      .bb-portrait img{width:100%;height:100%;object-fit:cover}
-      .bb-info{flex:1;min-width:0}
-      .bb-nom{font-family:'Cinzel',serif;font-size:13px;font-weight:700;color:var(--text)}
-      .bb-prenom{font-size:11px;color:var(--muted);font-style:italic;margin-bottom:6px}
-      .bb-danger-eleve{background:rgba(220,38,38,0.1);color:#991b1b;border:1px solid rgba(220,38,38,0.25);display:inline-block;font-family:'Share Tech Mono',monospace;font-size:8px;letter-spacing:0.5px;padding:2px 7px;border-radius:4px;font-weight:700}
-      .bb-danger-moyen{background:rgba(180,140,20,0.1);color:#854d0e;border:1px solid rgba(180,140,20,0.25);display:inline-block;font-family:'Share Tech Mono',monospace;font-size:8px;letter-spacing:0.5px;padding:2px 7px;border-radius:4px;font-weight:700}
-      .bb-danger-faible{background:rgba(21,128,61,0.1);color:#166534;border:1px solid rgba(21,128,61,0.2);display:inline-block;font-family:'Share Tech Mono',monospace;font-size:8px;letter-spacing:0.5px;padding:2px 7px;border-radius:4px;font-weight:700}
-      .bb-fiche-body{padding:10px 12px;font-size:11px;color:var(--muted)}
-      .bb-row{display:flex;gap:4px;margin-bottom:3px}
-      .bb-lbl{color:var(--gold2);flex-shrink:0;font-family:'Share Tech Mono',monospace;font-size:9px;letter-spacing:0.5px}
-      .bb-val{color:var(--text)}
-      .bb-desc-preview{margin-top:6px;font-size:10px;color:var(--muted);font-style:italic;line-height:1.4;border-top:1px solid rgba(180,140,20,0.08);padding-top:5px}
-      .bb-fiche-footer{padding:8px 12px;border-top:1px solid rgba(180,140,20,0.08);display:flex;justify-content:space-between;align-items:center;background:rgba(180,140,20,0.02)}
-      .bb-reward{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--gold2);font-weight:700}
-      .bb-fiche-num{font-family:'Share Tech Mono',monospace;font-size:8px;color:var(--muted)}
-      .bb-filter-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
-      .bb-fbtn{background:transparent;border:1px solid rgba(180,140,20,0.2);color:var(--muted);font-family:'Share Tech Mono',monospace;font-size:9px;padding:4px 12px;border-radius:5px;cursor:pointer;letter-spacing:1px;transition:all 0.18s}
-      .bb-fbtn:hover,.bb-fbtn.on{background:rgba(180,140,20,0.1);border-color:var(--gold2);color:var(--gold2)}
-      .bb-empty{text-align:center;padding:48px;color:var(--muted);font-style:italic}
-      /* Modal dossier */
-      .bb-modal-portrait{width:100px;height:120px;flex-shrink:0;border:1px solid rgba(180,140,20,0.25);border-radius:6px;overflow:hidden;display:flex;align-items:center;justify-content:center;background:rgba(180,140,20,0.04);font-family:'Cinzel',serif;font-size:16px;color:rgba(180,140,20,0.4);font-style:italic;text-align:center}
-      .bb-modal-portrait img{width:100%;height:100%;object-fit:cover}
-      .bb-dossier-desc{background:rgba(180,140,20,0.04);border-left:3px solid rgba(180,140,20,0.3);padding:12px 14px;border-radius:0 6px 6px 0;font-size:12px;color:var(--text);line-height:1.7;font-style:italic;margin-top:8px}
-      /* Form ajout */
-      #bb-add-panel .card{border-left:3px solid var(--gold)}
+      /* ── BINGO BOOK — THEME SOMBRE LIVRE ── */
+      #page-bingobook{background:#0e0b07;min-height:100vh;padding:0}
+      .bb-hero{padding:36px 32px 20px;border-bottom:1px solid rgba(180,140,20,0.12)}
+      .bb-hero-label{font-family:'Share Tech Mono',monospace;font-size:9px;letter-spacing:4px;color:rgba(180,140,20,0.5);text-transform:uppercase;margin-bottom:8px;display:flex;align-items:center;gap:8px}
+      .bb-hero-label::before{content:'';display:inline-block;width:8px;height:8px;background:#dc2626;border-radius:1px}
+      .bb-hero-title{font-family:'Cinzel',serif;font-size:34px;font-weight:700;color:#fff;line-height:1;margin-bottom:4px}
+      .bb-hero-title span{color:#d4b44a}
+      .bb-hero-sub{font-size:12px;color:rgba(255,255,255,0.4);font-family:'Share Tech Mono',monospace;letter-spacing:1.5px}
+      .bb-toolbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:16px 32px;border-bottom:1px solid rgba(180,140,20,0.08)}
+      .bb-search-wrap{position:relative;flex:1;min-width:200px;max-width:320px}
+      .bb-search-wrap input{background:rgba(255,255,255,0.04);border:1px solid rgba(180,140,20,0.15);color:#fff;border-radius:6px;padding:8px 12px 8px 32px;font-size:12px;width:100%;outline:none;font-family:'Share Tech Mono',monospace;transition:border-color 0.2s}
+      .bb-search-wrap input:focus{border-color:rgba(180,140,20,0.4)}
+      .bb-search-wrap::before{content:'🔍';position:absolute;left:9px;top:50%;transform:translateY(-50%);font-size:11px;pointer-events:none}
+      .bb-search-wrap input::placeholder{color:rgba(255,255,255,0.25)}
+      .bb-filters{display:flex;gap:6px;flex-wrap:wrap}
+      .bb-fbtn{background:transparent;border:1px solid rgba(180,140,20,0.15);color:rgba(255,255,255,0.4);font-family:'Share Tech Mono',monospace;font-size:9px;padding:6px 14px;border-radius:4px;cursor:pointer;letter-spacing:1.5px;transition:all 0.18s;white-space:nowrap}
+      .bb-fbtn:hover,.bb-fbtn.on{background:rgba(180,140,20,0.12);border-color:rgba(180,140,20,0.5);color:#d4b44a}
+      .bb-add-btn{background:transparent;border:1px solid rgba(180,140,20,0.3);color:#d4b44a;font-family:'Share Tech Mono',monospace;font-size:9px;padding:6px 16px;border-radius:4px;cursor:pointer;letter-spacing:1.5px;transition:all 0.2s;display:none}
+      .bb-add-btn:hover{background:rgba(180,140,20,0.15);border-color:#d4b44a}
+      .bb-body{padding:24px 32px}
+      /* Grid cartes */
+      .bb-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:16px}
+      .bb-card{background:linear-gradient(160deg,#f5ead0 0%,#e8d9b0 100%);border-radius:4px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,0.5),inset 0 0 0 1px rgba(180,140,20,0.2);transition:transform 0.2s,box-shadow 0.2s;position:relative;cursor:pointer}
+      .bb-card:hover{transform:translateY(-4px);box-shadow:0 12px 32px rgba(0,0,0,0.6),inset 0 0 0 1px rgba(180,140,20,0.3)}
+      .bb-card-header{padding:10px 12px 8px;border-bottom:1px solid rgba(120,80,20,0.2);display:flex;justify-content:space-between;align-items:center}
+      .bb-card-fiche-num{font-family:'Share Tech Mono',monospace;font-size:8px;color:rgba(100,70,20,0.6);letter-spacing:2px}
+      .bb-card-actions{display:flex;gap:4px;opacity:0;transition:opacity 0.2s}
+      .bb-card:hover .bb-card-actions{opacity:1}
+      .bb-card-btn{background:rgba(120,80,20,0.12);border:none;border-radius:3px;padding:3px 7px;cursor:pointer;font-size:11px;transition:background 0.15s;line-height:1}
+      .bb-card-btn:hover{background:rgba(120,80,20,0.25)}
+      .bb-card-btn.del:hover{background:rgba(180,30,30,0.2)}
+      .bb-card-body{display:flex;gap:10px;padding:10px 12px 12px}
+      .bb-portrait-wrap{width:64px;height:80px;flex-shrink:0;border:1px solid rgba(120,80,20,0.3);border-radius:3px;overflow:hidden;background:rgba(120,80,20,0.08);display:flex;align-items:center;justify-content:center;font-family:'Cinzel',serif;font-size:11px;color:rgba(100,70,20,0.5);text-align:center;line-height:1.3}
+      .bb-portrait-wrap img{width:100%;height:100%;object-fit:cover}
+      .bb-card-info{flex:1;min-width:0}
+      .bb-card-nom{font-family:'Cinzel',serif;font-size:14px;font-weight:700;color:#2d1a08;line-height:1.2}
+      .bb-card-prenom{font-size:11px;color:rgba(80,50,15,0.7);font-style:italic;margin-bottom:6px}
+      .bb-badge-eleve{display:inline-block;background:rgba(180,30,30,0.12);color:#8b1515;border:1px solid rgba(180,30,30,0.3);font-family:'Share Tech Mono',monospace;font-size:7.5px;letter-spacing:0.5px;padding:2px 7px;border-radius:3px;font-weight:700}
+      .bb-badge-moyen{display:inline-block;background:rgba(160,100,10,0.12);color:#7a4e08;border:1px solid rgba(160,100,10,0.3);font-family:'Share Tech Mono',monospace;font-size:7.5px;letter-spacing:0.5px;padding:2px 7px;border-radius:3px;font-weight:700}
+      .bb-badge-faible{display:inline-block;background:rgba(30,110,50,0.1);color:#1a5c2e;border:1px solid rgba(30,110,50,0.25);font-family:'Share Tech Mono',monospace;font-size:7.5px;letter-spacing:0.5px;padding:2px 7px;border-radius:3px;font-weight:700}
+      .bb-card-meta{margin-top:7px;display:flex;flex-direction:column;gap:2px}
+      .bb-card-row{font-size:10px;color:rgba(60,35,8,0.75);display:flex;gap:4px}
+      .bb-card-lbl{color:rgba(140,90,15,0.8);font-family:'Share Tech Mono',monospace;font-size:8px;letter-spacing:0.5px;flex-shrink:0}
+      .bb-card-footer{padding:8px 12px;border-top:1px solid rgba(120,80,20,0.15);display:flex;justify-content:space-between;align-items:center;background:rgba(120,80,20,0.05)}
+      .bb-reward{font-family:'Share Tech Mono',monospace;font-size:10px;color:#8b5e0a;font-weight:700}
+      .bb-desc-snip{margin-top:7px;font-size:9.5px;color:rgba(60,35,8,0.65);font-style:italic;line-height:1.45;border-top:1px solid rgba(120,80,20,0.12);padding-top:5px}
+      .bb-empty{text-align:center;padding:60px;color:rgba(255,255,255,0.25);font-style:italic;font-size:13px}
+      /* Formulaire */
+      #bb-form-wrap{background:rgba(255,255,255,0.03);border:1px solid rgba(180,140,20,0.15);border-radius:8px;padding:20px 24px;margin-bottom:20px}
+      #bb-form-wrap .form-label{color:rgba(180,140,20,0.7);font-size:9px;letter-spacing:2px;text-transform:uppercase;font-family:'Share Tech Mono',monospace;margin-bottom:5px}
+      #bb-form-wrap .form-control{background:rgba(255,255,255,0.05);border:1px solid rgba(180,140,20,0.15);color:#e8dcc8;border-radius:5px;padding:8px 11px;font-size:12px;outline:none;transition:border-color 0.2s}
+      #bb-form-wrap .form-control:focus{border-color:rgba(180,140,20,0.45);background:rgba(255,255,255,0.07)}
+      #bb-form-wrap select.form-control option{background:#1a1209;color:#e8dcc8}
+      #bb-form-wrap .form-control::placeholder{color:rgba(255,255,255,0.2)}
+      .bb-form-title{font-family:'Cinzel',serif;font-size:16px;color:#d4b44a;margin-bottom:16px;padding-bottom:10px;border-bottom:1px solid rgba(180,140,20,0.15)}
+      /* Upload image */
+      .bb-upload-zone{border:1.5px dashed rgba(180,140,20,0.25);border-radius:6px;padding:14px;text-align:center;cursor:pointer;transition:all 0.2s;position:relative;background:rgba(180,140,20,0.02)}
+      .bb-upload-zone:hover{border-color:rgba(180,140,20,0.5);background:rgba(180,140,20,0.05)}
+      .bb-upload-zone input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+      .bb-upload-preview{width:60px;height:74px;object-fit:cover;border-radius:3px;border:1px solid rgba(180,140,20,0.25);display:none}
+      .bb-upload-label{font-size:11px;color:rgba(255,255,255,0.35);font-family:'Share Tech Mono',monospace;font-size:9px;letter-spacing:1px;margin-top:6px}
+      /* Modal dossier (livre ouvert) */
+      #bb-dossier-modal .modal{max-width:760px;background:#1a1108;border:1px solid rgba(180,140,20,0.2)}
+      #bb-dossier-modal .modal-header{background:rgba(180,140,20,0.06);border-bottom:1px solid rgba(180,140,20,0.15)}
+      #bb-dossier-modal .modal-header h3{font-family:'Share Tech Mono',monospace;font-size:10px;letter-spacing:3px;color:rgba(180,140,20,0.7)}
+      .bb-dossier-inner{display:flex;gap:0}
+      .bb-dossier-left{width:240px;flex-shrink:0;background:linear-gradient(160deg,#f5ead0,#e8d4a0);padding:24px 20px;display:flex;flex-direction:column;align-items:center;gap:14px;border-right:2px solid rgba(120,80,20,0.25)}
+      .bb-dossier-right{flex:1;padding:24px;overflow-y:auto;max-height:70vh;color:#d8cbb0}
+      .bb-dossier-portrait{width:120px;height:148px;border:2px solid rgba(120,80,20,0.4);border-radius:4px;overflow:hidden;background:rgba(120,80,20,0.1);display:flex;align-items:center;justify-content:center;font-family:'Cinzel',serif;font-size:22px;color:rgba(100,70,20,0.4);text-align:center}
+      .bb-dossier-portrait img{width:100%;height:100%;object-fit:cover}
+      .bb-dossier-nom{font-family:'Cinzel',serif;font-size:20px;font-weight:700;color:#2d1a08;text-align:center;line-height:1.2}
+      .bb-dossier-prenom{font-size:12px;color:rgba(80,50,15,0.7);font-style:italic;text-align:center}
+      .bb-dossier-right h4{font-family:'Share Tech Mono',monospace;font-size:9px;letter-spacing:3px;color:rgba(180,140,20,0.6);text-transform:uppercase;margin-bottom:10px;margin-top:0}
+      .bb-dossier-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:18px}
+      .bb-dossier-field{font-size:11px}
+      .bb-dossier-field-lbl{font-family:'Share Tech Mono',monospace;font-size:8px;letter-spacing:1.5px;color:rgba(180,140,20,0.5);margin-bottom:3px}
+      .bb-dossier-field-val{color:#d8cbb0;font-size:13px}
+      .bb-dossier-desc-box{background:rgba(180,140,20,0.05);border-left:3px solid rgba(180,140,20,0.3);padding:14px 16px;border-radius:0 6px 6px 0;font-size:12px;color:#c8b890;line-height:1.75;font-style:italic}
+      .bb-dossier-actions{margin-top:16px;display:flex;gap:8px}
     </style>
 
-    <div class="section-header">
-      <div>
-        <div class="section-title">Bingo Book</div>
-        <div class="section-sub">REGISTRE OFFICIEL DES NINJAS RECHERCHÉS</div>
-      </div>
-      <div style="display:flex;gap:8px;align-items:center">
-        <button class="btn btn-gold btn-sm" id="bb-add-btn" onclick="bbToggleAddPanel()" style="display:none">+ Ajouter une fiche</button>
-      </div>
+    <!-- Hero -->
+    <div class="bb-hero">
+      <div class="bb-hero-label">AVIS OFFICIEL</div>
+      <div class="bb-hero-title">Bingo <span>Book</span></div>
+      <div class="bb-hero-sub">Registre officiel des ninjas recherchés · Toute information menant à la capture sera récompensée</div>
     </div>
 
-    <!-- Panel ajout (admin/modo) -->
-    <div id="bb-add-panel" style="display:none;margin-bottom:16px">
-      <div class="card" id="bb-add-card">
-        <div class="card-header"><span>📕</span><h3 id="bb-form-title">Nouvelle fiche ninja</h3></div>
-        <div class="card-body">
-          <div class="grid grid-2" style="gap:10px;margin-bottom:10px">
-            <div class="form-group" style="margin-bottom:0"><label class="form-label">Nom</label><input type="text" id="bb-nom" class="form-control" placeholder="Ex: Nagasawa"></div>
-            <div class="form-group" style="margin-bottom:0"><label class="form-label">Prénom</label><input type="text" id="bb-prenom" class="form-control" placeholder="Ex: Tsurizao"></div>
-          </div>
-          <div class="grid grid-3" style="gap:10px;margin-bottom:10px">
-            <div class="form-group" style="margin-bottom:0"><label class="form-label">Grade</label>
-              <select id="bb-grade" class="form-control"><option>Genin</option><option>Chunin</option><option>Jonin</option><option>Kage</option><option>Inconnu</option></select>
-            </div>
-            <div class="form-group" style="margin-bottom:0"><label class="form-label">Niveau de danger</label>
-              <select id="bb-danger" class="form-control"><option value="eleve">⚠ Danger élevé</option><option value="moyen">◆ Danger moyen</option><option value="faible">▸ Danger faible</option></select>
-            </div>
-            <div class="form-group" style="margin-bottom:0"><label class="form-label">Récompense (Ryos)</label><input type="number" id="bb-reward" class="form-control" placeholder="25000"></div>
-          </div>
-          <div class="grid grid-2" style="gap:10px;margin-bottom:10px">
-            <div class="form-group" style="margin-bottom:0"><label class="form-label">Village d'origine</label><input type="text" id="bb-village" class="form-control" placeholder="Ex: Konoha"></div>
-            <div class="form-group" style="margin-bottom:0"><label class="form-label">Portrait (URL image)</label><input type="text" id="bb-portrait" class="form-control" placeholder="https://..."></div>
-          </div>
-          <div class="form-group" style="margin-bottom:10px"><label class="form-label">Vu pour la dernière fois</label><input type="text" id="bb-vu" class="form-control" placeholder="Ex: Forêt interdite, secteur nord..."></div>
-          <div class="form-group" style="margin-bottom:10px"><label class="form-label">Description / Rapport de signalement</label><textarea id="bb-desc" class="form-control" rows="3" placeholder="Décrivez l'individu, ses techniques, ses crimes..."></textarea></div>
-          <div style="display:flex;gap:8px">
-            <button class="btn btn-primary" onclick="bbSaveFiche()">💾 Enregistrer la fiche</button>
-            <button class="btn btn-outline btn-sm" onclick="bbCancelForm()">Annuler</button>
-            <button class="btn btn-danger btn-sm" id="bb-del-btn" style="display:none;margin-left:auto" onclick="bbDeleteFiche()">🗑 Supprimer</button>
-          </div>
-        </div>
+    <!-- Toolbar -->
+    <div class="bb-toolbar">
+      <div class="bb-search-wrap">
+        <input type="text" id="bb-search" placeholder="Rechercher un ninja..." oninput="bbRender()">
       </div>
-    </div>
-
-    <!-- Filtres + recherche -->
-    <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
-      <input type="text" id="bb-search" class="form-control" style="width:220px;font-size:12px" placeholder="🔍 Rechercher un ninja..." oninput="bbRender()">
-      <div class="bb-filter-row" style="margin-top:0">
+      <div class="bb-filters">
         <button class="bb-fbtn on" id="bbf-all" onclick="bbSetFilter('all')">TOUS</button>
         <button class="bb-fbtn" id="bbf-eleve" onclick="bbSetFilter('eleve')">DANGER ÉLEVÉ</button>
         <button class="bb-fbtn" id="bbf-moyen" onclick="bbSetFilter('moyen')">DANGER MOYEN</button>
         <button class="bb-fbtn" id="bbf-faible" onclick="bbSetFilter('faible')">DANGER FAIBLE</button>
       </div>
+      <button class="bb-add-btn" id="bb-add-btn" onclick="bbToggleAddPanel()">+ AJOUTER UNE FICHE</button>
     </div>
 
-    <div class="bb-grid-cards" id="bb-grid"></div>
+    <div class="bb-body">
+      <!-- Formulaire ajout/édition -->
+      <div id="bb-form-wrap" style="display:none">
+        <div class="bb-form-title" id="bb-form-title">Nouvelle fiche ninja</div>
+        <div class="grid grid-2" style="gap:10px;margin-bottom:12px">
+          <div class="form-group" style="margin-bottom:0"><label class="form-label">Nom</label><input type="text" id="bb-nom" class="form-control" placeholder="Ex: Nagasawa"></div>
+          <div class="form-group" style="margin-bottom:0"><label class="form-label">Prénom</label><input type="text" id="bb-prenom" class="form-control" placeholder="Ex: Tsurizao"></div>
+        </div>
+        <div class="grid grid-3" style="gap:10px;margin-bottom:12px">
+          <div class="form-group" style="margin-bottom:0"><label class="form-label">Grade</label>
+            <select id="bb-grade" class="form-control"><option>Genin</option><option>Chunin</option><option>Jonin</option><option>Kage</option><option>Inconnu</option></select>
+          </div>
+          <div class="form-group" style="margin-bottom:0"><label class="form-label">Niveau de danger</label>
+            <select id="bb-danger" class="form-control"><option value="eleve">⚠ Danger élevé</option><option value="moyen">◆ Danger moyen</option><option value="faible">▸ Danger faible</option></select>
+          </div>
+          <div class="form-group" style="margin-bottom:0"><label class="form-label">Récompense (Ryos)</label><input type="number" id="bb-reward" class="form-control" placeholder="25000"></div>
+        </div>
+        <div class="grid grid-2" style="gap:10px;margin-bottom:12px">
+          <div class="form-group" style="margin-bottom:0"><label class="form-label">Village d'origine</label><input type="text" id="bb-village" class="form-control" placeholder="Ex: Konoha"></div>
+          <div class="form-group" style="margin-bottom:0"><label class="form-label">Portrait</label>
+            <div class="bb-upload-zone" onclick="document.getElementById('bb-portrait-file').click()">
+              <input type="file" id="bb-portrait-file" accept="image/*" style="display:none" onchange="bbHandleImageUpload(event)">
+              <img id="bb-portrait-preview" class="bb-upload-preview" alt="preview">
+              <div class="bb-upload-label" id="bb-upload-label">📷 Cliquer pour choisir une image</div>
+            </div>
+          </div>
+        </div>
+        <div class="form-group" style="margin-bottom:12px"><label class="form-label">Vu pour la dernière fois</label><input type="text" id="bb-vu" class="form-control" placeholder="Ex: Forêt interdite, secteur nord..."></div>
+        <div class="form-group" style="margin-bottom:16px"><label class="form-label">Description / Rapport de signalement</label><textarea id="bb-desc" class="form-control" rows="3" placeholder="Décrivez l'individu, ses techniques, ses crimes..."></textarea></div>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-primary" onclick="bbSaveFiche()">💾 Enregistrer</button>
+          <button class="btn btn-outline btn-sm" onclick="bbCancelForm()">Annuler</button>
+          <button class="btn btn-danger btn-sm" id="bb-del-btn" style="display:none;margin-left:auto" onclick="bbDeleteFiche()">🗑 Supprimer la fiche</button>
+        </div>
+      </div>
+
+      <!-- Grille de cartes -->
+      <div class="bb-grid" id="bb-grid"></div>
+    </div>
 
     <!-- Modal dossier complet -->
     <div class="modal-overlay" id="bb-dossier-modal">
-      <div class="modal" style="max-width:560px">
-        <div class="modal-header">
-          <h3 id="bb-modal-title">DOSSIER NINJA</h3>
+      <div class="modal" style="max-width:700px;padding:0;overflow:hidden">
+        <div class="modal-header" style="padding:14px 20px">
+          <h3 id="bb-modal-title" style="font-size:10px;letter-spacing:3px">DOSSIER NINJA</h3>
           <span class="modal-close" onclick="bbCloseModal()">✕</span>
         </div>
-        <div class="modal-body" id="bb-modal-body"></div>
+        <div id="bb-modal-body" style="display:flex"></div>
       </div>
     </div>
   </div>
@@ -4298,7 +4352,7 @@ function saveCommNameAdmin(){
 
 // NAV
 const PAGES={dashboard:"Tableau de bord",annonces:"Annonces",recensement:"Recensement",recrutement:"Recrutement",plaintes:"Plaintes",dossiers:"Dossiers criminels",codepenal:"Code Pénal",operations:"Opérations",effectifs:"Effectifs",hierarchie:"Hiérarchie",sanctions:"Sanctions & Promotions",admin:"Panel Admin",messagerie:"Messagerie",profil:"Mon profil"};
-const VISITOR_PAGES=["dashboard","annonces","recensement","recrutement","plaintes","codepenal","profil"];
+const VISITOR_PAGES=["dashboard","annonces","recensement","recrutement","plaintes","codepenal","profil","bingobook"];
 
 // Mapping page → bnav-item id (pour les 4 onglets directs de la barre)
 const BNAV_MAP={dashboard:"bnav-dashboard",annonces:"bnav-annonces",recensement:"bnav-recensement",plaintes:"bnav-plaintes"};
@@ -13633,13 +13687,13 @@ function opsBriefingSave() {
 var bbFilter = 'all';
 var bbEditingId = null;
 var bbNextId = 100;
+var _bbPortraitData = ''; // base64 ou URL
 
 function bbGetNinjas() {
   try { return JSON.parse(localStorage.getItem('bb_ninjas') || 'null') || bbDefaultNinjas(); } catch(e) { return bbDefaultNinjas(); }
 }
 function bbSaveNinjas(list) {
   try { localStorage.setItem('bb_ninjas', JSON.stringify(list)); } catch(e) {}
-  // Sync Firebase si disponible
   if (window._fbDB && window._fbRef && window._fbSet) {
     var r = window._fbRef(window._fbDB, 'sunagakure/bingobook');
     window._fbSet(r, list);
@@ -13655,7 +13709,7 @@ function bbDefaultNinjas() {
   ];
 }
 
-function bbDangerClass(d){ return {eleve:'bb-danger-eleve',moyen:'bb-danger-moyen',faible:'bb-danger-faible'}[d]||'bb-danger-faible'; }
+function bbDangerClass(d){ return {eleve:'bb-badge-eleve',moyen:'bb-badge-moyen',faible:'bb-badge-faible'}[d]||'bb-badge-faible'; }
 function bbDangerLabel(d){ return {eleve:'⚠ DANGER ÉLEVÉ',moyen:'◆ DANGER MOYEN',faible:'▸ DANGER FAIBLE'}[d]||d.toUpperCase(); }
 function bbInitials(n,p){ return (((n||'?')[0])+((p&&p!=='—')?p[0]:'')).toUpperCase(); }
 
@@ -13678,82 +13732,111 @@ function bbRender() {
   });
   var g = document.getElementById('bb-grid');
   if (!g) return;
+  // Bouton ajouter
+  var addBtn = document.getElementById('bb-add-btn');
+  if (addBtn) addBtn.style.display = (typeof canModify === 'function' && canModify()) ? 'inline-block' : 'none';
   if (!list.length) { g.innerHTML='<div class="bb-empty">Aucune fiche dans le registre pour ces critères.</div>'; return; }
-  g.innerHTML = list.map(function(n,i){
+  var isMod = typeof canModify === 'function' && canModify();
+  g.innerHTML = list.map(function(n, i){
     var portrait = n.portrait
       ? '<img src="'+n.portrait+'" alt="portrait" onerror="this.style.display=\'none\'">'
-      : bbInitials(n.nom,n.prenom)+'<br><span style="font-size:8px">PORTRAIT</span>';
-    return '<div class="bb-fiche" onclick="bbOpenDossier('+n.id+')" style="animation:fadeIn 0.2s ease '+(i*0.04)+'s both">'+
-      '<div class="bb-fiche-top">'+
-        '<div class="bb-portrait">'+portrait+'</div>'+
-        '<div class="bb-info">'+
-          '<div class="bb-nom">'+n.nom+'</div>'+
-          '<div class="bb-prenom">'+n.prenom+'</div>'+
+      : bbInitials(n.nom,n.prenom)+'<br><span style="font-size:7px;letter-spacing:1px">PORTRAIT</span>';
+    var actionBtns = isMod
+      ? '<div class="bb-card-actions">'+
+          '<button class="bb-card-btn" title="Voir" onclick="event.stopPropagation();bbOpenDossier('+n.id+')">👁</button>'+
+          '<button class="bb-card-btn" title="Modifier" onclick="event.stopPropagation();bbOpenEdit('+n.id+')">✏️</button>'+
+          '<button class="bb-card-btn del" title="Supprimer" onclick="event.stopPropagation();bbDeleteById('+n.id+')">🗑</button>'+
+        '</div>'
+      : '<div class="bb-card-actions"><button class="bb-card-btn" title="Voir" onclick="event.stopPropagation();bbOpenDossier('+n.id+')">👁</button></div>';
+    return '<div class="bb-card" onclick="bbOpenDossier('+n.id+')" style="animation:fadeIn 0.2s ease '+(i*0.04)+'s both">'+
+      '<div class="bb-card-header">'+
+        '<span class="bb-card-fiche-num">~ FICHE '+String(i+1).toUpperCase()+' ~</span>'+
+        actionBtns+
+      '</div>'+
+      '<div class="bb-card-body">'+
+        '<div class="bb-portrait-wrap">'+portrait+'</div>'+
+        '<div class="bb-card-info">'+
+          '<div class="bb-card-nom">'+n.nom+'</div>'+
+          '<div class="bb-card-prenom">'+n.prenom+'</div>'+
           '<span class="'+bbDangerClass(n.danger)+'">'+bbDangerLabel(n.danger)+'</span>'+
+          '<div class="bb-card-meta">'+
+            '<div class="bb-card-row"><span class="bb-card-lbl">Grade :</span> <span>'+n.grade+'</span></div>'+
+            '<div class="bb-card-row"><span class="bb-card-lbl">Village :</span> <span>'+n.village+'</span></div>'+
+            (n.vu?'<div class="bb-card-row"><span class="bb-card-lbl">Vu :</span> <span>'+n.vu.slice(0,40)+(n.vu.length>40?'...':'')+'</span></div>':'')+
+          '</div>'+
         '</div>'+
       '</div>'+
-      '<div class="bb-fiche-body">'+
-        '<div class="bb-row"><span class="bb-lbl">Grade :</span><span class="bb-val">'+n.grade+'</span></div>'+
-        '<div class="bb-row"><span class="bb-lbl">Village :</span><span class="bb-val">'+n.village+'</span></div>'+
-        (n.vu?'<div class="bb-row"><span class="bb-lbl">Vu :</span><span class="bb-val" style="font-size:10px">'+n.vu+'</span></div>':'')+
-        (n.desc?'<div class="bb-desc-preview">'+n.desc.slice(0,75)+(n.desc.length>75?'...':'')+'</div>':'')+
-      '</div>'+
-      '<div class="bb-fiche-footer">'+
+      (n.desc?'<div class="bb-desc-snip" style="padding:0 12px 8px">'+n.desc.slice(0,80)+(n.desc.length>80?'...':'')+'</div>':'')+
+      '<div class="bb-card-footer">'+
         '<span class="bb-reward">'+(n.recompense?n.recompense.toLocaleString()+' Ryos':'N/A')+'</span>'+
-        '<span class="bb-fiche-num">FICHE #'+String(n.id).padStart(3,'0')+'</span>'+
+        '<span style="font-family:\'Share Tech Mono\',monospace;font-size:8px;color:rgba(100,70,20,0.5)">FICHE #'+String(n.id).padStart(3,'0')+'</span>'+
       '</div>'+
     '</div>';
   }).join('');
-
-  // Bouton admin visible si membre
-  var addBtn = document.getElementById('bb-add-btn');
-  if (addBtn) addBtn.style.display = (typeof canModify === 'function' && canModify()) ? 'inline-flex' : 'none';
 }
 
 function bbOpenDossier(id) {
   var list = bbGetNinjas();
   var n = list.find(function(x){return x.id===id});
   if (!n) return;
-  document.getElementById('bb-modal-title').textContent = 'DOSSIER — '+n.nom.toUpperCase()+' '+n.prenom;
+  var isMod = typeof canModify === 'function' && canModify();
   var portrait = n.portrait
-    ? '<img src="'+n.portrait+'" alt="portrait" onerror="this.style.display=\'none\'">'
-    : '<div style="font-family:\'Cinzel\',serif;font-size:18px;color:rgba(180,140,20,0.4);font-style:italic;text-align:center">'+bbInitials(n.nom,n.prenom)+'<br><span style="font-size:9px;display:block;margin-top:4px">PORTRAIT</span></div>';
-  var editBtn = (typeof canModify === 'function' && canModify())
-    ? '<button class="btn btn-gold btn-sm" style="margin-top:14px" onclick="bbOpenEdit('+n.id+');bbCloseModal()">✏️ Modifier cette fiche</button>' : '';
+    ? '<img src="'+n.portrait+'" alt="portrait">'
+    : '<div style="font-family:\'Cinzel\',serif;font-size:22px;color:rgba(100,70,20,0.4);font-style:italic;text-align:center">'+bbInitials(n.nom,n.prenom)+'<br><span style="font-size:9px;display:block;margin-top:4px">PORTRAIT</span></div>';
+  document.getElementById('bb-modal-title').textContent = '~ DOSSIER — '+n.nom.toUpperCase()+' '+n.prenom+' ~';
   document.getElementById('bb-modal-body').innerHTML =
-    '<div style="display:flex;gap:16px;margin-bottom:14px">'+
-      '<div class="bb-modal-portrait">'+portrait+'</div>'+
-      '<div style="flex:1">'+
-        '<div style="font-family:\'Cinzel\',serif;font-size:20px;font-weight:700;color:var(--text)">'+n.nom+'</div>'+
-        '<div style="font-size:13px;color:var(--muted);font-style:italic;margin-bottom:10px">'+n.prenom+'</div>'+
-        '<span class="'+bbDangerClass(n.danger)+'" style="font-size:10px">'+bbDangerLabel(n.danger)+'</span>'+
-        editBtn+
+    '<div class="bb-dossier-left">'+
+      '<div class="bb-dossier-portrait">'+portrait+'</div>'+
+      '<div class="bb-dossier-nom">'+n.nom+'</div>'+
+      '<div class="bb-dossier-prenom">'+n.prenom+'</div>'+
+      '<span class="'+bbDangerClass(n.danger)+'" style="font-size:8px">'+bbDangerLabel(n.danger)+'</span>'+
+      (isMod ? '<div class="bb-dossier-actions"><button class="btn btn-gold btn-sm" onclick="bbOpenEdit('+n.id+');bbCloseModal()">✏️ Modifier</button><button class="btn btn-danger btn-sm" onclick="bbDeleteById('+n.id+');bbCloseModal()">🗑</button></div>' : '')+
+    '</div>'+
+    '<div class="bb-dossier-right">'+
+      '<h4>INFORMATIONS</h4>'+
+      '<div class="bb-dossier-grid">'+
+        '<div class="bb-dossier-field"><div class="bb-dossier-field-lbl">Grade</div><div class="bb-dossier-field-val">'+n.grade+'</div></div>'+
+        '<div class="bb-dossier-field"><div class="bb-dossier-field-lbl">Village</div><div class="bb-dossier-field-val">'+n.village+'</div></div>'+
+        '<div class="bb-dossier-field"><div class="bb-dossier-field-lbl">Récompense</div><div class="bb-dossier-field-val" style="color:#d4b44a;font-weight:700">'+(n.recompense?n.recompense.toLocaleString()+' Ryos':'—')+'</div></div>'+
+        '<div class="bb-dossier-field"><div class="bb-dossier-field-lbl">N° de fiche</div><div class="bb-dossier-field-val" style="font-family:\'Share Tech Mono\',monospace">#'+String(n.id).padStart(3,'0')+'</div></div>'+
       '</div>'+
-    '</div>'+
-    '<div class="divider"></div>'+
-    '<div class="grid grid-2" style="gap:8px;margin-bottom:12px">'+
-      '<div><div class="form-label">Grade</div><div style="font-size:13px">'+n.grade+'</div></div>'+
-      '<div><div class="form-label">Village</div><div style="font-size:13px">'+n.village+'</div></div>'+
-      '<div><div class="form-label">Récompense</div><div style="font-size:13px;color:var(--gold2);font-weight:700">'+(n.recompense?n.recompense.toLocaleString()+' Ryos':'Non définie')+'</div></div>'+
-      '<div><div class="form-label">Fiche N°</div><div style="font-size:13px;font-family:\'Share Tech Mono\',monospace">#'+String(n.id).padStart(3,'0')+'</div></div>'+
-    '</div>'+
-    (n.vu?'<div class="form-label">Vu pour la dernière fois</div><div style="font-size:12px;margin-bottom:12px;color:var(--text)">'+n.vu+'</div>':'')+
-    (n.desc?'<div class="form-label">Rapport de signalement</div><div class="bb-dossier-desc">'+n.desc+'</div>':'');
+      (n.vu?'<div class="bb-dossier-field" style="margin-bottom:16px"><div class="bb-dossier-field-lbl">Vu pour la dernière fois</div><div class="bb-dossier-field-val" style="font-size:12px">'+n.vu+'</div></div>':'')+
+      (n.desc?'<h4 style="margin-top:0">RAPPORT DE SIGNALEMENT</h4><div class="bb-dossier-desc-box">'+n.desc+'</div>':'')+
+    '</div>';
   document.getElementById('bb-dossier-modal').classList.add('open');
 }
 function bbCloseModal() { document.getElementById('bb-dossier-modal').classList.remove('open'); }
 
+function bbHandleImageUpload(event) {
+  var file = event.target.files[0]; if(!file) return;
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    _bbPortraitData = e.target.result;
+    var prev = document.getElementById('bb-portrait-preview');
+    var lbl = document.getElementById('bb-upload-label');
+    if(prev){ prev.src = _bbPortraitData; prev.style.display='block'; }
+    if(lbl){ lbl.textContent = '✅ Image chargée — cliquer pour changer'; }
+  };
+  reader.readAsDataURL(file);
+}
+
 function bbToggleAddPanel() {
   bbEditingId = null;
+  _bbPortraitData = '';
   document.getElementById('bb-form-title').textContent = 'Nouvelle fiche ninja';
-  ['bb-nom','bb-prenom','bb-reward','bb-village','bb-portrait','bb-vu','bb-desc'].forEach(function(id){
+  ['bb-nom','bb-prenom','bb-reward','bb-village','bb-vu','bb-desc'].forEach(function(id){
     var el=document.getElementById(id); if(el) el.value='';
   });
   document.getElementById('bb-grade').value='Chunin';
   document.getElementById('bb-danger').value='eleve';
   document.getElementById('bb-del-btn').style.display='none';
-  var p = document.getElementById('bb-add-panel');
+  var prev = document.getElementById('bb-portrait-preview');
+  var lbl = document.getElementById('bb-upload-label');
+  if(prev){prev.src='';prev.style.display='none';}
+  if(lbl){lbl.textContent='📷 Cliquer pour choisir une image';}
+  var p = document.getElementById('bb-form-wrap');
   p.style.display = p.style.display==='none' ? 'block' : 'none';
+  if(p.style.display==='block') p.scrollIntoView({behavior:'smooth'});
 }
 
 function bbOpenEdit(id) {
@@ -13761,6 +13844,7 @@ function bbOpenEdit(id) {
   var n = list.find(function(x){return x.id===id});
   if(!n) return;
   bbEditingId = id;
+  _bbPortraitData = n.portrait || '';
   document.getElementById('bb-form-title').textContent = 'Modifier — '+n.nom+' '+n.prenom;
   document.getElementById('bb-nom').value = n.nom;
   document.getElementById('bb-prenom').value = n.prenom==='—'?'':n.prenom;
@@ -13768,12 +13852,16 @@ function bbOpenEdit(id) {
   document.getElementById('bb-danger').value = n.danger;
   document.getElementById('bb-reward').value = n.recompense||'';
   document.getElementById('bb-village').value = n.village;
-  document.getElementById('bb-portrait').value = n.portrait||'';
   document.getElementById('bb-vu').value = n.vu||'';
   document.getElementById('bb-desc').value = n.desc||'';
   document.getElementById('bb-del-btn').style.display='inline-flex';
-  document.getElementById('bb-add-panel').style.display='block';
-  document.getElementById('bb-add-panel').scrollIntoView({behavior:'smooth'});
+  var prev = document.getElementById('bb-portrait-preview');
+  var lbl = document.getElementById('bb-upload-label');
+  if(prev && n.portrait){prev.src=n.portrait;prev.style.display='block';}
+  else if(prev){prev.src='';prev.style.display='none';}
+  if(lbl){ lbl.textContent = n.portrait ? '✅ Image chargée — cliquer pour changer' : '📷 Cliquer pour choisir une image'; }
+  document.getElementById('bb-form-wrap').style.display='block';
+  document.getElementById('bb-form-wrap').scrollIntoView({behavior:'smooth'});
 }
 
 function bbSaveFiche() {
@@ -13787,14 +13875,14 @@ function bbSaveFiche() {
     danger: document.getElementById('bb-danger').value,
     recompense: parseInt(document.getElementById('bb-reward').value)||0,
     village: document.getElementById('bb-village').value.trim()||'Inconnu',
-    portrait: document.getElementById('bb-portrait').value.trim(),
+    portrait: _bbPortraitData,
     vu: document.getElementById('bb-vu').value.trim(),
     desc: document.getElementById('bb-desc').value.trim(),
   };
   if (bbEditingId) {
     var idx = list.findIndex(function(x){return x.id===bbEditingId});
     if(idx>-1){ data.id=bbEditingId; list[idx]=data; }
-    if(typeof showToast==='function') showToast('✅ Fiche modifiée avec succès', 'success');
+    if(typeof showToast==='function') showToast('✅ Fiche modifiée', 'success');
   } else {
     data.id = bbNextId++;
     list.unshift(data);
@@ -13807,20 +13895,23 @@ function bbSaveFiche() {
 
 function bbDeleteFiche() {
   if (!bbEditingId) return;
-  if (!confirm('Supprimer cette fiche du Bingo Book ?')) return;
-  var list = bbGetNinjas().filter(function(x){return x.id!==bbEditingId});
-  bbSaveNinjas(list);
+  bbDeleteById(bbEditingId);
   bbCancelForm();
+}
+function bbDeleteById(id) {
+  if (!confirm('Supprimer cette fiche du Bingo Book ?')) return;
+  var list = bbGetNinjas().filter(function(x){return x.id!==id});
+  bbSaveNinjas(list);
   bbRender();
   if(typeof showToast==='function') showToast('Fiche supprimée du registre', 'info');
 }
 
 function bbCancelForm() {
   bbEditingId = null;
-  document.getElementById('bb-add-panel').style.display='none';
+  _bbPortraitData = '';
+  document.getElementById('bb-form-wrap').style.display='none';
 }
 
-// Charger depuis Firebase si dispo
 document.addEventListener('DOMContentLoaded', function(){
   if (window._fbDB && window._fbRef && window._fbOn) {
     var r = window._fbRef(window._fbDB, 'sunagakure/bingobook');
