@@ -1727,6 +1727,7 @@ document.addEventListener('DOMContentLoaded',function(){if(localStorage.getItem(
     <div class="nav-item" role="button" tabindex="0" onclick="showPage('recrutement')" data-page="recrutement"><span class="icon">🎖️</span> Recrutement <span class="nav-badge" id="badge-recrutement" style="background:var(--cyan);display:none">0</span></div>
     <div class="nav-item" role="button" tabindex="0" onclick="showPage('plaintes')" data-page="plaintes"><span class="icon">📋</span> Plaintes <span class="nav-badge" id="badge-plaintes">0</span></div>
     <div class="nav-item" role="button" tabindex="0" onclick="showPage('dossiers')" data-page="dossiers" data-member-only="true"><span class="icon">🗂️</span> Dossiers criminels <span class="nav-badge" id="badge-dossiers" style="background:var(--purple);display:none">0</span></div>
+    <div class="nav-item" role="button" tabindex="0" onclick="showPage('bingobook')" data-page="bingobook"><span class="icon">📕</span> Bingo Book</div>
     <div class="nav-item" role="button" tabindex="0" onclick="showPage('codepenal')" data-page="codepenal"><span class="icon">📜</span> Code Pénal</div>
     <div class="nav-item" role="button" tabindex="0" onclick="showPage('messagerie')" data-page="messagerie" data-member-only="true"><span class="icon">💬</span> Messagerie <span class="nav-badge" id="badge-messagerie" style="background:var(--cyan);display:none">0</span></div>
     <div class="nav-section" data-member-only="true">Opérations</div>
@@ -2042,6 +2043,109 @@ document.addEventListener('DOMContentLoaded',function(){if(localStorage.getItem(
           </tr></thead>
           <tbody id="cp-tbody"></tbody>
         </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- BINGO BOOK -->
+  <div class="page-content" id="page-bingobook">
+    <style>
+      .bb-grid-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:14px;margin-top:16px}
+      .bb-fiche{background:#fff;border:1px solid rgba(180,140,20,0.18);border-radius:10px;overflow:hidden;transition:all 0.2s ease;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,0.06)}
+      .bb-fiche:hover{border-color:rgba(180,140,20,0.45);transform:translateY(-3px);box-shadow:0 8px 24px rgba(0,0,0,0.1)}
+      .bb-fiche-top{display:flex;gap:10px;padding:12px;border-bottom:1px solid rgba(180,140,20,0.1)}
+      .bb-portrait{width:56px;height:68px;flex-shrink:0;border:1px solid rgba(180,140,20,0.2);border-radius:4px;overflow:hidden;display:flex;align-items:center;justify-content:center;background:rgba(180,140,20,0.05);font-family:'Cinzel',serif;font-size:12px;color:rgba(180,140,20,0.5);text-align:center;font-style:italic;line-height:1.3}
+      .bb-portrait img{width:100%;height:100%;object-fit:cover}
+      .bb-info{flex:1;min-width:0}
+      .bb-nom{font-family:'Cinzel',serif;font-size:13px;font-weight:700;color:var(--text)}
+      .bb-prenom{font-size:11px;color:var(--muted);font-style:italic;margin-bottom:6px}
+      .bb-danger-eleve{background:rgba(220,38,38,0.1);color:#991b1b;border:1px solid rgba(220,38,38,0.25);display:inline-block;font-family:'Share Tech Mono',monospace;font-size:8px;letter-spacing:0.5px;padding:2px 7px;border-radius:4px;font-weight:700}
+      .bb-danger-moyen{background:rgba(180,140,20,0.1);color:#854d0e;border:1px solid rgba(180,140,20,0.25);display:inline-block;font-family:'Share Tech Mono',monospace;font-size:8px;letter-spacing:0.5px;padding:2px 7px;border-radius:4px;font-weight:700}
+      .bb-danger-faible{background:rgba(21,128,61,0.1);color:#166534;border:1px solid rgba(21,128,61,0.2);display:inline-block;font-family:'Share Tech Mono',monospace;font-size:8px;letter-spacing:0.5px;padding:2px 7px;border-radius:4px;font-weight:700}
+      .bb-fiche-body{padding:10px 12px;font-size:11px;color:var(--muted)}
+      .bb-row{display:flex;gap:4px;margin-bottom:3px}
+      .bb-lbl{color:var(--gold2);flex-shrink:0;font-family:'Share Tech Mono',monospace;font-size:9px;letter-spacing:0.5px}
+      .bb-val{color:var(--text)}
+      .bb-desc-preview{margin-top:6px;font-size:10px;color:var(--muted);font-style:italic;line-height:1.4;border-top:1px solid rgba(180,140,20,0.08);padding-top:5px}
+      .bb-fiche-footer{padding:8px 12px;border-top:1px solid rgba(180,140,20,0.08);display:flex;justify-content:space-between;align-items:center;background:rgba(180,140,20,0.02)}
+      .bb-reward{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--gold2);font-weight:700}
+      .bb-fiche-num{font-family:'Share Tech Mono',monospace;font-size:8px;color:var(--muted)}
+      .bb-filter-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+      .bb-fbtn{background:transparent;border:1px solid rgba(180,140,20,0.2);color:var(--muted);font-family:'Share Tech Mono',monospace;font-size:9px;padding:4px 12px;border-radius:5px;cursor:pointer;letter-spacing:1px;transition:all 0.18s}
+      .bb-fbtn:hover,.bb-fbtn.on{background:rgba(180,140,20,0.1);border-color:var(--gold2);color:var(--gold2)}
+      .bb-empty{text-align:center;padding:48px;color:var(--muted);font-style:italic}
+      /* Modal dossier */
+      .bb-modal-portrait{width:100px;height:120px;flex-shrink:0;border:1px solid rgba(180,140,20,0.25);border-radius:6px;overflow:hidden;display:flex;align-items:center;justify-content:center;background:rgba(180,140,20,0.04);font-family:'Cinzel',serif;font-size:16px;color:rgba(180,140,20,0.4);font-style:italic;text-align:center}
+      .bb-modal-portrait img{width:100%;height:100%;object-fit:cover}
+      .bb-dossier-desc{background:rgba(180,140,20,0.04);border-left:3px solid rgba(180,140,20,0.3);padding:12px 14px;border-radius:0 6px 6px 0;font-size:12px;color:var(--text);line-height:1.7;font-style:italic;margin-top:8px}
+      /* Form ajout */
+      #bb-add-panel .card{border-left:3px solid var(--gold)}
+    </style>
+
+    <div class="section-header">
+      <div>
+        <div class="section-title">Bingo Book</div>
+        <div class="section-sub">REGISTRE OFFICIEL DES NINJAS RECHERCHÉS</div>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <button class="btn btn-gold btn-sm" id="bb-add-btn" onclick="bbToggleAddPanel()" style="display:none">+ Ajouter une fiche</button>
+      </div>
+    </div>
+
+    <!-- Panel ajout (admin/modo) -->
+    <div id="bb-add-panel" style="display:none;margin-bottom:16px">
+      <div class="card" id="bb-add-card">
+        <div class="card-header"><span>📕</span><h3 id="bb-form-title">Nouvelle fiche ninja</h3></div>
+        <div class="card-body">
+          <div class="grid grid-2" style="gap:10px;margin-bottom:10px">
+            <div class="form-group" style="margin-bottom:0"><label class="form-label">Nom</label><input type="text" id="bb-nom" class="form-control" placeholder="Ex: Nagasawa"></div>
+            <div class="form-group" style="margin-bottom:0"><label class="form-label">Prénom</label><input type="text" id="bb-prenom" class="form-control" placeholder="Ex: Tsurizao"></div>
+          </div>
+          <div class="grid grid-3" style="gap:10px;margin-bottom:10px">
+            <div class="form-group" style="margin-bottom:0"><label class="form-label">Grade</label>
+              <select id="bb-grade" class="form-control"><option>Genin</option><option>Chunin</option><option>Jonin</option><option>Kage</option><option>Inconnu</option></select>
+            </div>
+            <div class="form-group" style="margin-bottom:0"><label class="form-label">Niveau de danger</label>
+              <select id="bb-danger" class="form-control"><option value="eleve">⚠ Danger élevé</option><option value="moyen">◆ Danger moyen</option><option value="faible">▸ Danger faible</option></select>
+            </div>
+            <div class="form-group" style="margin-bottom:0"><label class="form-label">Récompense (Ryos)</label><input type="number" id="bb-reward" class="form-control" placeholder="25000"></div>
+          </div>
+          <div class="grid grid-2" style="gap:10px;margin-bottom:10px">
+            <div class="form-group" style="margin-bottom:0"><label class="form-label">Village d'origine</label><input type="text" id="bb-village" class="form-control" placeholder="Ex: Konoha"></div>
+            <div class="form-group" style="margin-bottom:0"><label class="form-label">Portrait (URL image)</label><input type="text" id="bb-portrait" class="form-control" placeholder="https://..."></div>
+          </div>
+          <div class="form-group" style="margin-bottom:10px"><label class="form-label">Vu pour la dernière fois</label><input type="text" id="bb-vu" class="form-control" placeholder="Ex: Forêt interdite, secteur nord..."></div>
+          <div class="form-group" style="margin-bottom:10px"><label class="form-label">Description / Rapport de signalement</label><textarea id="bb-desc" class="form-control" rows="3" placeholder="Décrivez l'individu, ses techniques, ses crimes..."></textarea></div>
+          <div style="display:flex;gap:8px">
+            <button class="btn btn-primary" onclick="bbSaveFiche()">💾 Enregistrer la fiche</button>
+            <button class="btn btn-outline btn-sm" onclick="bbCancelForm()">Annuler</button>
+            <button class="btn btn-danger btn-sm" id="bb-del-btn" style="display:none;margin-left:auto" onclick="bbDeleteFiche()">🗑 Supprimer</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Filtres + recherche -->
+    <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+      <input type="text" id="bb-search" class="form-control" style="width:220px;font-size:12px" placeholder="🔍 Rechercher un ninja..." oninput="bbRender()">
+      <div class="bb-filter-row" style="margin-top:0">
+        <button class="bb-fbtn on" id="bbf-all" onclick="bbSetFilter('all')">TOUS</button>
+        <button class="bb-fbtn" id="bbf-eleve" onclick="bbSetFilter('eleve')">DANGER ÉLEVÉ</button>
+        <button class="bb-fbtn" id="bbf-moyen" onclick="bbSetFilter('moyen')">DANGER MOYEN</button>
+        <button class="bb-fbtn" id="bbf-faible" onclick="bbSetFilter('faible')">DANGER FAIBLE</button>
+      </div>
+    </div>
+
+    <div class="bb-grid-cards" id="bb-grid"></div>
+
+    <!-- Modal dossier complet -->
+    <div class="modal-overlay" id="bb-dossier-modal">
+      <div class="modal" style="max-width:560px">
+        <div class="modal-header">
+          <h3 id="bb-modal-title">DOSSIER NINJA</h3>
+          <span class="modal-close" onclick="bbCloseModal()">✕</span>
+        </div>
+        <div class="modal-body" id="bb-modal-body"></div>
       </div>
     </div>
   </div>
@@ -13522,6 +13626,213 @@ function opsBriefingSave() {
     };
   }, 400);
 })();
+
+/* ══════════════════════════════
+   BINGO BOOK
+══════════════════════════════ */
+var bbFilter = 'all';
+var bbEditingId = null;
+var bbNextId = 100;
+
+function bbGetNinjas() {
+  try { return JSON.parse(localStorage.getItem('bb_ninjas') || 'null') || bbDefaultNinjas(); } catch(e) { return bbDefaultNinjas(); }
+}
+function bbSaveNinjas(list) {
+  try { localStorage.setItem('bb_ninjas', JSON.stringify(list)); } catch(e) {}
+  // Sync Firebase si disponible
+  if (window._fbDB && window._fbRef && window._fbSet) {
+    var r = window._fbRef(window._fbDB, 'sunagakure/bingobook');
+    window._fbSet(r, list);
+  }
+}
+function bbDefaultNinjas() {
+  return [
+    {id:1,nom:'Nagasawa',prenom:'Tsurizao',grade:'Chunin',danger:'eleve',recompense:25000,village:'Konoha',portrait:'',vu:'Forêt interdite & forêt des cerisiers',desc:"Ancien membre des forces de l'ordre (police de Konoha). Connaissance approfondie des protocoles de sécurité. Individu hostile — niveau de menace élevé."},
+    {id:2,nom:'Uchiha',prenom:'Sasuke',grade:'Jonin',danger:'eleve',recompense:80000,village:'Konoha (déserteur)',portrait:'',vu:'Région frontière de Sound',desc:"Ex-membre de l'équipe 7. Maîtrise du Sharingan et du Chidori. Dangereux au combat rapproché."},
+    {id:3,nom:'Kabuto',prenom:'Yakushi',grade:'Inconnu',danger:'eleve',recompense:60000,village:'Konoha (traître)',portrait:'',vu:'Laboratoire souterrain, région des montagnes',desc:"Médecin ninja corrompu. Expert en jutsu de transformation. Ancien bras droit d'Orochimaru."},
+    {id:4,nom:'Mizuki',prenom:'—',grade:'Chunin',danger:'moyen',recompense:15000,village:'Konoha (déserteur)',portrait:'',vu:'Prison de Konoha — évasion récente',desc:"Ancien instructeur de l'académie. A volé le Parchemin des Techniques Interdites."},
+    {id:5,nom:'Zaku',prenom:'Abumi',grade:'Genin',danger:'faible',recompense:5000,village:'Sound (ennemi)',portrait:'',vu:'Région forêt examen Chunin',desc:"Espion de Sound infiltré lors des examens Chunin. Capacités offensives modérées."},
+  ];
+}
+
+function bbDangerClass(d){ return {eleve:'bb-danger-eleve',moyen:'bb-danger-moyen',faible:'bb-danger-faible'}[d]||'bb-danger-faible'; }
+function bbDangerLabel(d){ return {eleve:'⚠ DANGER ÉLEVÉ',moyen:'◆ DANGER MOYEN',faible:'▸ DANGER FAIBLE'}[d]||d.toUpperCase(); }
+function bbInitials(n,p){ return (((n||'?')[0])+((p&&p!=='—')?p[0]:'')).toUpperCase(); }
+
+function bbSetFilter(f) {
+  bbFilter = f;
+  ['all','eleve','moyen','faible'].forEach(function(k){
+    var el = document.getElementById('bbf-'+k);
+    if(el) el.className = 'bb-fbtn' + (k===f?' on':'');
+  });
+  bbRender();
+}
+
+function bbRender() {
+  var list = bbGetNinjas();
+  var q = (document.getElementById('bb-search') ? document.getElementById('bb-search').value : '').toLowerCase();
+  list = list.filter(function(n){
+    if (bbFilter !== 'all' && n.danger !== bbFilter) return false;
+    if (q) { var s=(n.nom+n.prenom+n.grade+n.village+(n.desc||'')).toLowerCase(); if(!s.includes(q)) return false; }
+    return true;
+  });
+  var g = document.getElementById('bb-grid');
+  if (!g) return;
+  if (!list.length) { g.innerHTML='<div class="bb-empty">Aucune fiche dans le registre pour ces critères.</div>'; return; }
+  g.innerHTML = list.map(function(n,i){
+    var portrait = n.portrait
+      ? '<img src="'+n.portrait+'" alt="portrait" onerror="this.style.display=\'none\'">'
+      : bbInitials(n.nom,n.prenom)+'<br><span style="font-size:8px">PORTRAIT</span>';
+    return '<div class="bb-fiche" onclick="bbOpenDossier('+n.id+')" style="animation:fadeIn 0.2s ease '+(i*0.04)+'s both">'+
+      '<div class="bb-fiche-top">'+
+        '<div class="bb-portrait">'+portrait+'</div>'+
+        '<div class="bb-info">'+
+          '<div class="bb-nom">'+n.nom+'</div>'+
+          '<div class="bb-prenom">'+n.prenom+'</div>'+
+          '<span class="'+bbDangerClass(n.danger)+'">'+bbDangerLabel(n.danger)+'</span>'+
+        '</div>'+
+      '</div>'+
+      '<div class="bb-fiche-body">'+
+        '<div class="bb-row"><span class="bb-lbl">Grade :</span><span class="bb-val">'+n.grade+'</span></div>'+
+        '<div class="bb-row"><span class="bb-lbl">Village :</span><span class="bb-val">'+n.village+'</span></div>'+
+        (n.vu?'<div class="bb-row"><span class="bb-lbl">Vu :</span><span class="bb-val" style="font-size:10px">'+n.vu+'</span></div>':'')+
+        (n.desc?'<div class="bb-desc-preview">'+n.desc.slice(0,75)+(n.desc.length>75?'...':'')+'</div>':'')+
+      '</div>'+
+      '<div class="bb-fiche-footer">'+
+        '<span class="bb-reward">'+(n.recompense?n.recompense.toLocaleString()+' Ryos':'N/A')+'</span>'+
+        '<span class="bb-fiche-num">FICHE #'+String(n.id).padStart(3,'0')+'</span>'+
+      '</div>'+
+    '</div>';
+  }).join('');
+
+  // Bouton admin visible si membre
+  var addBtn = document.getElementById('bb-add-btn');
+  if (addBtn) addBtn.style.display = (typeof canModify === 'function' && canModify()) ? 'inline-flex' : 'none';
+}
+
+function bbOpenDossier(id) {
+  var list = bbGetNinjas();
+  var n = list.find(function(x){return x.id===id});
+  if (!n) return;
+  document.getElementById('bb-modal-title').textContent = 'DOSSIER — '+n.nom.toUpperCase()+' '+n.prenom;
+  var portrait = n.portrait
+    ? '<img src="'+n.portrait+'" alt="portrait" onerror="this.style.display=\'none\'">'
+    : '<div style="font-family:\'Cinzel\',serif;font-size:18px;color:rgba(180,140,20,0.4);font-style:italic;text-align:center">'+bbInitials(n.nom,n.prenom)+'<br><span style="font-size:9px;display:block;margin-top:4px">PORTRAIT</span></div>';
+  var editBtn = (typeof canModify === 'function' && canModify())
+    ? '<button class="btn btn-gold btn-sm" style="margin-top:14px" onclick="bbOpenEdit('+n.id+');bbCloseModal()">✏️ Modifier cette fiche</button>' : '';
+  document.getElementById('bb-modal-body').innerHTML =
+    '<div style="display:flex;gap:16px;margin-bottom:14px">'+
+      '<div class="bb-modal-portrait">'+portrait+'</div>'+
+      '<div style="flex:1">'+
+        '<div style="font-family:\'Cinzel\',serif;font-size:20px;font-weight:700;color:var(--text)">'+n.nom+'</div>'+
+        '<div style="font-size:13px;color:var(--muted);font-style:italic;margin-bottom:10px">'+n.prenom+'</div>'+
+        '<span class="'+bbDangerClass(n.danger)+'" style="font-size:10px">'+bbDangerLabel(n.danger)+'</span>'+
+        editBtn+
+      '</div>'+
+    '</div>'+
+    '<div class="divider"></div>'+
+    '<div class="grid grid-2" style="gap:8px;margin-bottom:12px">'+
+      '<div><div class="form-label">Grade</div><div style="font-size:13px">'+n.grade+'</div></div>'+
+      '<div><div class="form-label">Village</div><div style="font-size:13px">'+n.village+'</div></div>'+
+      '<div><div class="form-label">Récompense</div><div style="font-size:13px;color:var(--gold2);font-weight:700">'+(n.recompense?n.recompense.toLocaleString()+' Ryos':'Non définie')+'</div></div>'+
+      '<div><div class="form-label">Fiche N°</div><div style="font-size:13px;font-family:\'Share Tech Mono\',monospace">#'+String(n.id).padStart(3,'0')+'</div></div>'+
+    '</div>'+
+    (n.vu?'<div class="form-label">Vu pour la dernière fois</div><div style="font-size:12px;margin-bottom:12px;color:var(--text)">'+n.vu+'</div>':'')+
+    (n.desc?'<div class="form-label">Rapport de signalement</div><div class="bb-dossier-desc">'+n.desc+'</div>':'');
+  document.getElementById('bb-dossier-modal').classList.add('open');
+}
+function bbCloseModal() { document.getElementById('bb-dossier-modal').classList.remove('open'); }
+
+function bbToggleAddPanel() {
+  bbEditingId = null;
+  document.getElementById('bb-form-title').textContent = 'Nouvelle fiche ninja';
+  ['bb-nom','bb-prenom','bb-reward','bb-village','bb-portrait','bb-vu','bb-desc'].forEach(function(id){
+    var el=document.getElementById(id); if(el) el.value='';
+  });
+  document.getElementById('bb-grade').value='Chunin';
+  document.getElementById('bb-danger').value='eleve';
+  document.getElementById('bb-del-btn').style.display='none';
+  var p = document.getElementById('bb-add-panel');
+  p.style.display = p.style.display==='none' ? 'block' : 'none';
+}
+
+function bbOpenEdit(id) {
+  var list = bbGetNinjas();
+  var n = list.find(function(x){return x.id===id});
+  if(!n) return;
+  bbEditingId = id;
+  document.getElementById('bb-form-title').textContent = 'Modifier — '+n.nom+' '+n.prenom;
+  document.getElementById('bb-nom').value = n.nom;
+  document.getElementById('bb-prenom').value = n.prenom==='—'?'':n.prenom;
+  document.getElementById('bb-grade').value = n.grade;
+  document.getElementById('bb-danger').value = n.danger;
+  document.getElementById('bb-reward').value = n.recompense||'';
+  document.getElementById('bb-village').value = n.village;
+  document.getElementById('bb-portrait').value = n.portrait||'';
+  document.getElementById('bb-vu').value = n.vu||'';
+  document.getElementById('bb-desc').value = n.desc||'';
+  document.getElementById('bb-del-btn').style.display='inline-flex';
+  document.getElementById('bb-add-panel').style.display='block';
+  document.getElementById('bb-add-panel').scrollIntoView({behavior:'smooth'});
+}
+
+function bbSaveFiche() {
+  var nom = document.getElementById('bb-nom').value.trim();
+  if (!nom) { if(typeof showToast==='function') showToast('Le nom est requis', 'error'); return; }
+  var list = bbGetNinjas();
+  var data = {
+    nom: nom,
+    prenom: document.getElementById('bb-prenom').value.trim()||'—',
+    grade: document.getElementById('bb-grade').value,
+    danger: document.getElementById('bb-danger').value,
+    recompense: parseInt(document.getElementById('bb-reward').value)||0,
+    village: document.getElementById('bb-village').value.trim()||'Inconnu',
+    portrait: document.getElementById('bb-portrait').value.trim(),
+    vu: document.getElementById('bb-vu').value.trim(),
+    desc: document.getElementById('bb-desc').value.trim(),
+  };
+  if (bbEditingId) {
+    var idx = list.findIndex(function(x){return x.id===bbEditingId});
+    if(idx>-1){ data.id=bbEditingId; list[idx]=data; }
+    if(typeof showToast==='function') showToast('✅ Fiche modifiée avec succès', 'success');
+  } else {
+    data.id = bbNextId++;
+    list.unshift(data);
+    if(typeof showToast==='function') showToast('✅ Fiche ajoutée au Bingo Book', 'success');
+  }
+  bbSaveNinjas(list);
+  bbCancelForm();
+  bbRender();
+}
+
+function bbDeleteFiche() {
+  if (!bbEditingId) return;
+  if (!confirm('Supprimer cette fiche du Bingo Book ?')) return;
+  var list = bbGetNinjas().filter(function(x){return x.id!==bbEditingId});
+  bbSaveNinjas(list);
+  bbCancelForm();
+  bbRender();
+  if(typeof showToast==='function') showToast('Fiche supprimée du registre', 'info');
+}
+
+function bbCancelForm() {
+  bbEditingId = null;
+  document.getElementById('bb-add-panel').style.display='none';
+}
+
+// Charger depuis Firebase si dispo
+document.addEventListener('DOMContentLoaded', function(){
+  if (window._fbDB && window._fbRef && window._fbOn) {
+    var r = window._fbRef(window._fbDB, 'sunagakure/bingobook');
+    window._fbOn(r, 'value', function(snap){
+      var val = snap.val();
+      if (val && Array.isArray(val) && val.length) {
+        try { localStorage.setItem('bb_ninjas', JSON.stringify(val)); } catch(e){}
+        bbRender();
+      }
+    });
+  }
+});
 </script>
 </body>
 </html>
