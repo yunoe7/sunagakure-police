@@ -2028,7 +2028,7 @@ document.addEventListener('DOMContentLoaded',function(){if(localStorage.getItem(
           </div>
           <div class="form-group" style="margin-bottom:10px"><label class="form-label">Notes / Précisions</label><input type="text" id="cp-notes" class="form-control" placeholder="Circonstances aggravantes, conditions..."></div>
           <button class="btn btn-primary" onclick="saveInfraction()">+ Ajouter au code pénal</button>
-          <button class="btn btn-outline btn-sm" style="margin-left:8px" onclick="doReimportCP()">📜 Réimporter Code Pénal officiel</button>
+          <button class="btn btn-outline btn-sm" style="margin-left:8px;opacity:0.7" onclick="doReimportCP()" title="Réservé aux administrateurs">🔒 Réimporter Code Pénal officiel</button>
         </div>
       </div>
     </div>
@@ -2620,11 +2620,11 @@ document.addEventListener('DOMContentLoaded',function(){if(localStorage.getItem(
             <div style="font-size:11px;color:var(--muted);text-align:center;padding:8px">Aucune activité récente</div>
           </div>
         </div>
-        <div style="display:flex;gap:10px;flex-wrap:wrap;padding-top:4px;border-top:1px solid rgba(180,140,20,0.12);margin-top:4px">
+        <div style="display:flex;gap:6px;flex-wrap:wrap;padding-top:4px;border-top:1px solid rgba(180,140,20,0.12);margin-top:4px">
           <button class="btn btn-outline" onclick="resetNotifs()" style="flex:1;justify-content:center;font-size:11.5px;gap:7px;padding:9px 14px;border-color:rgba(180,140,20,0.3);color:var(--gold2)">
             <span style="font-size:13px">🔄</span> Réinitialiser
           </button>
-          <button class="btn btn-gold" onclick="markAllNotifsRead()" style="flex:1;justify-content:center;font-size:11.5px;gap:7px;padding:9px 14px">
+          <button class="btn btn-outline" onclick="markAllNotifsRead()" style="flex:1;justify-content:center;font-size:11.5px;gap:7px;padding:9px 14px;border-color:rgba(180,140,20,0.3);color:var(--gold2)">
             <span style="font-size:13px">✓</span> Tout marquer comme lu
           </button>
         </div>
@@ -6855,6 +6855,10 @@ function doDeleteInfraction(id){
 }
 
 function doReimportCP(){
+  if(!currentUser || currentUser.role !== 'admin'){
+    showToast('⛔ Action réservée aux administrateurs.', 'error');
+    return;
+  }
   if(!confirm('Réimporter le Code Pénal officiel de Sunagakure ?\nCela écrasera toutes les infractions actuelles.')) return;
   DB.infractions=[];
   localStorage.removeItem('suna_cp_seeded');
@@ -12015,12 +12019,39 @@ body:not(.has-action-fab) #yuno-config-banner{
   }
 
   // ── Toggle chat ──
+  // Repositionne le panel/config près du FAB quelle que soit sa position
+  function _yunoRepositionPanel(){
+    var fab = document.getElementById('yuno-fab');
+    var panel = document.getElementById('yuno-chat-panel');
+    var config = document.getElementById('yuno-config-banner');
+    if(!fab) return;
+    var r = fab.getBoundingClientRect();
+    var panelW = 360;
+    var panelH = 520;
+    var gap = 8;
+    // Positionner au-dessus du FAB par défaut
+    var left = r.left + r.width/2 - panelW/2;
+    var top  = r.top - panelH - gap;
+    // Si ça sort en haut → mettre en dessous
+    if(top < 8) top = r.bottom + gap;
+    // Clamp horizontal
+    left = Math.max(8, Math.min(window.innerWidth - panelW - 8, left));
+    [panel, config].forEach(function(el){
+      if(!el) return;
+      el.style.left   = left + 'px';
+      el.style.top    = top  + 'px';
+      el.style.right  = 'auto';
+      el.style.bottom = 'auto';
+    });
+  }
+
   window.yunoToggleChat = function(){
     var panel = document.getElementById('yuno-chat-panel');
     var config = document.getElementById('yuno-config-banner');
     var fab = document.getElementById('yuno-fab');
     if(!getKey()){
       // Pas de clé → afficher config
+      _yunoRepositionPanel();
       var configOpen = config.classList.toggle('open');
       config.setAttribute('aria-hidden', configOpen ? 'false' : 'true');
       return;
@@ -12029,6 +12060,7 @@ body:not(.has-action-fab) #yuno-config-banner{
     config.setAttribute('aria-hidden', 'true');
     chatOpen = !chatOpen;
     if(chatOpen){
+      _yunoRepositionPanel();
       panel.classList.add('open');
       panel.setAttribute('aria-hidden', 'false');
       if(fab) fab.setAttribute('aria-expanded', 'true');
@@ -12062,6 +12094,85 @@ body:not(.has-action-fab) #yuno-config-banner{
       }
     }
   });
+
+  // ── Drag & Drop du FAB (liberté totale sur l'écran) ──
+  (function(){
+    var fab = document.getElementById('yuno-fab');
+    if(!fab) return;
+    var dragging = false, hasMoved = false;
+    var startX, startY, origLeft, origTop;
+
+    function applyPos(left, top){
+      var maxL = window.innerWidth  - fab.offsetWidth  - 4;
+      var maxT = window.innerHeight - fab.offsetHeight - 4;
+      left = Math.max(4, Math.min(maxL, left));
+      top  = Math.max(4, Math.min(maxT, top));
+      fab.style.left   = left + 'px';
+      fab.style.top    = top  + 'px';
+      fab.style.right  = 'auto';
+      fab.style.bottom = 'auto';
+      // Synchroniser right/bottom pour _yunoRepositionPanel
+      fab.style.right  = (window.innerWidth  - left - fab.offsetWidth)  + 'px';
+      fab.style.bottom = (window.innerHeight - top  - fab.offsetHeight) + 'px';
+      fab.style.left = left + 'px';
+      fab.style.top  = top  + 'px';
+    }
+    function savePos(left, top){
+      try{ localStorage.setItem('yuno_fab_pos', JSON.stringify({left:left, top:top})); }catch(e){}
+    }
+    // Restaurer position sauvegardée
+    try{
+      var saved = JSON.parse(localStorage.getItem('yuno_fab_pos'));
+      if(saved && saved.left != null){
+        applyPos(saved.left, saved.top);
+      }
+    }catch(e){}
+
+    fab.addEventListener('mousedown', function(e){
+      if(e.button !== 0) return;
+      dragging = true; hasMoved = false;
+      startX = e.clientX; startY = e.clientY;
+      var r = fab.getBoundingClientRect();
+      origLeft = r.left; origTop = r.top;
+      fab.style.transition = 'none';
+      e.stopPropagation();
+    });
+    document.addEventListener('mousemove', function(e){
+      if(!dragging) return;
+      var dx = e.clientX - startX;
+      var dy = e.clientY - startY;
+      if(Math.abs(dx) > 4 || Math.abs(dy) > 4) hasMoved = true;
+      if(!hasMoved) return;
+      applyPos(origLeft + dx, origTop + dy);
+    });
+    document.addEventListener('mouseup', function(){
+      if(!dragging) return;
+      dragging = false;
+      fab.style.transition = '';
+      if(hasMoved){ var r=fab.getBoundingClientRect(); savePos(r.left, r.top); }
+    });
+    // Touch
+    fab.addEventListener('touchstart', function(e){
+      dragging = true; hasMoved = false;
+      startX = e.touches[0].clientX; startY = e.touches[0].clientY;
+      var r = fab.getBoundingClientRect();
+      origLeft = r.left; origTop = r.top;
+      fab.style.transition = 'none';
+    },{passive:true});
+    fab.addEventListener('touchmove', function(e){
+      if(!dragging) return;
+      var dx = e.touches[0].clientX - startX;
+      var dy = e.touches[0].clientY - startY;
+      if(Math.abs(dx) > 6 || Math.abs(dy) > 6){ hasMoved = true; e.preventDefault(); }
+      if(!hasMoved) return;
+      applyPos(origLeft + dx, origTop + dy);
+    },{passive:false});
+    fab.addEventListener('touchend', function(){
+      dragging = false; fab.style.transition = '';
+      if(hasMoved){ var r=fab.getBoundingClientRect(); savePos(r.left, r.top); }
+    });
+    fab.addEventListener('click', function(e){ if(hasMoved){ e.stopImmediatePropagation(); hasMoved=false; } }, true);
+  })();
 
   window.yunoShowConfig = function(){
     var config = document.getElementById('yuno-config-banner');
