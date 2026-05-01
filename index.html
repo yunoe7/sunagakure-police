@@ -1524,6 +1524,64 @@ body.dark .profile-hero{background:linear-gradient(135deg,rgba(192,65,14,0.1),rg
 .op-pin.terminee .op-pin-line{background:#6b7280}
 /* Tooltip */
 #ops-map-tooltip{position:absolute;z-index:50;background:rgba(13,14,26,0.97);border:1px solid rgba(180,140,20,0.35);border-radius:10px;padding:12px 14px;min-width:200px;max-width:240px;box-shadow:0 8px 32px rgba(0,0,0,0.6);pointer-events:none;opacity:0;transition:opacity 0.15s;backdrop-filter:blur(8px)}
+
+/* ── MINIMAP ── */
+#ops-minimap{
+  position:absolute;bottom:44px;right:10px;z-index:35;
+  width:130px;height:95px;
+  border-radius:8px;overflow:hidden;
+  border:1px solid rgba(180,140,20,0.4);
+  background:#0d0e1a;
+  box-shadow:0 4px 20px rgba(0,0,0,0.6);
+  cursor:pointer;
+  transition:opacity 0.2s,transform 0.2s;
+}
+#ops-minimap:hover{opacity:1!important;transform:scale(1.04)}
+#ops-minimap-img{position:absolute;inset:0;width:100%;height:100%;opacity:0.7}
+#ops-minimap-img img{width:100%;height:100%;object-fit:cover;display:block}
+#ops-minimap-viewport{
+  position:absolute;
+  border:1.5px solid rgba(212,180,74,0.9);
+  border-radius:2px;
+  background:rgba(212,180,74,0.08);
+  box-shadow:0 0 0 1px rgba(0,0,0,0.4);
+  pointer-events:none;
+  transition:all 0.05s linear;
+}
+#ops-minimap-pins{position:absolute;inset:0;pointer-events:none}
+#ops-minimap-label{
+  position:absolute;bottom:4px;left:6px;
+  font-size:7px;letter-spacing:1.5px;color:rgba(212,180,74,0.6);
+  font-family:'Share Tech Mono',monospace;text-transform:uppercase;pointer-events:none;
+}
+
+/* ── RECHERCHE ── */
+#ops-search-wrap{position:relative;flex:1;max-width:280px}
+#ops-search-input{
+  width:100%;padding:7px 32px 7px 12px;
+  background:rgba(13,14,26,0.7);border:1px solid rgba(180,140,20,0.25);
+  border-radius:7px;color:#fff;font-size:11px;font-family:'Share Tech Mono',monospace;
+  outline:none;transition:border-color 0.2s;letter-spacing:0.5px;
+}
+#ops-search-input::placeholder{color:rgba(255,255,255,0.25)}
+#ops-search-input:focus{border-color:rgba(180,140,20,0.55);background:rgba(13,14,26,0.9)}
+#ops-search-clear{position:absolute;right:9px;top:50%;transform:translateY(-50%);color:rgba(255,255,255,0.3);cursor:pointer;font-size:12px;display:none;line-height:1}
+#ops-search-clear:hover{color:#fff}
+#ops-search-results{
+  position:absolute;top:calc(100% + 4px);left:0;right:0;z-index:60;
+  background:rgba(13,14,26,0.98);border:1px solid rgba(180,140,20,0.3);
+  border-radius:8px;overflow:hidden;box-shadow:0 8px 32px rgba(0,0,0,0.6);
+  backdrop-filter:blur(12px);display:none;
+}
+.ops-search-item{
+  display:flex;align-items:center;gap:9px;padding:9px 13px;cursor:pointer;
+  border-bottom:1px solid rgba(255,255,255,0.05);transition:background 0.12s;
+}
+.ops-search-item:last-child{border-bottom:none}
+.ops-search-item:hover{background:rgba(255,255,255,0.06)}
+.ops-search-item .si-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.ops-search-item .si-nom{font-size:12px;font-weight:600;color:#fff;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ops-search-item .si-stat{font-size:9px;font-family:'Share Tech Mono',monospace;color:rgba(255,255,255,0.35)}
 #ops-map-tooltip.show{opacity:1;pointer-events:auto}
 #ops-map-tooltip .tt-nom{font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:700;letter-spacing:1px;color:#fff;margin-bottom:6px}
 #ops-map-tooltip .tt-badges{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:8px}
@@ -2033,7 +2091,13 @@ document.addEventListener('DOMContentLoaded',function(){if(localStorage.getItem(
           <div class="ops-filter-btn f-planifiee on" onclick="toggleOpsFilter('planifiee',this)" title="Afficher/masquer opérations planifiées"><span style="width:8px;height:8px;border-radius:50%;background:#1d4ed8;flex-shrink:0;display:inline-block"></span>Planifiée</div>
           <div class="ops-filter-btn f-terminee on" onclick="toggleOpsFilter('terminee',this)" title="Afficher/masquer opérations terminées"><span style="width:8px;height:8px;border-radius:50%;background:#6b7280;flex-shrink:0;display:inline-block"></span>Terminée</div>
         </div>
-        <div style="display:flex;gap:5px;align-items:center">
+        <div style="display:flex;gap:8px;align-items:center;flex:1;justify-content:flex-end;flex-wrap:wrap">
+          <!-- Barre de recherche -->
+          <div id="ops-search-wrap">
+            <input id="ops-search-input" type="text" placeholder="🔍  Rechercher une opération..." oninput="opsSearchInput(this.value)" onfocus="opsSearchShow()" onblur="setTimeout(opsSearchHide,180)" autocomplete="off">
+            <span id="ops-search-clear" onclick="opsSearchClear()">✕</span>
+            <div id="ops-search-results"></div>
+          </div>
           <div id="ops-place-mode-btn" class="ops-zoom-btn" style="width:auto;padding:0 9px;font-size:10px;font-family:'Share Tech Mono',monospace;letter-spacing:0.5px;gap:5px;display:flex;align-items:center" onclick="togglePinPlaceMode()" title="Placer un pin sur la carte">📍 Placer</div>
           <div id="ops-fullscreen-btn" onclick="opsFullscreen()" title="Plein écran">⛶</div>
         </div>
@@ -2069,6 +2133,15 @@ document.addEventListener('DOMContentLoaded',function(){if(localStorage.getItem(
           </div>
         </div>
         </div><!-- /ops-map-zoom-inner -->
+        <!-- MINIMAP -->
+        <div id="ops-minimap" title="Minimap — cliquez pour naviguer" onclick="opsMinimapClick(event)">
+          <div id="ops-minimap-img">
+            <img src="https://raw.githubusercontent.com/yunoe7/sunagakure-police/main/cartographie-nrp.svg" draggable="false" alt="">
+          </div>
+          <div id="ops-minimap-pins"></div>
+          <div id="ops-minimap-viewport"></div>
+          <div id="ops-minimap-label">Minimap</div>
+        </div>
         <div id="ops-map-legend">
           <div class="map-legend-item"><div class="map-legend-dot" style="background:#16a34a"></div>Active</div>
           <div class="map-legend-item"><div class="map-legend-dot" style="background:#1d4ed8"></div>Planifiée</div>
@@ -5535,6 +5608,7 @@ function _opsApplyTransform(){
     if(!inner) return;
     // GPU-accelerated: transform évite le reflow de layout (no blur sur SVG)
     inner.style.transform = 'translate(' + _opsPanX + 'px,' + _opsPanY + 'px) scale(' + _opsZoom + ')';
+    _opsUpdateMinimap();
   });
 }
 
@@ -5557,6 +5631,7 @@ function opsZoom(factor){
 function opsZoomReset(){
   _opsZoom = 1; _opsPanX = 0; _opsPanY = 0;
   _opsApplyTransform();
+  _opsUpdateMinimap();
 }
 
 function _opsClampPan(){
@@ -5782,6 +5857,8 @@ function renderOpsMap(){
     });
     pinsEl.appendChild(pin);
   });
+  // Mettre à jour la minimap
+  setTimeout(_opsUpdateMinimap, 50);
 }
 
 function showOpsMapTooltip(op, px, py, pinsEl){
@@ -5810,6 +5887,165 @@ function showOpsMapTooltip(op, px, py, pinsEl){
   tt.style.left = leftVal + 'px';
   tt.style.top  = topVal + 'px';
   tt.classList.add('show');
+}
+
+/* ══════════════════════════════════════════
+   MINIMAP
+   ══════════════════════════════════════════ */
+function _opsUpdateMinimap(){
+  var wrap = document.getElementById('ops-map-img-wrap');
+  var mini = document.getElementById('ops-minimap');
+  var vp   = document.getElementById('ops-minimap-viewport');
+  if(!wrap || !mini || !vp) return;
+
+  var mW = mini.clientWidth;
+  var mH = mini.clientHeight;
+  var wW = wrap.clientWidth;
+  var wH = wrap.clientHeight;
+  if(!wW || !wH || !mW || !mH) return;
+
+  // La minimap représente la carte à zoom=1
+  // Le viewport visible = (wW/zoom) x (wH/zoom) déplacé de (-panX/zoom, -panY/zoom)
+  var visW = wW / _opsZoom;
+  var visH = wH / _opsZoom;
+  var visX = -_opsPanX / _opsZoom;
+  var visY = -_opsPanY / _opsZoom;
+
+  // Ratio minimap / carte réelle
+  var rx = mW / wW;
+  var ry = mH / wH;
+
+  vp.style.left   = Math.max(0, visX * rx) + 'px';
+  vp.style.top    = Math.max(0, visY * ry) + 'px';
+  vp.style.width  = Math.min(mW, visW * rx) + 'px';
+  vp.style.height = Math.min(mH, visH * ry) + 'px';
+
+  // Opacité : plus on zoom, plus la minimap est visible
+  mini.style.opacity = _opsZoom > 1.2 ? '1' : '0.55';
+
+  // Pins minimap
+  _opsRenderMinimapPins(mW, mH, wW, wH);
+}
+
+function _opsRenderMinimapPins(mW, mH, wW, wH){
+  var pinsEl = document.getElementById('ops-minimap-pins');
+  if(!pinsEl) return;
+  pinsEl.innerHTML = '';
+  var ops = DB.operations || [];
+  ops.forEach(function(op){
+    var px = op.mapX != null ? op.mapX : _pinHash(op.id, 1, 8, 88);
+    var py = op.mapY != null ? op.mapY : _pinHash(op.id, 7, 12, 82);
+    var color = op.statut==='Active'?'#16a34a': op.statut==='Planifiée'?'#3b82f6':'#6b7280';
+    var dot = document.createElement('div');
+    dot.style.cssText = 'position:absolute;width:5px;height:5px;border-radius:50%;background:'+color+
+      ';border:1px solid rgba(255,255,255,0.7);transform:translate(-50%,-50%);'+
+      'left:'+(px/100*mW)+'px;top:'+(py/100*mH)+'px;'+
+      (op.statut==='Active'?'box-shadow:0 0 4px '+color+';':'');
+    pinsEl.appendChild(dot);
+  });
+}
+
+function opsMinimapClick(e){
+  var mini = document.getElementById('ops-minimap');
+  var wrap = document.getElementById('ops-map-img-wrap');
+  if(!mini || !wrap) return;
+  var rect = mini.getBoundingClientRect();
+  var mx = e.clientX - rect.left;
+  var my = e.clientY - rect.top;
+  // Convertir position minimap → pan
+  var mW = mini.clientWidth;
+  var mH = mini.clientHeight;
+  var wW = wrap.clientWidth;
+  var wH = wrap.clientHeight;
+  var rx = mW / wW;
+  var ry = mH / wH;
+  // Centre la vue sur le point cliqué
+  var mapX = mx / rx; // position dans la carte réelle
+  var mapY = my / ry;
+  _opsPanX = wW/2 - mapX * _opsZoom;
+  _opsPanY = wH/2 - mapY * _opsZoom;
+  _opsClampPan();
+  _opsApplyTransform();
+  _opsUpdateMinimap();
+}
+
+/* ══════════════════════════════════════════
+   RECHERCHE & CENTRAGE
+   ══════════════════════════════════════════ */
+function opsSearchInput(val){
+  var clear = document.getElementById('ops-search-clear');
+  if(clear) clear.style.display = val ? 'block' : 'none';
+  opsSearchShow(val);
+}
+
+function opsSearchShow(val){
+  var input = document.getElementById('ops-search-input');
+  var results = document.getElementById('ops-search-results');
+  if(!results) return;
+  val = (val !== undefined ? val : (input ? input.value : '')).trim().toLowerCase();
+  var ops = (DB.operations || []);
+  var filtered = val ? ops.filter(function(o){
+    return (o.nom||'').toLowerCase().indexOf(val) >= 0 ||
+           (o.type||'').toLowerCase().indexOf(val) >= 0 ||
+           (o.resp||'').toLowerCase().indexOf(val) >= 0;
+  }) : ops;
+  if(!filtered.length || (!val && !document.getElementById('ops-search-input').matches(':focus'))){
+    results.style.display = 'none'; return;
+  }
+  results.innerHTML = filtered.slice(0,6).map(function(op){
+    var color = op.statut==='Active'?'#16a34a': op.statut==='Planifiée'?'#3b82f6':'#6b7280';
+    return '<div class="ops-search-item" onmousedown="opsCenterOnPin('+op.id+')">'+
+      '<div class="si-dot" style="background:'+color+'"></div>'+
+      '<div class="si-nom">'+op.nom+'</div>'+
+      '<div class="si-stat">'+op.statut+'</div>'+
+    '</div>';
+  }).join('');
+  results.style.display = 'block';
+}
+
+function opsSearchHide(){
+  var r = document.getElementById('ops-search-results');
+  if(r) r.style.display = 'none';
+}
+
+function opsSearchClear(){
+  var input = document.getElementById('ops-search-input');
+  var clear = document.getElementById('ops-search-clear');
+  var results = document.getElementById('ops-search-results');
+  if(input) input.value = '';
+  if(clear) clear.style.display = 'none';
+  if(results) results.style.display = 'none';
+}
+
+function opsCenterOnPin(opId){
+  opsSearchHide();
+  opsSearchClear();
+  var op = (DB.operations||[]).find(function(o){ return String(o.id)===String(opId); });
+  if(!op) return;
+  var px = op.mapX != null ? op.mapX : _pinHash(op.id, 1, 8, 88);
+  var py = op.mapY != null ? op.mapY : _pinHash(op.id, 7, 12, 82);
+  var wrap = document.getElementById('ops-map-img-wrap');
+  if(!wrap) return;
+  var wW = wrap.clientWidth;
+  var wH = wrap.clientHeight;
+  // Centrer la vue sur ce pin
+  var pinAbsX = px / 100 * wW;
+  var pinAbsY = py / 100 * wH;
+  _opsPanX = wW/2 - pinAbsX * _opsZoom;
+  _opsPanY = wH/2 - pinAbsY * _opsZoom;
+  _opsClampPan();
+  _opsApplyTransform();
+  _opsUpdateMinimap();
+  // Flash du pin ciblé
+  var pin = document.querySelector('.op-pin[data-id="'+opId+'"]');
+  if(pin){
+    pin.style.transition = 'transform 0.2s';
+    pin.style.transform = 'translate(-50%,-100%) scale(1.6)';
+    setTimeout(function(){ pin.style.transform = ''; pin.style.transition = ''; }, 500);
+    setTimeout(function(){ showOpsMapTooltip(op, px, py, document.getElementById('ops-map-pins')); }, 300);
+  }
+  // Toast
+  showToast('🎯 Centré sur "'+op.nom+'"', 'info');
 }
 
 function closeOpsMapTooltip(){
