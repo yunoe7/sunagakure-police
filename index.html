@@ -1729,10 +1729,10 @@ document.addEventListener('DOMContentLoaded',function(){if(localStorage.getItem(
     <div class="nav-item" role="button" tabindex="0" onclick="showPage('dossiers')" data-page="dossiers" data-member-only="true"><span class="icon">🗂️</span> Dossiers criminels <span class="nav-badge" id="badge-dossiers" style="background:var(--purple);display:none">0</span></div>
     <div class="nav-item" role="button" tabindex="0" onclick="showPage('codepenal')" data-page="codepenal"><span class="icon">📜</span> Code Pénal</div>
     <div class="nav-item" role="button" tabindex="0" onclick="showPage('messagerie')" data-page="messagerie" data-member-only="true"><span class="icon">💬</span> Messagerie <span class="nav-badge" id="badge-messagerie" style="background:var(--cyan);display:none">0</span></div>
-    <div class="nav-section" data-admin-only="true" style="display:none">Opérations</div>
-    <div class="nav-item" role="button" tabindex="0" onclick="showPage('operations')" data-page="operations" data-admin-only="true" style="display:none"><span class="icon">🚨</span> Opérations <span class="nav-badge" id="badge-operations" style="background:var(--accent);display:none">0</span></div>
-    <div class="nav-item" role="button" tabindex="0" onclick="showPage('effectifs')" data-page="effectifs" data-admin-only="true" style="display:none"><span class="icon">👮</span> Effectifs</div>
-    <div class="nav-item" role="button" tabindex="0" onclick="showPage('sanctions')" data-page="sanctions" data-admin-only="true" style="display:none"><span class="icon">⚖️</span> Sanctions / Promo</div>
+    <div class="nav-section" data-member-only="true">Opérations</div>
+    <div class="nav-item" role="button" tabindex="0" onclick="showPage('operations')" data-page="operations" data-member-only="true"><span class="icon">🚨</span> Opérations <span class="nav-badge" id="badge-operations" style="background:var(--accent);display:none">0</span></div>
+    <div class="nav-item" role="button" tabindex="0" onclick="showPage('effectifs')" data-page="effectifs" data-member-only="true"><span class="icon">👮</span> Effectifs</div>
+    <div class="nav-item" role="button" tabindex="0" onclick="showPage('sanctions')" data-page="sanctions" data-member-only="true"><span class="icon">⚖️</span> Sanctions / Promo</div>
     <div class="nav-section" data-member-only="true">Administration</div>
     <div class="nav-item" role="button" tabindex="0" id="nav-admin" onclick="showPage('admin')" style="display:none"><span class="icon">⚙️</span> Panel Admin</div>
     <div class="nav-item" role="button" tabindex="0" onclick="showPage('profil')" data-page="profil"><span class="icon">👤</span> Mon profil</div>
@@ -2048,6 +2048,39 @@ document.addEventListener('DOMContentLoaded',function(){if(localStorage.getItem(
 
   <!-- OPÉRATIONS -->
   <div class="page-content" id="page-operations">
+
+    <!-- ══ BRIEFING OPÉRATIONNEL ══ -->
+    <div class="card" id="ops-briefing-card" style="margin-bottom:18px;border-left:3px solid var(--accent)">
+      <div class="card-header" style="justify-content:space-between">
+        <div style="display:flex;align-items:center;gap:8px">
+          <span style="font-size:16px">📡</span>
+          <h3 style="color:var(--accent2)">BRIEFING OPÉRATIONNEL</h3>
+        </div>
+        <div style="display:flex;gap:7px;align-items:center">
+          <span id="ops-briefing-ts" style="font-size:9px;color:var(--muted);font-family:'Share Tech Mono',monospace"></span>
+          <!-- Bouton édition : visible uniquement pour les admins -->
+          <button id="ops-briefing-edit-btn" class="btn btn-sm btn-gold" onclick="opsBriefingStartEdit()" style="display:none">✏️ Modifier</button>
+        </div>
+      </div>
+      <div class="card-body" style="padding:14px 18px">
+        <!-- Affichage lecture -->
+        <div id="ops-briefing-view" style="font-size:13px;color:var(--text);line-height:1.75;white-space:pre-wrap;min-height:36px">
+          <span style="color:var(--muted);font-style:italic;font-size:12px">Aucun briefing pour le moment.</span>
+        </div>
+        <!-- Zone d'édition (masquée par défaut) -->
+        <div id="ops-briefing-editor" style="display:none">
+          <textarea id="ops-briefing-input" class="form-control" rows="5"
+            placeholder="Rédigez ici le briefing opérationnel visible par tous les membres…"
+            style="resize:vertical;font-size:13px;line-height:1.7;margin-bottom:10px"></textarea>
+          <div style="display:flex;gap:8px;justify-content:flex-end">
+            <button class="btn btn-sm btn-outline" onclick="opsBriefingCancelEdit()">Annuler</button>
+            <button class="btn btn-sm btn-primary" onclick="opsBriefingSave()">💾 Enregistrer</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- ══ FIN BRIEFING ══ -->
+
     <div class="section-header">
       <div><div class="section-title">Opérations</div><div class="section-sub">MISSIONS & DÉPLOIEMENTS</div></div>
       <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
@@ -4212,7 +4245,7 @@ function renderPage(name){
   if(name==="plaintes")renderPlaintes();
   if(name==="dossiers")renderDossiers();
   if(name==="codepenal")renderCodePenal();
-  if(name==="operations"){renderOperations();initFeatureMap();setTimeout(_syncTeaserBg,150);}
+  if(name==="operations"){renderOperations();initFeatureMap();setTimeout(_syncTeaserBg,150);opsBriefingRender();}
   if(name==="effectifs")renderEffectifs();
   if(name==="sanctions")renderSanctions();
   if(name==="admin"){
@@ -13385,6 +13418,64 @@ function dismissNotifBadge() {
   }
   _pendingNotifItems = [];
   clearTimeout(_notifBadgeTimer);
+}
+
+/* ════════════════════════════════════════════════════════════════
+   BRIEFING OPÉRATIONNEL — lecture / édition / sauvegarde Firebase
+   ════════════════════════════════════════════════════════════════ */
+function opsBriefingRender() {
+  var briefing = (DB.features && DB.features.opsBriefing) || null;
+  var viewEl = document.getElementById('ops-briefing-view');
+  var tsEl   = document.getElementById('ops-briefing-ts');
+  var editBtn = document.getElementById('ops-briefing-edit-btn');
+  if (!viewEl) return;
+
+  // Afficher le texte ou le placeholder
+  if (briefing && briefing.text) {
+    viewEl.style.fontStyle = 'normal';
+    viewEl.textContent = briefing.text;
+    if (tsEl && briefing.ts) {
+      var d = new Date(briefing.ts);
+      tsEl.textContent = 'Mis à jour le ' + d.toLocaleDateString('fr-FR') + ' à ' + d.toLocaleTimeString('fr-FR', {hour:'2-digit',minute:'2-digit'});
+    }
+  } else {
+    viewEl.innerHTML = '<span style="color:var(--muted);font-style:italic;font-size:12px">Aucun briefing pour le moment.</span>';
+    if (tsEl) tsEl.textContent = '';
+  }
+
+  // Bouton édition visible pour les admins/modos seulement
+  if (editBtn) editBtn.style.display = (typeof canModify === 'function' && canModify()) ? 'inline-flex' : 'none';
+}
+
+function opsBriefingStartEdit() {
+  var input = document.getElementById('ops-briefing-input');
+  var briefing = (DB.features && DB.features.opsBriefing) || null;
+  if (input) input.value = (briefing && briefing.text) ? briefing.text : '';
+  document.getElementById('ops-briefing-view').style.display = 'none';
+  document.getElementById('ops-briefing-editor').style.display = 'block';
+  document.getElementById('ops-briefing-edit-btn').style.display = 'none';
+  if (input) input.focus();
+}
+
+function opsBriefingCancelEdit() {
+  document.getElementById('ops-briefing-view').style.display = '';
+  document.getElementById('ops-briefing-editor').style.display = 'none';
+  document.getElementById('ops-briefing-edit-btn').style.display = 'inline-flex';
+}
+
+function opsBriefingSave() {
+  var input = document.getElementById('ops-briefing-input');
+  var text = input ? input.value.trim() : '';
+  if (!DB.features) DB.features = {};
+  DB.features.opsBriefing = { text: text, ts: Date.now(), author: (currentUser && currentUser.pseudo) || '?' };
+  // Sauvegarder dans Firebase
+  if (window._fbDB && window._fbRef && window._fbSet) {
+    var r = window._fbRef(window._fbDB, 'sunagakure/features/opsBriefing');
+    window._fbSet(r, DB.features.opsBriefing);
+  }
+  opsBriefingCancelEdit();
+  opsBriefingRender();
+  if (typeof showToast === 'function') showToast('✅ Briefing enregistré !', 'success');
 }
 
 // Remplacer _checkRealtimeNotifs par une version améliorée
