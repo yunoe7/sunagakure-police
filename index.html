@@ -1515,7 +1515,7 @@ body.dark .profile-hero{background:linear-gradient(135deg,rgba(192,65,14,0.1),rg
 
 /* ── MINIMAP ── */
 #ops-minimap{
-  position:absolute;bottom:44px;right:10px;z-index:35;
+  position:absolute;top:10px;right:10px;z-index:35;
   width:130px;height:95px;
   border-radius:8px;overflow:hidden;
   border:1px solid rgba(180,140,20,0.4);
@@ -1543,7 +1543,16 @@ body.dark .profile-hero{background:linear-gradient(135deg,rgba(192,65,14,0.1),rg
   font-family:'Share Tech Mono',monospace;text-transform:uppercase;pointer-events:none;
 }
 
-/* ── BARRE TACTIQUE ── */
+/* ── MINIMAP EN PLEIN ÉCRAN ── */
+#ops-map-img-wrap:fullscreen #ops-minimap,
+#ops-map-img-wrap:-webkit-full-screen #ops-minimap,
+#ops-map-img-wrap:-moz-full-screen #ops-minimap{
+  position:fixed!important;top:10px!important;right:10px!important;
+  z-index:9999!important;display:block!important;
+}
+#ops-map-img-wrap:fullscreen,
+#ops-map-img-wrap:-webkit-full-screen,
+#ops-map-img-wrap:-moz-full-screen{overflow:visible!important}
 #ops-map-toolbar{
   display:flex;align-items:center;gap:8px;margin-bottom:8px;
   background:rgba(8,9,20,0.85);border:1px solid rgba(180,140,20,0.2);
@@ -3984,14 +3993,14 @@ function fetchSessionGeo(){
 
 function parseBrowser(ua){
   if(!ua)return{name:'Inconnu',version:'',icon:'🌐'};
-  var n,v,ic;
-  if(/Edg\//.test(ua)){n='Edge';ic='🔷';var m=ua.match(/Edg\/([\d.]+)/);v=m?m[1].split('.')[0]:'';}
-  else if(/OPR\/|Opera/.test(ua)){n='Opera';ic='🔴';var m=ua.match(/OPR\/([\d.]+)/);v=m?m[1].split('.')[0]:'';}
-  else if(/Firefox\//.test(ua)){n='Firefox';ic='🦊';var m=ua.match(/Firefox\/([\d.]+)/);v=m?m[1].split('.')[0]:'';}
-  else if(/Chrome\//.test(ua)){n='Chrome';ic='🟡';var m=ua.match(/Chrome\/([\d.]+)/);v=m?m[1].split('.')[0]:'';}
-  else if(/Safari\//.test(ua)&&/Version\//.test(ua)){n='Safari';ic='🔵';var m=ua.match(/Version\/([\d.]+)/);v=m?m[1].split('.')[0]:'';}
-  else{n='Autre';ic='🌐';v='';}
-  return{name:n,version:v,icon:ic};
+  var n,bver,ic;
+  if(/Edg\//.test(ua)){n='Edge';ic='🔷';var m=ua.match(/Edg\/([\d.]+)/);bver=m?m[1].split('.')[0]:'';}
+  else if(/OPR\/|Opera/.test(ua)){n='Opera';ic='🔴';var m=ua.match(/OPR\/([\d.]+)/);bver=m?m[1].split('.')[0]:'';}
+  else if(/Firefox\//.test(ua)){n='Firefox';ic='🦊';var m=ua.match(/Firefox\/([\d.]+)/);bver=m?m[1].split('.')[0]:'';}
+  else if(/Chrome\//.test(ua)){n='Chrome';ic='🟡';var m=ua.match(/Chrome\/([\d.]+)/);bver=m?m[1].split('.')[0]:'';}
+  else if(/Safari\//.test(ua)&&/Version\//.test(ua)){n='Safari';ic='🔵';var m=ua.match(/Version\/([\d.]+)/);bver=m?m[1].split('.')[0]:'';}
+  else{n='Autre';ic='🌐';bver='';}
+  return{name:n,version:bver,icon:ic};
 }
 
 function parseOS(ua){
@@ -6143,6 +6152,22 @@ function opsFullscreen(){
 document.addEventListener('fullscreenchange', function(){
   var btn = document.getElementById('ops-fullscreen-btn');
   if(btn) btn.textContent = document.fullscreenElement ? '✕' : '⛶';
+  var mini = document.getElementById('ops-minimap');
+  if(mini){
+    if(document.fullscreenElement){
+      mini.style.position='fixed';
+      mini.style.top='10px';
+      mini.style.right='10px';
+      mini.style.zIndex='9999';
+      mini.style.display='block';
+    } else {
+      mini.style.position='absolute';
+      mini.style.top='10px';
+      mini.style.right='10px';
+      mini.style.zIndex='35';
+      mini.style.display='';
+    }
+  }
 });
 
 /* ── PLACEMENT DES PINS PAR CLIC ── */
@@ -13257,9 +13282,12 @@ function _patchDossierRows() {
     window.addEventListener('beforeunload', function() {
       clearInterval(heartbeatTimer);
       try {
-        // Effacement synchrone via sendBeacon ou fetch keepalive
-        var url = 'https://suna-police-default-rtdb.europe-west1.firebasedatabase.app/presence/' + userId + '.json?auth=';
-        navigator.sendBeacon && navigator.sendBeacon(url, 'null');
+        // Effacement synchrone via fetch keepalive (méthode DELETE = suppression du nœud)
+        // sendBeacon envoie un POST ce qui crée un enfant push au lieu de supprimer — inutilisable ici
+        var url = 'https://suna-police-default-rtdb.europe-west1.firebasedatabase.app/presence/' + userId + '.json';
+        if (typeof fetch === 'function') {
+          fetch(url, { method: 'DELETE', keepalive: true }).catch(function(){});
+        }
       } catch(e) {}
     });
 
