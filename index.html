@@ -1465,8 +1465,7 @@ body.dark .profile-hero{background:linear-gradient(135deg,rgba(192,65,14,0.1),rg
 #ops-map-img-wrap.dragging{cursor:grabbing}
 #ops-map-zoom-inner{position:absolute;left:0;top:0;width:100%;height:100%;transition:none;transform-origin:0 0;will-change:transform}
 #ops-map-zoom-controls{position:absolute;bottom:10px;right:10px;z-index:40;display:flex;flex-direction:column;gap:4px}
-.ops-zoom-btn{width:28px;height:28px;border-radius:6px;background:rgba(13,14,26,0.85);border:1px solid rgba(180,140,20,0.35);color:#d4b44a;font-size:16px;display:flex;align-items:center;justify-content:center;cursor:pointer;backdrop-filter:blur(4px);line-height:1;transition:background 0.15s}
-.ops-zoom-btn:hover{background:rgba(180,140,20,0.15)}
+/* Filtres et zoom — voir #ops-map-toolbar */
 #ops-zoom-reset{font-size:9px;letter-spacing:0.5px;font-family:'Share Tech Mono',monospace}
 #ops-map-img-wrap img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;display:block;opacity:1}
 #ops-map-zoom-inner svg{position:absolute;inset:0;width:100%;height:100%;display:block}
@@ -1486,18 +1485,7 @@ body.dark .profile-hero{background:linear-gradient(135deg,rgba(192,65,14,0.1),rg
 .op-pin.active .op-pin-dot{background:#16a34a;border-color:#fff;box-shadow:0 2px 12px rgba(22,163,74,0.7),0 0 0 4px rgba(22,163,74,0.2);animation:pin-pulse 1.8s ease-in-out infinite}
 @keyframes pin-pulse{0%,100%{box-shadow:0 2px 12px rgba(22,163,74,0.7),0 0 0 4px rgba(22,163,74,0.2)}50%{box-shadow:0 2px 16px rgba(22,163,74,0.9),0 0 0 8px rgba(22,163,74,0.12)}}
 /* Filtres carte */
-#ops-map-filters{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px;margin-bottom:2px}
-.ops-filter-btn{display:inline-flex;align-items:center;gap:5px;padding:5px 11px;border-radius:6px;font-size:10px;font-weight:700;letter-spacing:0.8px;font-family:'Share Tech Mono',monospace;cursor:pointer;border:1px solid transparent;transition:all 0.18s;opacity:0.45;user-select:none}
-.ops-filter-btn.on{opacity:1}
-.ops-filter-btn.f-active{background:rgba(22,163,74,0.1);color:#16a34a;border-color:rgba(22,163,74,0.35)}
-.ops-filter-btn.f-active.on{background:rgba(22,163,74,0.2);box-shadow:0 0 10px rgba(22,163,74,0.2)}
-.ops-filter-btn.f-planifiee{background:rgba(29,78,216,0.1);color:#3b82f6;border-color:rgba(29,78,216,0.3)}
-.ops-filter-btn.f-planifiee.on{background:rgba(29,78,216,0.2);box-shadow:0 0 10px rgba(29,78,216,0.2)}
-.ops-filter-btn.f-terminee{background:rgba(107,114,128,0.1);color:#9ca3af;border-color:rgba(107,114,128,0.3)}
-.ops-filter-btn.f-terminee.on{background:rgba(107,114,128,0.2)}
-/* Bouton plein écran */
-#ops-fullscreen-btn{width:28px;height:28px;border-radius:6px;background:rgba(13,14,26,0.85);border:1px solid rgba(180,140,20,0.35);color:#d4b44a;font-size:13px;display:flex;align-items:center;justify-content:center;cursor:pointer;backdrop-filter:blur(4px);transition:background 0.15s;line-height:1}
-#ops-fullscreen-btn:hover{background:rgba(180,140,20,0.15)}
+/* Filter styles — voir #ops-map-toolbar */
 /* Pin placement mode */
 #ops-map-img-wrap.placing{cursor:crosshair}
 #ops-place-banner{
@@ -1555,33 +1543,96 @@ body.dark .profile-hero{background:linear-gradient(135deg,rgba(192,65,14,0.1),rg
   font-family:'Share Tech Mono',monospace;text-transform:uppercase;pointer-events:none;
 }
 
-/* ── RECHERCHE ── */
-#ops-search-wrap{position:relative;flex:1;max-width:280px}
-#ops-search-input{
-  width:100%;padding:7px 32px 7px 12px;
-  background:rgba(13,14,26,0.7);border:1px solid rgba(180,140,20,0.25);
-  border-radius:7px;color:#fff;font-size:11px;font-family:'Share Tech Mono',monospace;
-  outline:none;transition:border-color 0.2s;letter-spacing:0.5px;
+/* ── BARRE TACTIQUE ── */
+#ops-map-toolbar{
+  display:flex;align-items:center;gap:8px;margin-bottom:8px;
+  background:rgba(8,9,20,0.85);border:1px solid rgba(180,140,20,0.2);
+  border-radius:10px;padding:7px 10px;backdrop-filter:blur(10px);
+  flex-wrap:wrap;
 }
-#ops-search-input::placeholder{color:rgba(255,255,255,0.25)}
-#ops-search-input:focus{border-color:rgba(180,140,20,0.55);background:rgba(13,14,26,0.9)}
-#ops-search-clear{position:absolute;right:9px;top:50%;transform:translateY(-50%);color:rgba(255,255,255,0.3);cursor:pointer;font-size:12px;display:none;line-height:1}
-#ops-search-clear:hover{color:#fff}
+#ops-map-toolbar .tb-sep{width:1px;height:20px;background:rgba(255,255,255,0.08);flex-shrink:0}
+/* Filtres */
+#ops-map-filters{display:flex;gap:4px;align-items:center}
+.ops-filter-btn{
+  display:inline-flex;align-items:center;gap:5px;
+  padding:5px 10px;border-radius:6px;
+  font-size:9.5px;font-weight:700;letter-spacing:1px;
+  font-family:'Share Tech Mono',monospace;text-transform:uppercase;
+  cursor:pointer;border:1px solid transparent;
+  transition:all 0.18s;user-select:none;
+  opacity:0.38;
+}
+.ops-filter-btn .fb-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0;transition:box-shadow 0.18s}
+.ops-filter-btn.on{opacity:1}
+.ops-filter-btn.f-active{color:#22c55e;border-color:rgba(34,197,94,0.25);background:rgba(34,197,94,0.06)}
+.ops-filter-btn.f-active.on{background:rgba(34,197,94,0.12);border-color:rgba(34,197,94,0.4)}
+.ops-filter-btn.f-active.on .fb-dot{box-shadow:0 0 6px #22c55e}
+.ops-filter-btn.f-planifiee{color:#60a5fa;border-color:rgba(96,165,250,0.25);background:rgba(96,165,250,0.06)}
+.ops-filter-btn.f-planifiee.on{background:rgba(96,165,250,0.12);border-color:rgba(96,165,250,0.4)}
+.ops-filter-btn.f-planifiee.on .fb-dot{box-shadow:0 0 6px #60a5fa}
+.ops-filter-btn.f-terminee{color:#94a3b8;border-color:rgba(148,163,184,0.2);background:rgba(148,163,184,0.04)}
+.ops-filter-btn.f-terminee.on{background:rgba(148,163,184,0.08);border-color:rgba(148,163,184,0.3)}
+/* Recherche */
+#ops-search-wrap{position:relative;flex:1;min-width:180px;max-width:260px}
+#ops-search-icon{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:rgba(180,140,20,0.5);font-size:11px;pointer-events:none;line-height:1}
+#ops-search-input{
+  width:100%;padding:6px 28px 6px 30px;
+  background:rgba(255,255,255,0.04);
+  border:1px solid rgba(255,255,255,0.08);
+  border-radius:7px;color:#fff;font-size:10.5px;
+  font-family:'Share Tech Mono',monospace;
+  outline:none;transition:all 0.2s;letter-spacing:0.5px;box-sizing:border-box;
+}
+#ops-search-input::placeholder{color:rgba(255,255,255,0.2);font-size:10px}
+#ops-search-input:focus{border-color:rgba(180,140,20,0.45);background:rgba(180,140,20,0.04)}
+#ops-search-clear{position:absolute;right:9px;top:50%;transform:translateY(-50%);color:rgba(255,255,255,0.25);cursor:pointer;font-size:10px;display:none;line-height:1;transition:color 0.15s}
+#ops-search-clear:hover{color:rgba(255,255,255,0.7)}
 #ops-search-results{
-  position:absolute;top:calc(100% + 4px);left:0;right:0;z-index:60;
-  background:rgba(13,14,26,0.98);border:1px solid rgba(180,140,20,0.3);
-  border-radius:8px;overflow:hidden;box-shadow:0 8px 32px rgba(0,0,0,0.6);
-  backdrop-filter:blur(12px);display:none;
+  position:absolute;top:calc(100% + 5px);left:0;right:0;z-index:60;
+  background:rgba(10,11,24,0.98);border:1px solid rgba(180,140,20,0.25);
+  border-radius:9px;overflow:hidden;
+  box-shadow:0 12px 40px rgba(0,0,0,0.7),0 0 0 1px rgba(180,140,20,0.08);
+  backdrop-filter:blur(16px);display:none;
 }
 .ops-search-item{
   display:flex;align-items:center;gap:9px;padding:9px 13px;cursor:pointer;
-  border-bottom:1px solid rgba(255,255,255,0.05);transition:background 0.12s;
+  border-bottom:1px solid rgba(255,255,255,0.04);transition:background 0.12s;
 }
 .ops-search-item:last-child{border-bottom:none}
-.ops-search-item:hover{background:rgba(255,255,255,0.06)}
+.ops-search-item:hover{background:rgba(180,140,20,0.07)}
 .ops-search-item .si-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
-.ops-search-item .si-nom{font-size:12px;font-weight:600;color:#fff;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.ops-search-item .si-stat{font-size:9px;font-family:'Share Tech Mono',monospace;color:rgba(255,255,255,0.35)}
+.ops-search-item .si-nom{font-size:11.5px;font-weight:600;color:#fff;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-family:'Barlow Condensed',sans-serif;letter-spacing:0.5px}
+.ops-search-item .si-stat{font-size:8.5px;font-family:'Share Tech Mono',monospace;color:rgba(255,255,255,0.3);letter-spacing:0.8px}
+/* Boutons action */
+.ops-action-btn{
+  display:inline-flex;align-items:center;gap:5px;
+  height:30px;padding:0 11px;border-radius:7px;
+  font-size:9.5px;font-weight:700;letter-spacing:1px;
+  font-family:'Share Tech Mono',monospace;text-transform:uppercase;
+  cursor:pointer;transition:all 0.18s;white-space:nowrap;flex-shrink:0;border:1px solid transparent;
+}
+#ops-place-mode-btn.ops-action-btn{
+  background:rgba(192,65,14,0.1);color:#e07040;border-color:rgba(192,65,14,0.3);
+}
+#ops-place-mode-btn.ops-action-btn:hover{background:rgba(192,65,14,0.2);border-color:rgba(192,65,14,0.5)}
+#ops-fullscreen-btn{
+  width:30px;height:30px;border-radius:7px;
+  background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);
+  color:rgba(255,255,255,0.45);font-size:14px;
+  display:flex;align-items:center;justify-content:center;
+  cursor:pointer;transition:all 0.18s;flex-shrink:0;
+}
+#ops-fullscreen-btn:hover{background:rgba(180,140,20,0.1);border-color:rgba(180,140,20,0.3);color:#d4b44a}
+/* Zoom buttons restylés */
+.ops-zoom-btn{
+  width:30px;height:30px;border-radius:7px;
+  background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);
+  color:rgba(255,255,255,0.5);font-size:15px;
+  display:flex;align-items:center;justify-content:center;
+  cursor:pointer;backdrop-filter:blur(4px);line-height:1;
+  transition:all 0.15s;flex-shrink:0;
+}
+.ops-zoom-btn:hover{background:rgba(180,140,20,0.12);border-color:rgba(180,140,20,0.35);color:#d4b44a}
 #ops-map-tooltip.show{opacity:1;pointer-events:auto}
 #ops-map-tooltip .tt-nom{font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:700;letter-spacing:1px;color:#fff;margin-bottom:6px}
 #ops-map-tooltip .tt-badges{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:8px}
@@ -2084,23 +2135,34 @@ document.addEventListener('DOMContentLoaded',function(){if(localStorage.getItem(
 
     <!-- CARTE TACTIQUE INTERACTIVE (activée quand ops-map-teaser masqué) -->
     <div id="ops-map-wrap" style="display:none">
-      <!-- Barre filtres + plein écran -->
-      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:6px">
+      <!-- BARRE TACTIQUE -->
+      <div id="ops-map-toolbar">
+        <!-- Filtres -->
         <div id="ops-map-filters">
-          <div class="ops-filter-btn f-active on" onclick="toggleOpsFilter('active',this)" title="Afficher/masquer opérations actives"><span style="width:8px;height:8px;border-radius:50%;background:#16a34a;flex-shrink:0;display:inline-block"></span>Active</div>
-          <div class="ops-filter-btn f-planifiee on" onclick="toggleOpsFilter('planifiee',this)" title="Afficher/masquer opérations planifiées"><span style="width:8px;height:8px;border-radius:50%;background:#1d4ed8;flex-shrink:0;display:inline-block"></span>Planifiée</div>
-          <div class="ops-filter-btn f-terminee on" onclick="toggleOpsFilter('terminee',this)" title="Afficher/masquer opérations terminées"><span style="width:8px;height:8px;border-radius:50%;background:#6b7280;flex-shrink:0;display:inline-block"></span>Terminée</div>
-        </div>
-        <div style="display:flex;gap:8px;align-items:center;flex:1;justify-content:flex-end;flex-wrap:wrap">
-          <!-- Barre de recherche -->
-          <div id="ops-search-wrap">
-            <input id="ops-search-input" type="text" placeholder="🔍  Rechercher une opération..." oninput="opsSearchInput(this.value)" onfocus="opsSearchShow()" onblur="setTimeout(opsSearchHide,180)" autocomplete="off">
-            <span id="ops-search-clear" onclick="opsSearchClear()">✕</span>
-            <div id="ops-search-results"></div>
+          <div class="ops-filter-btn f-active on" onclick="toggleOpsFilter('active',this)" title="Afficher/masquer opérations actives">
+            <span class="fb-dot" style="background:#22c55e"></span>Active
           </div>
-          <div id="ops-place-mode-btn" class="ops-zoom-btn" style="width:auto;padding:0 9px;font-size:10px;font-family:'Share Tech Mono',monospace;letter-spacing:0.5px;gap:5px;display:flex;align-items:center" onclick="togglePinPlaceMode()" title="Placer un pin sur la carte">📍 Placer</div>
-          <div id="ops-fullscreen-btn" onclick="opsFullscreen()" title="Plein écran">⛶</div>
+          <div class="ops-filter-btn f-planifiee on" onclick="toggleOpsFilter('planifiee',this)" title="Afficher/masquer opérations planifiées">
+            <span class="fb-dot" style="background:#60a5fa"></span>Planifiée
+          </div>
+          <div class="ops-filter-btn f-terminee on" onclick="toggleOpsFilter('terminee',this)" title="Afficher/masquer opérations terminées">
+            <span class="fb-dot" style="background:#94a3b8"></span>Terminée
+          </div>
         </div>
+        <div class="tb-sep"></div>
+        <!-- Recherche -->
+        <div id="ops-search-wrap">
+          <span id="ops-search-icon">🔍</span>
+          <input id="ops-search-input" type="text" placeholder="Rechercher une opération..." oninput="opsSearchInput(this.value)" onfocus="opsSearchShow()" onblur="setTimeout(opsSearchHide,180)" autocomplete="off">
+          <span id="ops-search-clear" onclick="opsSearchClear()">✕</span>
+          <div id="ops-search-results"></div>
+        </div>
+        <div class="tb-sep"></div>
+        <!-- Actions -->
+        <div id="ops-place-mode-btn" class="ops-action-btn" onclick="togglePinPlaceMode()" title="Placer un pin sur la carte">
+          📍 Placer
+        </div>
+        <div id="ops-fullscreen-btn" onclick="opsFullscreen()" title="Plein écran">⛶</div>
       </div>
       <!-- Bannière mode placement -->
       <div id="ops-place-banner">
@@ -2115,7 +2177,7 @@ document.addEventListener('DOMContentLoaded',function(){if(localStorage.getItem(
         <div class="pb-cancel" onclick="cancelPinPlace()">✕ Annuler</div>
       </div>
       <div id="ops-map-img-wrap">
-        <div id="ops-map-zoom-controls"><button class="ops-zoom-btn" onclick="opsZoom(1.2)" title="Zoom +">+</button><button class="ops-zoom-btn" onclick="opsZoom(0.833)" title="Zoom −">−</button><button class="ops-zoom-btn" id="ops-zoom-reset" onclick="opsZoomReset()" title="Réinitialiser">↺</button></div>
+        <div id="ops-map-zoom-controls"><button class="ops-zoom-btn" onclick="opsZoom(1.2)" title="Zoom +">+</button><button class="ops-zoom-btn" onclick="opsZoom(0.833)" title="Zoom −">−</button><button class="ops-zoom-btn" id="ops-zoom-reset" onclick="opsZoomReset()" title="Réinitialiser la vue" style="font-size:12px">↺</button></div>
         <div id="ops-map-zoom-inner">
         <div id="ops-map-svg-container" style="position:absolute;inset:0;width:100%;height:100%;z-index:1"></div>
         <div id="ops-map-overlay"></div>
