@@ -1463,13 +1463,13 @@ body.dark .profile-hero{background:linear-gradient(135deg,rgba(192,65,14,0.1),rg
 #ops-map-wrap{margin-top:16px;border:1px solid rgba(180,140,20,0.3);border-radius:14px;overflow:hidden;position:relative;background:#0d0e1a;box-shadow:0 4px 24px rgba(0,0,0,0.18)}
 #ops-map-img-wrap{position:relative;width:100%;padding-bottom:72.6%;overflow:hidden;cursor:grab}
 #ops-map-img-wrap.dragging{cursor:grabbing}
-#ops-map-zoom-inner{position:absolute;left:0;top:0;width:100%;height:100%;transition:none;transform-origin:0 0;will-change:transform}
+#ops-map-zoom-inner{position:absolute;left:0;top:0;width:100%;height:100%;transition:none;transform-origin:0 0}
 #ops-map-zoom-controls{position:absolute;bottom:10px;right:10px;z-index:40;display:flex;flex-direction:column;gap:4px}
 /* Filtres et zoom — voir #ops-map-toolbar */
 #ops-zoom-reset{font-size:9px;letter-spacing:0.5px;font-family:'Share Tech Mono',monospace}
 #ops-map-img-wrap img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;display:block;opacity:1}
 #ops-map-zoom-inner svg{position:absolute;inset:0;width:100%;height:100%;display:block}
-#ops-map-zoom-inner>svg{shape-rendering:geometricPrecision;image-rendering:optimizeQuality}
+#ops-map-zoom-inner>svg{shape-rendering:geometricPrecision;image-rendering:high-quality;text-rendering:geometricPrecision}
 #ops-map-overlay{position:absolute;inset:0;background:linear-gradient(180deg,rgba(13,14,26,0.55) 0%,transparent 22%,transparent 75%,rgba(13,14,26,0.6) 100%);pointer-events:none}
 #ops-map-pins{position:absolute;inset:0;z-index:10}
 #ops-map-header{position:absolute;top:0;left:0;right:0;padding:12px 16px;display:flex;align-items:center;gap:10px;z-index:2;pointer-events:none}
@@ -5631,6 +5631,10 @@ var _opsDragOriginX = 0;
 var _opsDragOriginY = 0;
 var _opsZoomInitDone = false;
 var _opsSvgLoaded = false;
+// ViewBox-based zoom (zero-blur vector zoom)
+var _svgOrigVBx = 0, _svgOrigVBy = 0, _svgOrigVBw = 0, _svgOrigVBh = 0;
+var _svgVBx = 0, _svgVBy = 0, _svgVBw = 0, _svgVBh = 0;
+var _svgReady = false;
 
 function _opsLoadInlineSvg(){
   if(_opsSvgLoaded) return;
@@ -5658,6 +5662,14 @@ function _opsLoadInlineSvg(){
         svg.removeAttribute('height');
         svg.setAttribute('preserveAspectRatio','xMidYMid meet');
         svg.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;display:block;shape-rendering:geometricPrecision;pointer-events:none';
+        // Capturer le viewBox original pour le zoom vectoriel
+        var parts = svg.getAttribute('viewBox').split(/[\s,]+/).map(Number);
+        _svgOrigVBx = parts[0]||0; _svgOrigVBy = parts[1]||0;
+        _svgOrigVBw = parts[2]||1000; _svgOrigVBh = parts[3]||1000;
+        _svgVBx = _svgOrigVBx; _svgVBy = _svgOrigVBy;
+        _svgVBw = _svgOrigVBw; _svgVBh = _svgOrigVBh;
+        _svgReady = true;
+        _opsZoom = 1; _opsPanX = 0; _opsPanY = 0;
       }
       _opsSvgLoaded = true;
       renderOpsMap(); // Re-render pins une fois la carte chargée
@@ -5675,10 +5687,33 @@ function _opsApplyTransform(){
   _opsRafPending = true;
   requestAnimationFrame(function(){
     _opsRafPending = false;
-    var inner = document.getElementById('ops-map-zoom-inner');
-    if(!inner) return;
-    // GPU-accelerated: transform évite le reflow de layout (no blur sur SVG)
-    inner.style.transform = 'translate(' + _opsPanX + 'px,' + _opsPanY + 'px) scale(' + _opsZoom + ')';
+    // Zoom vectoriel via viewBox SVG — zéro perte de qualité
+    if(_svgReady){
+      var container = document.getElementById('ops-map-svg-container');
+      var svg = container ? container.querySelector('svg') : null;
+      if(svg){
+        // Calculer le viewBox zoomé : réduire la fenêtre autour du point de pan
+        var vbW = _svgOrigVBw / _opsZoom;
+        var vbH = _svgOrigVBh / _opsZoom;
+        // Convertir _opsPanX/_opsPanY (px écran) en décalage SVG units
+        var wrap = document.getElementById('ops-map-img-wrap');
+        var wrapW = wrap ? wrap.clientWidth : 1;
+        var wrapH = wrap ? wrap.clientHeight : 1;
+        // pan négatif = déplacé vers la droite = viewBox origin vers la gauche
+        var vbX = _svgOrigVBx + (-_opsPanX / wrapW) * _svgOrigVBw / _opsZoom * _opsZoom
+                  - (_svgOrigVBw - vbW) * 0; // centrage géré par panX
+        var vbY = _svgOrigVBy + (-_opsPanY / wrapH) * _svgOrigVBh / _opsZoom * _opsZoom;
+        // Remappe le pan écran → unités SVG
+        vbX = _svgOrigVBx + (-_opsPanX / wrapW) * _svgOrigVBw;
+        vbY = _svgOrigVBy + (-_opsPanY / wrapH) * _svgOrigVBh;
+        // Clamp pour ne pas sortir de la carte
+        vbX = Math.max(_svgOrigVBx, Math.min(_svgOrigVBx + _svgOrigVBw - vbW, vbX));
+        vbY = Math.max(_svgOrigVBy, Math.min(_svgOrigVBy + _svgOrigVBh - vbH, vbY));
+        svg.setAttribute('viewBox', vbX+' '+vbY+' '+vbW+' '+vbH);
+        // Mettre à jour les pins en fonction du viewBox courant
+        _svgVBx = vbX; _svgVBy = vbY; _svgVBw = vbW; _svgVBh = vbH;
+      }
+    }
     _opsUpdateMinimap();
   });
 }
@@ -5701,16 +5736,24 @@ function opsZoom(factor){
 
 function opsZoomReset(){
   _opsZoom = 1; _opsPanX = 0; _opsPanY = 0;
+  // Restaurer le viewBox d'origine
+  if(_svgReady){
+    var container = document.getElementById('ops-map-svg-container');
+    var svg = container ? container.querySelector('svg') : null;
+    if(svg) svg.setAttribute('viewBox', _svgOrigVBx+' '+_svgOrigVBy+' '+_svgOrigVBw+' '+_svgOrigVBh);
+    _svgVBx=_svgOrigVBx; _svgVBy=_svgOrigVBy; _svgVBw=_svgOrigVBw; _svgVBh=_svgOrigVBh;
+  }
   _opsApplyTransform();
   _opsUpdateMinimap();
 }
 
 function _opsClampPan(){
+  // En mode viewBox, le clamp se fait dans _opsApplyTransform via les unités SVG
+  // Ici on borne juste le pan pixel pour cohérence
   var wrap = document.getElementById('ops-map-img-wrap');
   if(!wrap) return;
   var w = wrap.clientWidth;
   var h = wrap.clientHeight;
-  // With translate+scale(origin 0 0): max pan is 0, min pan = w*(1-zoom)
   var maxX = 0;
   var minX = w * (1 - _opsZoom);
   var maxY = 0;
