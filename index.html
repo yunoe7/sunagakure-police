@@ -1461,7 +1461,7 @@ body.dark .profile-hero{background:linear-gradient(135deg,rgba(192,65,14,0.1),rg
 
 /* ── CARTE TACTIQUE OPÉRATIONS ── */
 #ops-map-wrap{margin-top:16px;border:1px solid rgba(180,140,20,0.3);border-radius:14px;overflow:hidden;position:relative;background:#0d0e1a;box-shadow:0 4px 24px rgba(0,0,0,0.18)}
-#ops-map-img-wrap{position:relative;width:100%;padding-bottom:72.6%;overflow:hidden;cursor:grab}
+#ops-map-img-wrap{position:relative;width:100%;padding-bottom:72.6%;overflow:hidden;cursor:grab;min-height:300px}
 #ops-map-img-wrap.dragging{cursor:grabbing}
 #ops-map-zoom-inner{position:absolute;left:0;top:0;width:100%;height:100%;transition:none;transform-origin:0 0}
 #ops-map-zoom-controls{position:absolute;bottom:10px;right:10px;z-index:40;display:flex;flex-direction:column;gap:4px}
@@ -1513,43 +1513,8 @@ body.dark .profile-hero{background:linear-gradient(135deg,rgba(192,65,14,0.1),rg
 /* Tooltip */
 #ops-map-tooltip{position:absolute;z-index:50;background:rgba(13,14,26,0.97);border:1px solid rgba(180,140,20,0.35);border-radius:10px;padding:12px 14px;min-width:200px;max-width:240px;box-shadow:0 8px 32px rgba(0,0,0,0.6);pointer-events:none;opacity:0;transition:opacity 0.15s;backdrop-filter:blur(8px)}
 
-/* ── MINIMAP ── */
-#ops-minimap{
-  position:absolute;top:10px;right:10px;z-index:35;
-  width:130px;height:95px;
-  border-radius:8px;overflow:hidden;
-  border:1px solid rgba(180,140,20,0.4);
-  background:#0d0e1a;
-  box-shadow:0 4px 20px rgba(0,0,0,0.6);
-  cursor:pointer;
-  transition:opacity 0.2s,transform 0.2s;
-}
-#ops-minimap:hover{opacity:1!important;transform:scale(1.04)}
-#ops-minimap-img{position:absolute;inset:0;width:100%;height:100%;opacity:0.7;background:#0d0e1a}
-#ops-minimap-img img{width:100%;height:100%;object-fit:contain;display:block}
-#ops-minimap-viewport{
-  position:absolute;
-  border:1.5px solid rgba(212,180,74,0.9);
-  border-radius:2px;
-  background:rgba(212,180,74,0.08);
-  box-shadow:0 0 0 1px rgba(0,0,0,0.4);
-  pointer-events:none;
-  transition:all 0.05s linear;
-}
-#ops-minimap-pins{position:absolute;inset:0;pointer-events:none}
-#ops-minimap-label{
-  position:absolute;bottom:4px;left:6px;
-  font-size:7px;letter-spacing:1.5px;color:rgba(212,180,74,0.6);
-  font-family:'Share Tech Mono',monospace;text-transform:uppercase;pointer-events:none;
-}
 
 /* ── MINIMAP EN PLEIN ÉCRAN ── */
-#ops-map-img-wrap:fullscreen #ops-minimap,
-#ops-map-img-wrap:-webkit-full-screen #ops-minimap,
-#ops-map-img-wrap:-moz-full-screen #ops-minimap{
-  position:fixed!important;top:10px!important;right:10px!important;
-  z-index:9999!important;display:block!important;
-}
 #ops-map-img-wrap:fullscreen,
 #ops-map-img-wrap:-webkit-full-screen,
 #ops-map-img-wrap:-moz-full-screen{overflow:visible!important}
@@ -2204,15 +2169,6 @@ document.addEventListener('DOMContentLoaded',function(){if(localStorage.getItem(
           </div>
         </div>
         </div><!-- /ops-map-zoom-inner -->
-        <!-- MINIMAP -->
-        <div id="ops-minimap" title="Minimap — cliquez pour naviguer" onclick="opsMinimapClick(event)">
-          <div id="ops-minimap-img">
-            <img src="https://raw.githubusercontent.com/yunoe7/sunagakure-police/main/cartographie-nrp.svg" draggable="false" alt="">
-          </div>
-          <div id="ops-minimap-pins"></div>
-          <div id="ops-minimap-viewport"></div>
-          <div id="ops-minimap-label">Minimap</div>
-        </div>
         <div id="ops-map-legend">
           <div class="map-legend-item"><div class="map-legend-dot" style="background:#16a34a"></div>Active</div>
           <div class="map-legend-item"><div class="map-legend-dot" style="background:#1d4ed8"></div>Planifiée</div>
@@ -5670,6 +5626,10 @@ function _opsLoadInlineSvg(){
         _svgVBw = _svgOrigVBw; _svgVBh = _svgOrigVBh;
         _svgReady = true;
         _opsZoom = 1; _opsPanX = 0; _opsPanY = 0;
+        // Ajuster le conteneur au ratio réel du SVG — supprime le vide noir
+        var ratio = (_svgOrigVBh / _svgOrigVBw) * 100;
+        var imgWrap = document.getElementById('ops-map-img-wrap');
+        if(imgWrap) imgWrap.style.paddingBottom = Math.round(ratio * 10) / 10 + '%';
       }
       _opsSvgLoaded = true;
       renderOpsMap(); // Re-render pins une fois la carte chargée
@@ -5714,7 +5674,7 @@ function _opsApplyTransform(){
         _svgVBx = vbX; _svgVBy = vbY; _svgVBw = vbW; _svgVBh = vbH;
       }
     }
-    _opsUpdateMinimap();
+
   });
 }
 
@@ -5744,7 +5704,7 @@ function opsZoomReset(){
     _svgVBx=_svgOrigVBx; _svgVBy=_svgOrigVBy; _svgVBw=_svgOrigVBw; _svgVBh=_svgOrigVBh;
   }
   _opsApplyTransform();
-  _opsUpdateMinimap();
+
 }
 
 function _opsClampPan(){
@@ -5971,8 +5931,6 @@ function renderOpsMap(){
     });
     pinsEl.appendChild(pin);
   });
-  // Mettre à jour la minimap
-  setTimeout(_opsUpdateMinimap, 50);
 }
 
 function showOpsMapTooltip(op, px, py, pinsEl){
@@ -6001,113 +5959,6 @@ function showOpsMapTooltip(op, px, py, pinsEl){
   tt.style.left = leftVal + 'px';
   tt.style.top  = topVal + 'px';
   tt.classList.add('show');
-}
-
-/* ══════════════════════════════════════════
-   MINIMAP
-   ══════════════════════════════════════════ */
-function _opsUpdateMinimap(){
-  var wrap = document.getElementById('ops-map-img-wrap');
-  var mini = document.getElementById('ops-minimap');
-  var vp   = document.getElementById('ops-minimap-viewport');
-  if(!wrap || !mini || !vp) return;
-
-  var mW = mini.clientWidth;
-  var mH = mini.clientHeight;
-  if(!mW || !mH) return;
-
-  if(_svgReady && _svgOrigVBw && _svgOrigVBh){
-    // Calcul via viewBox SVG — précis car lié au système de zoom vectoriel
-    var vpL = ((_svgVBx - _svgOrigVBx) / _svgOrigVBw) * mW;
-    var vpT = ((_svgVBy - _svgOrigVBy) / _svgOrigVBh) * mH;
-    var vpW = (_svgVBw / _svgOrigVBw) * mW;
-    var vpH = (_svgVBh / _svgOrigVBh) * mH;
-    vp.style.left   = Math.max(0, vpL) + 'px';
-    vp.style.top    = Math.max(0, vpT) + 'px';
-    vp.style.width  = Math.min(mW, vpW) + 'px';
-    vp.style.height = Math.min(mH, vpH) + 'px';
-  } else {
-    // Fallback si SVG pas encore chargé
-    var wW = wrap.clientWidth;
-    var wH = wrap.clientHeight;
-    if(!wW || !wH) return;
-    var visW = wW / _opsZoom;
-    var visH = wH / _opsZoom;
-    var visX = -_opsPanX / _opsZoom;
-    var visY = -_opsPanY / _opsZoom;
-    var rx = mW / wW;
-    var ry = mH / wH;
-    vp.style.left   = Math.max(0, visX * rx) + 'px';
-    vp.style.top    = Math.max(0, visY * ry) + 'px';
-    vp.style.width  = Math.min(mW, visW * rx) + 'px';
-    vp.style.height = Math.min(mH, visH * ry) + 'px';
-  }
-
-  // Opacité : plus on zoom, plus la minimap est visible
-  mini.style.opacity = _opsZoom > 1.2 ? '1' : '0.55';
-
-  // Pins minimap
-  _opsRenderMinimapPins(mW, mH, wrap.clientWidth || mW, wrap.clientHeight || mH);
-}
-
-function _opsRenderMinimapPins(mW, mH, wW, wH){
-  var pinsEl = document.getElementById('ops-minimap-pins');
-  if(!pinsEl) return;
-  pinsEl.innerHTML = '';
-  var ops = DB.operations || [];
-  ops.forEach(function(op){
-    var px = op.mapX != null ? op.mapX : _pinHash(op.id, 1, 8, 88);
-    var py = op.mapY != null ? op.mapY : _pinHash(op.id, 7, 12, 82);
-    var color = op.statut==='Active'?'#16a34a': op.statut==='Planifiée'?'#3b82f6':'#6b7280';
-    var dot = document.createElement('div');
-    dot.style.cssText = 'position:absolute;width:5px;height:5px;border-radius:50%;background:'+color+
-      ';border:1px solid rgba(255,255,255,0.7);transform:translate(-50%,-50%);'+
-      'left:'+(px/100*mW)+'px;top:'+(py/100*mH)+'px;'+
-      (op.statut==='Active'?'box-shadow:0 0 4px '+color+';':'');
-    pinsEl.appendChild(dot);
-  });
-}
-
-function opsMinimapClick(e){
-  var mini = document.getElementById('ops-minimap');
-  var wrap = document.getElementById('ops-map-img-wrap');
-  if(!mini || !wrap) return;
-  var rect = mini.getBoundingClientRect();
-  var mx = e.clientX - rect.left;
-  var my = e.clientY - rect.top;
-  var mW = mini.clientWidth;
-  var mH = mini.clientHeight;
-  var wW = wrap.clientWidth;
-  var wH = wrap.clientHeight;
-
-  if(_svgReady && _svgOrigVBw && _svgOrigVBh){
-    // Convertir clic minimap → position SVG units → nouveau viewBox centré
-    var svgClickX = _svgOrigVBx + (mx / mW) * _svgOrigVBw;
-    var svgClickY = _svgOrigVBy + (my / mH) * _svgOrigVBh;
-    var halfW = _svgVBw / 2;
-    var halfH = _svgVBh / 2;
-    // Centrer le viewBox sur le point cliqué
-    var newVBx = Math.max(_svgOrigVBx, Math.min(_svgOrigVBx + _svgOrigVBw - _svgVBw, svgClickX - halfW));
-    var newVBy = Math.max(_svgOrigVBy, Math.min(_svgOrigVBy + _svgOrigVBh - _svgVBh, svgClickY - halfH));
-    _svgVBx = newVBx; _svgVBy = newVBy;
-    // Synchroniser _opsPanX/_opsPanY pour cohérence
-    _opsPanX = -((_svgVBx - _svgOrigVBx) / _svgOrigVBw) * wW * _opsZoom;
-    _opsPanY = -((_svgVBy - _svgOrigVBy) / _svgOrigVBh) * wH * _opsZoom;
-    // Appliquer directement au SVG
-    var container = document.getElementById('ops-map-svg-container');
-    var svg = container ? container.querySelector('svg') : null;
-    if(svg) svg.setAttribute('viewBox', _svgVBx+' '+_svgVBy+' '+_svgVBw+' '+_svgVBh);
-    _opsUpdateMinimap();
-  } else {
-    var rx = mW / wW;
-    var ry = mH / wH;
-    var mapX = mx / rx;
-    var mapY = my / ry;
-    _opsPanX = wW/2 - mapX * _opsZoom;
-    _opsPanY = wH/2 - mapY * _opsZoom;
-    _opsClampPan();
-    _opsApplyTransform();
-  }
 }
 
 /* ══════════════════════════════════════════
@@ -6176,7 +6027,7 @@ function opsCenterOnPin(opId){
   _opsPanY = wH/2 - pinAbsY * _opsZoom;
   _opsClampPan();
   _opsApplyTransform();
-  _opsUpdateMinimap();
+
   // Flash du pin ciblé
   var pin = document.querySelector('.op-pin[data-id="'+opId+'"]');
   if(pin){
@@ -6222,22 +6073,6 @@ function opsFullscreen(){
 document.addEventListener('fullscreenchange', function(){
   var btn = document.getElementById('ops-fullscreen-btn');
   if(btn) btn.textContent = document.fullscreenElement ? '✕' : '⛶';
-  var mini = document.getElementById('ops-minimap');
-  if(mini){
-    if(document.fullscreenElement){
-      mini.style.position='fixed';
-      mini.style.top='10px';
-      mini.style.right='10px';
-      mini.style.zIndex='9999';
-      mini.style.display='block';
-    } else {
-      mini.style.position='absolute';
-      mini.style.top='10px';
-      mini.style.right='10px';
-      mini.style.zIndex='35';
-      mini.style.display='';
-    }
-  }
 });
 
 /* ── PLACEMENT DES PINS PAR CLIC ── */
