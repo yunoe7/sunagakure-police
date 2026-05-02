@@ -378,8 +378,8 @@ textarea.form-control{resize:vertical;min-height:80px}
 .lg-field-bottom{display:flex;align-items:center;justify-content:space-between;margin-bottom:24px}
 .lg-check-label{display:flex;align-items:center;gap:8px;cursor:pointer;font-size:11px;letter-spacing:1px;color:rgba(240,232,208,0.45);font-family:'Share Tech Mono',monospace;user-select:none}
 .lg-check-label input{display:none}
-.lg-check-box{width:14px;height:14px;border:1px solid rgba(201,162,39,0.5);border-radius:3px;background:rgba(255,255,255,0.02);display:flex;align-items:center;justify-content:center;font-size:9px;color:#c9a227;transition:all 0.2s;flex-shrink:0}
-.lg-check-label input:checked + .lg-check-box{background:rgba(201,162,39,0.15);border-color:#c9a227}
+.lg-check-box{width:14px;height:14px;border:1px solid rgba(201,162,39,0.5);border-radius:3px;background:rgba(255,255,255,0.02);display:flex;align-items:center;justify-content:center;font-size:9px;color:transparent;transition:all 0.2s;flex-shrink:0}
+.lg-check-label input:checked + .lg-check-box{background:rgba(201,162,39,0.15);border-color:#c9a227;color:#c9a227}
 .lg-forgot-link{font-family:'Share Tech Mono',monospace;font-size:9px;letter-spacing:1.5px;color:rgba(192,65,14,0.7);cursor:pointer;text-transform:uppercase;transition:color 0.2s;text-decoration:none}
 .lg-forgot-link:hover{color:#e05c1a}
 /* Submit button */
@@ -1909,7 +1909,7 @@ document.addEventListener('DOMContentLoaded',function(){if(localStorage.getItem(
 
         <div class="lg-field-bottom">
           <label class="lg-check-label">
-            <input type="checkbox" id="remember-me">
+            <input type="checkbox" id="remember-me" checked>
             <div class="lg-check-box">✓</div>
             Se souvenir de moi
           </label>
@@ -2011,32 +2011,8 @@ document.addEventListener('DOMContentLoaded',function(){if(localStorage.getItem(
     <!-- Articles dynamiques (publiés) -->
     <div id="lg-lore-articles" class="lg-lore-articles"></div>
 
-    <!-- Article d'exemple (affiché si aucun publié) -->
-    <div id="lg-lore-example">
-      <div class="lg-lore-layout">
-        <div>
-          <div class="lg-lore-section-wrap" style="margin-bottom:44px">
-            <div class="lg-lore-era-tag">Fondation de Sunagakure</div>
-            <h2 class="lg-lore-section-title">La Création — Un ordre né du sable</h2>
-            <p class="lg-lore-p">Peu après la fondation du Village Caché du Sable, le <strong>Kazekage fondateur</strong> prit l'une des décisions les plus marquantes de l'histoire de Sunagakure : la création d'une force de police militaire dédiée à maintenir l'ordre et la sécurité intérieure du village.</p>
-            <p class="lg-lore-p">À cette époque, Suna était encore en pleine construction. Les clans du désert, fiers et indépendants, devaient apprendre à coexister sous une même bannière. Le Kazekage comprit qu'aucune menace extérieure ne pouvait être affrontée sans une cohésion intérieure absolue.</p>
-          </div>
-          <div class="lg-lore-divider"><span>✦</span></div>
-          <div style="margin-bottom:44px">
-            <div class="lg-lore-era-tag">Rôle & Mission</div>
-            <h2 class="lg-lore-section-title">Gardiens du Sable</h2>
-            <p class="lg-lore-p">La Police de Sunagakure fut fondée pour incarner la loi dans chaque grain de sable du village. Une institution d'élite, recrutant parmi les shinobi les plus rigoureux, chargée de faire respecter les lois du Kazekage et de protéger les habitants.</p>
-            <p class="lg-lore-p">Au fil des générations, la Police du Sable s'est forgé une réputation de <strong>discipline absolue</strong> et d'intégrité sans faille, devenant le pilier invisible sur lequel repose la paix de Sunagakure.</p>
-          </div>
-        </div>
-        <aside>
-          <div class="lg-lore-card"><div class="lg-lore-card-lbl">Fondateur</div><div class="lg-lore-card-val">Kazekage</div><div class="lg-lore-card-sub">Père fondateur de l'ordre</div></div>
-          <div class="lg-lore-card"><div class="lg-lore-card-lbl">Symbole</div><div class="lg-lore-card-val">Le Tanuki d'Acier</div><div class="lg-lore-card-sub">Protection et vigilance</div></div>
-          <div class="lg-lore-card"><div class="lg-lore-card-lbl">Devise</div><div class="lg-lore-card-val">Volonté du Vent</div><div class="lg-lore-card-sub">Protéger, servir, perdurer</div></div>
-          <div class="lg-lore-quote"><p>« Le sable efface les traces, mais jamais les crimes commis sous notre ciel. »</p><cite>— Doctrine fondatrice de la Police de Suna</cite></div>
-        </aside>
-      </div>
-    </div>
+    <!-- Article d'exemple (affiché si aucun publié) — contenu géré via panneau admin -->
+    <div id="lg-lore-example"></div>
 
     <!-- CTA connexion -->
     <div class="lg-lore-cta">
@@ -2519,6 +2495,81 @@ document.addEventListener('DOMContentLoaded',function(){if(localStorage.getItem(
   </style>
 
   <div class="lore-wrap">
+
+    <!-- ══ PANNEAU ÉDITEUR PAGE D'ACCUEIL (admin only) ══ -->
+    <div id="lore-preview-admin-panel" style="display:none;margin-bottom:32px;border:1px solid rgba(201,162,39,0.2);border-radius:10px;overflow:hidden;background:rgba(20,16,9,0.8)">
+      <div onclick="lpToggle()" style="padding:14px 20px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;background:rgba(201,162,39,0.05);border-bottom:1px solid transparent;transition:border-color 0.2s" id="lp-header">
+        <div style="display:flex;align-items:center;gap:12px">
+          <span style="font-size:18px">✏️</span>
+          <div>
+            <div style="font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#d4b44a">Éditer la page d'accueil publique</div>
+            <div style="font-family:'Share Tech Mono',monospace;font-size:8px;letter-spacing:1.5px;color:rgba(201,162,39,0.35);text-transform:uppercase;margin-top:1px">Modifie le contenu visible avant connexion</div>
+          </div>
+        </div>
+        <span id="lp-arrow" style="color:rgba(201,162,39,0.4);font-size:11px;transition:transform 0.25s">▼</span>
+      </div>
+
+      <div id="lp-body" style="display:none;padding:22px 24px">
+        <style>
+          .lp-tab-bar{display:flex;gap:4px;margin-bottom:20px;background:rgba(255,255,255,0.03);border:1px solid rgba(201,162,39,0.12);border-radius:6px;padding:3px}
+          .lp-tab{flex:1;padding:7px 10px;border:none;background:none;cursor:pointer;font-family:'Share Tech Mono',monospace;font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:rgba(232,223,200,0.35);border-radius:4px;transition:all 0.2s}
+          .lp-tab.active{background:rgba(201,162,39,0.12);color:#d4b44a;border:1px solid rgba(201,162,39,0.2)}
+          .lp-input{width:100%;background:rgba(255,255,255,0.04);border:1px solid rgba(201,162,39,0.18);border-radius:5px;padding:8px 11px;color:#e8dfc8;font-size:12px;font-family:'Barlow',sans-serif;outline:none;transition:border-color 0.2s}
+          .lp-input:focus{border-color:rgba(201,162,39,0.45)}
+          .lp-input::placeholder{color:rgba(232,223,200,0.2)}
+          .lp-label{font-family:'Share Tech Mono',monospace;font-size:8px;letter-spacing:2px;color:rgba(201,162,39,0.45);text-transform:uppercase;display:block;margin-bottom:4px}
+          .lp-section-block{background:rgba(255,255,255,0.025);border:1px solid rgba(201,162,39,0.12);border-radius:8px;padding:16px;margin-bottom:12px;position:relative}
+          .lp-card-block{background:rgba(255,255,255,0.025);border:1px solid rgba(201,162,39,0.12);border-radius:8px;padding:14px;margin-bottom:10px;display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:10px;align-items:end}
+          .lp-del-btn{width:30px;height:30px;background:rgba(220,38,38,0.07);border:1px solid rgba(220,38,38,0.2);border-radius:5px;cursor:pointer;color:rgba(248,113,113,0.6);font-size:14px;display:flex;align-items:center;justify-content:center;transition:all 0.15s;flex-shrink:0}
+          .lp-del-btn:hover{background:rgba(220,38,38,0.15);color:#f87171;border-color:rgba(220,38,38,0.4)}
+          .lp-add-btn{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;background:rgba(201,162,39,0.06);border:1px dashed rgba(201,162,39,0.25);border-radius:6px;cursor:pointer;font-family:'Share Tech Mono',monospace;font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:rgba(201,162,39,0.5);transition:all 0.2s;margin-top:6px}
+          .lp-add-btn:hover{background:rgba(201,162,39,0.1);color:#c9a227;border-color:rgba(201,162,39,0.4)}
+          .lp-save-btn{display:flex;align-items:center;gap:8px;padding:10px 24px;background:linear-gradient(135deg,rgba(192,65,14,0.7),rgba(160,52,8,0.7));border:1px solid rgba(192,65,14,0.4);border-radius:6px;cursor:pointer;font-family:'Share Tech Mono',monospace;font-size:10px;letter-spacing:2px;text-transform:uppercase;color:#fff;transition:all 0.2s;margin-top:20px}
+          .lp-save-btn:hover{box-shadow:0 4px 16px rgba(192,65,14,0.3);transform:translateY(-1px)}
+          .lp-drag-handle{color:rgba(201,162,39,0.25);font-size:14px;cursor:grab;margin-right:6px}
+          @media(max-width:768px){.lp-card-block{grid-template-columns:1fr;}.lp-tab{font-size:8px;padding:6px 6px}}
+        </style>
+
+        <div class="lp-tab-bar">
+          <button class="lp-tab active" onclick="lpTab(this,'sections')">📝 Sections</button>
+          <button class="lp-tab" onclick="lpTab(this,'cards')">🃏 Encarts</button>
+          <button class="lp-tab" onclick="lpTab(this,'quote')">💬 Citation</button>
+        </div>
+
+        <!-- TAB SECTIONS -->
+        <div id="lp-tab-sections">
+          <div id="lp-sections-list"></div>
+          <button class="lp-add-btn" onclick="lpAddSection()">＋ Ajouter une section</button>
+        </div>
+
+        <!-- TAB CARDS -->
+        <div id="lp-tab-cards" style="display:none">
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:8px;margin-bottom:8px;padding:0 4px">
+            <span class="lp-label">Label</span>
+            <span class="lp-label">Valeur principale</span>
+            <span class="lp-label">Sous-titre</span>
+            <span></span>
+          </div>
+          <div id="lp-cards-list"></div>
+          <button class="lp-add-btn" onclick="lpAddCard()">＋ Ajouter un encart</button>
+        </div>
+
+        <!-- TAB QUOTE -->
+        <div id="lp-tab-quote" style="display:none">
+          <div style="margin-bottom:14px">
+            <label class="lp-label">Texte de la citation</label>
+            <textarea id="lp-quote-text" class="lp-input" rows="3" style="resize:vertical" placeholder="« Le sable efface les traces… »"></textarea>
+          </div>
+          <div>
+            <label class="lp-label">Source / Auteur</label>
+            <input id="lp-quote-cite" class="lp-input" placeholder="— Doctrine fondatrice de la Police de Suna">
+          </div>
+        </div>
+
+        <button class="lp-save-btn" onclick="lpSave()">💾 Sauvegarder les modifications</button>
+      </div>
+    </div>
+    <!-- ══ /PANNEAU ÉDITEUR ══ -->
 
     <!-- HERO -->
     <div class="lore-hero">
@@ -5346,6 +5397,180 @@ function lgRenderLorePreview(){
 if(document.readyState==='loading'){document.addEventListener('DOMContentLoaded',lgRenderLorePreview);}
 else{lgRenderLorePreview();}
 
+// ─── LORE PREVIEW EXAMPLE — données éditables ───
+var LP_KEY='suna_lore_preview';
+var LP_DEFAULTS={
+  sections:[
+    {id:1,era:'Fondation de Sunagakure',title:'La Création — Un ordre né du sable',paras:[
+      "Peu après la fondation du Village Caché du Sable, le <strong>Kazekage fondateur</strong> prit l'une des décisions les plus marquantes de l'histoire de Sunagakure : la création d'une force de police militaire dédiée à maintenir l'ordre et la sécurité intérieure du village.",
+      "À cette époque, Suna était encore en pleine construction. Les clans du désert, fiers et indépendants, devaient apprendre à coexister sous une même bannière. Le Kazekage comprit qu'aucune menace extérieure ne pouvait être affrontée sans une cohésion intérieure absolue."
+    ]},
+    {id:2,era:'Rôle & Mission',title:'Gardiens du Sable',paras:[
+      "La Police de Sunagakure fut fondée pour incarner la loi dans chaque grain de sable du village. Une institution d'élite, recrutant parmi les shinobi les plus rigoureux, chargée de faire respecter les lois du Kazekage et de protéger les habitants.",
+      "Au fil des générations, la Police du Sable s'est forgé une réputation de <strong>discipline absolue</strong> et d'intégrité sans faille, devenant le pilier invisible sur lequel repose la paix de Sunagakure."
+    ]}
+  ],
+  cards:[
+    {id:1,lbl:'Fondateur',val:'Kazekage',sub:"Père fondateur de l'ordre"},
+    {id:2,lbl:'Symbole',val:"Le Tanuki d'Acier",sub:'Protection et vigilance'},
+    {id:3,lbl:'Devise',val:'Volonté du Vent',sub:'Protéger, servir, perdurer'}
+  ],
+  quote:{text:"« Le sable efface les traces, mais jamais les crimes commis sous notre ciel. »",cite:"— Doctrine fondatrice de la Police de Suna"}
+};
+function lpGetData(){try{var d=JSON.parse(localStorage.getItem(LP_KEY));return(d&&d.sections)?d:JSON.parse(JSON.stringify(LP_DEFAULTS));}catch(e){return JSON.parse(JSON.stringify(LP_DEFAULTS));}}
+function lpSetData(d){try{localStorage.setItem(LP_KEY,JSON.stringify(d));}catch(e){}}
+var _lpNextId=Date.now();
+
+// Rendu dynamique de l'exemple sur la page de login
+function lgRenderLoreExample(){
+  var ex=document.getElementById('lg-lore-example');
+  if(!ex)return;
+  var d=lpGetData();
+  var leftHTML='';
+  (d.sections||[]).forEach(function(s,i){
+    if(i>0)leftHTML+='<div class="lg-lore-divider"><span>✦</span></div>';
+    leftHTML+='<div style="margin-bottom:44px">';
+    if(s.era)leftHTML+='<div class="lg-lore-era-tag">'+s.era+'</div>';
+    leftHTML+='<h2 class="lg-lore-section-title">'+s.title+'</h2>';
+    (s.paras||[]).forEach(function(p){leftHTML+='<p class="lg-lore-p">'+p+'</p>';});
+    leftHTML+='</div>';
+  });
+  var rightHTML='';
+  (d.cards||[]).forEach(function(c){
+    rightHTML+='<div class="lg-lore-card"><div class="lg-lore-card-lbl">'+c.lbl+'</div><div class="lg-lore-card-val">'+c.val+'</div><div class="lg-lore-card-sub">'+c.sub+'</div></div>';
+  });
+  if(d.quote&&d.quote.text){
+    rightHTML+='<div class="lg-lore-quote"><p>'+d.quote.text+'</p>'+(d.quote.cite?'<cite>'+d.quote.cite+'</cite>':'')+'</div>';
+  }
+  ex.innerHTML='<div class="lg-lore-layout"><div>'+leftHTML+'</div><aside>'+rightHTML+'</aside></div>';
+}
+if(document.readyState==='loading'){document.addEventListener('DOMContentLoaded',lgRenderLoreExample);}
+else{lgRenderLoreExample();}
+
+// ─── PANNEAU ADMIN : toggle ───
+var _lpOpen=false;
+function lpToggle(){
+  _lpOpen=!_lpOpen;
+  var body=document.getElementById('lp-body');
+  var arrow=document.getElementById('lp-arrow');
+  var hdr=document.getElementById('lp-header');
+  if(body)body.style.display=_lpOpen?'block':'none';
+  if(arrow)arrow.style.transform=_lpOpen?'rotate(180deg)':'';
+  if(hdr)hdr.style.borderBottomColor=_lpOpen?'rgba(201,162,39,0.15)':'transparent';
+  if(_lpOpen)lpRenderAll();
+}
+function lpTab(btn,tab){
+  ['sections','cards','quote'].forEach(function(t){
+    var el2=document.getElementById('lp-tab-'+t);
+    if(el2)el2.style.display=(t===tab)?'block':'none';
+  });
+  document.querySelectorAll('.lp-tab').forEach(function(b){b.classList.remove('active');});
+  btn.classList.add('active');
+}
+
+// ─── RENDU DES LISTES ───
+function lpRenderAll(){lpRenderSections();lpRenderCards();lpLoadQuote();}
+
+function lpRenderSections(){
+  var d=lpGetData();
+  var list=document.getElementById('lp-sections-list');
+  if(!list)return;
+  if(!d.sections||!d.sections.length){list.innerHTML='<div style="font-family:Share Tech Mono,monospace;font-size:9px;color:rgba(201,162,39,0.3);text-align:center;padding:16px">Aucune section — cliquez sur ＋</div>';return;}
+  list.innerHTML=d.sections.map(function(s,i){
+    return '<div class="lp-section-block" id="lp-sec-'+s.id+'">'
+      +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">'
+      +'<span style="font-family:Share Tech Mono,monospace;font-size:8px;letter-spacing:2px;color:rgba(201,162,39,0.4);text-transform:uppercase">Section '+(i+1)+'</span>'
+      +'<button class="lp-del-btn" onclick="lpDelSection('+s.id+')">🗑</button>'
+      +'</div>'
+      +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">'
+      +'<div><label class="lp-label">Ère / Tag</label><input class="lp-input" id="lp-s-era-'+s.id+'" value="'+_lpEsc(s.era||'')+'" placeholder="Ex : Fondation de Sunagakure"></div>'
+      +'<div><label class="lp-label">Titre</label><input class="lp-input" id="lp-s-title-'+s.id+'" value="'+_lpEsc(s.title||'')+'" placeholder="Ex : La Création…"></div>'
+      +'</div>'
+      +'<label class="lp-label">Paragraphes <span style="opacity:0.5">(séparer par une ligne vide — HTML autorisé)</span></label>'
+      +'<textarea class="lp-input" id="lp-s-paras-'+s.id+'" rows="5" style="resize:vertical">'+_lpEsc((s.paras||[]).join('\n\n'))+'</textarea>'
+      +'</div>';
+  }).join('');
+}
+
+function lpRenderCards(){
+  var d=lpGetData();
+  var list=document.getElementById('lp-cards-list');
+  if(!list)return;
+  if(!d.cards||!d.cards.length){list.innerHTML='<div style="font-family:Share Tech Mono,monospace;font-size:9px;color:rgba(201,162,39,0.3);text-align:center;padding:16px">Aucun encart</div>';return;}
+  list.innerHTML=d.cards.map(function(c){
+    return '<div class="lp-card-block" id="lp-card-'+c.id+'">'
+      +'<div><input class="lp-input" id="lp-c-lbl-'+c.id+'" value="'+_lpEsc(c.lbl||'')+'" placeholder="Ex : Fondateur"></div>'
+      +'<div><input class="lp-input" id="lp-c-val-'+c.id+'" value="'+_lpEsc(c.val||'')+'" placeholder="Ex : Kazekage"></div>'
+      +'<div><input class="lp-input" id="lp-c-sub-'+c.id+'" value="'+_lpEsc(c.sub||'')+'" placeholder="Sous-titre…"></div>'
+      +'<button class="lp-del-btn" onclick="lpDelCard('+c.id+')">🗑</button>'
+      +'</div>';
+  }).join('');
+}
+
+function lpLoadQuote(){
+  var d=lpGetData();
+  var qt=document.getElementById('lp-quote-text');
+  var qc=document.getElementById('lp-quote-cite');
+  if(qt)qt.value=(d.quote&&d.quote.text)||'';
+  if(qc)qc.value=(d.quote&&d.quote.cite)||'';
+}
+
+function _lpEsc(s){return String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;');}
+function _lpVal(id){var e=document.getElementById(id);return e?e.value:'';}
+
+// ─── ADD / DELETE ───
+function lpAddSection(){
+  var d=lpGetData();
+  var newId=++_lpNextId;
+  d.sections.push({id:newId,era:'',title:'',paras:['']});
+  lpSetData(d);lpRenderSections();
+  setTimeout(function(){var el2=document.getElementById('lp-s-era-'+newId);if(el2){el2.focus();el2.closest('.lp-section-block').scrollIntoView({behavior:'smooth',block:'center'});}},50);
+}
+function lpDelSection(id){
+  if(!confirm('Supprimer cette section ?'))return;
+  var d=lpGetData();
+  d.sections=d.sections.filter(function(s){return s.id!==id;});
+  lpSetData(d);lpRenderSections();lgRenderLoreExample();
+}
+function lpAddCard(){
+  var d=lpGetData();
+  var newId=++_lpNextId;
+  d.cards.push({id:newId,lbl:'',val:'',sub:''});
+  lpSetData(d);lpRenderCards();
+  setTimeout(function(){var el2=document.getElementById('lp-c-lbl-'+newId);if(el2)el2.focus();},50);
+}
+function lpDelCard(id){
+  if(!confirm('Supprimer cet encart ?'))return;
+  var d=lpGetData();
+  d.cards=d.cards.filter(function(c){return c.id!==id;});
+  lpSetData(d);lpRenderCards();lgRenderLoreExample();
+}
+
+// ─── SAUVEGARDE ───
+function lpSave(){
+  var d=lpGetData();
+  // Lire sections
+  d.sections.forEach(function(s){
+    var era=_lpVal('lp-s-era-'+s.id);
+    var title=_lpVal('lp-s-title-'+s.id);
+    var parasRaw=_lpVal('lp-s-paras-'+s.id);
+    s.era=era;s.title=title;
+    s.paras=parasRaw.split(/\n{2,}/).map(function(p){return p.trim();}).filter(Boolean);
+    if(!s.paras.length)s.paras=[''];
+  });
+  // Lire cards
+  d.cards.forEach(function(c){
+    c.lbl=_lpVal('lp-c-lbl-'+c.id);
+    c.val=_lpVal('lp-c-val-'+c.id);
+    c.sub=_lpVal('lp-c-sub-'+c.id);
+  });
+  // Lire quote
+  d.quote={text:_lpVal('lp-quote-text'),cite:_lpVal('lp-quote-cite')};
+  lpSetData(d);
+  lgRenderLoreExample();
+  if(typeof showToast==='function')showToast('✅ Page d\'accueil mise à jour','success');
+}
+
 // ─── LOGIN CANVAS DUNES ───
 (function(){
   function lgInitCanvas(){
@@ -5780,6 +6005,9 @@ function applyLogin(){
   }
   // Éléments admin-only (opérations, effectifs, sanctions)
   const isAdminUser=currentUser&&currentUser.role==="admin";
+  // Panneau éditeur page d'accueil : visible seulement pour les admins
+  var _lpPanel=document.getElementById('lore-preview-admin-panel');
+  if(_lpPanel)_lpPanel.style.display=isAdminUser?'block':'none';
   const isMember=!isVisiteur();
   document.querySelectorAll('[data-admin-only="true"]').forEach(item=>{
     item.style.display=canModify()?'':'none';
