@@ -5280,13 +5280,18 @@ function initFirebaseSync(){
           const freshUser=DB.users.find(u=>u.id===currentUser.id&&u.statut!=="Désactivé");
           if(freshUser){
             currentUser=freshUser;
-            // Si le mot de passe a changé, invalider la session mémorisée
+            // Si le hash Firebase diffère du hash local mémorisé, on met simplement
+            // à jour la session avec le nouveau hash au lieu de la supprimer.
+            // Sinon, après un refresh post-migration / sync inter-appareils,
+            // l'utilisateur serait déconnecté à tort au prochain rechargement.
+            // (Un vrai changement de mot de passe passe par un logout/login explicite
+            //  qui réécrit la session correctement.)
             try{
               const saved=localStorage.getItem("suna_session");
               if(saved){
                 const s=JSON.parse(saved);
                 if(s.passHash&&s.passHash!==freshUser.pass){
-                  localStorage.removeItem("suna_session");
+                  localStorage.setItem("suna_session",JSON.stringify({id:freshUser.id,passHash:freshUser.pass}));
                 }
               }
             }catch(e){}
@@ -5767,9 +5772,18 @@ function checkRememberMe(){
   if(!DB.users||DB.users.length===0)return false;
   try{
     const s=JSON.parse(saved);
-    // Validation : on compare l'ID + le hash du mot de passe stocké LOCALEMENT
-    // (ne dépend pas de Firebase → résiste aux écrasements inter-appareils)
-    const user=DB.users.find(u=>u.id===s.id&&u.pass===s.passHash&&u.statut!=="Désactivé");
+    // 1) Cas idéal : l'ID + le hash correspondent encore exactement.
+    let user=DB.users.find(u=>u.id===s.id&&u.pass===s.passHash&&u.statut!=="Désactivé");
+    // 2) Fallback : l'ID correspond et le compte est actif, mais le hash a changé
+    //    (migration silencieuse, sync inter-appareils, re-hash). On accepte la session
+    //    et on met à jour le hash mémorisé. Un vrai changement de mot de passe par
+    //    l'admin invalide la session via une déconnexion explicite, pas via cette comparaison.
+    if(!user){
+      user=DB.users.find(u=>u.id===s.id&&u.statut!=="Désactivé");
+      if(user&&user.role!=="visiteur"){
+        try{localStorage.setItem("suna_session",JSON.stringify({id:user.id,passHash:user.pass}));}catch(e){}
+      }
+    }
     // Sécurité supplémentaire : ne jamais auto-connecter un compte visiteur via "Se souvenir de moi".
     // Les visiteurs doivent toujours se connecter manuellement.
     if(user&&user.role!=="visiteur"){currentUser=user;_loginSource='auto';applyLogin();return true}
@@ -15459,7 +15473,20 @@ var bbNextId = 100;
 var _bbPortraitData = ''; // base64 ou URL
 
 function bbGetNinjas() {
-  try { return JSON.parse(localStorage.getItem('bb_ninjas') || 'null') || bbDefaultNinjas(); } catch(e) { return bbDefaultNinjas(); }
+  var list;
+  try { list = JSON.parse(localStorage.getItem('bb_ninjas') || 'null') || bbDefaultNinjas(); } catch(e) { list = bbDefaultNinjas(); }
+  // Déduplication par ID au cas où des doublons auraient été créés (bug d'ID répété)
+  if (Array.isArray(list)) {
+    var seen = {}; var dedup = [];
+    for (var i=0; i<list.length; i++){
+      var n = list[i]; if (!n) continue;
+      var key = String(n.id);
+      if (seen[key]) continue;
+      seen[key] = 1; dedup.push(n);
+    }
+    list = dedup;
+  }
+  return list;
 }
 function bbSaveNinjas(list) {
   try { localStorage.setItem('bb_ninjas', JSON.stringify(list)); } catch(e) {}
@@ -15467,6 +15494,17 @@ function bbSaveNinjas(list) {
     var r = window._fbRef(window._fbDB, 'sunagakure/bingobook');
     window._fbSet(r, list);
   }
+}
+// Calcule un nouvel ID unique strictement supérieur à tous les IDs existants
+function bbComputeNextId(list) {
+  var max = 0;
+  if (Array.isArray(list)) {
+    for (var i=0; i<list.length; i++){
+      var v = parseInt(list[i] && list[i].id, 10);
+      if (!isNaN(v) && v > max) max = v;
+    }
+  }
+  return Math.max(max + 1, 100);
 }
 function bbDefaultNinjas() {
   return [
@@ -15672,7 +15710,8 @@ function bbSaveFiche() {
     if(idx>-1){ data.id=bbEditingId; list[idx]=data; }
     if(typeof showToast==='function') showToast('✅ Fiche modifiée', 'success');
   } else {
-    data.id = bbNextId++;
+    data.id = bbComputeNextId(list);
+    bbNextId = data.id + 1; // pour compat éventuelle si ailleurs
     list.unshift(data);
     if(typeof showToast==='function') showToast('✅ Fiche ajoutée au Bingo Book', 'success');
   }
@@ -15702,16 +15741,29 @@ function bbCancelForm() {
 }
 
 document.addEventListener('DOMContentLoaded', function(){
-  if (window._fbDB && window._fbRef && window._fbOn) {
-    var r = window._fbRef(window._fbDB, 'sunagakure/bingobook');
-    window._fbOn(r, 'value', function(snap){
-      var val = snap.val();
-      if (val && Array.isArray(val) && val.length) {
-        try { localStorage.setItem('bb_ninjas', JSON.stringify(val)); } catch(e){}
-        bbRender();
-      }
-    });
-  }
+  // Firebase est chargé en module → window._fbDB peut ne pas être prêt à DOMContentLoaded.
+  // De plus, la fonction exposée s'appelle _fbOnValue (pas _fbOn).
+  // On attend donc activement qu'elle soit dispo, puis on attache le listener.
+  var bbWaits = 0;
+  var bbItv = setInterval(function(){
+    bbWaits++;
+    if (window._fbDB && window._fbRef && window._fbOnValue) {
+      clearInterval(bbItv);
+      try {
+        var r = window._fbRef(window._fbDB, 'sunagakure/bingobook');
+        window._fbOnValue(r, function(snap){
+          var val = snap.val();
+          if (val && Array.isArray(val) && val.length) {
+            try { localStorage.setItem('bb_ninjas', JSON.stringify(val)); } catch(e){}
+            bbRender();
+          }
+        });
+      } catch(e){}
+    } else if (bbWaits > 60) {
+      // ~6 secondes : on abandonne sans casser la page (mode local pur)
+      clearInterval(bbItv);
+    }
+  }, 100);
 });
 </script>
 <!-- BINGO BOOK — Modal dossier (hors page-content, sinon will-change:transform casse position:fixed) -->
