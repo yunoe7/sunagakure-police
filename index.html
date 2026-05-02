@@ -2653,40 +2653,69 @@ document.addEventListener('DOMContentLoaded',function(){if(localStorage.getItem(
       display:block;
       font-weight:700;
     }
-    #page-codepenal .cp-add-body .form-control{
-      background:#fffdf5 !important;
-      background-color:#fffdf5 !important;
-      border:1.5px solid rgba(120,80,20,0.35) !important;
-      color:#1f0e02 !important;
+    #page-codepenal .cp-add-body .form-control,
+    #page-codepenal #cp-nom,
+    #page-codepenal #cp-amende,
+    #page-codepenal #cp-duree,
+    #page-codepenal #cp-notes,
+    #page-codepenal #cp-cat,
+    #page-codepenal #cp-prison,
+    #page-codepenal input#cp-nom.form-control,
+    #page-codepenal input#cp-amende.form-control,
+    #page-codepenal input#cp-duree.form-control,
+    #page-codepenal input#cp-notes.form-control,
+    #page-codepenal select#cp-cat.form-control,
+    #page-codepenal select#cp-prison.form-control{
+      background:#fffaf0 !important;
+      background-color:#fffaf0 !important;
+      background-image:none !important;
+      border:1.5px solid rgba(120,80,20,0.45) !important;
+      color:#1a0d02 !important;
       font-family:'Barlow',sans-serif !important;
       font-size:13.5px !important;
       font-weight:500 !important;
       padding:10px 14px !important;
       border-radius:6px !important;
+      box-shadow:inset 0 1px 3px rgba(60,30,5,0.05) !important;
     }
-    #page-codepenal .cp-add-body .form-control::placeholder{
-      color:rgba(80,45,8,0.5) !important;
-      opacity:1 !important;
+    #page-codepenal .cp-add-body .form-control::placeholder,
+    #page-codepenal #cp-nom::placeholder,
+    #page-codepenal #cp-amende::placeholder,
+    #page-codepenal #cp-duree::placeholder,
+    #page-codepenal #cp-notes::placeholder{
+      color:#7a4e08 !important;
+      opacity:0.7 !important;
       font-style:italic !important;
+      font-weight:500 !important;
     }
-    #page-codepenal .cp-add-body .form-control:focus{
+    #page-codepenal .cp-add-body .form-control:focus,
+    #page-codepenal #cp-nom:focus,
+    #page-codepenal #cp-amende:focus,
+    #page-codepenal #cp-duree:focus,
+    #page-codepenal #cp-notes:focus,
+    #page-codepenal #cp-cat:focus,
+    #page-codepenal #cp-prison:focus{
       border-color:#7a4e08 !important;
-      box-shadow:0 0 0 3px rgba(120,80,20,0.18) !important;
+      box-shadow:0 0 0 3px rgba(120,80,20,0.22) !important;
       background:#ffffff !important;
       background-color:#ffffff !important;
       outline:none !important;
     }
-    #page-codepenal .cp-add-body select.form-control{
-      cursor:pointer;
+    #page-codepenal #cp-cat,
+    #page-codepenal #cp-prison{
+      cursor:pointer !important;
     }
-    #page-codepenal .cp-add-body select.form-control option{
+    #page-codepenal #cp-cat option,
+    #page-codepenal #cp-prison option{
       background:#fffaeb !important;
       background-color:#fffaeb !important;
-      color:#1f0e02 !important;
+      color:#1a0d02 !important;
       font-weight:500 !important;
     }
-    #page-codepenal .cp-add-body select.form-control option:checked,
-    #page-codepenal .cp-add-body select.form-control option:hover{
+    #page-codepenal #cp-cat option:checked,
+    #page-codepenal #cp-prison option:checked,
+    #page-codepenal #cp-cat option:hover,
+    #page-codepenal #cp-prison option:hover{
       background:#f4e8c8 !important;
       background-color:#f4e8c8 !important;
       color:#3a1f06 !important;
@@ -5359,7 +5388,7 @@ document.addEventListener('DOMContentLoaded',function(){if(localStorage.getItem(
         ℹ️ Les ninjas recensés sont <strong style="color:#a78bfa">automatiquement ajoutés</strong> à ce registre selon leur grade. Utilisez ce formulaire uniquement pour des cas exceptionnels (ninja non-recensé, agent externe…).
       </div>
       <div class="imp-add-row">
-        <div><label>Nom et prénom</label><input type="text" id="imp-add-nom" class="form-control" placeholder="Ex : Naruto Uzumaki"></div>
+        <div><label>Nom et prénom</label><input type="text" id="imp-add-nom" class="form-control" placeholder="Ex : Shun Sabaku"></div>
         <div><label>Grade</label><select id="imp-add-grade" class="form-control"></select></div>
         <button class="btn btn-primary" onclick="impAddNinja()" style="height:38px">+ Ajouter</button>
       </div>
