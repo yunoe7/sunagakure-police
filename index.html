@@ -2848,117 +2848,739 @@ document.addEventListener('DOMContentLoaded',function(){if(localStorage.getItem(
   <!-- BINGO BOOK -->
   <div class="page-content" id="page-bingobook">
     <style>
-      /* ── BINGO BOOK — THEME SOMBRE LIVRE ── */
-      #page-bingobook{background:#0e0b07;min-height:100vh;padding:0}
-      .bb-hero{padding:36px 32px 20px;border-bottom:1px solid rgba(180,140,20,0.12)}
-      .bb-hero-label{font-family:'Share Tech Mono',monospace;font-size:9px;letter-spacing:4px;color:rgba(180,140,20,0.5);text-transform:uppercase;margin-bottom:8px;display:flex;align-items:center;gap:8px}
-      .bb-hero-label::before{content:'';display:inline-block;width:8px;height:8px;background:#dc2626;border-radius:1px}
-      .bb-hero-title{font-family:'Cinzel',serif;font-size:34px;font-weight:700;color:#fff;line-height:1;margin-bottom:4px}
-      .bb-hero-title span{color:#d4b44a}
-      .bb-hero-sub{font-size:12px;color:rgba(255,255,255,0.4);font-family:'Share Tech Mono',monospace;letter-spacing:1.5px}
-      .bb-toolbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:16px 32px;border-bottom:1px solid rgba(180,140,20,0.08)}
-      .bb-search-wrap{position:relative;flex:1;min-width:200px;max-width:320px}
-      .bb-search-wrap input{background:rgba(255,255,255,0.04);border:1px solid rgba(180,140,20,0.15);color:#fff;border-radius:6px;padding:8px 12px 8px 32px;font-size:12px;width:100%;outline:none;font-family:'Share Tech Mono',monospace;transition:border-color 0.2s}
-      .bb-search-wrap input:focus{border-color:rgba(180,140,20,0.4)}
-      .bb-search-wrap::before{content:'🔍';position:absolute;left:9px;top:50%;transform:translateY(-50%);font-size:11px;pointer-events:none}
-      .bb-search-wrap input::placeholder{color:rgba(255,255,255,0.25)}
-      .bb-filters{display:flex;gap:6px;flex-wrap:wrap}
-      .bb-fbtn{background:transparent;border:1px solid rgba(180,140,20,0.15);color:rgba(255,255,255,0.4);font-family:'Share Tech Mono',monospace;font-size:9px;padding:6px 14px;border-radius:4px;cursor:pointer;letter-spacing:1.5px;transition:all 0.18s;white-space:nowrap}
-      .bb-fbtn:hover,.bb-fbtn.on{background:rgba(180,140,20,0.12);border-color:rgba(180,140,20,0.5);color:#d4b44a}
-      .bb-add-btn{background:transparent;border:1px solid rgba(180,140,20,0.3);color:#d4b44a;font-family:'Share Tech Mono',monospace;font-size:9px;padding:6px 16px;border-radius:4px;cursor:pointer;letter-spacing:1.5px;transition:all 0.2s;display:none}
-      .bb-add-btn:hover{background:rgba(180,140,20,0.15);border-color:#d4b44a}
-      .bb-body{padding:24px 32px}
-      /* Grid cartes */
-      .bb-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:16px}
-      .bb-card{background:linear-gradient(160deg,#f5ead0 0%,#e8d9b0 100%);border-radius:4px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,0.5),inset 0 0 0 1px rgba(180,140,20,0.2);transition:transform 0.2s,box-shadow 0.2s;position:relative;cursor:pointer}
-      .bb-card:hover{transform:translateY(-4px);box-shadow:0 12px 32px rgba(0,0,0,0.6),inset 0 0 0 1px rgba(180,140,20,0.3)}
-      .bb-card-header{padding:10px 12px 8px;border-bottom:1px solid rgba(120,80,20,0.2);display:flex;justify-content:space-between;align-items:center}
-      .bb-card-fiche-num{font-family:'Share Tech Mono',monospace;font-size:8px;color:rgba(100,70,20,0.6);letter-spacing:2px}
-      .bb-card-actions{display:flex;gap:4px;opacity:0;transition:opacity 0.2s}
-      .bb-card:hover .bb-card-actions{opacity:1}
-      .bb-card-btn{background:rgba(120,80,20,0.12);border:none;border-radius:3px;padding:3px 7px;cursor:pointer;font-size:11px;transition:background 0.15s;line-height:1}
-      .bb-card-btn:hover{background:rgba(120,80,20,0.25)}
-      .bb-card-btn.del:hover{background:rgba(180,30,30,0.2)}
-      .bb-card-body{display:flex;gap:10px;padding:10px 12px 12px}
-      .bb-portrait-wrap{width:64px;height:80px;flex-shrink:0;border:1px solid rgba(120,80,20,0.3);border-radius:3px;overflow:hidden;background:rgba(120,80,20,0.08);display:flex;align-items:center;justify-content:center;font-family:'Cinzel',serif;font-size:11px;color:rgba(100,70,20,0.5);text-align:center;line-height:1.3}
-      .bb-portrait-wrap img{width:100%;height:100%;object-fit:cover}
-      .bb-card-info{flex:1;min-width:0}
-      .bb-card-nom{font-family:'Cinzel',serif;font-size:14px;font-weight:700;color:#2d1a08;line-height:1.2}
-      .bb-card-prenom{font-size:11px;color:rgba(80,50,15,0.7);font-style:italic;margin-bottom:6px}
-      .bb-badge-eleve{display:inline-block;background:rgba(180,30,30,0.12);color:#8b1515;border:1px solid rgba(180,30,30,0.3);font-family:'Share Tech Mono',monospace;font-size:7.5px;letter-spacing:0.5px;padding:2px 7px;border-radius:3px;font-weight:700}
-      .bb-badge-moyen{display:inline-block;background:rgba(160,100,10,0.12);color:#7a4e08;border:1px solid rgba(160,100,10,0.3);font-family:'Share Tech Mono',monospace;font-size:7.5px;letter-spacing:0.5px;padding:2px 7px;border-radius:3px;font-weight:700}
-      .bb-badge-faible{display:inline-block;background:rgba(30,110,50,0.1);color:#1a5c2e;border:1px solid rgba(30,110,50,0.25);font-family:'Share Tech Mono',monospace;font-size:7.5px;letter-spacing:0.5px;padding:2px 7px;border-radius:3px;font-weight:700}
-      .bb-card-meta{margin-top:7px;display:flex;flex-direction:column;gap:2px}
-      .bb-card-row{font-size:10px;color:rgba(60,35,8,0.75);display:flex;gap:4px}
-      .bb-card-lbl{color:rgba(140,90,15,0.8);font-family:'Share Tech Mono',monospace;font-size:8px;letter-spacing:0.5px;flex-shrink:0}
-      .bb-card-footer{padding:8px 12px;border-top:1px solid rgba(120,80,20,0.15);display:flex;justify-content:space-between;align-items:center;background:rgba(120,80,20,0.05)}
-      .bb-reward{font-family:'Share Tech Mono',monospace;font-size:10px;color:#8b5e0a;font-weight:700}
-      .bb-desc-snip{margin-top:7px;font-size:9.5px;color:rgba(60,35,8,0.65);font-style:italic;line-height:1.45;border-top:1px solid rgba(120,80,20,0.12);padding-top:5px}
-      .bb-empty{text-align:center;padding:60px;color:rgba(255,255,255,0.25);font-style:italic;font-size:13px}
-      /* Formulaire */
-      #bb-form-wrap{background:rgba(255,255,255,0.03);border:1px solid rgba(180,140,20,0.15);border-radius:8px;padding:20px 24px;margin-bottom:20px}
-      #bb-form-wrap .form-label{color:rgba(180,140,20,0.7);font-size:9px;letter-spacing:2px;text-transform:uppercase;font-family:'Share Tech Mono',monospace;margin-bottom:5px}
-      #bb-form-wrap .form-control{background:rgba(255,255,255,0.05);border:1px solid rgba(180,140,20,0.15);color:#e8dcc8;border-radius:5px;padding:8px 11px;font-size:12px;outline:none;transition:border-color 0.2s}
-      #bb-form-wrap .form-control:focus{border-color:rgba(180,140,20,0.45);background:rgba(255,255,255,0.07)}
-      #bb-form-wrap select.form-control option{background:#1a1209;color:#e8dcc8}
-      #bb-form-wrap .form-control::placeholder{color:rgba(255,255,255,0.2)}
-      .bb-form-title{font-family:'Cinzel',serif;font-size:16px;color:#d4b44a;margin-bottom:16px;padding-bottom:10px;border-bottom:1px solid rgba(180,140,20,0.15)}
-      /* Upload image */
-      .bb-upload-zone{border:1.5px dashed rgba(180,140,20,0.25);border-radius:6px;padding:14px;text-align:center;cursor:pointer;transition:all 0.2s;position:relative;background:rgba(180,140,20,0.02)}
-      .bb-upload-zone:hover{border-color:rgba(180,140,20,0.5);background:rgba(180,140,20,0.05)}
-      .bb-upload-zone input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
-      .bb-upload-preview{width:60px;height:74px;object-fit:cover;border-radius:3px;border:1px solid rgba(180,140,20,0.25);display:none}
-      .bb-upload-label{font-size:11px;color:rgba(255,255,255,0.35);font-family:'Share Tech Mono',monospace;font-size:9px;letter-spacing:1px;margin-top:6px}
-      /* Modal dossier (livre ouvert) */
-      #bb-dossier-modal .modal{max-width:760px;background:#1a1108;border:1px solid rgba(180,140,20,0.2)}
-      #bb-dossier-modal .modal-header{background:rgba(180,140,20,0.06);border-bottom:1px solid rgba(180,140,20,0.15)}
-      #bb-dossier-modal .modal-header h3{font-family:'Share Tech Mono',monospace;font-size:10px;letter-spacing:3px;color:rgba(180,140,20,0.7)}
-      .bb-dossier-inner{display:flex;gap:0}
-      .bb-dossier-left{width:240px;flex-shrink:0;background:linear-gradient(160deg,#f5ead0,#e8d4a0);padding:24px 20px;display:flex;flex-direction:column;align-items:center;gap:14px;border-right:2px solid rgba(120,80,20,0.25)}
-      .bb-dossier-right{flex:1;padding:24px;overflow-y:auto;max-height:70vh;color:#d8cbb0}
-      .bb-dossier-portrait{width:120px;height:148px;border:2px solid rgba(120,80,20,0.4);border-radius:4px;overflow:hidden;background:rgba(120,80,20,0.1);display:flex;align-items:center;justify-content:center;font-family:'Cinzel',serif;font-size:22px;color:rgba(100,70,20,0.4);text-align:center}
-      .bb-dossier-portrait img{width:100%;height:100%;object-fit:cover}
-      .bb-dossier-nom{font-family:'Cinzel',serif;font-size:20px;font-weight:700;color:#2d1a08;text-align:center;line-height:1.2}
-      .bb-dossier-prenom{font-size:12px;color:rgba(80,50,15,0.7);font-style:italic;text-align:center}
-      .bb-dossier-right h4{font-family:'Share Tech Mono',monospace;font-size:9px;letter-spacing:3px;color:rgba(180,140,20,0.6);text-transform:uppercase;margin-bottom:10px;margin-top:0}
-      .bb-dossier-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:18px}
-      .bb-dossier-field{font-size:11px}
-      .bb-dossier-field-lbl{font-family:'Share Tech Mono',monospace;font-size:8px;letter-spacing:1.5px;color:rgba(180,140,20,0.5);margin-bottom:3px}
-      .bb-dossier-field-val{color:#d8cbb0;font-size:13px}
-      .bb-dossier-desc-box{background:rgba(180,140,20,0.05);border-left:3px solid rgba(180,140,20,0.3);padding:14px 16px;border-radius:0 6px 6px 0;font-size:12px;color:#c8b890;line-height:1.75;font-style:italic}
-      .bb-dossier-actions{margin-top:16px;display:flex;gap:8px}
+      /* ══════════════════════════════════════════════
+         BINGO BOOK — REFONTE LIVRE PARCHEMIN
+      ══════════════════════════════════════════════ */
+
+      /* ── Fond général ── */
+      #page-bingobook {
+        background: #1a130a;
+        min-height: 100vh;
+        padding: 0;
+        background-image:
+          radial-gradient(ellipse at 20% 0%, rgba(201,162,39,0.06) 0%, transparent 50%),
+          radial-gradient(ellipse at 80% 100%, rgba(192,65,14,0.06) 0%, transparent 50%);
+      }
+
+      /* ── Couverture du livre ── */
+      .bb-cover {
+        background:
+          linear-gradient(180deg, #1c1208 0%, #231609 60%, #1a1208 100%);
+        border-bottom: 3px solid #5a3a10;
+        padding: 0;
+        position: relative;
+        overflow: hidden;
+      }
+      .bb-cover::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: repeating-linear-gradient(
+          90deg,
+          transparent 0px, transparent 38px,
+          rgba(90,58,16,0.08) 38px, rgba(90,58,16,0.08) 39px
+        );
+        pointer-events: none;
+      }
+      .bb-cover-inner {
+        display: flex;
+        align-items: stretch;
+        position: relative;
+        z-index: 1;
+      }
+      /* Tranche gauche de la reliure */
+      .bb-spine {
+        width: 14px;
+        background: linear-gradient(180deg, #7a4a12, #4a2c08, #7a4a12);
+        flex-shrink: 0;
+        box-shadow: 2px 0 8px rgba(0,0,0,0.6);
+      }
+      .bb-cover-content {
+        flex: 1;
+        padding: 32px 36px 28px 28px;
+      }
+      .bb-official-stamp {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 12px;
+      }
+      .bb-stamp-dot {
+        width: 9px; height: 9px;
+        background: #dc2626;
+        border-radius: 1px;
+        box-shadow: 0 0 6px rgba(220,38,38,0.5);
+      }
+      .bb-stamp-text {
+        font-family: 'Share Tech Mono', monospace;
+        font-size: 9px;
+        letter-spacing: 4px;
+        color: rgba(220,38,38,0.75);
+        text-transform: uppercase;
+      }
+      .bb-main-title {
+        font-family: 'Cinzel', serif;
+        font-size: 42px;
+        font-weight: 900;
+        line-height: 1;
+        margin-bottom: 6px;
+        color: #f0e4c0;
+        text-shadow: 0 2px 20px rgba(0,0,0,0.8), 0 0 40px rgba(201,162,39,0.15);
+        letter-spacing: 3px;
+      }
+      .bb-main-title em {
+        font-style: normal;
+        color: #d4a820;
+      }
+      .bb-cover-divider {
+        width: 280px;
+        height: 1px;
+        background: linear-gradient(90deg, transparent, rgba(201,162,39,0.6), rgba(201,162,39,0.3), transparent);
+        margin: 10px 0;
+      }
+      .bb-cover-sub {
+        font-family: 'Barlow', sans-serif;
+        font-size: 12px;
+        color: rgba(240,228,192,0.5);
+        letter-spacing: 0.5px;
+        line-height: 1.6;
+        max-width: 520px;
+      }
+      /* Emblème décoratif */
+      .bb-cover-emblem {
+        position: absolute;
+        right: 36px;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 90px;
+        height: 90px;
+        opacity: 0.12;
+      }
+
+      /* ── Barre outils redesignée ── */
+      .bb-toolbar {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+        flex-wrap: wrap;
+        padding: 14px 24px 14px 38px;
+        background: linear-gradient(90deg, rgba(20,12,4,0.95), rgba(28,18,8,0.9));
+        border-bottom: 1px solid rgba(90,58,16,0.4);
+        position: sticky;
+        top: 0;
+        z-index: 10;
+        backdrop-filter: blur(12px);
+      }
+      .bb-search-wrap {
+        position: relative;
+        flex: 1;
+        min-width: 180px;
+        max-width: 280px;
+      }
+      .bb-search-wrap input {
+        background: rgba(255,255,255,0.04);
+        border: 1px solid rgba(180,140,20,0.2);
+        color: #e8d8b0;
+        border-radius: 5px;
+        padding: 8px 12px 8px 34px;
+        font-size: 12px;
+        width: 100%;
+        outline: none;
+        font-family: 'Barlow', sans-serif;
+        transition: border-color 0.2s, background 0.2s;
+      }
+      .bb-search-wrap input:focus {
+        border-color: rgba(180,140,20,0.5);
+        background: rgba(255,255,255,0.07);
+      }
+      .bb-search-wrap::before {
+        content: '⌕';
+        position: absolute;
+        left: 10px;
+        top: 50%;
+        transform: translateY(-50%);
+        font-size: 15px;
+        color: rgba(180,140,20,0.4);
+        pointer-events: none;
+        font-style: normal;
+      }
+      .bb-search-wrap input::placeholder { color: rgba(232,216,176,0.25); }
+      .bb-filters { display: flex; gap: 5px; flex-wrap: wrap; }
+      .bb-fbtn {
+        background: transparent;
+        border: 1px solid rgba(90,58,16,0.35);
+        color: rgba(232,208,140,0.45);
+        font-family: 'Share Tech Mono', monospace;
+        font-size: 9px;
+        padding: 6px 13px;
+        border-radius: 3px;
+        cursor: pointer;
+        letter-spacing: 1.5px;
+        transition: all 0.18s;
+        white-space: nowrap;
+        text-transform: uppercase;
+      }
+      .bb-fbtn:hover { background: rgba(180,140,20,0.08); border-color: rgba(180,140,20,0.4); color: #d4a820; }
+      .bb-fbtn.on {
+        background: rgba(180,140,20,0.14);
+        border-color: rgba(180,140,20,0.55);
+        color: #d4a820;
+        box-shadow: inset 0 1px 0 rgba(255,255,255,0.04);
+      }
+      .bb-add-btn {
+        background: linear-gradient(135deg, rgba(192,65,14,0.15), rgba(180,140,20,0.1));
+        border: 1px solid rgba(192,65,14,0.4);
+        color: #e07030;
+        font-family: 'Share Tech Mono', monospace;
+        font-size: 9px;
+        padding: 7px 16px;
+        border-radius: 3px;
+        cursor: pointer;
+        letter-spacing: 1.5px;
+        transition: all 0.2s;
+        display: none;
+        margin-left: auto;
+        text-transform: uppercase;
+      }
+      .bb-add-btn:hover {
+        background: linear-gradient(135deg, rgba(192,65,14,0.25), rgba(180,140,20,0.15));
+        border-color: rgba(192,65,14,0.7);
+        color: #f08040;
+      }
+      .bb-count-badge {
+        margin-left: 6px;
+        font-family: 'Share Tech Mono', monospace;
+        font-size: 9px;
+        color: rgba(180,140,20,0.5);
+        letter-spacing: 1px;
+      }
+
+      /* ── Corps principal ── */
+      .bb-body { padding: 28px 28px 28px 28px; }
+
+      /* ── Grille de fiches ── */
+      .bb-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+        gap: 20px;
+      }
+
+      /* ── Carte fiche ninja (parchemin) ── */
+      .bb-card {
+        background: linear-gradient(170deg, #f8edce 0%, #eedad8 30%, #e8d4a4 70%, #dfc896 100%);
+        border-radius: 3px;
+        overflow: hidden;
+        box-shadow:
+          0 6px 24px rgba(0,0,0,0.55),
+          0 2px 6px rgba(0,0,0,0.3),
+          inset 0 0 0 1px rgba(150,100,30,0.25);
+        transition: transform 0.22s cubic-bezier(.22,.68,0,1.2), box-shadow 0.22s;
+        position: relative;
+        cursor: pointer;
+      }
+      .bb-card::before {
+        /* Texture parchemin subtile */
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: url("data:image/svg+xml,%3Csvg width='200' height='200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+        pointer-events: none;
+        border-radius: 3px;
+        opacity: 0.6;
+      }
+      .bb-card:hover {
+        transform: translateY(-5px) rotate(0.4deg);
+        box-shadow:
+          0 14px 40px rgba(0,0,0,0.65),
+          0 4px 10px rgba(0,0,0,0.35),
+          inset 0 0 0 1px rgba(150,100,30,0.4);
+      }
+
+      /* En-tête de carte */
+      .bb-card-header {
+        padding: 9px 12px 8px;
+        border-bottom: 1px solid rgba(100,65,15,0.2);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        background: rgba(120,70,15,0.06);
+      }
+      .bb-card-fiche-num {
+        font-family: 'Cinzel', serif;
+        font-size: 8px;
+        color: rgba(80,45,10,0.55);
+        letter-spacing: 2px;
+        font-weight: 600;
+        text-transform: uppercase;
+      }
+      .bb-card-actions { display: flex; gap: 3px; opacity: 0; transition: opacity 0.18s; }
+      .bb-card:hover .bb-card-actions { opacity: 1; }
+      .bb-card-btn {
+        background: rgba(100,60,10,0.1);
+        border: 1px solid rgba(100,60,10,0.15);
+        border-radius: 3px;
+        padding: 3px 7px;
+        cursor: pointer;
+        font-size: 11px;
+        transition: background 0.15s;
+        line-height: 1.2;
+        color: rgba(60,30,5,0.7);
+      }
+      .bb-card-btn:hover { background: rgba(100,60,10,0.2); }
+      .bb-card-btn.del:hover { background: rgba(160,20,20,0.15); color: #8b1515; }
+
+      /* Corps de carte */
+      .bb-card-body { display: flex; gap: 12px; padding: 12px 13px 10px; }
+      .bb-portrait-wrap {
+        width: 68px;
+        height: 88px;
+        flex-shrink: 0;
+        border: 2px solid rgba(100,65,15,0.35);
+        border-radius: 2px;
+        overflow: hidden;
+        background: rgba(100,65,15,0.08);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-family: 'Cinzel', serif;
+        font-size: 18px;
+        color: rgba(80,50,10,0.4);
+        text-align: center;
+        line-height: 1.2;
+        box-shadow: inset 0 2px 6px rgba(0,0,0,0.15);
+      }
+      .bb-portrait-wrap img { width: 100%; height: 100%; object-fit: cover; }
+      .bb-portrait-placeholder-text {
+        font-size: 8px;
+        letter-spacing: 1px;
+        color: rgba(80,50,10,0.35);
+        margin-top: 3px;
+        font-family: 'Share Tech Mono', monospace;
+      }
+
+      .bb-card-info { flex: 1; min-width: 0; }
+      .bb-card-nom {
+        font-family: 'Cinzel', serif;
+        font-size: 15px;
+        font-weight: 700;
+        color: #2a1505;
+        line-height: 1.15;
+        letter-spacing: 0.5px;
+      }
+      .bb-card-prenom {
+        font-family: 'Barlow', sans-serif;
+        font-size: 11.5px;
+        color: rgba(70,40,8,0.65);
+        font-style: italic;
+        margin-bottom: 8px;
+      }
+
+      /* Badges de danger */
+      .bb-badge-eleve {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        background: rgba(160,20,20,0.1);
+        color: #7a1212;
+        border: 1px solid rgba(160,20,20,0.28);
+        font-family: 'Share Tech Mono', monospace;
+        font-size: 8px;
+        letter-spacing: 1px;
+        padding: 2px 8px;
+        border-radius: 2px;
+        font-weight: 700;
+        text-transform: uppercase;
+      }
+      .bb-badge-moyen {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        background: rgba(150,90,5,0.1);
+        color: #6e430a;
+        border: 1px solid rgba(150,90,5,0.28);
+        font-family: 'Share Tech Mono', monospace;
+        font-size: 8px;
+        letter-spacing: 1px;
+        padding: 2px 8px;
+        border-radius: 2px;
+        font-weight: 700;
+        text-transform: uppercase;
+      }
+      .bb-badge-faible {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        background: rgba(20,90,35,0.1);
+        color: #174e22;
+        border: 1px solid rgba(20,90,35,0.25);
+        font-family: 'Share Tech Mono', monospace;
+        font-size: 8px;
+        letter-spacing: 1px;
+        padding: 2px 8px;
+        border-radius: 2px;
+        font-weight: 700;
+        text-transform: uppercase;
+      }
+
+      /* Métadonnées de la carte */
+      .bb-card-meta {
+        margin-top: 8px;
+        display: flex;
+        flex-direction: column;
+        gap: 3px;
+      }
+      .bb-card-row {
+        display: flex;
+        gap: 5px;
+        align-items: baseline;
+        font-size: 10.5px;
+        color: rgba(50,25,5,0.7);
+        font-family: 'Barlow', sans-serif;
+      }
+      .bb-card-lbl {
+        color: rgba(120,75,15,0.75);
+        font-family: 'Share Tech Mono', monospace;
+        font-size: 8px;
+        letter-spacing: 0.5px;
+        flex-shrink: 0;
+        text-transform: uppercase;
+      }
+      .bb-card-val { color: rgba(40,20,3,0.8); font-size: 10.5px; }
+
+      /* Extrait de description */
+      .bb-desc-snip {
+        margin: 0;
+        padding: 8px 13px 9px;
+        font-size: 10px;
+        color: rgba(50,25,5,0.62);
+        font-style: italic;
+        font-family: 'Barlow', sans-serif;
+        line-height: 1.5;
+        border-top: 1px solid rgba(100,65,15,0.15);
+        background: rgba(100,65,15,0.03);
+      }
+
+      /* Pied de carte */
+      .bb-card-footer {
+        padding: 7px 13px;
+        border-top: 1px solid rgba(100,65,15,0.18);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        background: rgba(100,65,15,0.06);
+      }
+      .bb-reward {
+        font-family: 'Cinzel', serif;
+        font-size: 11px;
+        color: #7a4e08;
+        font-weight: 700;
+        letter-spacing: 0.3px;
+      }
+      .bb-reward-label {
+        font-family: 'Share Tech Mono', monospace;
+        font-size: 7.5px;
+        color: rgba(100,65,15,0.5);
+        letter-spacing: 1px;
+        text-transform: uppercase;
+        margin-bottom: 1px;
+      }
+      .bb-fiche-id {
+        font-family: 'Share Tech Mono', monospace;
+        font-size: 8px;
+        color: rgba(80,50,10,0.4);
+        letter-spacing: 1.5px;
+      }
+
+      /* ── État vide ── */
+      .bb-empty {
+        grid-column: 1/-1;
+        text-align: center;
+        padding: 80px 20px;
+        color: rgba(220,200,150,0.3);
+        font-family: 'Cinzel', serif;
+        font-size: 14px;
+        letter-spacing: 2px;
+      }
+
+      /* ── Formulaire ajout/édition ── */
+      #bb-form-wrap {
+        background: rgba(20,12,4,0.9);
+        border: 1px solid rgba(180,140,20,0.2);
+        border-radius: 6px;
+        padding: 22px 26px;
+        margin-bottom: 24px;
+        backdrop-filter: blur(8px);
+        box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+      }
+      #bb-form-wrap .form-label {
+        color: rgba(200,160,60,0.75);
+        font-size: 8.5px;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+        font-family: 'Share Tech Mono', monospace;
+        margin-bottom: 5px;
+        display: block;
+      }
+      #bb-form-wrap .form-control {
+        background: rgba(255,255,255,0.04);
+        border: 1px solid rgba(180,140,20,0.18);
+        color: #e8d8b0;
+        border-radius: 4px;
+        padding: 8px 11px;
+        font-size: 12.5px;
+        outline: none;
+        transition: border-color 0.2s, background 0.2s;
+        font-family: 'Barlow', sans-serif;
+      }
+      #bb-form-wrap .form-control:focus {
+        border-color: rgba(180,140,20,0.5);
+        background: rgba(255,255,255,0.07);
+      }
+      #bb-form-wrap select.form-control option { background: #1a1209; color: #e8dcc8; }
+      #bb-form-wrap .form-control::placeholder { color: rgba(255,255,255,0.18); }
+      .bb-form-title {
+        font-family: 'Cinzel', serif;
+        font-size: 15px;
+        color: #d4a820;
+        margin-bottom: 18px;
+        padding-bottom: 12px;
+        border-bottom: 1px solid rgba(180,140,20,0.18);
+        letter-spacing: 1px;
+      }
+      .bb-upload-zone {
+        border: 1.5px dashed rgba(180,140,20,0.25);
+        border-radius: 5px;
+        padding: 14px;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.2s;
+        position: relative;
+        background: rgba(180,140,20,0.02);
+      }
+      .bb-upload-zone:hover { border-color: rgba(180,140,20,0.5); background: rgba(180,140,20,0.05); }
+      .bb-upload-zone input[type=file] { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
+      .bb-upload-preview { width: 60px; height: 74px; object-fit: cover; border-radius: 3px; border: 1px solid rgba(180,140,20,0.3); display: none; }
+      .bb-upload-label { font-family: 'Share Tech Mono', monospace; font-size: 9px; letter-spacing: 1px; color: rgba(255,255,255,0.3); margin-top: 6px; }
+
+      /* ── Modal dossier complet — style livre ouvert ── */
+      #bb-dossier-modal .modal {
+        max-width: 800px !important;
+        background: #1c1308 !important;
+        border: 1px solid rgba(120,80,20,0.35) !important;
+        border-radius: 6px !important;
+        box-shadow: 0 24px 80px rgba(0,0,0,0.8) !important;
+        overflow: hidden;
+        padding: 0 !important;
+      }
+      #bb-dossier-modal .modal-header {
+        background: linear-gradient(90deg, rgba(90,55,10,0.25), rgba(50,30,5,0.15)) !important;
+        border-bottom: 1px solid rgba(120,80,20,0.3) !important;
+        padding: 14px 20px !important;
+      }
+      #bb-dossier-modal .modal-header h3 {
+        font-family: 'Share Tech Mono', monospace !important;
+        font-size: 9px !important;
+        letter-spacing: 4px !important;
+        color: rgba(200,160,50,0.6) !important;
+        text-transform: uppercase !important;
+      }
+
+      /* Livre ouvert — deux pages */
+      .bb-book-open {
+        display: flex;
+        min-height: 400px;
+        position: relative;
+      }
+      /* Pas d'ombre centrale artificielle — la séparation est naturelle via les backgrounds */
+
+      /* Page gauche — parchemin clair */
+      .bb-dossier-left {
+        width: 260px;
+        flex-shrink: 0;
+        background: linear-gradient(170deg, #f6eccf 0%, #eeddaa 50%, #e5d09a 100%);
+        padding: 28px 22px 24px 26px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 14px;
+        position: relative;
+        border-right: 1px solid rgba(100,65,15,0.3);
+      }
+
+      .bb-dossier-portrait {
+        width: 130px;
+        height: 160px;
+        border: 3px solid rgba(100,60,10,0.35);
+        border-radius: 3px;
+        overflow: hidden;
+        background: rgba(100,60,10,0.08);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-family: 'Cinzel', serif;
+        color: rgba(80,45,8,0.35);
+        text-align: center;
+        box-shadow:
+          inset 0 3px 10px rgba(0,0,0,0.15),
+          0 3px 12px rgba(0,0,0,0.3);
+      }
+      .bb-dossier-portrait img { width: 100%; height: 100%; object-fit: cover; }
+      .bb-dossier-nom {
+        font-family: 'Cinzel', serif;
+        font-size: 18px;
+        font-weight: 700;
+        color: #1e0e03;
+        text-align: center;
+        line-height: 1.25;
+        letter-spacing: 0.5px;
+      }
+      .bb-dossier-prenom {
+        font-family: 'Barlow', sans-serif;
+        font-size: 12px;
+        color: rgba(60,35,5,0.65);
+        font-style: italic;
+        text-align: center;
+        margin-top: -8px;
+      }
+      .bb-dossier-actions {
+        margin-top: 6px;
+        display: flex;
+        gap: 8px;
+        width: 100%;
+        justify-content: center;
+      }
+
+      /* Page droite — fond sombre */
+      .bb-dossier-right {
+        flex: 1;
+        padding: 28px 28px 24px;
+        overflow-y: auto;
+        max-height: 72vh;
+        color: #d4c49a;
+        background: linear-gradient(170deg, #201408 0%, #1a1008 100%);
+        position: relative;
+      }
+
+      .bb-dossier-section-title {
+        font-family: 'Share Tech Mono', monospace;
+        font-size: 8.5px;
+        letter-spacing: 3.5px;
+        color: rgba(200,155,40,0.55);
+        text-transform: uppercase;
+        margin-bottom: 14px;
+        padding-bottom: 6px;
+        border-bottom: 1px solid rgba(180,140,20,0.15);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .bb-dossier-section-title::before {
+        content: '▸';
+        color: rgba(200,155,40,0.4);
+        font-size: 10px;
+      }
+      .bb-dossier-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+        margin-bottom: 20px;
+      }
+      .bb-dossier-field { }
+      .bb-dossier-field-lbl {
+        font-family: 'Share Tech Mono', monospace;
+        font-size: 8px;
+        letter-spacing: 1.5px;
+        color: rgba(180,140,20,0.5);
+        margin-bottom: 4px;
+        text-transform: uppercase;
+      }
+      .bb-dossier-field-val {
+        color: #d4c49a;
+        font-size: 13px;
+        font-family: 'Barlow', sans-serif;
+        font-weight: 500;
+      }
+      .bb-dossier-vu-box {
+        background: rgba(180,140,20,0.05);
+        border: 1px solid rgba(180,140,20,0.12);
+        border-radius: 4px;
+        padding: 11px 14px;
+        margin-bottom: 18px;
+      }
+      .bb-dossier-desc-box {
+        background: rgba(180,140,20,0.04);
+        border-left: 3px solid rgba(180,140,20,0.25);
+        padding: 14px 16px;
+        border-radius: 0 5px 5px 0;
+        font-size: 12.5px;
+        color: #c8b88a;
+        line-height: 1.8;
+        font-family: 'Barlow', sans-serif;
+        font-style: italic;
+      }
+
+      /* ── Scrollbar du dossier ── */
+      .bb-dossier-right::-webkit-scrollbar { width: 4px; }
+      .bb-dossier-right::-webkit-scrollbar-track { background: rgba(0,0,0,0.2); }
+      .bb-dossier-right::-webkit-scrollbar-thumb { background: rgba(180,140,20,0.2); border-radius: 2px; }
+
+      /* ── Séparateur décoratif ── */
+      .bb-ornament {
+        text-align: center;
+        font-size: 14px;
+        color: rgba(180,140,20,0.25);
+        letter-spacing: 8px;
+        margin: 4px 0 16px;
+        font-family: 'Cinzel', serif;
+      }
     </style>
 
-    <!-- Hero -->
-    <div class="bb-hero">
-      <div class="bb-hero-label">AVIS OFFICIEL</div>
-      <div class="bb-hero-title">Bingo <span>Book</span></div>
-      <div class="bb-hero-sub">Registre officiel des ninjas recherchés · Toute information menant à la capture sera récompensée</div>
+    <!-- Couverture du livre -->
+    <div class="bb-cover">
+      <div class="bb-cover-inner">
+        <div class="bb-spine"></div>
+        <div class="bb-cover-content">
+          <div class="bb-official-stamp">
+            <span class="bb-stamp-dot"></span>
+            <span class="bb-stamp-text">Avis Officiel — Usage Restreint</span>
+          </div>
+          <div class="bb-main-title">Bingo <em>Book</em></div>
+          <div class="bb-cover-divider"></div>
+          <div class="bb-cover-sub">Registre officiel des fugitifs recherchés par la Police de Konoha. Toute information menant à la capture d'un individu listé sera récompensée selon le grade de l'avis.</div>
+        </div>
+        <!-- Emblème SVG décoratif -->
+        <svg class="bb-cover-emblem" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <polygon points="50,5 95,27.5 95,72.5 50,95 5,72.5 5,27.5" stroke="#d4a820" stroke-width="2" fill="none"/>
+          <polygon points="50,15 85,32.5 85,67.5 50,85 15,67.5 15,32.5" stroke="#d4a820" stroke-width="1" fill="none" opacity="0.5"/>
+          <circle cx="50" cy="50" r="18" stroke="#d4a820" stroke-width="1.5" fill="none"/>
+          <text x="50" y="55" text-anchor="middle" font-family="Cinzel" font-size="10" fill="#d4a820" font-weight="700">BB</text>
+        </svg>
+      </div>
     </div>
 
-    <!-- Toolbar -->
+    <!-- Barre outils -->
     <div class="bb-toolbar">
       <div class="bb-search-wrap">
         <input type="text" id="bb-search" placeholder="Rechercher un ninja..." oninput="bbRender()">
       </div>
       <div class="bb-filters">
-        <button class="bb-fbtn on" id="bbf-all" onclick="bbSetFilter('all')">TOUS</button>
-        <button class="bb-fbtn" id="bbf-eleve" onclick="bbSetFilter('eleve')">DANGER ÉLEVÉ</button>
-        <button class="bb-fbtn" id="bbf-moyen" onclick="bbSetFilter('moyen')">DANGER MOYEN</button>
-        <button class="bb-fbtn" id="bbf-faible" onclick="bbSetFilter('faible')">DANGER FAIBLE</button>
+        <button class="bb-fbtn on" id="bbf-all" onclick="bbSetFilter('all')">Toutes</button>
+        <button class="bb-fbtn" id="bbf-eleve" onclick="bbSetFilter('eleve')">Danger élevé</button>
+        <button class="bb-fbtn" id="bbf-moyen" onclick="bbSetFilter('moyen')">Danger moyen</button>
+        <button class="bb-fbtn" id="bbf-faible" onclick="bbSetFilter('faible')">Danger faible</button>
       </div>
-      <button class="bb-add-btn" id="bb-add-btn" onclick="bbToggleAddPanel()">+ AJOUTER UNE FICHE</button>
+      <button class="bb-add-btn" id="bb-add-btn" onclick="bbToggleAddPanel()">+ Ajouter une fiche</button>
     </div>
 
     <div class="bb-body">
       <!-- Formulaire ajout/édition -->
       <div id="bb-form-wrap" style="display:none">
         <div class="bb-form-title" id="bb-form-title">Nouvelle fiche ninja</div>
-        <div class="grid grid-2" style="gap:10px;margin-bottom:12px">
+        <div class="grid grid-2" style="gap:12px;margin-bottom:14px">
           <div class="form-group" style="margin-bottom:0"><label class="form-label">Nom</label><input type="text" id="bb-nom" class="form-control" placeholder="Ex: Nagasawa"></div>
           <div class="form-group" style="margin-bottom:0"><label class="form-label">Prénom</label><input type="text" id="bb-prenom" class="form-control" placeholder="Ex: Tsurizao"></div>
         </div>
-        <div class="grid grid-3" style="gap:10px;margin-bottom:12px">
+        <div class="grid grid-3" style="gap:12px;margin-bottom:14px">
           <div class="form-group" style="margin-bottom:0"><label class="form-label">Grade</label>
             <select id="bb-grade" class="form-control"><option>Genin</option><option>Chunin</option><option>Jonin</option><option>Kage</option><option>Inconnu</option></select>
           </div>
@@ -2967,7 +3589,7 @@ document.addEventListener('DOMContentLoaded',function(){if(localStorage.getItem(
           </div>
           <div class="form-group" style="margin-bottom:0"><label class="form-label">Récompense (Ryos)</label><input type="number" id="bb-reward" class="form-control" placeholder="25000"></div>
         </div>
-        <div class="grid grid-2" style="gap:10px;margin-bottom:12px">
+        <div class="grid grid-2" style="gap:12px;margin-bottom:14px">
           <div class="form-group" style="margin-bottom:0"><label class="form-label">Village d'origine</label><input type="text" id="bb-village" class="form-control" placeholder="Ex: Konoha"></div>
           <div class="form-group" style="margin-bottom:0"><label class="form-label">Portrait</label>
             <div class="bb-upload-zone" onclick="document.getElementById('bb-portrait-file').click()">
@@ -2977,20 +3599,18 @@ document.addEventListener('DOMContentLoaded',function(){if(localStorage.getItem(
             </div>
           </div>
         </div>
-        <div class="form-group" style="margin-bottom:12px"><label class="form-label">Vu pour la dernière fois</label><input type="text" id="bb-vu" class="form-control" placeholder="Ex: Forêt interdite, secteur nord..."></div>
-        <div class="form-group" style="margin-bottom:16px"><label class="form-label">Description / Rapport de signalement</label><textarea id="bb-desc" class="form-control" rows="3" placeholder="Décrivez l'individu, ses techniques, ses crimes..."></textarea></div>
-        <div style="display:flex;gap:8px">
+        <div class="form-group" style="margin-bottom:14px"><label class="form-label">Vu pour la dernière fois</label><input type="text" id="bb-vu" class="form-control" placeholder="Ex: Forêt interdite, secteur nord..."></div>
+        <div class="form-group" style="margin-bottom:18px"><label class="form-label">Description / Rapport de signalement</label><textarea id="bb-desc" class="form-control" rows="4" placeholder="Décrivez l'individu, ses techniques, ses crimes..."></textarea></div>
+        <div style="display:flex;gap:8px;align-items:center">
           <button class="btn btn-primary" onclick="bbSaveFiche()">💾 Enregistrer</button>
           <button class="btn btn-outline btn-sm" onclick="bbCancelForm()">Annuler</button>
           <button class="btn btn-danger btn-sm" id="bb-del-btn" style="display:none;margin-left:auto" onclick="bbDeleteFiche()">🗑 Supprimer la fiche</button>
         </div>
       </div>
 
-      <!-- Grille de cartes -->
+      <!-- Grille de fiches -->
       <div class="bb-grid" id="bb-grid"></div>
     </div>
-
-    <!-- Modal dossier complet — HORS du page-content pour éviter le bug will-change:transform -->
   </div><!-- /page-bingobook -->
 
   <!-- OPÉRATIONS -->
@@ -14655,9 +15275,7 @@ function bbRender() {
   if (!list.length) { g.innerHTML='<div class="bb-empty">Aucune fiche dans le registre pour ces critères.</div>'; return; }
   var isMod = typeof canModify === 'function' && canModify();
   g.innerHTML = list.map(function(n, i){
-    var portrait = n.portrait
-      ? '<img src="'+n.portrait+'" alt="portrait" onerror="this.style.display=\'none\'">'
-      : bbInitials(n.nom,n.prenom)+'<br><span style="font-size:7px;letter-spacing:1px">PORTRAIT</span>';
+    var portrait = '<img src="'+n.portrait+'" alt="portrait" onerror="this.style.display=\'none\'">';
     var actionBtns = isMod
       ? '<div class="bb-card-actions">'+
           '<button class="bb-card-btn" title="Voir" onclick="event.stopPropagation();bbOpenDossier('+n.id+')">👁</button>'+
@@ -14665,28 +15283,35 @@ function bbRender() {
           '<button class="bb-card-btn del" title="Supprimer" onclick="event.stopPropagation();bbDeleteById('+n.id+')">🗑</button>'+
         '</div>'
       : '<div class="bb-card-actions"><button class="bb-card-btn" title="Voir" onclick="event.stopPropagation();bbOpenDossier('+n.id+')">👁</button></div>';
-    return '<div class="bb-card" onclick="bbOpenDossier('+n.id+')" style="animation:fadeIn 0.2s ease '+(i*0.04)+'s both">'+
+    var portraitPlaceholder = '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:4px">'
+      + '<span style="font-size:20px;color:rgba(80,50,10,0.3);font-family:\'Cinzel\',serif">'+bbInitials(n.nom,n.prenom)+'</span>'
+      + '<span class="bb-portrait-placeholder-text">portrait</span>'
+      + '</div>';
+    return '<div class="bb-card" onclick="bbOpenDossier('+n.id+')" style="animation:fadeIn 0.22s ease '+(i*0.05)+'s both">'+
       '<div class="bb-card-header">'+
-        '<span class="bb-card-fiche-num">~ FICHE '+String(i+1).toUpperCase()+' ~</span>'+
+        '<span class="bb-card-fiche-num">Fiche '+(i+1)+'</span>'+
         actionBtns+
       '</div>'+
       '<div class="bb-card-body">'+
-        '<div class="bb-portrait-wrap">'+portrait+'</div>'+
+        '<div class="bb-portrait-wrap">'+(n.portrait?portrait:portraitPlaceholder)+'</div>'+
         '<div class="bb-card-info">'+
           '<div class="bb-card-nom">'+n.nom+'</div>'+
           '<div class="bb-card-prenom">'+n.prenom+'</div>'+
           '<span class="'+bbDangerClass(n.danger)+'">'+bbDangerLabel(n.danger)+'</span>'+
           '<div class="bb-card-meta">'+
-            '<div class="bb-card-row"><span class="bb-card-lbl">Grade :</span> <span>'+n.grade+'</span></div>'+
-            '<div class="bb-card-row"><span class="bb-card-lbl">Village :</span> <span>'+n.village+'</span></div>'+
-            (n.vu?'<div class="bb-card-row"><span class="bb-card-lbl">Vu :</span> <span>'+n.vu.slice(0,40)+(n.vu.length>40?'...':'')+'</span></div>':'')+
+            '<div class="bb-card-row"><span class="bb-card-lbl">Grade</span><span class="bb-card-val">'+n.grade+'</span></div>'+
+            '<div class="bb-card-row"><span class="bb-card-lbl">Village</span><span class="bb-card-val">'+n.village+'</span></div>'+
+            (n.recompense?'<div class="bb-card-row"><span class="bb-card-lbl">Prime</span><span class="bb-card-val" style="color:#7a4e08;font-weight:600">'+n.recompense.toLocaleString()+' Ryos</span></div>':'')+
           '</div>'+
         '</div>'+
       '</div>'+
-      (n.desc?'<div class="bb-desc-snip" style="padding:0 12px 8px">'+n.desc.slice(0,80)+(n.desc.length>80?'...':'')+'</div>':'')+
+      (n.desc?'<div class="bb-desc-snip">'+n.desc.slice(0,90)+(n.desc.length>90?'…':'')+'</div>':'')+
+      (n.vu?'<div style="padding:6px 13px 0;font-size:9.5px;color:rgba(50,25,5,0.55);font-family:\'Share Tech Mono\',monospace;letter-spacing:0.5px">Vu : '+n.vu.slice(0,45)+(n.vu.length>45?'…':'')+'</div>':'')+
       '<div class="bb-card-footer">'+
-        '<span class="bb-reward">'+(n.recompense?n.recompense.toLocaleString()+' Ryos':'N/A')+'</span>'+
-        '<span style="font-family:\'Share Tech Mono\',monospace;font-size:8px;color:rgba(100,70,20,0.5)">FICHE #'+String(n.id).padStart(3,'0')+'</span>'+
+        '<div>'+
+          (n.recompense?'<div class="bb-reward-label">Récompense</div><div class="bb-reward">'+n.recompense.toLocaleString()+' Ryos</div>':'<span style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:rgba(80,50,10,0.4)">Non renseignée</span>')+
+        '</div>'+
+        '<span class="bb-fiche-id">#'+String(n.id).padStart(3,'0')+'</span>'+
       '</div>'+
     '</div>';
   }).join('');
@@ -14705,23 +15330,32 @@ function bbOpenDossier(id) {
   if(!_bbTitle || !_bbBody) return;
   _bbTitle.textContent = '~ DOSSIER — '+n.nom.toUpperCase()+' '+n.prenom+' ~';
   _bbBody.innerHTML =
+    '<div class="bb-book-open">'+
     '<div class="bb-dossier-left">'+
       '<div class="bb-dossier-portrait">'+portrait+'</div>'+
       '<div class="bb-dossier-nom">'+n.nom+'</div>'+
       '<div class="bb-dossier-prenom">'+n.prenom+'</div>'+
-      '<span class="'+bbDangerClass(n.danger)+'" style="font-size:8px">'+bbDangerLabel(n.danger)+'</span>'+
+      '<span class="'+bbDangerClass(n.danger)+'">'+bbDangerLabel(n.danger)+'</span>'+
+      '<div style="font-family:\'Share Tech Mono\',monospace;font-size:8px;color:rgba(80,50,10,0.4);letter-spacing:1.5px;margin-top:4px">FICHE #'+String(n.id).padStart(3,'0')+'</div>'+
       (isMod ? '<div class="bb-dossier-actions"><button class="btn btn-gold btn-sm" onclick="bbOpenEdit('+n.id+');bbCloseModal()">✏️ Modifier</button><button class="btn btn-danger btn-sm" onclick="bbDeleteById('+n.id+');bbCloseModal()">🗑</button></div>' : '')+
     '</div>'+
     '<div class="bb-dossier-right">'+
-      '<h4>INFORMATIONS</h4>'+
+      '<div class="bb-dossier-section-title">Informations générales</div>'+
       '<div class="bb-dossier-grid">'+
         '<div class="bb-dossier-field"><div class="bb-dossier-field-lbl">Grade</div><div class="bb-dossier-field-val">'+n.grade+'</div></div>'+
-        '<div class="bb-dossier-field"><div class="bb-dossier-field-lbl">Village</div><div class="bb-dossier-field-val">'+n.village+'</div></div>'+
-        '<div class="bb-dossier-field"><div class="bb-dossier-field-lbl">Récompense</div><div class="bb-dossier-field-val" style="color:#d4b44a;font-weight:700">'+(n.recompense?n.recompense.toLocaleString()+' Ryos':'—')+'</div></div>'+
-        '<div class="bb-dossier-field"><div class="bb-dossier-field-lbl">N° de fiche</div><div class="bb-dossier-field-val" style="font-family:\'Share Tech Mono\',monospace">#'+String(n.id).padStart(3,'0')+'</div></div>'+
+        '<div class="bb-dossier-field"><div class="bb-dossier-field-lbl">Village d\'origine</div><div class="bb-dossier-field-val">'+n.village+'</div></div>'+
+        '<div class="bb-dossier-field"><div class="bb-dossier-field-lbl">Récompense</div><div class="bb-dossier-field-val" style="color:#d4a820;font-weight:700;font-family:\'Cinzel\',serif">'+(n.recompense?n.recompense.toLocaleString()+' Ryos':'Non définie')+'</div></div>'+
+        '<div class="bb-dossier-field"><div class="bb-dossier-field-lbl">Niveau de danger</div><div class="bb-dossier-field-val"><span class="'+bbDangerClass(n.danger)+'">'+bbDangerLabel(n.danger)+'</span></div></div>'+
       '</div>'+
-      (n.vu?'<div class="bb-dossier-field" style="margin-bottom:16px"><div class="bb-dossier-field-lbl">Vu pour la dernière fois</div><div class="bb-dossier-field-val" style="font-size:12px">'+n.vu+'</div></div>':'')+
-      (n.desc?'<h4 style="margin-top:0">RAPPORT DE SIGNALEMENT</h4><div class="bb-dossier-desc-box">'+n.desc+'</div>':'')+
+      (n.vu?
+        '<div class="bb-dossier-section-title" style="margin-top:6px">Dernière localisation connue</div>'+
+        '<div class="bb-dossier-vu-box"><div class="bb-dossier-field-val" style="font-size:12px;line-height:1.6">'+n.vu+'</div></div>'
+      :'')+
+      (n.desc?
+        '<div class="bb-dossier-section-title" style="margin-top:6px">Rapport de signalement</div>'+
+        '<div class="bb-dossier-desc-box">'+n.desc+'</div>'
+      :'')+
+    '</div>'+
     '</div>';
   document.getElementById('bb-dossier-modal').classList.add('open');
 }
@@ -14850,12 +15484,12 @@ document.addEventListener('DOMContentLoaded', function(){
 </script>
 <!-- BINGO BOOK — Modal dossier (hors page-content, sinon will-change:transform casse position:fixed) -->
 <div class="modal-overlay" id="bb-dossier-modal">
-  <div class="modal" style="max-width:700px;padding:0;overflow:hidden;background:#1a1108;border:1px solid rgba(180,140,20,0.2)">
-    <div class="modal-header" style="padding:14px 20px;background:rgba(180,140,20,0.06);border-bottom:1px solid rgba(180,140,20,0.15)">
-      <h3 id="bb-modal-title" style="font-size:10px;letter-spacing:3px;font-family:'Share Tech Mono',monospace;color:rgba(180,140,20,0.7)">DOSSIER NINJA</h3>
-      <span class="modal-close" onclick="bbCloseModal()">✕</span>
+  <div class="modal" style="max-width:800px;padding:0;overflow:hidden;background:#1c1308;border:1px solid rgba(120,80,20,0.35);border-radius:6px;box-shadow:0 24px 80px rgba(0,0,0,0.8)">
+    <div class="modal-header" style="padding:13px 20px;background:linear-gradient(90deg,rgba(90,55,10,0.25),rgba(50,30,5,0.1));border-bottom:1px solid rgba(120,80,20,0.3)">
+      <h3 id="bb-modal-title" style="font-size:8.5px;letter-spacing:4px;font-family:'Share Tech Mono',monospace;color:rgba(200,160,50,0.6);text-transform:uppercase">DOSSIER NINJA</h3>
+      <span class="modal-close" onclick="bbCloseModal()" style="color:rgba(200,160,80,0.5)">✕</span>
     </div>
-    <div id="bb-modal-body" style="display:flex"></div>
+    <div id="bb-modal-body"></div>
   </div>
 </div>
 
