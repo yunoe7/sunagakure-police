@@ -1262,6 +1262,50 @@ textarea.form-control{resize:vertical;min-height:80px}
 /* Section title */
 .section-title { font-size: 22px; letter-spacing: 0.3px; color: var(--text); }
 
+/* ===== CORRECTION CONTRASTE THÈME CLAIR =====
+   #main et .topbar ont un fond clair beige. Les textes prévus pour fond sombre
+   y deviennent illisibles. On force ici des couleurs sombres pour les textes
+   qui apparaissent directement sur ce fond clair (titres de page, sous-titres,
+   chemin de la topbar, état vide, onglets de filtres, compteurs).
+   À l'intérieur des .card / .stat-card / .modal / etc. (qui ont un fond sombre),
+   les couleurs claires d'origine continuent de s'appliquer. */
+
+/* Titre + sous-titre de page (visibles directement sur le fond beige) */
+#main .section-header .section-title { color: #2a1505 !important; }
+#main .section-header .section-sub   { color: rgba(80,45,8,0.7) !important; }
+
+/* Topbar : breadcrumb / chemin sur fond blanc */
+.topbar .topbar-path { color: rgba(60,35,5,0.6) !important; }
+
+/* Compteurs « .text-muted » qui flottent en dehors d'une card sombre */
+#main .page-content > .text-muted,
+#main .page-content > div > .text-muted { color: rgba(60,35,5,0.7) !important; }
+
+/* Onglets « Toutes / Ouvertes / Fermées » placés directement sur le fond clair
+   (uniquement quand .tab-row est un enfant direct d'une page-content) */
+#main .page-content > .tab-row {
+  background: rgba(40,25,5,0.05) !important;
+  border: 1px solid rgba(120,80,20,0.18) !important;
+}
+#main .page-content > .tab-row .tab-btn:not(.active) {
+  color: rgba(60,35,5,0.62) !important;
+}
+#main .page-content > .tab-row .tab-btn:not(.active):hover {
+  color: rgba(60,35,5,0.9) !important;
+  background: rgba(40,25,5,0.05) !important;
+}
+
+/* États vides (« Aucun X » en dehors d'une card) */
+#main .page-content > .bb-empty,
+#main .page-content > div > [style*="color:var(--muted)"][style*="text-align:center"] {
+  color: rgba(60,35,5,0.5) !important;
+}
+
+/* Filter chips bar (par ex. recensement) directement sur le fond clair */
+#main .page-content > .filter-chip-bar {
+  color: rgba(60,35,5,0.7);
+}
+
 /* ===== NOUVEAUTÉS FONCTIONNELLES V3 ===== */
 
 /* Indicateur de chargement Firebase */
@@ -1495,8 +1539,8 @@ body.dark .msg-input-row{background:rgba(18,20,36,0.9)!important;border-top-colo
 .map-legend-item{display:flex;align-items:center;gap:5px;font-size:9px;font-family:'Share Tech Mono',monospace;color:rgba(255,255,255,0.7);letter-spacing:0.5px}
 .map-legend-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
 /* Pins */
-.op-pin{position:absolute;transform:translate(-50%,-100%);cursor:pointer;z-index:10;transition:transform 0.15s}
-.op-pin:hover{transform:translate(-50%,-100%) scale(1.18);z-index:20}
+.op-pin{position:absolute;transform:translate(-50%,-100%) scale(var(--pin-inv-scale,1));cursor:pointer;z-index:10;transition:transform 0.15s;transform-origin:50% 100%}
+.op-pin:hover{transform:translate(-50%,-100%) scale(calc(var(--pin-inv-scale,1) * 1.18));z-index:20}
 .op-pin-dot{width:14px;height:14px;border-radius:50%;border:2px solid rgba(255,255,255,0.9);box-shadow:0 2px 8px rgba(0,0,0,0.5),0 0 0 3px rgba(255,255,255,0.15);transition:all 0.15s}
 .op-pin-line{width:2px;height:10px;margin:0 auto;border-radius:1px;opacity:0.8}
 .op-pin.active .op-pin-dot{background:#16a34a;border-color:#fff;box-shadow:0 2px 12px rgba(22,163,74,0.7),0 0 0 4px rgba(22,163,74,0.2);animation:pin-pulse 1.8s ease-in-out infinite}
@@ -1734,11 +1778,6 @@ body.dark .msg-input-row{background:rgba(18,20,36,0.9)!important;border-top-colo
 }
 
 /* Bingo book card */
-.bb-card{
-  background:rgba(18,14,8,0.96) !important;
-  border:1px solid rgba(201,162,39,0.14) !important;
-}
-
 /* Msg contact items */
 .msg-contact{border-bottom:1px solid rgba(201,162,39,0.07) !important;}
 .msg-contact:hover{background:rgba(201,162,39,0.04) !important;}
@@ -3822,13 +3861,13 @@ document.addEventListener('DOMContentLoaded',function(){if(localStorage.getItem(
           <span class="title">Carte tactique des opérations</span>
         </div>
         <div id="ops-map-pins">
-          <div id="ops-map-tooltip">
-            <span class="tt-close" onclick="closeOpsMapTooltip()">✕</span>
-            <div class="tt-nom" id="tt-nom"></div>
-            <div class="tt-badges" id="tt-badges"></div>
-            <div class="tt-resp" id="tt-resp"></div>
-            <div class="tt-desc" id="tt-desc"></div>
-          </div>
+        </div>
+        <div id="ops-map-tooltip">
+          <span class="tt-close" onclick="closeOpsMapTooltip()">✕</span>
+          <div class="tt-nom" id="tt-nom"></div>
+          <div class="tt-badges" id="tt-badges"></div>
+          <div class="tt-resp" id="tt-resp"></div>
+          <div class="tt-desc" id="tt-desc"></div>
         </div>
         </div><!-- /ops-map-zoom-inner -->
         <div id="ops-map-legend">
@@ -7655,6 +7694,33 @@ function _opsApplyTransform(){
       }
     }
 
+    // Synchroniser le conteneur des pins avec le zoom/pan de la carte
+    // Les pins sont positionnés en % de la carte ORIGINALE (mapX/mapY) ; sans
+    // cette transformation, ils restent collés au conteneur écran et dérivent
+    // par rapport à la carte qui zoome via viewBox.
+    // Le viewBox réel utilisé peut avoir été clampé : on doit donc en déduire
+    // le pan effectif (en pixels écran) plutôt que d'utiliser _opsPanX brut.
+    var pinsEl = document.getElementById('ops-map-pins');
+    if(pinsEl){
+      var wrap2 = document.getElementById('ops-map-img-wrap');
+      if(wrap2 && _svgReady && _svgOrigVBw > 0 && _svgOrigVBh > 0){
+        var wrapW2 = wrap2.clientWidth || 1;
+        var wrapH2 = wrap2.clientHeight || 1;
+        // Pan écran effectif (déduit du viewBox réel, qui a pu être clampé)
+        var effPanX = -((_svgVBx - _svgOrigVBx) / _svgOrigVBw) * wrapW2;
+        var effPanY = -((_svgVBy - _svgOrigVBy) / _svgOrigVBh) * wrapH2;
+        pinsEl.style.transformOrigin = '0 0';
+        pinsEl.style.transform = 'translate('+effPanX+'px,'+effPanY+'px) scale('+_opsZoom+')';
+        // Compense la mise à l'échelle pour que les pins gardent une taille constante
+        var pins = pinsEl.querySelectorAll('.op-pin');
+        var inv = 1 / _opsZoom;
+        for(var i=0; i<pins.length; i++){
+          pins[i].style.setProperty('--pin-inv-scale', inv);
+        }
+      } else {
+        pinsEl.style.transform = '';
+      }
+    }
   });
 }
 
@@ -7799,8 +7865,15 @@ function _opsInitZoomEvents(){
     var rect = wrap.getBoundingClientRect();
     var rawX = e.clientX - rect.left;
     var rawY = e.clientY - rect.top;
-    var imgX = (rawX - _opsPanX) / _opsZoom;
-    var imgY = (rawY - _opsPanY) / _opsZoom;
+    // Utiliser le pan EFFECTIF (déduit du viewBox réel, qui a pu être clampé)
+    // pour rester cohérent avec la position visible des pins après zoom/pan.
+    var effPanX = _opsPanX, effPanY = _opsPanY;
+    if(_svgReady && _svgOrigVBw > 0 && _svgOrigVBh > 0){
+      effPanX = -((_svgVBx - _svgOrigVBx) / _svgOrigVBw) * wrap.clientWidth;
+      effPanY = -((_svgVBy - _svgOrigVBy) / _svgOrigVBh) * wrap.clientHeight;
+    }
+    var imgX = (rawX - effPanX) / _opsZoom;
+    var imgY = (rawY - effPanY) / _opsZoom;
     var pct = function(v, total){ return Math.min(100, Math.max(0, (v / total * 100))); };
     var px = pct(imgX, wrap.clientWidth);
     var py = pct(imgY, wrap.clientHeight);
@@ -7927,10 +8000,19 @@ function showOpsMapTooltip(op, px, py, pinsEl){
     '<span style="font-size:9px;font-family:\'Share Tech Mono\',monospace;padding:2px 7px;border-radius:4px;background:rgba(192,65,14,0.15);color:#e05c1a;border:1px solid rgba(192,65,14,0.25)">'+typeIcon+' '+(op.type||'')+'</span>';
   document.getElementById('tt-resp').textContent = op.resp ? '👤 ' + op.resp : '';
   document.getElementById('tt-desc').textContent = op.desc ? (op.desc.length > 80 ? op.desc.slice(0,80)+'…' : op.desc) : '';
+  // Le tooltip n'est plus enfant de #ops-map-pins (qui est désormais transformé
+  // pour suivre le zoom/pan de la carte). Il faut donc calculer sa position en
+  // pixels écran à partir de la position visible réelle du pin.
   var wrapW = pinsEl.offsetWidth || 1;
   var wrapH = pinsEl.offsetHeight || 1;
-  var pinPx = px / 100 * wrapW;
-  var pinPy = py / 100 * wrapH;
+  // Pan effectif déduit du viewBox courant (pour rester cohérent avec le clamp)
+  var effPanX = 0, effPanY = 0;
+  if(_svgReady && _svgOrigVBw > 0 && _svgOrigVBh > 0){
+    effPanX = -((_svgVBx - _svgOrigVBx) / _svgOrigVBw) * wrapW;
+    effPanY = -((_svgVBy - _svgOrigVBy) / _svgOrigVBh) * wrapH;
+  }
+  var pinPx = (px / 100 * wrapW) * _opsZoom + effPanX;
+  var pinPy = (py / 100 * wrapH) * _opsZoom + effPanY;
   var ttW = 240, leftVal = pinPx + 18;
   if(leftVal + ttW > wrapW - 10) leftVal = pinPx - ttW - 18;
   var topVal = pinPy - 100;
@@ -8011,8 +8093,9 @@ function opsCenterOnPin(opId){
   // Flash du pin ciblé
   var pin = document.querySelector('.op-pin[data-id="'+opId+'"]');
   if(pin){
+    var inv = 1 / (_opsZoom || 1);
     pin.style.transition = 'transform 0.2s';
-    pin.style.transform = 'translate(-50%,-100%) scale(1.6)';
+    pin.style.transform = 'translate(-50%,-100%) scale('+(inv * 1.6)+')';
     setTimeout(function(){ pin.style.transform = ''; pin.style.transition = ''; }, 500);
     setTimeout(function(){ showOpsMapTooltip(op, px, py, document.getElementById('ops-map-pins')); }, 300);
   }
@@ -15489,11 +15572,27 @@ function bbGetNinjas() {
   return list;
 }
 function bbSaveNinjas(list) {
-  try { localStorage.setItem('bb_ninjas', JSON.stringify(list)); } catch(e) {}
-  if (window._fbDB && window._fbRef && window._fbSet) {
-    var r = window._fbRef(window._fbDB, 'sunagakure/bingobook');
-    window._fbSet(r, list);
+  var localOk = false;
+  try {
+    localStorage.setItem('bb_ninjas', JSON.stringify(list));
+    localOk = true;
+  } catch(e) {
+    if(typeof showToast==='function') showToast('Stockage local plein — réduisez la taille des images', 'error');
   }
+  if (window._fbDB && window._fbRef && window._fbSet) {
+    try {
+      var r = window._fbRef(window._fbDB, 'sunagakure/bingobook');
+      var p = window._fbSet(r, list);
+      if (p && typeof p.catch === 'function') {
+        p.catch(function(err){
+          if(typeof showToast==='function') showToast('Échec de synchronisation (image trop lourde ?)', 'error');
+        });
+      }
+    } catch(e) {
+      if(typeof showToast==='function') showToast('Erreur de synchronisation Firebase', 'error');
+    }
+  }
+  return localOk;
 }
 // Calcule un nouvel ID unique strictement supérieur à tous les IDs existants
 function bbComputeNextId(list) {
@@ -15633,13 +15732,62 @@ function bbCloseModal() { document.getElementById('bb-dossier-modal').classList.
 
 function bbHandleImageUpload(event) {
   var file = event.target.files[0]; if(!file) return;
+  // Vérification basique de type
+  if (!file.type || file.type.indexOf('image/') !== 0) {
+    if(typeof showToast==='function') showToast('Fichier non reconnu comme image', 'error');
+    return;
+  }
+  var lbl = document.getElementById('bb-upload-label');
+  if (lbl) lbl.textContent = '⏳ Compression de l\'image...';
   var reader = new FileReader();
   reader.onload = function(e) {
-    _bbPortraitData = e.target.result;
-    var prev = document.getElementById('bb-portrait-preview');
-    var lbl = document.getElementById('bb-upload-label');
-    if(prev){ prev.src = _bbPortraitData; prev.style.display='block'; }
-    if(lbl){ lbl.textContent = '✅ Image chargée — cliquer pour changer'; }
+    // On charge l'image dans un canvas pour la redimensionner / compresser.
+    // Cible : max 512px de côté, JPEG qualité 0.82 → typiquement < 100 Ko base64.
+    // Nécessaire car Firebase Realtime DB a une limite ~256 Ko par valeur,
+    // et localStorage ~5 Mo total partagés avec toute l'app.
+    var img = new Image();
+    img.onload = function() {
+      try {
+        var MAX = 512;
+        var w = img.width, h = img.height;
+        if (w > MAX || h > MAX) {
+          if (w >= h) { h = Math.round(h * MAX / w); w = MAX; }
+          else        { w = Math.round(w * MAX / h); h = MAX; }
+        }
+        var canvas = document.createElement('canvas');
+        canvas.width = w; canvas.height = h;
+        var ctx = canvas.getContext('2d');
+        // Fond blanc pour éviter le noir si le PNG source a de la transparence
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, w, h);
+        ctx.drawImage(img, 0, 0, w, h);
+        var compressed = canvas.toDataURL('image/jpeg', 0.82);
+        // Sécurité : si malgré la compression on dépasse 200 Ko, on baisse la qualité
+        if (compressed.length > 200000) {
+          compressed = canvas.toDataURL('image/jpeg', 0.6);
+        }
+        if (compressed.length > 200000) {
+          compressed = canvas.toDataURL('image/jpeg', 0.4);
+        }
+        _bbPortraitData = compressed;
+        var prev = document.getElementById('bb-portrait-preview');
+        if(prev){ prev.src = _bbPortraitData; prev.style.display='block'; }
+        var sizeKb = Math.round(_bbPortraitData.length / 1024);
+        if(lbl){ lbl.textContent = '✅ Image chargée (' + sizeKb + ' Ko) — cliquer pour changer'; }
+      } catch(err) {
+        if(typeof showToast==='function') showToast('Erreur de compression de l\'image', 'error');
+        if(lbl){ lbl.textContent = '❌ Erreur — cliquer pour réessayer'; }
+      }
+    };
+    img.onerror = function(){
+      if(typeof showToast==='function') showToast('Image illisible', 'error');
+      if(lbl){ lbl.textContent = '❌ Image illisible — cliquer pour réessayer'; }
+    };
+    img.src = e.target.result;
+  };
+  reader.onerror = function(){
+    if(typeof showToast==='function') showToast('Erreur de lecture du fichier', 'error');
+    if(lbl){ lbl.textContent = '❌ Erreur — cliquer pour réessayer'; }
   };
   reader.readAsDataURL(file);
 }
