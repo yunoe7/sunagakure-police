@@ -2169,6 +2169,207 @@ document.addEventListener('DOMContentLoaded',function(){if(localStorage.getItem(
       <div class="lg-tax-footer">Les impôts sont collectés par les agents de la Police de Sunagakure lors des sessions officielles. Tout refus expose à des sanctions conformément au code pénal.</div>
     </div>
 
+    <!-- BINGO BOOK — Avis de recherche -->
+    <div class="lg-bb-section" id="lg-bb-section">
+      <style>
+      .lg-bb-section{
+        max-width:1200px;
+        margin:48px auto 0;
+        padding:48px 32px 32px;
+        border-top:1px solid rgba(201,162,39,0.12);
+      }
+      .lg-bb-overline{
+        font-family:'Share Tech Mono',monospace;
+        font-size:9.5px;letter-spacing:5px;
+        color:#dc2626;text-transform:uppercase;
+        margin-bottom:12px;
+        display:flex;align-items:center;gap:10px;
+      }
+      .lg-bb-overline::before{
+        content:'';width:24px;height:1px;background:#dc2626;opacity:.6;
+      }
+      .lg-bb-title{
+        font-family:'Cinzel',serif;
+        font-size:clamp(28px,4vw,40px);
+        font-weight:700;
+        color:#e8dfc8;
+        letter-spacing:1.5px;
+        margin-bottom:18px;
+        line-height:1.1;
+      }
+      .lg-bb-title span{
+        background:linear-gradient(135deg,#fca5a5 0%,#dc2626 50%,#7f1d1d 100%);
+        -webkit-background-clip:text;
+        -webkit-text-fill-color:transparent;
+        background-clip:text;
+      }
+      .lg-bb-desc{
+        font-family:'EB Garamond',Georgia,serif;
+        font-size:14.5px;line-height:1.7;
+        color:rgba(232,223,200,0.55);
+        max-width:900px;
+        margin-bottom:28px;
+        font-style:italic;
+      }
+      .lg-bb-empty{
+        padding:50px 20px;text-align:center;
+        font-family:'Cinzel',serif;font-size:14px;letter-spacing:1px;
+        color:rgba(232,223,200,0.3);
+        border:1px dashed rgba(201,162,39,0.18);
+        border-radius:8px;
+        background:rgba(20,16,9,0.4);
+      }
+      .lg-bb-grid{
+        display:grid;
+        grid-template-columns:repeat(auto-fill,minmax(260px,1fr));
+        gap:16px;
+        margin-bottom:24px;
+      }
+      .lg-bb-card{
+        background:linear-gradient(170deg,#f8edce 0%,#eedad8 30%,#e8d4a4 70%,#dfc896 100%);
+        border-radius:4px;
+        overflow:hidden;
+        position:relative;
+        box-shadow:0 6px 20px rgba(0,0,0,0.5),inset 0 0 0 1px rgba(150,100,30,0.25);
+        transition:transform .25s cubic-bezier(.22,.68,0,1.2),box-shadow .25s;
+      }
+      .lg-bb-card::before{
+        content:'';position:absolute;inset:0;
+        background:url("data:image/svg+xml,%3Csvg width='200' height='200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='nb'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23nb)' opacity='0.04'/%3E%3C/svg%3E");
+        pointer-events:none;
+        opacity:0.6;
+      }
+      .lg-bb-card:hover{
+        transform:translateY(-4px) rotate(0.4deg);
+        box-shadow:0 14px 36px rgba(0,0,0,0.6),inset 0 0 0 1px rgba(150,100,30,0.4);
+      }
+      .lg-bb-card-head{
+        padding:9px 13px 7px;
+        border-bottom:1px solid rgba(100,65,15,0.2);
+        background:rgba(120,70,15,0.06);
+        display:flex;justify-content:space-between;align-items:center;
+        position:relative;
+      }
+      .lg-bb-card-fiche{
+        font-family:'Cinzel',serif;
+        font-size:8px;
+        color:rgba(80,45,10,0.55);
+        letter-spacing:2px;
+        font-weight:600;
+        text-transform:uppercase;
+      }
+      .lg-bb-card-id{
+        font-family:'Share Tech Mono',monospace;
+        font-size:8px;
+        color:rgba(80,50,10,0.45);
+        letter-spacing:1.5px;
+      }
+      .lg-bb-card-body{
+        display:flex;gap:12px;padding:12px 13px 10px;
+        position:relative;
+      }
+      .lg-bb-portrait{
+        width:64px;height:84px;flex-shrink:0;
+        border:2px solid rgba(100,65,15,0.35);
+        border-radius:2px;
+        overflow:hidden;
+        background:rgba(100,65,15,0.08);
+        display:flex;align-items:center;justify-content:center;
+        font-family:'Cinzel',serif;font-size:18px;
+        color:rgba(80,50,10,0.45);
+        box-shadow:inset 0 2px 6px rgba(0,0,0,0.15);
+      }
+      .lg-bb-portrait img{width:100%;height:100%;object-fit:cover}
+      .lg-bb-info{flex:1;min-width:0}
+      .lg-bb-nom{
+        font-family:'Cinzel',serif;
+        font-size:14px;font-weight:700;
+        color:#2a1505;
+        line-height:1.15;
+        letter-spacing:0.3px;
+      }
+      .lg-bb-prenom{
+        font-family:'Barlow',sans-serif;
+        font-size:11px;
+        color:rgba(70,40,8,0.65);
+        font-style:italic;
+        margin-bottom:6px;
+      }
+      .lg-bb-danger{
+        display:inline-flex;align-items:center;gap:4px;
+        font-family:'Share Tech Mono',monospace;
+        font-size:7.5px;letter-spacing:1px;
+        padding:2px 7px;border-radius:2px;
+        font-weight:700;text-transform:uppercase;
+      }
+      .lg-bb-danger.eleve{background:rgba(160,20,20,0.12);color:#7a1212;border:1px solid rgba(160,20,20,0.3)}
+      .lg-bb-danger.moyen{background:rgba(150,90,5,0.12);color:#6e430a;border:1px solid rgba(150,90,5,0.3)}
+      .lg-bb-danger.faible{background:rgba(20,90,35,0.12);color:#174e22;border:1px solid rgba(20,90,35,0.27)}
+      .lg-bb-meta{
+        margin-top:7px;
+        display:flex;flex-direction:column;gap:2px;
+        font-size:10px;
+        color:rgba(50,25,5,0.7);
+        font-family:'Barlow',sans-serif;
+      }
+      .lg-bb-meta-row{display:flex;gap:5px;align-items:baseline}
+      .lg-bb-meta-lbl{
+        font-family:'Share Tech Mono',monospace;
+        font-size:7.5px;letter-spacing:0.5px;
+        color:rgba(120,75,15,0.7);
+        text-transform:uppercase;
+        flex-shrink:0;
+      }
+      .lg-bb-card-footer{
+        padding:7px 13px;
+        border-top:1px solid rgba(100,65,15,0.18);
+        background:rgba(100,65,15,0.06);
+        display:flex;justify-content:space-between;align-items:center;
+        position:relative;
+      }
+      .lg-bb-reward-lbl{
+        font-family:'Share Tech Mono',monospace;
+        font-size:7px;letter-spacing:1px;
+        color:rgba(100,65,15,0.5);
+        text-transform:uppercase;
+      }
+      .lg-bb-reward-val{
+        font-family:'Cinzel',serif;
+        font-size:11px;font-weight:700;
+        color:#7a4e08;letter-spacing:0.3px;
+      }
+      .lg-bb-reward-none{
+        font-family:'Share Tech Mono',monospace;
+        font-size:8.5px;color:rgba(80,50,10,0.4);
+      }
+      .lg-bb-footer-info{
+        background:rgba(220,38,38,0.06);
+        border:1px solid rgba(220,38,38,0.18);
+        border-left:3px solid #dc2626;
+        border-radius:6px;
+        padding:14px 18px;
+        font-family:'EB Garamond',Georgia,serif;
+        font-size:13.5px;
+        color:rgba(232,223,200,0.65);
+        line-height:1.6;
+        font-style:italic;
+        display:flex;align-items:center;gap:10px;
+      }
+      .lg-bb-footer-info::before{
+        content:'⚠';
+        font-size:18px;
+        color:#ef4444;
+        font-style:normal;
+        flex-shrink:0;
+      }
+      </style>
+      <div class="lg-bb-overline">AVIS DE RECHERCHE — POLICE DE SUNAGAKURE</div>
+      <h2 class="lg-bb-title"><span>Bingo Book</span></h2>
+      <p class="lg-bb-desc">Registre officiel des fugitifs recherchés par la Police de Sunagakure. Toute information menant à la capture d'un individu listé sera récompensée selon le grade de l'avis. Les citoyens vigilants sont priés de signaler immédiatement toute observation aux autorités compétentes.</p>
+      <div class="lg-bb-grid" id="lg-bb-grid"></div>
+      <div class="lg-bb-footer-info">Ces individus sont considérés comme dangereux. Ne tentez aucune approche directe — contactez la Police de Sunagakure immédiatement.</div>
+    </div>
+
     <!-- CTA connexion -->
     <div class="lg-lore-cta">
       <div class="lg-lore-cta-text">Connectez-vous pour accéder à l'intranet complet</div>
@@ -6872,6 +7073,85 @@ if(document.readyState==='loading'){document.addEventListener('DOMContentLoaded'
 else{lgRenderTaxBareme();}
 // Re-render au cas où Firebase mette à jour DB.impots après le chargement
 window.addEventListener('load', function(){ setTimeout(lgRenderTaxBareme, 500); setTimeout(lgRenderTaxBareme, 2000); });
+
+// ─── BINGO BOOK sur la page login ───
+// Affiche les fiches du Bingo Book stockées dans localStorage (clé bb_ninjas).
+// Triées par danger (élevé > moyen > faible) puis par récompense décroissante.
+function lgRenderBingoBook(){
+  try{
+    var grid = document.getElementById('lg-bb-grid');
+    if(!grid) return;
+    var ninjas = null;
+    try{
+      var raw = localStorage.getItem('bb_ninjas');
+      if(raw){
+        var parsed = JSON.parse(raw);
+        if(Array.isArray(parsed)) ninjas = parsed;
+      }
+    }catch(e){}
+    if(!ninjas || !ninjas.length){
+      grid.innerHTML = '<div class="lg-bb-empty">— Aucun avis de recherche actif pour le moment —</div>';
+      return;
+    }
+    // Déduplication par ID (au cas où)
+    var seen = {};
+    ninjas = ninjas.filter(function(n){
+      if(!n || seen[n.id]) return false;
+      seen[n.id] = 1;
+      return true;
+    });
+    // Tri : danger élevé d'abord, puis récompense décroissante
+    var dangerWeight = { eleve: 3, moyen: 2, faible: 1 };
+    ninjas.sort(function(a,b){
+      var da = dangerWeight[a.danger] || 0;
+      var db = dangerWeight[b.danger] || 0;
+      if(da !== db) return db - da;
+      return (b.recompense||0) - (a.recompense||0);
+    });
+    var dangerLabel = { eleve: '⚠ DANGER ÉLEVÉ', moyen: '◆ DANGER MOYEN', faible: '▸ DANGER FAIBLE' };
+    var bbInitialsLg = function(nom, prenom){
+      return (((nom||'?')[0])+((prenom&&prenom!=='—')?prenom[0]:'')).toUpperCase();
+    };
+    var escLg = function(s){
+      return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    };
+    var fmtLg = function(n){ return (parseInt(n,10)||0).toLocaleString('fr-FR').replace(/\u202f/g,' '); };
+    grid.innerHTML = ninjas.map(function(n, i){
+      var portraitHtml = (n.portrait && /^data:image|^https?:/.test(n.portrait))
+        ? '<img src="'+escLg(n.portrait)+'" alt="portrait" onerror="this.style.display=\'none\'">'
+        : '<div style="text-align:center;line-height:1.1">'+bbInitialsLg(n.nom,n.prenom)+'<div style="font-family:\'Share Tech Mono\',monospace;font-size:7px;color:rgba(80,50,10,0.4);margin-top:3px;letter-spacing:1px">PORTRAIT</div></div>';
+      var num = String(i+1).padStart(3,'0');
+      var idStr = String(n.id||0).padStart(3,'0');
+      return '<div class="lg-bb-card">'
+        + '<div class="lg-bb-card-head">'
+        +   '<span class="lg-bb-card-fiche">Fiche '+num+'</span>'
+        +   '<span class="lg-bb-card-id">#'+idStr+'</span>'
+        + '</div>'
+        + '<div class="lg-bb-card-body">'
+        +   '<div class="lg-bb-portrait">'+portraitHtml+'</div>'
+        +   '<div class="lg-bb-info">'
+        +     '<div class="lg-bb-nom">'+escLg(n.nom||'—')+'</div>'
+        +     '<div class="lg-bb-prenom">'+escLg(n.prenom||'')+'</div>'
+        +     '<span class="lg-bb-danger '+(n.danger||'eleve')+'">'+(dangerLabel[n.danger]||(n.danger||'').toUpperCase())+'</span>'
+        +     '<div class="lg-bb-meta">'
+        +       (n.grade ? '<div class="lg-bb-meta-row"><span class="lg-bb-meta-lbl">Grade</span><span>'+escLg(n.grade)+'</span></div>' : '')
+        +       (n.village ? '<div class="lg-bb-meta-row"><span class="lg-bb-meta-lbl">Village</span><span>'+escLg(n.village)+'</span></div>' : '')
+        +     '</div>'
+        +   '</div>'
+        + '</div>'
+        + '<div class="lg-bb-card-footer">'
+        +   (n.recompense
+              ? '<div><div class="lg-bb-reward-lbl">Récompense</div><div class="lg-bb-reward-val">'+fmtLg(n.recompense)+' Ryos</div></div>'
+              : '<span class="lg-bb-reward-none">Récompense non renseignée</span>')
+        + '</div>'
+        + '</div>';
+    }).join('');
+  }catch(e){}
+}
+if(document.readyState==='loading'){document.addEventListener('DOMContentLoaded',lgRenderBingoBook);}
+else{lgRenderBingoBook();}
+// Re-render au cas où Firebase pousse de nouvelles fiches après le chargement
+window.addEventListener('load', function(){ setTimeout(lgRenderBingoBook, 500); setTimeout(lgRenderBingoBook, 2000); });
 
 // ─── LORE PREVIEW EXAMPLE — données éditables ───
 var LP_KEY='suna_lore_preview';
@@ -17581,6 +17861,8 @@ function bbSaveNinjas(list) {
       if(typeof showToast==='function') showToast('Erreur de synchronisation Firebase', 'error');
     }
   }
+  // Mettre à jour la prévisualisation du Bingo Book sur la page login
+  if(typeof lgRenderBingoBook === 'function') lgRenderBingoBook();
   return localOk;
 }
 // Calcule un nouvel ID unique strictement supérieur à tous les IDs existants
@@ -17893,6 +18175,7 @@ document.addEventListener('DOMContentLoaded', function(){
           if (val && Array.isArray(val) && val.length) {
             try { localStorage.setItem('bb_ninjas', JSON.stringify(val)); } catch(e){}
             bbRender();
+            if(typeof lgRenderBingoBook === 'function') lgRenderBingoBook();
           }
         });
       } catch(e){}
