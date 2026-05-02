@@ -282,6 +282,8 @@ textarea.form-control{resize:vertical;min-height:80px}
   position:fixed;inset:0;z-index:300;
   display:flex;flex-direction:column;align-items:center;justify-content:flex-start;
   background:#0a0806;overflow-y:auto;overflow-x:hidden;
+  -webkit-overflow-scrolling:touch;
+  overscroll-behavior:contain;
   font-family:'Rajdhani',sans-serif;color:#f0e8d0;
   scroll-behavior:smooth;
 }
@@ -1827,6 +1829,357 @@ body.dark .msg-contact:hover,body.dark .react-btn,body.dark .react-btn:hover,
 body.dark .skeleton,body.dark .timeline-item::before{
   /* ces overrides sont désormais gérés par le thème global */
 }
+
+/* ═══════════════════════════════════════════════════════════════════
+   PATCHES MOBILE — Corrections globales pour toutes les nouvelles
+   sections et fonctionnalités. Garantit la compatibilité mobile sans
+   toucher aux media queries existants.
+   ═══════════════════════════════════════════════════════════════════ */
+@media(max-width:768px){
+  /* ─── PAGE LOGIN — toutes les sections institutionnelles ─── */
+  .lg-att-section, .lg-trib-section, .lg-av-section,
+  .lg-bm-section, .lg-tax-section, .lg-bb-section, .lg-mr-section,
+  .lg-deo-section, .lg-reg-section{
+    padding:32px 16px 24px !important;
+    margin-top:32px !important;
+  }
+  .lg-att-title, .lg-trib-title, .lg-av-title,
+  .lg-bm-title, .lg-tax-title, .lg-bb-title, .lg-mr-title,
+  .lg-deo-title, .lg-reg-title{
+    font-size:24px !important;
+    letter-spacing:0.8px !important;
+    line-height:1.15 !important;
+    margin-bottom:18px !important;
+  }
+  .lg-att-overline, .lg-trib-overline, .lg-av-overline,
+  .lg-bm-overline, .lg-tax-overline, .lg-bb-overline, .lg-mr-overline,
+  .lg-deo-overline, .lg-reg-overline{
+    font-size:8.5px !important;
+    letter-spacing:3px !important;
+  }
+  /* Grilles missions et grades adaptées mobile */
+  .lg-mr-grid{
+    grid-template-columns:1fr 1fr !important;
+    gap:10px !important;
+  }
+  .lg-mr-card{padding:16px 14px !important}
+  .lg-mr-card-icon{
+    width:38px !important;height:38px !important;
+    font-size:17px !important;
+    margin-bottom:12px !important;
+  }
+  .lg-mr-card-title{font-size:13px !important;letter-spacing:0.4px !important;margin-bottom:6px !important}
+  .lg-mr-card-text{font-size:12px !important;line-height:1.5 !important}
+  .lg-mr-grades-grid{
+    grid-template-columns:1fr 1fr !important;
+    gap:10px !important;
+  }
+  .lg-grade-card{padding:14px 12px !important}
+  .lg-grade-name{font-size:13px !important}
+  .lg-grade-desc{font-size:11px !important;line-height:1.5 !important}
+  .lg-grade-rang{font-size:8px !important;padding:3px 8px !important}
+  .lg-mr-divider{margin:32px 0 24px !important}
+  /* Déontologie : grille en 1 colonne */
+  .lg-deo-grid{
+    grid-template-columns:1fr !important;
+    gap:10px !important;
+  }
+  .lg-deo-card{padding:16px 16px 18px !important}
+  .lg-deo-card-title{font-size:13px !important;margin-bottom:8px !important}
+  .lg-deo-card-text{font-size:12.5px !important;line-height:1.55 !important}
+  .lg-deo-art{font-size:8px !important;padding:3px 9px !important;margin-bottom:10px !important}
+  /* Règlement : numéros plus petits, items plus serrés */
+  .lg-reg-item{
+    grid-template-columns:46px 1fr !important;
+    gap:12px !important;
+    padding:14px 4px !important;
+  }
+  .lg-reg-num{font-size:24px !important}
+  .lg-reg-h{font-size:13px !important}
+  .lg-reg-d{font-size:12.5px !important;line-height:1.5 !important}
+  /* Layout 2 colonnes → 1 colonne */
+  .lg-trib-grid, .lg-av-grid, .lg-bm-grid{
+    grid-template-columns:1fr !important;
+    gap:20px !important;
+  }
+  /* Side cards plus compactes */
+  .lg-trib-card, .lg-av-card, .lg-bm-card{
+    padding:12px 14px !important;
+  }
+  .lg-trib-card-val, .lg-av-card-val, .lg-bm-card-val{
+    font-size:14px !important;
+  }
+  /* Listes d'attributions : padding + tailles texte */
+  .lg-att-list, .lg-trib-list, .lg-av-list, .lg-bm-list{
+    padding:4px 14px !important;
+  }
+  .lg-att-item, .lg-trib-item, .lg-av-item, .lg-bm-item{
+    padding:12px 4px !important;
+    gap:10px !important;
+  }
+  .lg-att-text, .lg-trib-item-text, .lg-av-item-text, .lg-bm-item-text{
+    font-size:12.5px !important;
+    line-height:1.5 !important;
+  }
+  .lg-att-text strong, .lg-trib-item-text strong,
+  .lg-av-item-text strong, .lg-bm-item-text strong{
+    font-size:12.5px !important;
+  }
+  /* Paragraphes lore plus petits */
+  .lg-trib-p, .lg-av-p, .lg-bm-p{
+    font-size:13px !important;
+    line-height:1.6 !important;
+  }
+  .lg-trib-h3, .lg-av-h3, .lg-bm-h3{
+    font-size:15px !important;
+  }
+  /* Citations mobile */
+  .lg-trib-quote, .lg-av-quote, .lg-bm-quote{
+    padding:12px 14px !important;
+  }
+  .lg-trib-quote-text, .lg-av-quote-text, .lg-bm-quote-text{
+    font-size:12.5px !important;
+  }
+  /* Barème impôts : 2 colonnes au lieu de 4 */
+  .lg-tax-grid{
+    grid-template-columns:1fr 1fr !important;
+    gap:10px !important;
+  }
+  .lg-tax-card{
+    padding:12px 14px !important;
+    gap:10px !important;
+  }
+  .lg-tax-icon{
+    width:36px !important; height:36px !important;
+    font-size:16px !important;
+  }
+  .lg-tax-grade{font-size:12px !important}
+  .lg-tax-amount{font-size:11px !important}
+  .lg-tax-desc{
+    font-size:13px !important;
+    margin-bottom:18px !important;
+  }
+  .lg-tax-footer{
+    font-size:12px !important;
+    padding:11px 14px !important;
+    line-height:1.5 !important;
+  }
+  /* Bingo Book : 1 carte par ligne */
+  .lg-bb-grid{
+    grid-template-columns:1fr !important;
+    gap:12px !important;
+  }
+  .lg-bb-desc{font-size:13px !important; margin-bottom:18px !important}
+  .lg-bb-footer-info{
+    font-size:12px !important;
+    padding:11px 14px !important;
+    line-height:1.5 !important;
+  }
+  /* Bureau des missions — rangs plus compacts */
+  .lg-bm-rank{
+    font-size:12.5px !important;
+    padding:5px 4px !important;
+    gap:10px !important;
+  }
+  .lg-bm-rank-name{font-size:12.5px !important}
+
+  /* ─── IMPÔTS — page interne ─── */
+  #page-impots .imp-progress-pct{font-size:30px !important}
+  #page-impots .imp-progress-count{font-size:18px !important}
+  #page-impots .imp-stats{
+    grid-template-columns:1fr 1fr !important;
+    gap:8px !important;
+  }
+  #page-impots .imp-stat{padding:12px 14px !important}
+  #page-impots .imp-stat .val{font-size:20px !important}
+  #page-impots .imp-stat .val .ryos{font-size:11px !important}
+  #page-impots .imp-direction-actions{flex-direction:column}
+  #page-impots .imp-direction-actions .btn{
+    min-width:0 !important;
+    width:100% !important;
+    font-size:9.5px !important;
+    padding:9px 10px !important;
+  }
+  #page-impots .imp-add-row{grid-template-columns:1fr !important}
+  #page-impots .imp-toolbar{flex-direction:column;align-items:stretch}
+  #page-impots .imp-toolbar input{width:100% !important;min-width:0 !important}
+  #page-impots .imp-toolbar .imp-filters{justify-content:space-between}
+  #page-impots .imp-toolbar .imp-fbtn{flex:1;min-width:0;padding:7px 6px !important;font-size:9px !important}
+  /* Tableau impôts → mode "carte" empilée */
+  #page-impots .imp-thead{display:none !important}
+  #page-impots .imp-row{
+    grid-template-columns:1fr 56px !important;
+    grid-auto-rows:auto !important;
+    padding:11px !important;
+    gap:6px !important;
+  }
+  /* Historique collecteurs / récup direction : layout adapté */
+  #page-impots .imp-collecteur-head, #page-impots .imp-recup-head{
+    grid-template-columns:32px 1fr auto !important;
+    gap:10px !important;
+    padding:10px 12px !important;
+  }
+  #page-impots .imp-collecteur-avatar, #page-impots .imp-recup-avatar{
+    width:32px !important; height:32px !important;
+  }
+  #page-impots .imp-collecteur-info .nm, #page-impots .imp-recup-info .nm{font-size:12.5px !important}
+  #page-impots .imp-collecteur-amt .val, #page-impots .imp-recup-amt{font-size:13px !important}
+  #page-impots .imp-collecteur-arrow, #page-impots .imp-recup-arrow{display:none !important}
+  #page-impots .imp-total-banner{padding:14px 16px !important}
+  #page-impots .imp-total-banner .val{font-size:24px !important}
+  #page-impots .imp-section{padding:14px 14px !important}
+  /* Édition grades : layout 1 colonne */
+  #page-impots .imp-grades-grid{grid-template-columns:1fr !important}
+  #page-impots .imp-grade-row{grid-template-columns:1fr 1fr auto !important;gap:8px !important}
+  /* Détail collecteur/récup : items en colonnes */
+  #page-impots .imp-collecteur-detail .det-row,
+  #page-impots .imp-recup-detail .det-row{
+    flex-wrap:wrap !important;
+    padding:8px 0 !important;
+  }
+
+  /* ─── CODE PÉNAL — page refondue ─── */
+  #page-codepenal .cp-hero{padding:24px 18px 22px !important}
+  #page-codepenal .cp-hero h1{font-size:24px !important;letter-spacing:1.5px !important}
+  #page-codepenal .cp-hero-sub{font-size:12.5px !important}
+  #page-codepenal .cp-hero-quote{font-size:11.5px !important}
+  #page-codepenal .cp-hero-stats{gap:18px !important;margin-top:14px !important}
+  #page-codepenal .cp-hero-stat-val{font-size:18px !important}
+  #page-codepenal .cp-tabs{gap:6px !important}
+  #page-codepenal .cp-tab{
+    min-width:0 !important;
+    flex:1 1 calc(50% - 3px) !important;
+    padding:9px 10px !important;
+    font-size:10px !important;
+    letter-spacing:1px !important;
+  }
+  #page-codepenal .cp-add-body{padding:14px !important}
+  #page-codepenal .cp-add-body .grid.grid-2,
+  #page-codepenal .cp-add-body .grid.grid-3{
+    grid-template-columns:1fr !important;
+  }
+  #page-codepenal .cp-articles-grid{grid-template-columns:1fr !important}
+  #page-codepenal .cp-art{padding:13px 14px 11px !important}
+  #page-codepenal .cp-art-title{font-size:13.5px !important}
+  #page-codepenal .btn-cp-add{
+    width:100% !important;
+    margin-bottom:8px !important;
+  }
+  #page-codepenal .btn-cp-reimport{
+    width:100% !important;
+    margin-left:0 !important;
+  }
+
+  /* ─── BINGO BOOK — page interne ─── */
+  #bb-form-wrap .grid.grid-2, #bb-form-wrap .grid.grid-3{
+    grid-template-columns:1fr !important;
+  }
+  /* Modal dossier ninja en plein écran sur mobile */
+  #bb-dossier-modal .modal{
+    max-width:100% !important;
+    border-radius:0 !important;
+  }
+  .bb-book-open{flex-direction:column !important;min-height:0 !important}
+  .bb-dossier-left{
+    width:100% !important;
+    padding:18px 18px 16px !important;
+    border-right:none !important;
+    border-bottom:1px solid rgba(100,65,15,0.3) !important;
+  }
+  .bb-dossier-portrait{width:110px !important;height:138px !important}
+  .bb-dossier-right{
+    padding:18px 18px 18px !important;
+    max-height:none !important;
+  }
+  .bb-dossier-grid{grid-template-columns:1fr 1fr !important;gap:10px !important}
+  .bb-dossier-section-title{font-size:8px !important;letter-spacing:2.5px !important}
+
+  /* ─── RECENSEMENT mobile compatible ─── */
+  #page-recensement .grid.grid-3{grid-template-columns:1fr !important}
+
+  /* ─── CARTE OPÉRATIONS — toolbar empilée ─── */
+  #ops-map-toolbar{flex-wrap:wrap !important;gap:6px !important}
+  #ops-map-filters{flex-wrap:wrap !important}
+
+  /* ─── HISTOIRE / LORE en mode visiteur ─── */
+  body.is-visitor #page-histoire .lore-wrap::before{
+    font-size:9.5px !important;
+    letter-spacing:1.5px !important;
+    padding:10px 12px !important;
+  }
+
+  /* ─── MODALES génériques : marges adaptées ─── */
+  .modal{
+    /* respecte les insets safe-area iOS, évite que le contenu soit caché par la barre du bas */
+    padding-bottom:calc(env(safe-area-inset-bottom,0px) + 14px) !important;
+  }
+
+  /* ─── BOUTONS "Réinitialiser cycle / Récupérer" plus tactiles ─── */
+  .btn{min-height:38px}
+
+  /* ─── Empêche le scroll horizontal accidentel des tableaux ─── */
+  .table-scroll-wrapper{
+    -webkit-overflow-scrolling:touch;
+    overflow-x:auto;
+  }
+
+  /* ─── Inputs : taille de police ≥16px pour bloquer le zoom iOS ─── */
+  #page-impots input, #page-impots select,
+  #page-codepenal .cp-input,
+  #bb-form-wrap input, #bb-form-wrap select, #bb-form-wrap textarea{
+    font-size:16px !important;
+  }
+}
+
+/* ─── PATCHES PETITS ÉCRANS (≤480px) ─── */
+@media(max-width:480px){
+  /* Login : encore plus serré */
+  .lg-att-section, .lg-trib-section, .lg-av-section,
+  .lg-bm-section, .lg-tax-section, .lg-bb-section, .lg-mr-section,
+  .lg-deo-section, .lg-reg-section{
+    padding:24px 12px 20px !important;
+  }
+  .lg-att-title, .lg-trib-title, .lg-av-title,
+  .lg-bm-title, .lg-tax-title, .lg-bb-title, .lg-mr-title,
+  .lg-deo-title, .lg-reg-title{
+    font-size:21px !important;
+  }
+  /* Missions : 1 colonne sur très petit écran */
+  .lg-mr-grid{grid-template-columns:1fr !important}
+  /* Barème impôts : 1 colonne sur très petit écran */
+  .lg-tax-grid{grid-template-columns:1fr !important}
+  /* Impôts stats : 1 colonne aussi */
+  #page-impots .imp-stats{grid-template-columns:1fr !important}
+  /* CP tabs : 1 colonne */
+  #page-codepenal .cp-tab{
+    flex:1 1 100% !important;
+  }
+  /* Bingo Book dossier : portrait plus petit */
+  .bb-dossier-portrait{width:90px !important;height:115px !important}
+  .bb-dossier-grid{grid-template-columns:1fr !important}
+}
+
+/* ─── ORIENTATION PAYSAGE COURTE (téléphones tournés) ─── */
+@media(max-width:900px) and (orientation:landscape) and (max-height:500px){
+  /* Sur paysage de téléphone, le hero login devient plus compact */
+  #login-screen{min-height:auto}
+  .lg-att-section, .lg-trib-section, .lg-av-section,
+  .lg-bm-section, .lg-tax-section, .lg-bb-section{
+    margin-top:24px !important;
+    padding-top:24px !important;
+  }
+}
+
+/* ─── ACCESSIBILITÉ : zones tactiles minimum ─── */
+@media(max-width:768px){
+  .lg-att-item, .lg-trib-item, .lg-av-item, .lg-bm-item,
+  .imp-fbtn, .cp-tab, .bb-card-btn{
+    min-height:32px;
+  }
+  /* Empêcher le tap-highlight bleu d'iOS */
+  *{-webkit-tap-highlight-color:transparent}
+}
+
 </style>
 </head>
 <body>
@@ -2154,6 +2507,1296 @@ document.addEventListener('DOMContentLoaded',function(){if(localStorage.getItem(
           <span class="lg-att-icon">📝</span>
           <div class="lg-att-text"><strong>Rédaction de rapports</strong>Documentation des interventions, missions et incidents à transmettre à la hiérarchie ou au Tribunal sur demande.</div>
         </div>
+      </div>
+    </div>
+
+    <!-- MISSIONS & RESPONSABILITÉS (cartes) + GRADES & STRUCTURE -->
+    <div class="lg-mr-section" id="lg-mr-section">
+      <style>
+      .lg-mr-section{
+        max-width:1200px;
+        margin:48px auto 0;
+        padding:48px 32px 32px;
+        border-top:1px solid rgba(201,162,39,0.12);
+      }
+      .lg-mr-overline{
+        font-family:'Share Tech Mono',monospace;
+        font-size:9.5px;letter-spacing:5px;
+        color:#c9a227;text-transform:uppercase;
+        font-weight:700;
+        margin-bottom:14px;
+      }
+      .lg-mr-title{
+        font-family:'Cinzel',serif;
+        font-size:clamp(28px,4vw,40px);
+        font-weight:700;
+        color:#e8dfc8;
+        letter-spacing:1.5px;
+        margin-bottom:36px;
+        line-height:1.1;
+      }
+      .lg-mr-title span{
+        background:linear-gradient(135deg,#fbbf24 0%,#c9a227 50%,#a16207 100%);
+        -webkit-background-clip:text;
+        -webkit-text-fill-color:transparent;
+        background-clip:text;
+      }
+      /* Grille des missions (4 cartes) */
+      .lg-mr-grid{
+        display:grid;
+        grid-template-columns:repeat(4,1fr);
+        gap:18px;
+      }
+      @media(max-width:1100px){.lg-mr-grid{grid-template-columns:repeat(2,1fr)}}
+      .lg-mr-card{
+        background:linear-gradient(180deg,rgba(20,16,9,0.95) 0%,rgba(15,12,7,0.95) 100%);
+        border:1px solid rgba(201,162,39,0.18);
+        border-radius:10px;
+        padding:24px 22px;
+        position:relative;overflow:hidden;
+        box-shadow:0 4px 18px rgba(0,0,0,0.3);
+        transition:transform .25s ease,border-color .25s ease,box-shadow .25s ease;
+      }
+      .lg-mr-card:hover{
+        transform:translateY(-3px);
+        border-color:rgba(201,162,39,0.4);
+        box-shadow:0 10px 30px rgba(0,0,0,0.5);
+      }
+      .lg-mr-card-icon{
+        width:48px;height:48px;border-radius:10px;
+        display:flex;align-items:center;justify-content:center;
+        font-size:22px;
+        margin-bottom:18px;
+        background:var(--mr-accent-bg,rgba(201,162,39,0.1));
+        border:1px solid var(--mr-accent-border,rgba(201,162,39,0.25));
+      }
+      .lg-mr-card-title{
+        font-family:'Cinzel',serif;
+        font-size:15px;font-weight:700;
+        color:#e8dfc8;
+        letter-spacing:0.6px;
+        text-transform:uppercase;
+        margin-bottom:10px;
+      }
+      .lg-mr-card-text{
+        font-family:'EB Garamond',Georgia,serif;
+        font-size:13.5px;line-height:1.6;
+        color:rgba(232,223,200,0.55);
+      }
+
+      /* GRADES & STRUCTURE */
+      .lg-mr-divider{
+        height:1px;
+        background:linear-gradient(90deg,transparent,rgba(201,162,39,0.18),transparent);
+        margin:48px 0 36px;
+      }
+      .lg-mr-grades-grid{
+        display:grid;
+        grid-template-columns:repeat(5,1fr);
+        gap:14px;
+      }
+      @media(max-width:1100px){.lg-mr-grades-grid{grid-template-columns:repeat(3,1fr)}}
+      @media(max-width:680px){.lg-mr-grades-grid{grid-template-columns:repeat(2,1fr)}}
+      .lg-grade-card{
+        background:linear-gradient(180deg,rgba(20,16,9,0.95) 0%,rgba(15,12,7,0.95) 100%);
+        border:1px solid rgba(201,162,39,0.18);
+        border-radius:10px;
+        padding:18px 16px 16px;
+        text-align:center;
+        position:relative;
+        transition:transform .2s ease,border-color .2s ease;
+      }
+      .lg-grade-card:hover{
+        transform:translateY(-2px);
+        border-color:rgba(201,162,39,0.4);
+      }
+      .lg-grade-rang{
+        display:inline-block;
+        font-family:'Share Tech Mono',monospace;
+        font-size:8.5px;letter-spacing:2px;
+        font-weight:700;text-transform:uppercase;
+        padding:4px 10px;border-radius:3px;
+        margin-bottom:10px;
+        background:var(--rang-bg,rgba(201,162,39,0.14));
+        color:var(--rang-fg,#fbbf24);
+        border:1px solid var(--rang-border,rgba(201,162,39,0.35));
+      }
+      .lg-grade-name{
+        font-family:'Cinzel',serif;
+        font-size:14.5px;font-weight:700;
+        color:#e8dfc8;
+        letter-spacing:0.5px;
+        text-transform:uppercase;
+        margin-bottom:8px;
+      }
+      .lg-grade-desc{
+        font-family:'EB Garamond',Georgia,serif;
+        font-size:12px;line-height:1.55;
+        color:rgba(232,223,200,0.5);
+      }
+      </style>
+
+      <!-- MISSIONS & RESPONSABILITÉS (4 cartes) -->
+      <div class="lg-mr-overline">Nos missions</div>
+      <h2 class="lg-mr-title">Missions & <span>Responsabilités</span></h2>
+      <div class="lg-mr-grid">
+        <div class="lg-mr-card" style="--mr-accent-bg:rgba(59,130,246,0.12);--mr-accent-border:rgba(59,130,246,0.32)">
+          <div class="lg-mr-card-icon">🛡️</div>
+          <div class="lg-mr-card-title">Maintien de l'ordre</div>
+          <div class="lg-mr-card-text">Assurer la sécurité des habitants, patrouiller les rues et répondre aux incidents en temps réel.</div>
+        </div>
+        <div class="lg-mr-card" style="--mr-accent-bg:rgba(168,85,247,0.12);--mr-accent-border:rgba(168,85,247,0.32)">
+          <div class="lg-mr-card-icon">🔍</div>
+          <div class="lg-mr-card-title">Investigations</div>
+          <div class="lg-mr-card-text">Mener des enquêtes sur les crimes, traquer les criminels et rassembler des preuves tangibles.</div>
+        </div>
+        <div class="lg-mr-card" style="--mr-accent-bg:rgba(220,38,38,0.12);--mr-accent-border:rgba(220,38,38,0.35)">
+          <div class="lg-mr-card-icon">⚡</div>
+          <div class="lg-mr-card-title">Intervention tactique</div>
+          <div class="lg-mr-card-text">Neutraliser les menaces de rang élevé et coordonner les interventions d'urgence sur le terrain.</div>
+        </div>
+        <div class="lg-mr-card" style="--mr-accent-bg:rgba(22,163,74,0.12);--mr-accent-border:rgba(22,163,74,0.32)">
+          <div class="lg-mr-card-icon">✅</div>
+          <div class="lg-mr-card-title">Protection civile</div>
+          <div class="lg-mr-card-text">Protéger les dignitaires, sécuriser les événements publics et escorter les convois officiels.</div>
+        </div>
+      </div>
+
+      <div class="lg-mr-divider"></div>
+
+      <!-- GRADES & STRUCTURE (5 cartes) -->
+      <div class="lg-mr-overline">Hiérarchie</div>
+      <h2 class="lg-mr-title">Grades & <span>Structure</span></h2>
+      <div class="lg-mr-grades-grid">
+        <div class="lg-grade-card">
+          <div class="lg-grade-rang" style="--rang-bg:rgba(217,119,6,0.18);--rang-fg:#fbbf24;--rang-border:rgba(217,119,6,0.45)">RANG S</div>
+          <div class="lg-grade-name">Gérant</div>
+          <div class="lg-grade-desc">Chef suprême. Toutes les permissions. Répond directement au Kazekage.</div>
+        </div>
+        <div class="lg-grade-card">
+          <div class="lg-grade-rang" style="--rang-bg:rgba(217,119,6,0.14);--rang-fg:#fbbf24;--rang-border:rgba(217,119,6,0.4)">RANG S</div>
+          <div class="lg-grade-name">Co-Gérant</div>
+          <div class="lg-grade-desc">Toutes les permissions. Coordination stratégique et formation des agents.</div>
+        </div>
+        <div class="lg-grade-card">
+          <div class="lg-grade-rang" style="--rang-bg:rgba(220,38,38,0.14);--rang-fg:#f87171;--rang-border:rgba(220,38,38,0.4)">RANG A</div>
+          <div class="lg-grade-name">Sergent</div>
+          <div class="lg-grade-desc">Supervision des équipes et gestion des opérations sur le terrain.</div>
+        </div>
+        <div class="lg-grade-card">
+          <div class="lg-grade-rang" style="--rang-bg:rgba(22,163,74,0.14);--rang-fg:#4ade80;--rang-border:rgba(22,163,74,0.4)">RANG B</div>
+          <div class="lg-grade-name">Officier</div>
+          <div class="lg-grade-desc">Encadrement des stagiaires, accès aux candidatures et aux dossiers.</div>
+        </div>
+        <div class="lg-grade-card">
+          <div class="lg-grade-rang" style="--rang-bg:rgba(96,165,250,0.14);--rang-fg:#60a5fa;--rang-border:rgba(96,165,250,0.4)">RANG C</div>
+          <div class="lg-grade-name">Stagiaire</div>
+          <div class="lg-grade-desc">Formation initiale. Accès limité à l'espace agent en cours d'apprentissage.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TRIBUNAL DE SUNAGAKURE -->
+    <div class="lg-trib-section" id="lg-trib-section">
+      <style>
+      .lg-trib-section{
+        max-width:1200px;
+        margin:48px auto 0;
+        padding:48px 32px 32px;
+        border-top:1px solid rgba(201,162,39,0.12);
+      }
+      .lg-trib-overline{
+        font-family:'Share Tech Mono',monospace;
+        font-size:9.5px;letter-spacing:5px;
+        color:#fbbf24;text-transform:uppercase;
+        font-weight:700;
+        margin-bottom:14px;
+        display:flex;align-items:center;gap:10px;
+      }
+      .lg-trib-overline::before{
+        content:'⚖';
+        font-size:14px;
+      }
+      .lg-trib-title{
+        font-family:'Cinzel',serif;
+        font-size:clamp(28px,4vw,40px);
+        font-weight:700;
+        color:#e8dfc8;
+        letter-spacing:1.5px;
+        margin-bottom:30px;
+        line-height:1.1;
+      }
+      .lg-trib-title span{
+        background:linear-gradient(135deg,#fbbf24 0%,#c9a227 50%,#a16207 100%);
+        -webkit-background-clip:text;
+        -webkit-text-fill-color:transparent;
+        background-clip:text;
+      }
+      .lg-trib-grid{
+        display:grid;
+        grid-template-columns:1fr 320px;
+        gap:32px;
+        align-items:start;
+      }
+      @media(max-width:900px){
+        .lg-trib-grid{grid-template-columns:1fr}
+      }
+      /* Bloc principal de gauche */
+      .lg-trib-intro{
+        margin-bottom:28px;
+      }
+      .lg-trib-tag{
+        font-family:'Share Tech Mono',monospace;
+        font-size:9px;letter-spacing:2.5px;
+        color:#c9a227;text-transform:uppercase;
+        font-weight:700;
+        background:rgba(201,162,39,0.08);
+        border:1px solid rgba(201,162,39,0.3);
+        border-radius:3px;
+        padding:6px 12px;
+        display:inline-block;
+        margin-bottom:14px;
+      }
+      .lg-trib-h3{
+        font-family:'Cinzel',serif;
+        font-size:18px;font-weight:700;
+        color:#e8dfc8;
+        letter-spacing:0.5px;
+        margin-bottom:14px;
+      }
+      .lg-trib-p{
+        font-family:'EB Garamond',Georgia,serif;
+        font-size:14.5px;line-height:1.75;
+        color:rgba(232,223,200,0.7);
+        margin-bottom:14px;
+      }
+      .lg-trib-p strong{
+        color:#e8dfc8;
+        font-weight:700;
+      }
+      /* Liste attributions */
+      .lg-trib-attribs-tag{
+        font-family:'Share Tech Mono',monospace;
+        font-size:9px;letter-spacing:2.5px;
+        color:#60a5fa;text-transform:uppercase;
+        font-weight:700;
+        background:rgba(59,130,246,0.08);
+        border:1px solid rgba(59,130,246,0.32);
+        border-radius:3px;
+        padding:6px 12px;
+        display:inline-block;
+        margin-bottom:14px;
+        margin-top:18px;
+      }
+      .lg-trib-attribs-title{
+        font-family:'Cinzel',serif;
+        font-size:18px;font-weight:700;
+        color:#e8dfc8;
+        letter-spacing:0.5px;
+        margin-bottom:18px;
+      }
+      .lg-trib-list{
+        background:linear-gradient(180deg,rgba(20,16,9,0.85) 0%,rgba(15,12,7,0.85) 100%);
+        border:1px solid rgba(59,130,246,0.18);
+        border-radius:10px;
+        padding:6px 22px;
+      }
+      .lg-trib-item{
+        display:flex;align-items:flex-start;gap:14px;
+        padding:14px 4px;
+        border-bottom:1px dashed rgba(59,130,246,0.12);
+        transition:padding-left .2s ease;
+      }
+      .lg-trib-item:last-child{border-bottom:none}
+      .lg-trib-item:hover{padding-left:8px}
+      .lg-trib-item-icon{
+        font-size:18px;flex-shrink:0;
+        width:28px;text-align:center;line-height:1.2;
+      }
+      .lg-trib-item-text{
+        font-family:'EB Garamond',Georgia,serif;
+        font-size:13.5px;line-height:1.55;
+        color:rgba(232,223,200,0.7);
+      }
+      .lg-trib-item-text strong{
+        font-family:'Barlow',sans-serif;
+        font-weight:700;
+        color:#e8dfc8;
+        font-size:13.5px;
+      }
+      .lg-trib-item-text strong::after{
+        content:' — ';
+        color:rgba(59,130,246,0.4);
+        font-weight:400;
+      }
+      /* Side cards droite */
+      .lg-trib-side{display:flex;flex-direction:column;gap:14px}
+      .lg-trib-card{
+        background:rgba(20,16,9,0.85);
+        border:1px solid rgba(201,162,39,0.18);
+        border-radius:8px;
+        padding:16px 18px;
+        transition:border-color .2s ease;
+      }
+      .lg-trib-card:hover{border-color:rgba(201,162,39,0.4)}
+      .lg-trib-card-lbl{
+        font-family:'Share Tech Mono',monospace;
+        font-size:8.5px;letter-spacing:2.5px;
+        color:#c9a227;text-transform:uppercase;
+        font-weight:700;
+        margin-bottom:6px;
+      }
+      .lg-trib-card-val{
+        font-family:'Cinzel',serif;
+        font-size:16px;font-weight:700;
+        color:#e8dfc8;
+        letter-spacing:0.4px;
+        margin-bottom:3px;
+        text-transform:uppercase;
+      }
+      .lg-trib-card-sub{
+        font-family:'Barlow',sans-serif;
+        font-size:11.5px;
+        color:rgba(232,223,200,0.45);
+        font-style:italic;
+      }
+      /* Citation */
+      .lg-trib-quote{
+        background:linear-gradient(135deg,rgba(120,30,30,0.18) 0%,rgba(70,10,10,0.12) 100%);
+        border:1px solid rgba(220,38,38,0.22);
+        border-left:3px solid #dc2626;
+        border-radius:0 6px 6px 0;
+        padding:16px 18px;
+        margin-top:4px;
+      }
+      .lg-trib-quote-text{
+        font-family:'EB Garamond',Georgia,serif;
+        font-style:italic;
+        font-size:13.5px;line-height:1.55;
+        color:rgba(232,223,200,0.78);
+        margin-bottom:10px;
+      }
+      .lg-trib-quote-cite{
+        font-family:'Share Tech Mono',monospace;
+        font-size:9px;letter-spacing:1.5px;
+        color:rgba(220,38,38,0.65);
+        text-transform:uppercase;
+        font-weight:600;
+      }
+      </style>
+
+      <div class="lg-trib-overline">Tribunal de Sunagakure</div>
+      <h2 class="lg-trib-title">Le rôle du <span>Tribunal</span></h2>
+
+      <div class="lg-trib-grid">
+        <!-- COLONNE PRINCIPALE -->
+        <div>
+          <div class="lg-trib-intro">
+            <div class="lg-trib-tag">Institution Judiciaire</div>
+            <h3 class="lg-trib-h3">Les Juges, gardiens de la justice shinobi</h3>
+            <p class="lg-trib-p">Au cœur du Pays du Vent, le <strong>Tribunal de Sunagakure</strong> est l'institution chargée de rendre la justice. Composé de juges expérimentés, il statue sur les affaires les plus graves portées par la Police de Sunagakure : trahisons, homicides, conspirations, infractions majeures au code shinobi.</p>
+            <p class="lg-trib-p">Chaque juge prête serment de juger sans favoritisme, en respect de la <strong>Volonté du Vent</strong>. Leur autorité est reconnue par le Kazekage lui-même, et leurs décisions s'appliquent à tous — du Genin au Hokage.</p>
+          </div>
+
+          <div class="lg-trib-attribs-tag">Missions & Responsabilités</div>
+          <h3 class="lg-trib-attribs-title">Les attributions du Tribunal</h3>
+          <div class="lg-trib-list">
+            <div class="lg-trib-item">
+              <span class="lg-trib-item-icon">⚖️</span>
+              <div class="lg-trib-item-text"><strong>Jugement des affaires</strong>Analyse des casiers judiciaires transmis par la Police, audition des suspects, examen des preuves.</div>
+            </div>
+            <div class="lg-trib-item">
+              <span class="lg-trib-item-icon">📜</span>
+              <div class="lg-trib-item-text"><strong>Prononciation des sanctions</strong>Amendes, emprisonnement, bannissement du village ou exécution dans les cas extrêmes.</div>
+            </div>
+            <div class="lg-trib-item">
+              <span class="lg-trib-item-icon">🛡️</span>
+              <div class="lg-trib-item-text"><strong>Plaintes contre la Police</strong>Compétence exclusive : traitement des plaintes des citoyens contre les agents de Police pour garantir l'absence d'abus.</div>
+            </div>
+            <div class="lg-trib-item">
+              <span class="lg-trib-item-icon">💰</span>
+              <div class="lg-trib-item-text"><strong>Émission d'amendes</strong>Le Tribunal peut sanctionner directement certains comportements en complément du travail de la Police.</div>
+            </div>
+            <div class="lg-trib-item">
+              <span class="lg-trib-item-icon">📨</span>
+              <div class="lg-trib-item-text"><strong>Demande de rapports</strong>Sollicitation de rapports détaillés à la Police concernant des dossiers en cours d'instruction.</div>
+            </div>
+            <div class="lg-trib-item">
+              <span class="lg-trib-item-icon">🗂️</span>
+              <div class="lg-trib-item-text"><strong>Consultation des casiers</strong>Accès complet aux dossiers criminels pour assurer un jugement éclairé.</div>
+            </div>
+            <div class="lg-trib-item">
+              <span class="lg-trib-item-icon">🔒</span>
+              <div class="lg-trib-item-text"><strong>Suivi des détentions</strong>Validation des mises en cellule et durées d'emprisonnement.</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- COLONNE SIDE -->
+        <div class="lg-trib-side">
+          <div class="lg-trib-card">
+            <div class="lg-trib-card-lbl">Statut</div>
+            <div class="lg-trib-card-val">Indépendant</div>
+            <div class="lg-trib-card-sub">Distinct de la Police</div>
+          </div>
+          <div class="lg-trib-card">
+            <div class="lg-trib-card-lbl">Hiérarchie</div>
+            <div class="lg-trib-card-val">Premier Président</div>
+            <div class="lg-trib-card-sub">Plus haute autorité judiciaire</div>
+          </div>
+          <div class="lg-trib-card">
+            <div class="lg-trib-card-lbl">Compétence exclusive</div>
+            <div class="lg-trib-card-val">Plaintes vs Police</div>
+            <div class="lg-trib-card-sub">Garantie d'impartialité</div>
+          </div>
+          <div class="lg-trib-quote">
+            <div class="lg-trib-quote-text">« La justice ne connaît ni rang, ni clan, ni faveur. Seule la vérité guide notre main. »</div>
+            <div class="lg-trib-quote-cite">— Serment des juges de Sunagakure</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CABINET DES AVOCATS -->
+    <div class="lg-av-section" id="lg-av-section">
+      <style>
+      .lg-av-section{
+        max-width:1200px;
+        margin:48px auto 0;
+        padding:48px 32px 32px;
+        border-top:1px solid rgba(201,162,39,0.12);
+      }
+      .lg-av-overline{
+        font-family:'Share Tech Mono',monospace;
+        font-size:9.5px;letter-spacing:5px;
+        color:#a16207;text-transform:uppercase;
+        font-weight:700;
+        margin-bottom:14px;
+        display:flex;align-items:center;gap:10px;
+      }
+      .lg-av-overline::before{
+        content:'⚖';
+        font-size:14px;
+        color:#a16207;
+      }
+      .lg-av-title{
+        font-family:'Cinzel',serif;
+        font-size:clamp(28px,4vw,40px);
+        font-weight:700;
+        color:#e8dfc8;
+        letter-spacing:1.5px;
+        margin-bottom:30px;
+        line-height:1.1;
+      }
+      .lg-av-title span{
+        background:linear-gradient(135deg,#fbbf24 0%,#a16207 50%,#7c2d12 100%);
+        -webkit-background-clip:text;
+        -webkit-text-fill-color:transparent;
+        background-clip:text;
+      }
+      .lg-av-grid{
+        display:grid;
+        grid-template-columns:1fr 320px;
+        gap:32px;
+        align-items:start;
+      }
+      @media(max-width:900px){
+        .lg-av-grid{grid-template-columns:1fr}
+      }
+      /* Tags / sous-titres */
+      .lg-av-tag{
+        font-family:'Share Tech Mono',monospace;
+        font-size:9px;letter-spacing:2.5px;
+        color:#c9a227;text-transform:uppercase;
+        font-weight:700;
+        background:rgba(201,162,39,0.08);
+        border:1px solid rgba(201,162,39,0.3);
+        border-radius:3px;
+        padding:6px 12px;
+        display:inline-block;
+        margin-bottom:14px;
+      }
+      .lg-av-h3{
+        font-family:'Cinzel',serif;
+        font-size:18px;font-weight:700;
+        color:#e8dfc8;
+        letter-spacing:0.5px;
+        margin-bottom:14px;
+      }
+      .lg-av-p{
+        font-family:'EB Garamond',Georgia,serif;
+        font-size:14.5px;line-height:1.75;
+        color:rgba(232,223,200,0.7);
+        margin-bottom:14px;
+      }
+      .lg-av-p strong{color:#e8dfc8;font-weight:700}
+      .lg-av-divider{
+        height:1px;
+        background:linear-gradient(90deg,transparent,rgba(201,162,39,0.18),transparent);
+        margin:24px 0 24px;
+      }
+      /* Side cards droite */
+      .lg-av-side{display:flex;flex-direction:column;gap:14px}
+      .lg-av-card{
+        background:rgba(20,16,9,0.85);
+        border:1px solid rgba(201,162,39,0.18);
+        border-radius:8px;
+        padding:16px 18px;
+        transition:border-color .2s ease;
+      }
+      .lg-av-card:hover{border-color:rgba(201,162,39,0.4)}
+      .lg-av-card-lbl{
+        font-family:'Share Tech Mono',monospace;
+        font-size:8.5px;letter-spacing:2.5px;
+        color:#c9a227;text-transform:uppercase;
+        font-weight:700;
+        margin-bottom:6px;
+      }
+      .lg-av-card-val{
+        font-family:'Cinzel',serif;
+        font-size:16px;font-weight:700;
+        color:#e8dfc8;
+        letter-spacing:0.4px;
+        margin-bottom:3px;
+        text-transform:uppercase;
+      }
+      .lg-av-card-sub{
+        font-family:'Barlow',sans-serif;
+        font-size:11.5px;
+        color:rgba(232,223,200,0.45);
+        font-style:italic;
+      }
+      /* Citation */
+      .lg-av-quote{
+        background:linear-gradient(135deg,rgba(120,30,30,0.18) 0%,rgba(70,10,10,0.12) 100%);
+        border:1px solid rgba(220,38,38,0.22);
+        border-left:3px solid #dc2626;
+        border-radius:0 6px 6px 0;
+        padding:16px 18px;
+      }
+      .lg-av-quote-text{
+        font-family:'EB Garamond',Georgia,serif;
+        font-style:italic;
+        font-size:13.5px;line-height:1.55;
+        color:rgba(232,223,200,0.78);
+        margin-bottom:10px;
+      }
+      .lg-av-quote-cite{
+        font-family:'Share Tech Mono',monospace;
+        font-size:9px;letter-spacing:1.5px;
+        color:rgba(220,38,38,0.65);
+        text-transform:uppercase;
+        font-weight:600;
+      }
+      /* Bloc attributions */
+      .lg-av-attribs{
+        margin-top:36px;
+      }
+      .lg-av-attribs-tag{
+        font-family:'Share Tech Mono',monospace;
+        font-size:9px;letter-spacing:2.5px;
+        color:#fbbf24;text-transform:uppercase;
+        font-weight:700;
+        background:rgba(217,119,6,0.10)
+        ;border:1px solid rgba(217,119,6,0.32);
+        border-radius:3px;
+        padding:6px 12px;
+        display:inline-block;
+        margin-bottom:14px;
+      }
+      .lg-av-list{
+        background:linear-gradient(180deg,rgba(20,16,9,0.85) 0%,rgba(15,12,7,0.85) 100%);
+        border:1px solid rgba(217,119,6,0.18);
+        border-radius:10px;
+        padding:6px 22px;
+      }
+      .lg-av-item{
+        display:flex;align-items:flex-start;gap:14px;
+        padding:14px 4px;
+        border-bottom:1px dashed rgba(217,119,6,0.14);
+        transition:padding-left .2s ease;
+      }
+      .lg-av-item:last-child{border-bottom:none}
+      .lg-av-item:hover{padding-left:8px}
+      .lg-av-item-icon{
+        font-size:18px;flex-shrink:0;
+        width:28px;text-align:center;line-height:1.2;
+      }
+      .lg-av-item-text{
+        font-family:'EB Garamond',Georgia,serif;
+        font-size:13.5px;line-height:1.55;
+        color:rgba(232,223,200,0.7);
+      }
+      .lg-av-item-text strong{
+        font-family:'Barlow',sans-serif;
+        font-weight:700;
+        color:#e8dfc8;
+        font-size:13.5px;
+      }
+      .lg-av-item-text strong::after{
+        content:' — ';
+        color:rgba(217,119,6,0.4);
+        font-weight:400;
+      }
+      </style>
+
+      <div class="lg-av-overline">Cabinet des Avocats</div>
+      <h2 class="lg-av-title">Le Cabinet des <span>Avocats</span></h2>
+
+      <div class="lg-av-grid">
+        <!-- COLONNE PRINCIPALE -->
+        <div>
+          <div class="lg-av-tag">Défense des droits</div>
+          <h3 class="lg-av-h3">Les défenseurs des shinobis</h3>
+          <p class="lg-av-p">Le <strong>Cabinet des Avocats de Sunagakure</strong> rassemble les défenseurs jurés du village. Leur rôle : assister tout shinobi ou citoyen accusé, garantir un procès équitable, et plaider devant le Tribunal lorsque la liberté ou l'honneur d'un client est en jeu.</p>
+          <p class="lg-av-p">Un avocat de Sunagakure étudie le casier judiciaire de son client, prépare sa défense, négocie avec le Tribunal et la Police, et rédige les contrats officiels qui scellent ses engagements.</p>
+
+          <div class="lg-av-divider"></div>
+
+          <div class="lg-av-tag" style="color:#fbbf24;background:rgba(217,119,6,0.10);border-color:rgba(217,119,6,0.32)">Honoraires & Contrats</div>
+          <h3 class="lg-av-h3">Le contrat avocat-client</h3>
+          <p class="lg-av-p">Chaque dossier ouvert par un avocat fait l'objet d'un <strong>contrat officiel</strong> précisant les honoraires en Ryos. La facture est ensuite transmise au client.</p>
+          <p class="lg-av-p">Les avocats peuvent rouvrir un dossier déjà existant lorsqu'un nouveau fait apparaît concernant le même client — sans créer de doublon — et générer un avenant au contrat initial.</p>
+        </div>
+
+        <!-- COLONNE SIDE -->
+        <div class="lg-av-side">
+          <div class="lg-av-card">
+            <div class="lg-av-card-lbl">Hiérarchie</div>
+            <div class="lg-av-card-val">Bâtonnier</div>
+            <div class="lg-av-card-sub">Chef du Cabinet</div>
+          </div>
+          <div class="lg-av-card">
+            <div class="lg-av-card-lbl">Accès</div>
+            <div class="lg-av-card-val">Casiers judiciaires</div>
+            <div class="lg-av-card-sub">Pour défense efficace</div>
+          </div>
+          <div class="lg-av-card">
+            <div class="lg-av-card-lbl">Outil</div>
+            <div class="lg-av-card-val">Contrats & Factures</div>
+            <div class="lg-av-card-sub">Honoraires en Ryos</div>
+          </div>
+          <div class="lg-av-quote">
+            <div class="lg-av-quote-text">« Tout shinobi a droit à une défense, quelle que soit la gravité des charges qui pèsent sur lui. »</div>
+            <div class="lg-av-quote-cite">— Maxime du Barreau de Sunagakure</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ATTRIBUTIONS DU CABINET (pleine largeur) -->
+      <div class="lg-av-attribs">
+        <div class="lg-av-attribs-tag">Missions & Responsabilités</div>
+        <h3 class="lg-av-h3">Les attributions du Cabinet</h3>
+        <div class="lg-av-list">
+          <div class="lg-av-item">
+            <span class="lg-av-item-icon">⚖️</span>
+            <div class="lg-av-item-text"><strong>Défense des accusés</strong>Représentation devant le Tribunal de tout shinobi ou citoyen mis en cause.</div>
+          </div>
+          <div class="lg-av-item">
+            <span class="lg-av-item-icon">📁</span>
+            <div class="lg-av-item-text"><strong>Gestion des dossiers clients</strong>Suivi personnalisé de chaque client, archivage des affaires, suivi des honoraires.</div>
+          </div>
+          <div class="lg-av-item">
+            <span class="lg-av-item-icon">📜</span>
+            <div class="lg-av-item-text"><strong>Rédaction de contrats</strong>Établissement des conventions officielles avocat-client avec montant des honoraires.</div>
+          </div>
+          <div class="lg-av-item">
+            <span class="lg-av-item-icon">🗂️</span>
+            <div class="lg-av-item-text"><strong>Consultation des casiers</strong>Accès aux dossiers judiciaires pour préparer une défense efficace.</div>
+          </div>
+          <div class="lg-av-item">
+            <span class="lg-av-item-icon">💰</span>
+            <div class="lg-av-item-text"><strong>Émission d'amendes & contestation</strong>Possibilité de contester les amendes émises par la Police pour leurs clients.</div>
+          </div>
+          <div class="lg-av-item">
+            <span class="lg-av-item-icon">🤝</span>
+            <div class="lg-av-item-text"><strong>Négociation</strong>Médiation entre la Police, le Tribunal et le client pour obtenir le meilleur règlement possible.</div>
+          </div>
+          <div class="lg-av-item">
+            <span class="lg-av-item-icon">📃</span>
+            <div class="lg-av-item-text"><strong>Conseil juridique</strong>Accompagnement et conseil aux citoyens sur leurs droits et obligations.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- DÉONTOLOGIE POLICIÈRE -->
+    <div class="lg-deo-section" id="lg-deo-section">
+      <style>
+      .lg-deo-section{
+        max-width:1200px;
+        margin:48px auto 0;
+        padding:48px 32px 32px;
+        border-top:1px solid rgba(201,162,39,0.12);
+      }
+      .lg-deo-overline{
+        font-family:'Share Tech Mono',monospace;
+        font-size:9.5px;letter-spacing:5px;
+        color:#c9a227;text-transform:uppercase;
+        font-weight:700;
+        margin-bottom:14px;
+      }
+      .lg-deo-title{
+        font-family:'Cinzel',serif;
+        font-size:clamp(28px,4vw,40px);
+        font-weight:700;
+        color:#e8dfc8;
+        letter-spacing:1.5px;
+        margin-bottom:30px;
+        line-height:1.1;
+      }
+      .lg-deo-title span{
+        background:linear-gradient(135deg,#fbbf24 0%,#c9a227 50%,#a16207 100%);
+        -webkit-background-clip:text;
+        -webkit-text-fill-color:transparent;
+        background-clip:text;
+      }
+      .lg-deo-grid{
+        display:grid;
+        grid-template-columns:repeat(3,1fr);
+        gap:18px;
+      }
+      @media(max-width:1100px){.lg-deo-grid{grid-template-columns:repeat(2,1fr)}}
+      .lg-deo-card{
+        background:linear-gradient(180deg,rgba(20,16,9,0.95) 0%,rgba(15,12,7,0.95) 100%);
+        border:1px solid rgba(201,162,39,0.18);
+        border-radius:10px;
+        padding:22px 22px 24px;
+        position:relative;
+        transition:transform .25s ease,border-color .25s ease,box-shadow .25s ease;
+      }
+      .lg-deo-card:hover{
+        transform:translateY(-3px);
+        border-color:rgba(201,162,39,0.4);
+        box-shadow:0 10px 30px rgba(0,0,0,0.5);
+      }
+      .lg-deo-art{
+        display:inline-block;
+        font-family:'Share Tech Mono',monospace;
+        font-size:9px;letter-spacing:2.5px;
+        font-weight:700;text-transform:uppercase;
+        padding:4px 12px;border-radius:3px;
+        background:rgba(201,162,39,0.14);
+        color:#c9a227;
+        border:1px solid rgba(201,162,39,0.4);
+        margin-bottom:14px;
+      }
+      .lg-deo-card-title{
+        font-family:'Cinzel',serif;
+        font-size:15px;font-weight:700;
+        color:#e8dfc8;
+        letter-spacing:0.6px;
+        text-transform:uppercase;
+        margin-bottom:12px;
+      }
+      .lg-deo-card-text{
+        font-family:'EB Garamond',Georgia,serif;
+        font-size:13.5px;line-height:1.6;
+        color:rgba(232,223,200,0.55);
+      }
+      </style>
+
+      <div class="lg-deo-overline">Charte officielle</div>
+      <h2 class="lg-deo-title">Déontologie <span>Policière</span></h2>
+      <div class="lg-deo-grid">
+        <div class="lg-deo-card">
+          <div class="lg-deo-art">ART. 1</div>
+          <div class="lg-deo-card-title">Autorité de la police</div>
+          <div class="lg-deo-card-text">La police représente l'autorité et l'ordre au sein du village. Elle fait respecter les lois et garantit la sécurité de tous les citoyens.</div>
+        </div>
+        <div class="lg-deo-card">
+          <div class="lg-deo-art">ART. 2</div>
+          <div class="lg-deo-card-title">Respect des lois</div>
+          <div class="lg-deo-card-text">Toute infraction aux lois du village fera l'objet d'une sanction proportionnelle à la gravité des faits.</div>
+        </div>
+        <div class="lg-deo-card">
+          <div class="lg-deo-art">ART. 3</div>
+          <div class="lg-deo-card-title">Protection du village</div>
+          <div class="lg-deo-card-text">Tout acte de vandalisme, destruction ou atteinte aux infrastructures sera sévèrement puni.</div>
+        </div>
+        <div class="lg-deo-card">
+          <div class="lg-deo-art">ART. 4</div>
+          <div class="lg-deo-card-title">Respect entre citoyens</div>
+          <div class="lg-deo-card-text">Tout manque de respect grave ou trouble à l'ordre public peut entraîner une intervention et une sanction.</div>
+        </div>
+        <div class="lg-deo-card">
+          <div class="lg-deo-art">ART. 5</div>
+          <div class="lg-deo-card-title">Usage de la force</div>
+          <div class="lg-deo-card-text">La police utilise la force uniquement quand nécessaire pour maintenir l'ordre, protéger les citoyens ou neutraliser une menace.</div>
+        </div>
+        <div class="lg-deo-card">
+          <div class="lg-deo-art">ART. 6</div>
+          <div class="lg-deo-card-title">Égalité devant la loi</div>
+          <div class="lg-deo-card-text">Personne n'est au-dessus de la loi, y compris les membres de clans reconnus.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RÈGLEMENT OFFICIEL -->
+    <div class="lg-reg-section" id="lg-reg-section">
+      <style>
+      .lg-reg-section{
+        max-width:1100px;
+        margin:48px auto 0;
+        padding:48px 32px 32px;
+        border-top:1px solid rgba(201,162,39,0.12);
+      }
+      .lg-reg-overline{
+        font-family:'Share Tech Mono',monospace;
+        font-size:9.5px;letter-spacing:5px;
+        color:#c9a227;text-transform:uppercase;
+        font-weight:700;
+        margin-bottom:14px;
+      }
+      .lg-reg-title{
+        font-family:'Cinzel',serif;
+        font-size:clamp(28px,4vw,40px);
+        font-weight:700;
+        color:#e8dfc8;
+        letter-spacing:1.5px;
+        margin-bottom:36px;
+        line-height:1.1;
+      }
+      .lg-reg-title span{
+        background:linear-gradient(135deg,#fbbf24 0%,#c9a227 50%,#a16207 100%);
+        -webkit-background-clip:text;
+        -webkit-text-fill-color:transparent;
+        background-clip:text;
+      }
+      .lg-reg-list{
+        display:flex;flex-direction:column;
+      }
+      .lg-reg-item{
+        display:grid;
+        grid-template-columns:64px 1fr;
+        gap:18px;align-items:start;
+        padding:20px 8px;
+        border-bottom:1px solid rgba(201,162,39,0.1);
+        transition:background-color .2s ease;
+      }
+      .lg-reg-item:last-child{border-bottom:none}
+      .lg-reg-item:hover{background:rgba(201,162,39,0.03)}
+      .lg-reg-num{
+        font-family:'Cinzel',serif;
+        font-size:32px;font-weight:700;
+        color:rgba(201,162,39,0.45);
+        line-height:1;
+        letter-spacing:1px;
+      }
+      .lg-reg-content{
+        padding-top:4px;
+      }
+      .lg-reg-h{
+        font-family:'Barlow',sans-serif;
+        font-size:14.5px;font-weight:700;
+        color:#e8dfc8;
+        letter-spacing:0.3px;
+        margin-bottom:5px;
+      }
+      .lg-reg-d{
+        font-family:'EB Garamond',Georgia,serif;
+        font-size:13.5px;line-height:1.55;
+        color:rgba(232,223,200,0.55);
+      }
+      </style>
+
+      <div class="lg-reg-overline">Code de conduite</div>
+      <h2 class="lg-reg-title">Règlement <span>Officiel</span></h2>
+      <div class="lg-reg-list">
+        <div class="lg-reg-item">
+          <div class="lg-reg-num">01</div>
+          <div class="lg-reg-content">
+            <div class="lg-reg-h">Respect de la hiérarchie</div>
+            <div class="lg-reg-d">Les ordres des supérieurs doivent être respectés en toute circonstance.</div>
+          </div>
+        </div>
+        <div class="lg-reg-item">
+          <div class="lg-reg-num">02</div>
+          <div class="lg-reg-content">
+            <div class="lg-reg-h">Usage proportionné de la force</div>
+            <div class="lg-reg-d">Recourir à la force uniquement si nécessaire et de manière strictement proportionnelle.</div>
+          </div>
+        </div>
+        <div class="lg-reg-item">
+          <div class="lg-reg-num">03</div>
+          <div class="lg-reg-content">
+            <div class="lg-reg-h">Présence régulière</div>
+            <div class="lg-reg-d">Minimum 3 services par semaine. Toute absence prolongée doit être signalée.</div>
+          </div>
+        </div>
+        <div class="lg-reg-item">
+          <div class="lg-reg-num">04</div>
+          <div class="lg-reg-content">
+            <div class="lg-reg-h">Port de l'uniforme</div>
+            <div class="lg-reg-d">Uniforme officiel obligatoire durant tout service actif.</div>
+          </div>
+        </div>
+        <div class="lg-reg-item">
+          <div class="lg-reg-num">05</div>
+          <div class="lg-reg-content">
+            <div class="lg-reg-h">Interdiction de corruption</div>
+            <div class="lg-reg-d">Tout acte de corruption est passible d'exclusion immédiate.</div>
+          </div>
+        </div>
+        <div class="lg-reg-item">
+          <div class="lg-reg-num">06</div>
+          <div class="lg-reg-content">
+            <div class="lg-reg-h">Neutralité</div>
+            <div class="lg-reg-d">Pas de favoritisme basé sur clan, origine ou affiliation.</div>
+          </div>
+        </div>
+        <div class="lg-reg-item">
+          <div class="lg-reg-num">07</div>
+          <div class="lg-reg-content">
+            <div class="lg-reg-h">Confidentialité</div>
+            <div class="lg-reg-d">Les enquêtes en cours sont strictement confidentielles.</div>
+          </div>
+        </div>
+        <div class="lg-reg-item">
+          <div class="lg-reg-num">08</div>
+          <div class="lg-reg-content">
+            <div class="lg-reg-h">Respect des civils</div>
+            <div class="lg-reg-d">Tout citoyen arrêté a droit à être informé et traité avec dignité.</div>
+          </div>
+        </div>
+        <div class="lg-reg-item">
+          <div class="lg-reg-num">09</div>
+          <div class="lg-reg-content">
+            <div class="lg-reg-h">Rapport obligatoire</div>
+            <div class="lg-reg-d">Rapport détaillé après toute mission ou incident significatif.</div>
+          </div>
+        </div>
+        <div class="lg-reg-item">
+          <div class="lg-reg-num">10</div>
+          <div class="lg-reg-content">
+            <div class="lg-reg-h">Loyauté envers Sunagakure</div>
+            <div class="lg-reg-d">Allégeance au village et au Kazekage. Toute trahison entraîne exclusion.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- BUREAU DES MISSIONS -->
+    <div class="lg-bm-section" id="lg-bm-section">
+      <style>
+      .lg-bm-section{
+        max-width:1200px;
+        margin:48px auto 0;
+        padding:48px 32px 32px;
+        border-top:1px solid rgba(201,162,39,0.12);
+      }
+      .lg-bm-overline{
+        font-family:'Share Tech Mono',monospace;
+        font-size:9.5px;letter-spacing:5px;
+        color:#06b6d4;text-transform:uppercase;
+        font-weight:700;
+        margin-bottom:14px;
+        display:flex;align-items:center;gap:10px;
+      }
+      .lg-bm-overline::before{
+        content:'🎯';
+        font-size:14px;
+      }
+      .lg-bm-title{
+        font-family:'Cinzel',serif;
+        font-size:clamp(28px,4vw,40px);
+        font-weight:700;
+        color:#e8dfc8;
+        letter-spacing:1.5px;
+        margin-bottom:30px;
+        line-height:1.1;
+      }
+      .lg-bm-title span{
+        background:linear-gradient(135deg,#fbbf24 0%,#c9a227 50%,#a16207 100%);
+        -webkit-background-clip:text;
+        -webkit-text-fill-color:transparent;
+        background-clip:text;
+      }
+      .lg-bm-grid{
+        display:grid;
+        grid-template-columns:1fr 320px;
+        gap:32px;
+        align-items:start;
+      }
+      @media(max-width:900px){
+        .lg-bm-grid{grid-template-columns:1fr}
+      }
+      /* Tags / sous-titres */
+      .lg-bm-tag{
+        font-family:'Share Tech Mono',monospace;
+        font-size:9px;letter-spacing:2.5px;
+        color:#c9a227;text-transform:uppercase;
+        font-weight:700;
+        background:rgba(201,162,39,0.08);
+        border:1px solid rgba(201,162,39,0.3);
+        border-radius:3px;
+        padding:6px 12px;
+        display:inline-block;
+        margin-bottom:14px;
+      }
+      .lg-bm-tag.cyan{
+        color:#06b6d4;
+        background:rgba(6,182,212,0.10);
+        border-color:rgba(6,182,212,0.32);
+      }
+      .lg-bm-h3{
+        font-family:'Cinzel',serif;
+        font-size:18px;font-weight:700;
+        color:#e8dfc8;
+        letter-spacing:0.5px;
+        margin-bottom:14px;
+      }
+      .lg-bm-p{
+        font-family:'EB Garamond',Georgia,serif;
+        font-size:14.5px;line-height:1.75;
+        color:rgba(232,223,200,0.7);
+        margin-bottom:14px;
+      }
+      .lg-bm-p strong{color:#e8dfc8;font-weight:700}
+      .lg-bm-divider{
+        height:1px;
+        background:linear-gradient(90deg,transparent,rgba(201,162,39,0.18),transparent);
+        margin:24px 0;
+      }
+      /* Liste des rangs */
+      .lg-bm-ranks{
+        display:flex;flex-direction:column;gap:8px;
+        margin-top:18px;
+      }
+      .lg-bm-rank{
+        display:flex;align-items:center;gap:12px;
+        padding:6px 4px;
+        font-family:'EB Garamond',Georgia,serif;
+        font-size:14px;
+        color:rgba(232,223,200,0.75);
+        line-height:1.5;
+        transition:padding-left .2s ease;
+      }
+      .lg-bm-rank:hover{padding-left:6px}
+      .lg-bm-rank-dot{
+        width:14px;height:14px;border-radius:50%;
+        flex-shrink:0;
+        box-shadow:0 0 0 2px rgba(255,255,255,0.05),0 1px 3px rgba(0,0,0,0.4);
+      }
+      .lg-bm-rank-name{
+        font-family:'Barlow',sans-serif;
+        font-weight:700;color:#e8dfc8;font-size:13.5px;
+        letter-spacing:0.3px;
+      }
+      .lg-bm-rank-name::after{
+        content:' — ';
+        color:rgba(255,255,255,0.3);
+        font-weight:400;
+      }
+      /* Side cards droite */
+      .lg-bm-side{display:flex;flex-direction:column;gap:14px}
+      .lg-bm-card{
+        background:rgba(20,16,9,0.85);
+        border:1px solid rgba(201,162,39,0.18);
+        border-radius:8px;
+        padding:16px 18px;
+        transition:border-color .2s ease;
+      }
+      .lg-bm-card:hover{border-color:rgba(201,162,39,0.4)}
+      .lg-bm-card-lbl{
+        font-family:'Share Tech Mono',monospace;
+        font-size:8.5px;letter-spacing:2.5px;
+        color:#c9a227;text-transform:uppercase;
+        font-weight:700;
+        margin-bottom:6px;
+      }
+      .lg-bm-card-val{
+        font-family:'Cinzel',serif;
+        font-size:16px;font-weight:700;
+        color:#e8dfc8;
+        letter-spacing:0.4px;
+        margin-bottom:3px;
+        text-transform:uppercase;
+      }
+      .lg-bm-card-sub{
+        font-family:'Barlow',sans-serif;
+        font-size:11.5px;
+        color:rgba(232,223,200,0.45);
+        font-style:italic;
+      }
+      /* Citation */
+      .lg-bm-quote{
+        background:linear-gradient(135deg,rgba(120,30,30,0.18) 0%,rgba(70,10,10,0.12) 100%);
+        border:1px solid rgba(220,38,38,0.22);
+        border-left:3px solid #dc2626;
+        border-radius:0 6px 6px 0;
+        padding:16px 18px;
+      }
+      .lg-bm-quote-text{
+        font-family:'EB Garamond',Georgia,serif;
+        font-style:italic;
+        font-size:13.5px;line-height:1.55;
+        color:rgba(232,223,200,0.78);
+        margin-bottom:10px;
+      }
+      .lg-bm-quote-cite{
+        font-family:'Share Tech Mono',monospace;
+        font-size:9px;letter-spacing:1.5px;
+        color:rgba(220,38,38,0.65);
+        text-transform:uppercase;
+        font-weight:600;
+      }
+      /* Bloc attributions */
+      .lg-bm-attribs{
+        margin-top:36px;
+      }
+      .lg-bm-attribs-tag{
+        font-family:'Share Tech Mono',monospace;
+        font-size:9px;letter-spacing:2.5px;
+        color:#06b6d4;text-transform:uppercase;
+        font-weight:700;
+        background:rgba(6,182,212,0.10);
+        border:1px solid rgba(6,182,212,0.32);
+        border-radius:3px;
+        padding:6px 12px;
+        display:inline-block;
+        margin-bottom:14px;
+      }
+      .lg-bm-list{
+        background:linear-gradient(180deg,rgba(20,16,9,0.85) 0%,rgba(15,12,7,0.85) 100%);
+        border:1px solid rgba(6,182,212,0.18);
+        border-radius:10px;
+        padding:6px 22px;
+      }
+      .lg-bm-item{
+        display:flex;align-items:flex-start;gap:14px;
+        padding:14px 4px;
+        border-bottom:1px dashed rgba(6,182,212,0.14);
+        transition:padding-left .2s ease;
+      }
+      .lg-bm-item:last-child{border-bottom:none}
+      .lg-bm-item:hover{padding-left:8px}
+      .lg-bm-item-icon{
+        font-size:18px;flex-shrink:0;
+        width:28px;text-align:center;line-height:1.2;
+      }
+      .lg-bm-item-text{
+        font-family:'EB Garamond',Georgia,serif;
+        font-size:13.5px;line-height:1.55;
+        color:rgba(232,223,200,0.7);
+      }
+      .lg-bm-item-text strong{
+        font-family:'Barlow',sans-serif;
+        font-weight:700;
+        color:#e8dfc8;
+        font-size:13.5px;
+      }
+      .lg-bm-item-text strong::after{
+        content:' — ';
+        color:rgba(6,182,212,0.4);
+        font-weight:400;
+      }
+      /* Bloc philosophie */
+      .lg-bm-philo{margin-top:36px}
+      </style>
+
+      <div class="lg-bm-overline">Bureau des Missions</div>
+      <h2 class="lg-bm-title">Le Bureau des <span>Missions</span></h2>
+
+      <div class="lg-bm-grid">
+        <!-- COLONNE PRINCIPALE -->
+        <div>
+          <div class="lg-bm-tag">Origine</div>
+          <h3 class="lg-bm-h3">La création du Bureau</h3>
+          <p class="lg-bm-p">Le <strong>Bureau des Missions</strong> a été établi par le <strong>3ème Kazekage</strong> face à un constat simple : les shinobis du village devaient avoir un cadre clair et structuré pour exercer leur art. Avant sa création, les missions étaient distribuées de manière informelle, créant des inégalités, des conflits de légitimité et parfois des tragédies évitables.</p>
+          <p class="lg-bm-p">Le 3ème Kazekage souhaitait que <strong>tout ninja</strong>, du plus jeune Genin au plus expérimenté Jonin, puisse trouver des missions adaptées à son niveau et à ses ambitions, dans un environnement sécurisé et reconnu officiellement par le village.</p>
+
+          <div class="lg-bm-divider"></div>
+
+          <div class="lg-bm-tag">Système de classification</div>
+          <h3 class="lg-bm-h3">Les rangs de mission — De E à S+</h3>
+          <p class="lg-bm-p">Pour structurer la distribution équitable des missions, le Bureau a mis en place un système de <strong>7 rangs hiérarchiques</strong> :</p>
+          <div class="lg-bm-ranks">
+            <div class="lg-bm-rank"><span class="lg-bm-rank-dot" style="background:#22c55e"></span><div><span class="lg-bm-rank-name">Rang E</span>Tâches simples du village (jardinage, courses, escortes locales)</div></div>
+            <div class="lg-bm-rank"><span class="lg-bm-rank-dot" style="background:#3b82f6"></span><div><span class="lg-bm-rank-name">Rang D</span>Petites missions sans danger (livraisons, surveillance mineure)</div></div>
+            <div class="lg-bm-rank"><span class="lg-bm-rank-dot" style="background:#fbbf24"></span><div><span class="lg-bm-rank-name">Rang C</span>Missions standards avec risques modérés</div></div>
+            <div class="lg-bm-rank"><span class="lg-bm-rank-dot" style="background:#fb923c"></span><div><span class="lg-bm-rank-name">Rang B</span>Missions complexes face à des ninjas adverses</div></div>
+            <div class="lg-bm-rank"><span class="lg-bm-rank-dot" style="background:#ef4444"></span><div><span class="lg-bm-rank-name">Rang A</span>Missions dangereuses pour shinobis expérimentés</div></div>
+            <div class="lg-bm-rank"><span style="font-size:14px;line-height:1;width:14px;text-align:center;flex-shrink:0">👑</span><div><span class="lg-bm-rank-name">Rang S</span>Missions élites — Jonin et plus</div></div>
+            <div class="lg-bm-rank"><span style="font-size:14px;line-height:1;width:14px;text-align:center;flex-shrink:0">💀</span><div><span class="lg-bm-rank-name">Rang S+</span>Missions légendaires — Risque mortel</div></div>
+          </div>
+        </div>
+
+        <!-- COLONNE SIDE -->
+        <div class="lg-bm-side">
+          <div class="lg-bm-card">
+            <div class="lg-bm-card-lbl">Fondateur</div>
+            <div class="lg-bm-card-val">3ème Kazekage</div>
+            <div class="lg-bm-card-sub">Créateur du système</div>
+          </div>
+          <div class="lg-bm-card">
+            <div class="lg-bm-card-lbl">Hiérarchie</div>
+            <div class="lg-bm-card-val">Chef du Bureau</div>
+            <div class="lg-bm-card-sub">Direction des missions</div>
+          </div>
+          <div class="lg-bm-card">
+            <div class="lg-bm-card-lbl">Rangs</div>
+            <div class="lg-bm-card-val">E → S+</div>
+            <div class="lg-bm-card-sub">7 niveaux de difficulté</div>
+          </div>
+          <div class="lg-bm-card">
+            <div class="lg-bm-card-lbl">Accès</div>
+            <div class="lg-bm-card-val">Tous les shinobis</div>
+            <div class="lg-bm-card-sub">Du Genin au Jonin</div>
+          </div>
+          <div class="lg-bm-quote">
+            <div class="lg-bm-quote-text">« Une mission n'est pas qu'une tâche : c'est un engagement envers le village et envers soi-même. »</div>
+            <div class="lg-bm-quote-cite">— Discours du 3ème Kazekage</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ATTRIBUTIONS DU BUREAU (pleine largeur) -->
+      <div class="lg-bm-attribs">
+        <div class="lg-bm-attribs-tag">Missions & Responsabilités</div>
+        <h3 class="lg-bm-h3">Les attributions du Bureau</h3>
+        <div class="lg-bm-list">
+          <div class="lg-bm-item">
+            <span class="lg-bm-item-icon">📜</span>
+            <div class="lg-bm-item-text"><strong>Publication des missions</strong>Mise à disposition d'un tableau public officiel accessible à tous les shinobis du village.</div>
+          </div>
+          <div class="lg-bm-item">
+            <span class="lg-bm-item-icon">⚖️</span>
+            <div class="lg-bm-item-text"><strong>Classification par rangs</strong>Évaluation rigoureuse de la difficulté de chaque mission selon les 7 rangs (E à S+).</div>
+          </div>
+          <div class="lg-bm-item">
+            <span class="lg-bm-item-icon">💰</span>
+            <div class="lg-bm-item-text"><strong>Définition des récompenses</strong>Attribution des Ryos selon la difficulté, le danger et la durée estimée de la mission.</div>
+          </div>
+          <div class="lg-bm-item">
+            <span class="lg-bm-item-icon">👥</span>
+            <div class="lg-bm-item-text"><strong>Constitution d'équipes</strong>Validation des équipes formées par les shinobis pour les missions, vérification des grades requis.</div>
+          </div>
+          <div class="lg-bm-item">
+            <span class="lg-bm-item-icon">🗺️</span>
+            <div class="lg-bm-item-text"><strong>Suivi sur carte</strong>Tableau des opérations en cours avec localisation en temps réel des équipes en mission.</div>
+          </div>
+          <div class="lg-bm-item">
+            <span class="lg-bm-item-icon">✅</span>
+            <div class="lg-bm-item-text"><strong>Validation des accomplissements</strong>Marquage officiel d'une mission comme « Terminée » et clôture du dossier.</div>
+          </div>
+          <div class="lg-bm-item">
+            <span class="lg-bm-item-icon">🤝</span>
+            <div class="lg-bm-item-text"><strong>Coordination avec la Police</strong>Transmission automatique des équipes en mission au registre des Portes du village.</div>
+          </div>
+          <div class="lg-bm-item">
+            <span class="lg-bm-item-icon">📚</span>
+            <div class="lg-bm-item-text"><strong>Archives</strong>Conservation de l'historique de toutes les missions accomplies par les shinobis du village.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- PHILOSOPHIE -->
+      <div class="lg-bm-philo">
+        <div class="lg-bm-tag">Philosophie</div>
+        <h3 class="lg-bm-h3">Pourquoi le Bureau existe</h3>
+        <p class="lg-bm-p">Le Bureau des Missions repose sur trois principes fondateurs : <strong>équité</strong>, <strong>sécurité</strong> et <strong>traçabilité</strong>. Chaque shinobi doit pouvoir trouver des missions à sa hauteur, partir avec une équipe adaptée et savoir qu'en cas de problème, le village saura précisément où il se trouve.</p>
+        <p class="lg-bm-p">C'est aussi un acte de <strong>reconnaissance officielle</strong> : aucune mission accomplie n'est anonyme. Chaque exploit est consigné, chaque équipe créditée, chaque récompense versée selon les règles du village.</p>
       </div>
     </div>
 
@@ -5758,17 +7401,247 @@ document.addEventListener('DOMContentLoaded',function(){if(localStorage.getItem(
 
   <!-- ADMIN -->
   <div class="page-content" id="page-admin">
-    <div class="section-header">
-      <div>
-        <div class="section-title">Panel Admin</div>
-        <div class="section-sub">GESTION DES ACCÈS & CONFIGURATION</div>
+    <style>
+    /* ═══════════════════════════════════════════════════════════
+       PANEL ADMIN — Refonte console d'administration
+       ═══════════════════════════════════════════════════════════ */
+    #page-admin .adm-hero{
+      background:linear-gradient(135deg,rgba(20,16,9,0.95) 0%,rgba(15,12,7,0.95) 100%);
+      border:1px solid rgba(180,140,20,0.22);
+      border-radius:12px;
+      padding:22px 26px;
+      margin-bottom:18px;
+      display:flex;align-items:center;justify-content:space-between;
+      gap:18px;flex-wrap:wrap;
+      position:relative;overflow:hidden;
+      box-shadow:0 4px 24px rgba(0,0,0,0.35);
+    }
+    #page-admin .adm-hero::before{
+      content:'';position:absolute;top:0;left:0;right:0;height:2px;
+      background:linear-gradient(90deg,#c9a227 0%,#dc2626 50%,#c9a227 100%);
+      opacity:0.7;
+    }
+    #page-admin .adm-hero-left{display:flex;align-items:center;gap:14px}
+    #page-admin .adm-hero-icon{
+      width:48px;height:48px;border-radius:10px;
+      background:linear-gradient(135deg,rgba(192,65,14,0.2),rgba(180,140,20,0.15));
+      border:1px solid rgba(180,140,20,0.4);
+      display:flex;align-items:center;justify-content:center;
+      font-size:24px;flex-shrink:0;
+      box-shadow:inset 0 1px 0 rgba(255,255,255,0.05);
+    }
+    #page-admin .adm-hero-text .label{
+      font-family:'Share Tech Mono',monospace;
+      font-size:9px;letter-spacing:3px;
+      color:#c0410e;text-transform:uppercase;
+      margin-bottom:4px;font-weight:700;
+    }
+    #page-admin .adm-hero-text h2{
+      font-family:'Cinzel',serif;
+      font-size:21px;font-weight:700;
+      color:#f0e8d0;letter-spacing:1.5px;
+      text-transform:uppercase;
+      line-height:1;
+    }
+    #page-admin .adm-hero-actions{display:flex;gap:8px;flex-wrap:wrap}
+
+    /* Onglets */
+    #page-admin .adm-tabs{
+      display:flex;gap:4px;
+      background:rgba(20,16,9,0.6);
+      border:1px solid rgba(180,140,20,0.18);
+      border-radius:10px;
+      padding:5px;
+      margin-bottom:18px;
+      overflow-x:auto;
+      -webkit-overflow-scrolling:touch;
+      scrollbar-width:none;
+    }
+    #page-admin .adm-tabs::-webkit-scrollbar{display:none}
+    #page-admin .adm-tab{
+      flex:1;min-width:fit-content;
+      padding:10px 16px;
+      cursor:pointer;
+      background:transparent;
+      border:none;
+      border-radius:6px;
+      font-family:'Share Tech Mono',monospace;
+      font-size:10.5px;letter-spacing:2px;
+      color:rgba(255,255,255,0.5);
+      text-transform:uppercase;
+      transition:all .18s ease;
+      display:flex;align-items:center;justify-content:center;gap:7px;
+      white-space:nowrap;font-weight:600;
+    }
+    #page-admin .adm-tab:hover{
+      color:#fff;
+      background:rgba(180,140,20,0.06);
+    }
+    #page-admin .adm-tab.active{
+      background:linear-gradient(135deg,rgba(192,65,14,0.28),rgba(192,65,14,0.12));
+      color:#fff;
+      box-shadow:0 2px 12px rgba(192,65,14,0.25);
+      letter-spacing:2.2px;
+    }
+    #page-admin .adm-tab .tab-icon{font-size:13px;line-height:1}
+    #page-admin .adm-tab .tab-badge{
+      margin-left:4px;background:rgba(220,38,38,0.85);color:#fff;
+      font-size:9px;padding:1px 6px;border-radius:8px;font-weight:700;letter-spacing:0;
+    }
+    #page-admin .adm-tab.active .tab-badge{background:#dc2626}
+
+    /* Panneaux d'onglets */
+    #page-admin .adm-panel{display:none;animation:admPanelIn .25s ease}
+    #page-admin .adm-panel.active{display:block}
+    @keyframes admPanelIn{
+      from{opacity:0;transform:translateY(6px)}
+      to{opacity:1;transform:translateY(0)}
+    }
+
+    /* Bloc alertes (vue d'ensemble) */
+    #page-admin .adm-alert-grid{
+      display:grid;
+      grid-template-columns:repeat(auto-fit,minmax(260px,1fr));
+      gap:12px;margin-bottom:16px;
+    }
+    #page-admin .adm-alert{
+      background:rgba(20,16,9,0.95);
+      border:1px solid rgba(180,140,20,0.18);
+      border-left:3px solid var(--alert-c,#c9a227);
+      border-radius:8px;
+      padding:14px 16px;
+      display:flex;align-items:center;gap:12px;
+      transition:transform .15s ease,border-color .15s ease;
+    }
+    #page-admin .adm-alert:hover{
+      transform:translateY(-1px);
+      border-color:rgba(180,140,20,0.35);
+    }
+    #page-admin .adm-alert-icon{
+      font-size:22px;flex-shrink:0;
+      width:36px;height:36px;border-radius:8px;
+      background:var(--alert-bg,rgba(201,162,39,0.1));
+      display:flex;align-items:center;justify-content:center;
+    }
+    #page-admin .adm-alert-text{flex:1;min-width:0}
+    #page-admin .adm-alert-text .lbl{
+      font-family:'Share Tech Mono',monospace;
+      font-size:8.5px;letter-spacing:2px;
+      color:rgba(255,255,255,0.4);
+      text-transform:uppercase;
+      margin-bottom:3px;
+    }
+    #page-admin .adm-alert-text .val{
+      font-family:'Cinzel',serif;
+      font-size:14px;font-weight:600;
+      color:var(--text);
+    }
+    #page-admin .adm-alert.warn{--alert-c:#f59e0b;--alert-bg:rgba(217,119,6,0.12)}
+    #page-admin .adm-alert.danger{--alert-c:#dc2626;--alert-bg:rgba(220,38,38,0.12)}
+    #page-admin .adm-alert.info{--alert-c:#3b82f6;--alert-bg:rgba(59,130,246,0.12)}
+    #page-admin .adm-alert.success{--alert-c:#16a34a;--alert-bg:rgba(22,163,74,0.12)}
+
+    /* Quick actions */
+    #page-admin .adm-quick{
+      background:rgba(20,16,9,0.95);
+      border:1px solid rgba(180,140,20,0.18);
+      border-radius:10px;
+      padding:18px 20px;
+      margin-bottom:16px;
+    }
+    #page-admin .adm-quick-title{
+      font-family:'Share Tech Mono',monospace;
+      font-size:9px;letter-spacing:3px;
+      color:#c9a227;text-transform:uppercase;
+      font-weight:700;margin-bottom:14px;
+      display:flex;align-items:center;gap:8px;
+    }
+    #page-admin .adm-quick-grid{
+      display:grid;
+      grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
+      gap:10px;
+    }
+    #page-admin .adm-quick-btn{
+      background:rgba(255,255,255,0.04);
+      border:1px solid rgba(180,140,20,0.2);
+      border-radius:8px;
+      padding:14px;cursor:pointer;
+      transition:all .15s ease;
+      display:flex;align-items:center;gap:10px;
+      text-align:left;font-family:inherit;
+      color:var(--text);
+    }
+    #page-admin .adm-quick-btn:hover{
+      background:rgba(192,65,14,0.08);
+      border-color:rgba(192,65,14,0.4);
+      transform:translateY(-1px);
+    }
+    #page-admin .adm-quick-btn-ic{font-size:20px;flex-shrink:0}
+    #page-admin .adm-quick-btn-txt{flex:1;min-width:0}
+    #page-admin .adm-quick-btn-lbl{
+      font-family:'Cinzel',serif;
+      font-size:12.5px;font-weight:600;
+      color:#f0e8d0;letter-spacing:0.3px;
+    }
+    #page-admin .adm-quick-btn-sub{
+      font-family:'Share Tech Mono',monospace;
+      font-size:8.5px;letter-spacing:1.5px;
+      color:rgba(255,255,255,0.4);
+      text-transform:uppercase;
+      margin-top:2px;
+    }
+
+    @media(max-width:768px){
+      #page-admin .adm-hero{padding:16px 18px}
+      #page-admin .adm-hero-text h2{font-size:17px;letter-spacing:1px}
+      #page-admin .adm-hero-icon{width:42px;height:42px;font-size:20px}
+      #page-admin .adm-tab{padding:8px 12px;font-size:9.5px;letter-spacing:1.2px}
+      #page-admin .adm-tab .tab-label{display:none}
+      #page-admin .adm-tab .tab-icon{font-size:15px}
+      #page-admin .adm-tab.active .tab-label{display:inline}
+      #page-admin .adm-quick-btn{padding:11px 12px}
+    }
+    </style>
+
+    <!-- HERO -->
+    <div class="adm-hero">
+      <div class="adm-hero-left">
+        <div class="adm-hero-icon">⚙</div>
+        <div class="adm-hero-text">
+          <div class="label">Console d'administration</div>
+          <h2>Panel Admin</h2>
+        </div>
       </div>
-      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+      <div class="adm-hero-actions">
         <button class="btn btn-outline btn-sm" onclick="exportAdminData()" title="Exporter les données" data-export-btn style="display:none">📤 Export</button>
         <button class="btn btn-primary" onclick="populateGradeSelects();clearForm(['u-login','u-pass','u-nom']);var r=el('u-role');if(r)r.value='membre';openModal('modal-adduser')">+ Ajouter un membre</button>
       </div>
     </div>
-    <!-- Stats admin rapides -->
+
+    <!-- ONGLETS -->
+    <div class="adm-tabs" role="tablist">
+      <button class="adm-tab active" data-adm-tab="overview" onclick="admSwitchTab('overview',this)" role="tab">
+        <span class="tab-icon">📊</span><span class="tab-label">Vue d'ensemble</span>
+      </button>
+      <button class="adm-tab" data-adm-tab="members" onclick="admSwitchTab('members',this)" role="tab">
+        <span class="tab-icon">👥</span><span class="tab-label">Membres</span>
+      </button>
+      <button class="adm-tab" data-adm-tab="notifs" onclick="admSwitchTab('notifs',this)" role="tab">
+        <span class="tab-icon">🔔</span><span class="tab-label">Notifications</span>
+      </button>
+      <button class="adm-tab" data-adm-tab="config" onclick="admSwitchTab('config',this)" role="tab">
+        <span class="tab-icon">🛠</span><span class="tab-label">Configuration</span>
+      </button>
+      <button class="adm-tab" data-adm-tab="security" onclick="admSwitchTab('security',this)" role="tab">
+        <span class="tab-icon">🔐</span><span class="tab-label">Sécurité</span>
+      </button>
+      <button class="adm-tab" data-adm-tab="backup" onclick="admSwitchTab('backup',this)" role="tab">
+        <span class="tab-icon">💾</span><span class="tab-label">Sauvegarde</span>
+      </button>
+    </div>
+
+    <!-- ═════ ONGLET 1 : VUE D'ENSEMBLE ═════ -->
+    <div class="adm-panel active" data-adm-panel="overview">
     <div class="grid grid-4" style="margin-bottom:18px" id="admin-stats-row">
       <div class="stat-card" style="--card-accent:var(--gold);padding:14px 16px">
         <div class="stat-icon" style="font-size:20px;top:10px;right:10px">👮</div>
@@ -5791,215 +7664,50 @@ document.addEventListener('DOMContentLoaded',function(){if(localStorage.getItem(
         <div class="stat-label">Administrateurs</div>
       </div>
     </div>
-    <!-- Features / Teasings -->
-    <div class="card mb-4" style="border-color:rgba(180,140,20,0.25)">
-      <div class="card-header"><span>🚀</span><h3>Fonctionnalités</h3><span style="font-size:9px;font-family:'Share Tech Mono',monospace;color:var(--muted);margin-left:auto;letter-spacing:1px">ACTIVER / DÉSACTIVER</span></div>
-      <div class="card-body">
-        <div style="display:flex;flex-direction:column;gap:0">
-          <!-- Carte tactique -->
-          <div id="feat-row-map" style="display:flex;align-items:center;gap:14px;padding:14px 0;border-bottom:1px solid var(--border)">
-            <div style="width:44px;height:44px;border-radius:10px;background:rgba(180,140,20,0.08);border:1px solid rgba(180,140,20,0.2);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0">🗺️</div>
-            <div style="flex:1;min-width:0">
-              <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:2px">Carte tactique des opérations</div>
-              <div style="font-size:10px;color:var(--muted);font-family:'Share Tech Mono',monospace">Affiche les opérations comme pins cliquables sur la carte de Sunagakure</div>
+
+      <!-- Alertes système -->
+      <div class="adm-alert-grid" id="adm-alerts">
+        <!-- Rempli dynamiquement par renderAdmAlerts() -->
+      </div>
+
+      <!-- Actions rapides -->
+      <div class="adm-quick">
+        <div class="adm-quick-title"><span>⚡</span>Actions rapides</div>
+        <div class="adm-quick-grid">
+          <button class="adm-quick-btn" onclick="admSwitchTab('members',document.querySelector('[data-adm-tab=members]'))">
+            <span class="adm-quick-btn-ic">👥</span>
+            <div class="adm-quick-btn-txt">
+              <div class="adm-quick-btn-lbl">Gérer les membres</div>
+              <div class="adm-quick-btn-sub">Ajouter, modifier, désactiver</div>
             </div>
-            <div style="display:flex;align-items:center;gap:10px;flex-shrink:0">
-              <span id="feat-map-badge" style="font-size:9px;font-family:'Share Tech Mono',monospace;padding:2px 8px;border-radius:4px;background:rgba(192,65,14,0.15);color:#e05c1a;border:1px solid rgba(192,65,14,0.3);letter-spacing:1px">TEASING</span>
-              <label style="position:relative;display:inline-block;width:46px;height:26px;cursor:pointer">
-                <input type="checkbox" id="toggle-feat-map" style="opacity:0;width:0;height:0;position:absolute" onchange="toggleFeatureMap(this.checked)">
-                <span id="feat-map-track" style="position:absolute;inset:0;border-radius:13px;background:rgba(0,0,0,0.2);border:1px solid rgba(0,0,0,0.12);transition:all 0.2s">
-                  <span id="feat-map-thumb" style="position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:#6b7280;box-shadow:0 1px 4px rgba(0,0,0,0.3);transition:all 0.2s"></span>
-                </span>
-              </label>
+          </button>
+          <button class="adm-quick-btn" onclick="admSwitchTab('config',document.querySelector('[data-adm-tab=config]'))">
+            <span class="adm-quick-btn-ic">🛠</span>
+            <div class="adm-quick-btn-txt">
+              <div class="adm-quick-btn-lbl">Configuration</div>
+              <div class="adm-quick-btn-sub">Logo, grades, fonctions</div>
             </div>
-          </div>
-          <!-- Niveau de menace -->
-          <div style="display:flex;align-items:center;gap:14px;padding:14px 0;border-bottom:1px solid var(--border);opacity:0.55" title="Pas encore disponible">
-            <div style="width:44px;height:44px;border-radius:10px;background:rgba(192,65,14,0.06);border:1px solid rgba(192,65,14,0.15);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;filter:grayscale(0.5)">⚡</div>
-            <div style="flex:1;min-width:0">
-              <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:2px">Niveau de menace (Recensements)</div>
-              <div style="font-size:10px;color:var(--muted);font-family:'Share Tech Mono',monospace">Score de dangerosité calculé automatiquement</div>
+          </button>
+          <button class="adm-quick-btn" onclick="admSwitchTab('security',document.querySelector('[data-adm-tab=security]'))">
+            <span class="adm-quick-btn-ic">🔐</span>
+            <div class="adm-quick-btn-txt">
+              <div class="adm-quick-btn-lbl">Journaux & sécurité</div>
+              <div class="adm-quick-btn-sub">Audit, connexions</div>
             </div>
-            <span style="font-size:9px;font-family:'Share Tech Mono',monospace;padding:2px 8px;border-radius:4px;background:rgba(192,65,14,0.1);color:#c05010;border:1px solid rgba(192,65,14,0.2);letter-spacing:1px;flex-shrink:0">BIENTÔT</span>
-          </div>
-          <!-- Tags IA -->
-          <div style="display:flex;align-items:center;gap:14px;padding:14px 0;opacity:0.55" title="Pas encore disponible">
-            <div style="width:44px;height:44px;border-radius:10px;background:rgba(109,40,217,0.06);border:1px solid rgba(109,40,217,0.15);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;filter:grayscale(0.5)">🤖</div>
-            <div style="flex:1;min-width:0">
-              <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:2px">Analyse IA des dossiers</div>
-              <div style="font-size:10px;color:var(--muted);font-family:'Share Tech Mono',monospace">Suggestions automatiques de tags et niveau de risque</div>
+          </button>
+          <button class="adm-quick-btn" onclick="admSwitchTab('backup',document.querySelector('[data-adm-tab=backup]'))">
+            <span class="adm-quick-btn-ic">💾</span>
+            <div class="adm-quick-btn-txt">
+              <div class="adm-quick-btn-lbl">Sauvegarde</div>
+              <div class="adm-quick-btn-sub">Export, import, reset</div>
             </div>
-            <span style="font-size:9px;font-family:'Share Tech Mono',monospace;padding:2px 8px;border-radius:4px;background:rgba(109,40,217,0.1);color:#7c3aed;border:1px solid rgba(109,40,217,0.2);letter-spacing:1px;flex-shrink:0">BIENTÔT</span>
-          </div>
+          </button>
         </div>
       </div>
     </div>
 
-    <!-- Commissaire -->
-    <div class="card mb-4">
-      <div class="card-header"><span>🏛️</span><h3>Gérant</h3></div>
-      <div class="card-body">
-        <div class="flex gap-3 items-center flex-wrap">
-          <input type="text" id="admin-comm-input" class="form-control" placeholder="Nom Prénom RP" style="max-width:300px">
-          <button class="btn btn-gold" onclick="saveCommNameAdmin()">💾 Enregistrer</button>
-        </div>
-        <div id="admin-comm-ok" class="alert alert-success" style="display:none;margin-top:10px;margin-bottom:0">✅ Commissaire mis à jour.</div>
-      </div>
-    </div>
-    <!-- Logo -->
-    <div class="card mb-4">
-      <div class="card-header"><span>🖼️</span><h3>Logo du département</h3></div>
-      <div class="card-body">
-        <div style="display:flex;gap:20px;align-items:flex-start;flex-wrap:wrap">
-          <!-- Aperçu -->
-          <div style="display:flex;flex-direction:column;align-items:center;gap:8px;flex-shrink:0">
-            <div id="logo-preview-admin" style="width:90px;height:90px;border-radius:50%;border:2px solid var(--border2);display:flex;align-items:center;justify-content:center;background:rgba(180,140,20,0.07);overflow:hidden;box-shadow:0 4px 16px rgba(0,0,0,0.1)">
-              <span style="font-size:32px;opacity:0.35">🛡️</span>
-            </div>
-            <span style="font-size:9px;color:var(--muted);font-family:'Share Tech Mono',monospace;letter-spacing:1px">APERÇU</span>
-          </div>
-          <!-- Actions -->
-          <div style="flex:1;min-width:220px">
-            <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">
-              <label class="btn btn-outline" style="cursor:pointer">📁 Fichier <input type="file" id="logo-upload" accept="image/*" style="display:none" onchange="uploadLogo(this)"></label>
-              <button class="btn btn-gold" onclick="openLogoClipboard()">📋 Coller une image</button>
-              <button class="btn btn-danger btn-sm" onclick="removeLogo()">✕ Retirer</button>
-            </div>
-            <!-- Zone coller/drag-drop -->
-            <div id="logo-paste-zone" onclick="openLogoClipboard()" ondragover="event.preventDefault();this.style.borderColor='var(--gold)'" ondragleave="this.style.borderColor=''" ondrop="handleLogoDrop(event)"
-              style="border:2px dashed rgba(180,140,20,0.3);border-radius:10px;padding:14px 18px;cursor:pointer;transition:all 0.2s;text-align:center;background:rgba(180,140,20,0.03)">
-              <div style="font-size:22px;margin-bottom:4px">🖼️</div>
-              <div style="font-size:11px;color:var(--muted)">Cliquez pour coller depuis le presse-papier</div>
-              <div style="font-size:10px;color:var(--muted);margin-top:2px">ou glissez-déposez une image ici</div>
-            </div>
-            <div style="font-size:9.5px;color:var(--muted);margin-top:7px;font-family:'Share Tech Mono',monospace">PNG · JPG · SVG — Affiché dans la sidebar et la page de connexion</div>
-          </div>
-        </div>
-      </div>
-    </div>
-    <!-- BACKUP / RESTORE -->
-    <div class="card mb-4">
-      <div class="card-header"><span>💾</span><h3>Sauvegarde &amp; Restauration</h3></div>
-      <div class="card-body">
-        <p style="font-size:12.5px;color:var(--muted);margin-bottom:14px;line-height:1.6">Exportez toutes les données en JSON pour les archiver ou les restaurer en cas de problème.</p>
-        <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
-          <button class="btn btn-gold" onclick="backupJSON()">📥 Télécharger la sauvegarde JSON</button>
-          <label class="btn btn-outline" style="cursor:pointer">📂 Restaurer depuis JSON<input type="file" id="restore-json-input" accept=".json,application/json" style="display:none" onchange="restoreJSON(this)"></label>
-        </div>
-        <div id="backup-status" style="margin-top:10px;display:none"></div>
-      </div>
-    </div>
-    <!-- Grades -->
-    <div class="card mb-4">
-      <div class="card-header"><span>🎖️</span><h3>Gestion des grades</h3></div>
-      <div class="card-body">
-        <div id="grades-list" style="display:flex;flex-wrap:wrap;gap:7px;margin-bottom:14px"></div>
-        <div class="flex gap-2 items-center flex-wrap">
-          <input type="text" id="new-grade-input" class="form-control" placeholder="Nouveau grade..." style="max-width:220px">
-          <button class="btn btn-gold" onclick="addGrade()">+ Ajouter</button>
-        </div>
-      </div>
-    </div>
-    <div class="card mb-4">
-      <div class="card-header">
-        <span>🔔</span><h3>Notifications & badges</h3>
-        <span id="notif-live-dot" style="margin-left:auto;display:flex;align-items:center;gap:6px;font-size:10px;color:var(--green);font-family:'Share Tech Mono',monospace;letter-spacing:1px">
-          <span style="width:6px;height:6px;border-radius:50%;background:var(--green);display:inline-block;animation:blink 2s infinite"></span>EN DIRECT
-        </span>
-      </div>
-      <div class="card-body" style="padding:20px 18px">
-        <!-- Toggles redesignés -->
-        <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:18px">
-          <!-- Annonces -->
-          <div class="notif-toggle-row" id="ntr-annonces">
-            <div style="display:flex;align-items:center;gap:12px;flex:1">
-              <div class="notif-toggle-icon" style="background:rgba(180,140,20,0.12);border:1px solid rgba(180,140,20,0.25)">📢</div>
-              <div>
-                <div style="font-size:13px;font-weight:600;color:var(--text)">Annonces</div>
-                <div style="font-size:10px;color:var(--muted);font-family:'Share Tech Mono',monospace" id="notif-annonces-count">Chargement...</div>
-              </div>
-            </div>
-            <label class="notif-switch">
-              <input type="checkbox" id="notif-annonces" checked onchange="saveNotifPrefs()">
-              <span class="notif-slider"></span>
-            </label>
-          </div>
-          <!-- Plaintes -->
-          <div class="notif-toggle-row" id="ntr-plaintes">
-            <div style="display:flex;align-items:center;gap:12px;flex:1">
-              <div class="notif-toggle-icon" style="background:rgba(220,38,38,0.08);border:1px solid rgba(220,38,38,0.2)">📋</div>
-              <div>
-                <div style="font-size:13px;font-weight:600;color:var(--text)">Plaintes</div>
-                <div style="font-size:10px;color:var(--muted);font-family:'Share Tech Mono',monospace" id="notif-plaintes-count">Chargement...</div>
-              </div>
-            </div>
-            <label class="notif-switch">
-              <input type="checkbox" id="notif-plaintes" checked onchange="saveNotifPrefs()">
-              <span class="notif-slider"></span>
-            </label>
-          </div>
-          <!-- Recensement -->
-          <div class="notif-toggle-row" id="ntr-recenses">
-            <div style="display:flex;align-items:center;gap:12px;flex:1">
-              <div class="notif-toggle-icon" style="background:rgba(29,78,216,0.08);border:1px solid rgba(29,78,216,0.2)">📝</div>
-              <div>
-                <div style="font-size:13px;font-weight:600;color:var(--text)">Recensement</div>
-                <div style="font-size:10px;color:var(--muted);font-family:'Share Tech Mono',monospace" id="notif-recenses-count">Chargement...</div>
-              </div>
-            </div>
-            <label class="notif-switch">
-              <input type="checkbox" id="notif-recenses" checked onchange="saveNotifPrefs()">
-              <span class="notif-slider"></span>
-            </label>
-          </div>
-        </div>
-          <!-- Recrutement -->
-          <div class="notif-toggle-row" id="ntr-recrutement">
-            <div style="display:flex;align-items:center;gap:12px;flex:1">
-              <div class="notif-toggle-icon" style="background:rgba(14,116,144,0.08);border:1px solid rgba(14,116,144,0.2)">🎖️</div>
-              <div>
-                <div style="font-size:13px;font-weight:600;color:var(--text)">Recrutement</div>
-                <div style="font-size:10px;color:var(--muted);font-family:'Share Tech Mono',monospace" id="notif-recrutement-count">Chargement...</div>
-              </div>
-            </div>
-            <label class="notif-switch">
-              <input type="checkbox" id="notif-recrutement" checked onchange="saveNotifPrefs()">
-              <span class="notif-slider"></span>
-            </label>
-          </div>
-          <!-- Opérations -->
-          <div class="notif-toggle-row" id="ntr-operations">
-            <div style="display:flex;align-items:center;gap:12px;flex:1">
-              <div class="notif-toggle-icon" style="background:rgba(192,65,14,0.08);border:1px solid rgba(192,65,14,0.2)">🚨</div>
-              <div>
-                <div style="font-size:13px;font-weight:600;color:var(--text)">Opérations actives</div>
-                <div style="font-size:10px;color:var(--muted);font-family:'Share Tech Mono',monospace" id="notif-operations-count">Chargement...</div>
-              </div>
-            </div>
-            <label class="notif-switch">
-              <input type="checkbox" id="notif-operations" checked onchange="saveNotifPrefs()">
-              <span class="notif-slider"></span>
-            </label>
-          </div>
-        </div>
-        <!-- Zone historique de notifs -->
-        <div style="background:rgba(180,140,20,0.03);border:1px solid rgba(180,140,20,0.12);border-radius:10px;padding:12px 14px;margin-bottom:14px">
-          <div style="font-size:9px;letter-spacing:2px;color:var(--gold2);font-family:'Share Tech Mono',monospace;margin-bottom:10px;text-transform:uppercase">Activité récente</div>
-          <div id="notif-history-list" style="display:flex;flex-direction:column;gap:7px">
-            <div style="font-size:11px;color:var(--muted);text-align:center;padding:8px">Aucune activité récente</div>
-          </div>
-        </div>
-        <div style="display:flex;gap:6px;flex-wrap:wrap;padding-top:4px;border-top:1px solid rgba(180,140,20,0.12);margin-top:4px">
-          <button class="btn btn-outline" onclick="resetNotifs()" style="flex:1;justify-content:center;font-size:11.5px;gap:7px;padding:9px 14px;border-color:rgba(180,140,20,0.3);color:var(--gold2)">
-            <span style="font-size:13px">🔄</span> Réinitialiser
-          </button>
-          <button class="btn btn-outline" onclick="markAllNotifsRead()" style="flex:1;justify-content:center;font-size:11.5px;gap:7px;padding:9px 14px;border-color:rgba(180,140,20,0.3);color:var(--gold2)">
-            <span style="font-size:13px">✓</span> Tout marquer comme lu
-          </button>
-        </div>
-      </div>
-    </div><!-- /card notifications -->
-    <!-- Sections réservées aux admins uniquement -->
+    <!-- ═════ ONGLET 2 : MEMBRES ═════ -->
+    <div class="adm-panel" data-adm-panel="members">
     <div id="admin-restricted-sections" style="display:none">
     <!-- Membres -->
     <div class="card" style="overflow:visible">
@@ -6179,7 +7887,321 @@ document.addEventListener('DOMContentLoaded',function(){if(localStorage.getItem(
       </div>
     </div>
     </div><!-- /admin-restricted-sections -->
-  </div>
+
+    </div>
+
+    <!-- ═════ ONGLET 3 : NOTIFICATIONS ═════ -->
+    <div class="adm-panel" data-adm-panel="notifs">
+    <div class="card mb-4">
+      <div class="card-header">
+        <span>🔔</span><h3>Notifications & badges</h3>
+        <span id="notif-live-dot" style="margin-left:auto;display:flex;align-items:center;gap:6px;font-size:10px;color:var(--green);font-family:'Share Tech Mono',monospace;letter-spacing:1px">
+          <span style="width:6px;height:6px;border-radius:50%;background:var(--green);display:inline-block;animation:blink 2s infinite"></span>EN DIRECT
+        </span>
+      </div>
+      <div class="card-body" style="padding:20px 18px">
+        <!-- Toggles redesignés -->
+        <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:18px">
+          <!-- Annonces -->
+          <div class="notif-toggle-row" id="ntr-annonces">
+            <div style="display:flex;align-items:center;gap:12px;flex:1">
+              <div class="notif-toggle-icon" style="background:rgba(180,140,20,0.12);border:1px solid rgba(180,140,20,0.25)">📢</div>
+              <div>
+                <div style="font-size:13px;font-weight:600;color:var(--text)">Annonces</div>
+                <div style="font-size:10px;color:var(--muted);font-family:'Share Tech Mono',monospace" id="notif-annonces-count">Chargement...</div>
+              </div>
+            </div>
+            <label class="notif-switch">
+              <input type="checkbox" id="notif-annonces" checked onchange="saveNotifPrefs()">
+              <span class="notif-slider"></span>
+            </label>
+          </div>
+          <!-- Plaintes -->
+          <div class="notif-toggle-row" id="ntr-plaintes">
+            <div style="display:flex;align-items:center;gap:12px;flex:1">
+              <div class="notif-toggle-icon" style="background:rgba(220,38,38,0.08);border:1px solid rgba(220,38,38,0.2)">📋</div>
+              <div>
+                <div style="font-size:13px;font-weight:600;color:var(--text)">Plaintes</div>
+                <div style="font-size:10px;color:var(--muted);font-family:'Share Tech Mono',monospace" id="notif-plaintes-count">Chargement...</div>
+              </div>
+            </div>
+            <label class="notif-switch">
+              <input type="checkbox" id="notif-plaintes" checked onchange="saveNotifPrefs()">
+              <span class="notif-slider"></span>
+            </label>
+          </div>
+          <!-- Recensement -->
+          <div class="notif-toggle-row" id="ntr-recenses">
+            <div style="display:flex;align-items:center;gap:12px;flex:1">
+              <div class="notif-toggle-icon" style="background:rgba(29,78,216,0.08);border:1px solid rgba(29,78,216,0.2)">📝</div>
+              <div>
+                <div style="font-size:13px;font-weight:600;color:var(--text)">Recensement</div>
+                <div style="font-size:10px;color:var(--muted);font-family:'Share Tech Mono',monospace" id="notif-recenses-count">Chargement...</div>
+              </div>
+            </div>
+            <label class="notif-switch">
+              <input type="checkbox" id="notif-recenses" checked onchange="saveNotifPrefs()">
+              <span class="notif-slider"></span>
+            </label>
+          </div>
+        </div>
+          <!-- Recrutement -->
+          <div class="notif-toggle-row" id="ntr-recrutement">
+            <div style="display:flex;align-items:center;gap:12px;flex:1">
+              <div class="notif-toggle-icon" style="background:rgba(14,116,144,0.08);border:1px solid rgba(14,116,144,0.2)">🎖️</div>
+              <div>
+                <div style="font-size:13px;font-weight:600;color:var(--text)">Recrutement</div>
+                <div style="font-size:10px;color:var(--muted);font-family:'Share Tech Mono',monospace" id="notif-recrutement-count">Chargement...</div>
+              </div>
+            </div>
+            <label class="notif-switch">
+              <input type="checkbox" id="notif-recrutement" checked onchange="saveNotifPrefs()">
+              <span class="notif-slider"></span>
+            </label>
+          </div>
+          <!-- Opérations -->
+          <div class="notif-toggle-row" id="ntr-operations">
+            <div style="display:flex;align-items:center;gap:12px;flex:1">
+              <div class="notif-toggle-icon" style="background:rgba(192,65,14,0.08);border:1px solid rgba(192,65,14,0.2)">🚨</div>
+              <div>
+                <div style="font-size:13px;font-weight:600;color:var(--text)">Opérations actives</div>
+                <div style="font-size:10px;color:var(--muted);font-family:'Share Tech Mono',monospace" id="notif-operations-count">Chargement...</div>
+              </div>
+            </div>
+            <label class="notif-switch">
+              <input type="checkbox" id="notif-operations" checked onchange="saveNotifPrefs()">
+              <span class="notif-slider"></span>
+            </label>
+          </div>
+        </div>
+        <!-- Zone historique de notifs -->
+        <div style="background:rgba(180,140,20,0.03);border:1px solid rgba(180,140,20,0.12);border-radius:10px;padding:12px 14px;margin-bottom:14px">
+          <div style="font-size:9px;letter-spacing:2px;color:var(--gold2);font-family:'Share Tech Mono',monospace;margin-bottom:10px;text-transform:uppercase">Activité récente</div>
+          <div id="notif-history-list" style="display:flex;flex-direction:column;gap:7px">
+            <div style="font-size:11px;color:var(--muted);text-align:center;padding:8px">Aucune activité récente</div>
+          </div>
+        </div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;padding-top:4px;border-top:1px solid rgba(180,140,20,0.12);margin-top:4px">
+          <button class="btn btn-outline" onclick="resetNotifs()" style="flex:1;justify-content:center;font-size:11.5px;gap:7px;padding:9px 14px;border-color:rgba(180,140,20,0.3);color:var(--gold2)">
+            <span style="font-size:13px">🔄</span> Réinitialiser
+          </button>
+          <button class="btn btn-outline" onclick="markAllNotifsRead()" style="flex:1;justify-content:center;font-size:11.5px;gap:7px;padding:9px 14px;border-color:rgba(180,140,20,0.3);color:var(--gold2)">
+            <span style="font-size:13px">✓</span> Tout marquer comme lu
+          </button>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ═════ ONGLET 4 : CONFIGURATION ═════ -->
+    <div class="adm-panel" data-adm-panel="config">
+    <!-- Commissaire -->
+    <div class="card mb-4">
+      <div class="card-header"><span>🏛️</span><h3>Gérant</h3></div>
+      <div class="card-body">
+        <div class="flex gap-3 items-center flex-wrap">
+          <input type="text" id="admin-comm-input" class="form-control" placeholder="Nom Prénom RP" style="max-width:300px">
+          <button class="btn btn-gold" onclick="saveCommNameAdmin()">💾 Enregistrer</button>
+        </div>
+        <div id="admin-comm-ok" class="alert alert-success" style="display:none;margin-top:10px;margin-bottom:0">✅ Commissaire mis à jour.</div>
+      </div>
+    </div>
+    <!-- Logo -->
+    <div class="card mb-4">
+      <div class="card-header"><span>🖼️</span><h3>Logo du département</h3></div>
+      <div class="card-body">
+        <div style="display:flex;gap:20px;align-items:flex-start;flex-wrap:wrap">
+          <!-- Aperçu -->
+          <div style="display:flex;flex-direction:column;align-items:center;gap:8px;flex-shrink:0">
+            <div id="logo-preview-admin" style="width:90px;height:90px;border-radius:50%;border:2px solid var(--border2);display:flex;align-items:center;justify-content:center;background:rgba(180,140,20,0.07);overflow:hidden;box-shadow:0 4px 16px rgba(0,0,0,0.1)">
+              <span style="font-size:32px;opacity:0.35">🛡️</span>
+            </div>
+            <span style="font-size:9px;color:var(--muted);font-family:'Share Tech Mono',monospace;letter-spacing:1px">APERÇU</span>
+          </div>
+          <!-- Actions -->
+          <div style="flex:1;min-width:220px">
+            <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">
+              <label class="btn btn-outline" style="cursor:pointer">📁 Fichier <input type="file" id="logo-upload" accept="image/*" style="display:none" onchange="uploadLogo(this)"></label>
+              <button class="btn btn-gold" onclick="openLogoClipboard()">📋 Coller une image</button>
+              <button class="btn btn-danger btn-sm" onclick="removeLogo()">✕ Retirer</button>
+            </div>
+            <!-- Zone coller/drag-drop -->
+            <div id="logo-paste-zone" onclick="openLogoClipboard()" ondragover="event.preventDefault();this.style.borderColor='var(--gold)'" ondragleave="this.style.borderColor=''" ondrop="handleLogoDrop(event)"
+              style="border:2px dashed rgba(180,140,20,0.3);border-radius:10px;padding:14px 18px;cursor:pointer;transition:all 0.2s;text-align:center;background:rgba(180,140,20,0.03)">
+              <div style="font-size:22px;margin-bottom:4px">🖼️</div>
+              <div style="font-size:11px;color:var(--muted)">Cliquez pour coller depuis le presse-papier</div>
+              <div style="font-size:10px;color:var(--muted);margin-top:2px">ou glissez-déposez une image ici</div>
+            </div>
+            <div style="font-size:9.5px;color:var(--muted);margin-top:7px;font-family:'Share Tech Mono',monospace">PNG · JPG · SVG — Affiché dans la sidebar et la page de connexion</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- Grades -->
+    <div class="card mb-4">
+      <div class="card-header"><span>🎖️</span><h3>Gestion des grades</h3></div>
+      <div class="card-body">
+        <div id="grades-list" style="display:flex;flex-wrap:wrap;gap:7px;margin-bottom:14px"></div>
+        <div class="flex gap-2 items-center flex-wrap">
+          <input type="text" id="new-grade-input" class="form-control" placeholder="Nouveau grade..." style="max-width:220px">
+          <button class="btn btn-gold" onclick="addGrade()">+ Ajouter</button>
+        </div>
+      </div>
+    </div>
+    <!-- Features / Teasings -->
+    <div class="card mb-4" style="border-color:rgba(180,140,20,0.25)">
+      <div class="card-header"><span>🚀</span><h3>Fonctionnalités</h3><span style="font-size:9px;font-family:'Share Tech Mono',monospace;color:var(--muted);margin-left:auto;letter-spacing:1px">ACTIVER / DÉSACTIVER</span></div>
+      <div class="card-body">
+        <div style="display:flex;flex-direction:column;gap:0">
+          <!-- Carte tactique -->
+          <div id="feat-row-map" style="display:flex;align-items:center;gap:14px;padding:14px 0;border-bottom:1px solid var(--border)">
+            <div style="width:44px;height:44px;border-radius:10px;background:rgba(180,140,20,0.08);border:1px solid rgba(180,140,20,0.2);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0">🗺️</div>
+            <div style="flex:1;min-width:0">
+              <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:2px">Carte tactique des opérations</div>
+              <div style="font-size:10px;color:var(--muted);font-family:'Share Tech Mono',monospace">Affiche les opérations comme pins cliquables sur la carte de Sunagakure</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:10px;flex-shrink:0">
+              <span id="feat-map-badge" style="font-size:9px;font-family:'Share Tech Mono',monospace;padding:2px 8px;border-radius:4px;background:rgba(192,65,14,0.15);color:#e05c1a;border:1px solid rgba(192,65,14,0.3);letter-spacing:1px">TEASING</span>
+              <label style="position:relative;display:inline-block;width:46px;height:26px;cursor:pointer">
+                <input type="checkbox" id="toggle-feat-map" style="opacity:0;width:0;height:0;position:absolute" onchange="toggleFeatureMap(this.checked)">
+                <span id="feat-map-track" style="position:absolute;inset:0;border-radius:13px;background:rgba(0,0,0,0.2);border:1px solid rgba(0,0,0,0.12);transition:all 0.2s">
+                  <span id="feat-map-thumb" style="position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:#6b7280;box-shadow:0 1px 4px rgba(0,0,0,0.3);transition:all 0.2s"></span>
+                </span>
+              </label>
+            </div>
+          </div>
+          <!-- Niveau de menace -->
+          <div style="display:flex;align-items:center;gap:14px;padding:14px 0;border-bottom:1px solid var(--border);opacity:0.55" title="Pas encore disponible">
+            <div style="width:44px;height:44px;border-radius:10px;background:rgba(192,65,14,0.06);border:1px solid rgba(192,65,14,0.15);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;filter:grayscale(0.5)">⚡</div>
+            <div style="flex:1;min-width:0">
+              <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:2px">Niveau de menace (Recensements)</div>
+              <div style="font-size:10px;color:var(--muted);font-family:'Share Tech Mono',monospace">Score de dangerosité calculé automatiquement</div>
+            </div>
+            <span style="font-size:9px;font-family:'Share Tech Mono',monospace;padding:2px 8px;border-radius:4px;background:rgba(192,65,14,0.1);color:#c05010;border:1px solid rgba(192,65,14,0.2);letter-spacing:1px;flex-shrink:0">BIENTÔT</span>
+          </div>
+          <!-- Tags IA -->
+          <div style="display:flex;align-items:center;gap:14px;padding:14px 0;opacity:0.55" title="Pas encore disponible">
+            <div style="width:44px;height:44px;border-radius:10px;background:rgba(109,40,217,0.06);border:1px solid rgba(109,40,217,0.15);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;filter:grayscale(0.5)">🤖</div>
+            <div style="flex:1;min-width:0">
+              <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:2px">Analyse IA des dossiers</div>
+              <div style="font-size:10px;color:var(--muted);font-family:'Share Tech Mono',monospace">Suggestions automatiques de tags et niveau de risque</div>
+            </div>
+            <span style="font-size:9px;font-family:'Share Tech Mono',monospace;padding:2px 8px;border-radius:4px;background:rgba(109,40,217,0.1);color:#7c3aed;border:1px solid rgba(109,40,217,0.2);letter-spacing:1px;flex-shrink:0">BIENTÔT</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    </div>
+
+    <!-- ═════ ONGLET 5 : SÉCURITÉ ═════ -->
+    <div class="adm-panel" data-adm-panel="security">
+      <!-- Le journal d'activité et l'historique des connexions sont déjà
+           dans #admin-restricted-sections (onglet Membres). On les déplace
+           visuellement ici via un script qui clone leur affichage. -->
+      <div id="adm-security-host">
+        <!-- Rempli dynamiquement : journal et historique sont déplacés ici -->
+      </div>
+    </div>
+
+    <!-- ═════ ONGLET 6 : SAUVEGARDE ═════ -->
+    <div class="adm-panel" data-adm-panel="backup">
+    <!-- BACKUP / RESTORE -->
+    <div class="card mb-4">
+      <div class="card-header"><span>💾</span><h3>Sauvegarde &amp; Restauration</h3></div>
+      <div class="card-body">
+        <p style="font-size:12.5px;color:var(--muted);margin-bottom:14px;line-height:1.6">Exportez toutes les données en JSON pour les archiver ou les restaurer en cas de problème.</p>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+          <button class="btn btn-gold" onclick="backupJSON()">📥 Télécharger la sauvegarde JSON</button>
+          <label class="btn btn-outline" style="cursor:pointer">📂 Restaurer depuis JSON<input type="file" id="restore-json-input" accept=".json,application/json" style="display:none" onchange="restoreJSON(this)"></label>
+        </div>
+        <div id="backup-status" style="margin-top:10px;display:none"></div>
+      </div>
+    </div>
+
+    </div>
+
+    <script>
+    // Switch d'onglets du panel admin
+    function admSwitchTab(tabName, btn){
+      document.querySelectorAll('#page-admin .adm-tab').forEach(function(t){t.classList.remove('active')});
+      document.querySelectorAll('#page-admin .adm-panel').forEach(function(p){p.classList.remove('active')});
+      if(btn) btn.classList.add('active');
+      var p = document.querySelector('#page-admin [data-adm-panel="'+tabName+'"]');
+      if(p) p.classList.add('active');
+      // Déplacer les sections sécurité dans leur onglet (une seule fois)
+      if(tabName === 'security'){
+        admMoveSecuritySections();
+      }
+      // Re-render alertes quand on revient sur Vue d'ensemble
+      if(tabName === 'overview'){
+        try{ renderAdmAlerts(); }catch(e){}
+      }
+    }
+
+    var _admSecurityMoved = false;
+    function admMoveSecuritySections(){
+      if(_admSecurityMoved) return;
+      var host = document.getElementById('adm-security-host');
+      if(!host) return;
+      // Trouver les cards par leur titre
+      var allCards = document.querySelectorAll('#admin-restricted-sections > .card');
+      var toMove = [];
+      allCards.forEach(function(c){
+        var h = c.querySelector('.card-header h3');
+        if(!h) return;
+        var t = (h.textContent||'').toLowerCase();
+        if(t.indexOf("journal d'activit") !== -1 || t.indexOf('historique') !== -1){
+          toMove.push(c);
+        }
+      });
+      toMove.forEach(function(c){ host.appendChild(c); });
+      _admSecurityMoved = true;
+    }
+
+    // Génération des alertes (Vue d'ensemble)
+    function renderAdmAlerts(){
+      var host = document.getElementById('adm-alerts');
+      if(!host || !window.DB || !DB.users) return;
+      var users = DB.users || [];
+      var actifs = users.filter(function(u){return u.statut!=='Désactivé'});
+      var inactifs = users.filter(function(u){return u.statut==='Désactivé'});
+      var admins = users.filter(function(u){return u.role==='admin' && u.statut!=='Désactivé'});
+      var nbCand = (DB.candidatures||[]).filter(function(c){return !c.statut||c.statut==='En attente'}).length;
+      var nbPlaintes = (DB.plaintes||[]).filter(function(p){return p.statut==='ouverte'||p.statut==='en_cours'}).length;
+      var alerts = [];
+      if(admins.length === 1){
+        alerts.push({type:'warn',ic:'⚠',lbl:'Compte admin unique',val:'Aucune redondance — créez un second admin'});
+      }
+      if(inactifs.length > 0){
+        alerts.push({type:'info',ic:'🔒',lbl:inactifs.length+' membre'+(inactifs.length>1?'s':'')+' désactivé'+(inactifs.length>1?'s':''),val:'À vérifier dans la liste des membres'});
+      }
+      if(nbCand > 0){
+        alerts.push({type:'info',ic:'🎖',lbl:nbCand+' candidature'+(nbCand>1?'s':'')+' en attente',val:'À traiter dans Recrutement'});
+      }
+      if(nbPlaintes > 0){
+        alerts.push({type:'warn',ic:'📋',lbl:nbPlaintes+' plainte'+(nbPlaintes>1?'s':'')+' ouverte'+(nbPlaintes>1?'s':''),val:'Action requise'});
+      }
+      if(!alerts.length){
+        alerts.push({type:'success',ic:'✅',lbl:'Tout est en ordre',val:'Aucune alerte active'});
+      }
+      host.innerHTML = alerts.map(function(a){
+        return '<div class="adm-alert '+a.type+'">'
+          +'<div class="adm-alert-icon">'+a.ic+'</div>'
+          +'<div class="adm-alert-text"><div class="lbl">'+a.lbl+'</div><div class="val">'+a.val+'</div></div>'
+          +'</div>';
+      }).join('');
+    }
+
+    // Premier rendu des alertes au chargement initial de la page admin
+    document.addEventListener('DOMContentLoaded', function(){
+      setTimeout(function(){
+        try{ renderAdmAlerts(); }catch(e){}
+      }, 1000);
+    });
+    </script>
+
+  </div><!-- /page-admin -->
 
 <!-- ===== MODALS ===== -->
 
@@ -8084,6 +10106,8 @@ function renderPage(name){
     // Forcer une relecture Firebase pour afficher les comptes les plus récents
     // Affichage immédiat avec les données déjà à jour via le listener onValue
     renderAdmin();renderAdminTimeline();renderAuditLog();renderLoginHistory();
+    // Rendu des alertes du nouveau dashboard à onglets
+    if(typeof renderAdmAlerts==='function') renderAdmAlerts();
     // GET Firebase en arrière-plan — re-render uniquement si la liste users a changé
     if(window._fbDB&&window._fbRef&&window._fbGet){
       window._fbGet(window._fbRef(window._fbDB,"sunagakure")).then(function(snap){
@@ -12420,6 +14444,9 @@ window.addEventListener("load",()=>{
   <div class="drawer-item" id="ditem-sanctions" data-admin-only="true" style="display:none">
     <span class="d-icon">⚖️</span> Sanctions / Promo
   </div>
+  <div class="drawer-item" id="ditem-impots" data-member-only="true" onclick="closeMoreDrawer();showPage('impots')">
+    <span class="d-icon">💰</span> Impôts
+  </div>
   <div class="drawer-section-label" id="dsec-admin">Administration</div>
   <div class="drawer-item" id="ditem-admin" style="display:none">
     <span class="d-icon">⚙️</span> Panel Admin
@@ -12432,9 +14459,11 @@ window.addEventListener("load",()=>{
     {id:'ditem-recrutement', page:'recrutement'},
     {id:'ditem-dossiers',    page:'dossiers'},
     {id:'ditem-codepenal',   page:'codepenal'},
+    {id:'ditem-histoire',    page:'histoire'},
     {id:'ditem-operations',  page:'operations'},
     {id:'ditem-effectifs',   page:'effectifs'},
     {id:'ditem-sanctions',   page:'sanctions'},
+    {id:'ditem-impots',      page:'impots'},
     {id:'ditem-admin',       page:'admin'}
   ];
   drawerPages.forEach(function(item){
