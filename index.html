@@ -7700,6 +7700,14 @@ function _opsApplyTransform(){
     // par rapport à la carte qui zoome via viewBox.
     // Le viewBox réel utilisé peut avoir été clampé : on doit donc en déduire
     // le pan effectif (en pixels écran) plutôt que d'utiliser _opsPanX brut.
+    //
+    // ORDRE DU TRANSFORM CSS : "scale(S) translate(T)" signifie en réalité
+    // "appliquer translate D'ABORD, puis scale". Pour un pin à position p :
+    //   p → p + T → (p + T) * S = S*p + S*T
+    // C'est ce qu'on veut : le pin doit être à S*p (zoom appliqué à sa position)
+    // PLUS le pan effectif (déjà exprimé en pixels écran après-zoom).
+    // L'ordre inverse "translate(T) scale(S)" donnerait S*p + T (sans zoom du
+    // pan), ce qui causait la dérive des pins observée.
     var pinsEl = document.getElementById('ops-map-pins');
     if(pinsEl){
       var wrap2 = document.getElementById('ops-map-img-wrap');
@@ -7707,10 +7715,15 @@ function _opsApplyTransform(){
         var wrapW2 = wrap2.clientWidth || 1;
         var wrapH2 = wrap2.clientHeight || 1;
         // Pan écran effectif (déduit du viewBox réel, qui a pu être clampé)
-        var effPanX = -((_svgVBx - _svgOrigVBx) / _svgOrigVBw) * wrapW2;
-        var effPanY = -((_svgVBy - _svgOrigVBy) / _svgOrigVBh) * wrapH2;
+        // exprimé en pixels écran APRÈS-zoom (cad du point de vue du pin déjà
+        // mis à l'échelle).
+        var dxRatio = (_svgVBx - _svgOrigVBx) / _svgOrigVBw; // 0..1
+        var dyRatio = (_svgVBy - _svgOrigVBy) / _svgOrigVBh;
+        // Pan en coords pré-scale (à passer à translate AVANT scale)
+        var preScalePanX = -dxRatio * wrapW2 / _opsZoom;
+        var preScalePanY = -dyRatio * wrapH2 / _opsZoom;
         pinsEl.style.transformOrigin = '0 0';
-        pinsEl.style.transform = 'translate('+effPanX+'px,'+effPanY+'px) scale('+_opsZoom+')';
+        pinsEl.style.transform = 'scale('+_opsZoom+') translate('+preScalePanX+'px,'+preScalePanY+'px)';
         // Compense la mise à l'échelle pour que les pins gardent une taille constante
         var pins = pinsEl.querySelectorAll('.op-pin');
         var inv = 1 / _opsZoom;
@@ -8003,9 +8016,10 @@ function showOpsMapTooltip(op, px, py, pinsEl){
   // Le tooltip n'est plus enfant de #ops-map-pins (qui est désormais transformé
   // pour suivre le zoom/pan de la carte). Il faut donc calculer sa position en
   // pixels écran à partir de la position visible réelle du pin.
+  // Position visible = S * (p + preScalePan) où p = px/100 * wrap.
   var wrapW = pinsEl.offsetWidth || 1;
   var wrapH = pinsEl.offsetHeight || 1;
-  // Pan effectif déduit du viewBox courant (pour rester cohérent avec le clamp)
+  // Pan écran effectif (au point de vue post-scale = unités écran finales)
   var effPanX = 0, effPanY = 0;
   if(_svgReady && _svgOrigVBw > 0 && _svgOrigVBh > 0){
     effPanX = -((_svgVBx - _svgOrigVBx) / _svgOrigVBw) * wrapW;
