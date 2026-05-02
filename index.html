@@ -2093,6 +2093,7 @@ document.addEventListener('DOMContentLoaded',function(){if(localStorage.getItem(
     <div class="nav-item" role="button" tabindex="0" onclick="showPage('operations')" data-page="operations" data-member-only="true"><span class="icon">🚨</span> Opérations <span class="nav-badge" id="badge-operations" style="background:var(--accent);display:none">0</span></div>
     <div class="nav-item" role="button" tabindex="0" onclick="showPage('effectifs')" data-page="effectifs" data-member-only="true"><span class="icon">👮</span> Effectifs</div>
     <div class="nav-item" role="button" tabindex="0" onclick="showPage('sanctions')" data-page="sanctions" data-member-only="true"><span class="icon">⚖️</span> Sanctions / Promo</div>
+    <div class="nav-item" role="button" tabindex="0" onclick="showPage('impots')" data-page="impots" data-member-only="true"><span class="icon">💰</span> Impôts</div>
     <div class="nav-section" data-member-only="true">Administration</div>
     <div class="nav-item" role="button" tabindex="0" id="nav-admin" onclick="showPage('admin')" style="display:none"><span class="icon">⚙️</span> Panel Admin</div>
     <div class="nav-item" role="button" tabindex="0" onclick="showPage('profil')" data-page="profil"><span class="icon">👤</span> Mon profil</div>
@@ -4462,6 +4463,625 @@ document.addEventListener('DOMContentLoaded',function(){if(localStorage.getItem(
     </div>
   </div>
 
+  <!-- ═══════════════════════════════════════════════════════
+       IMPÔTS — Registre de collecte des contributions ninja
+       ═══════════════════════════════════════════════════════ -->
+  <div class="page-content" id="page-impots">
+    <style>
+    #page-impots .imp-section{
+      background:rgba(20,16,9,0.96);
+      border:1px solid rgba(180,140,20,0.18);
+      border-radius:12px;
+      padding:18px 22px;
+      margin-bottom:16px;
+      box-shadow:0 4px 18px rgba(0,0,0,0.3);
+    }
+    #page-impots .imp-section-title{
+      font-family:'Cinzel',serif;
+      font-size:14px;font-weight:700;
+      letter-spacing:2px;
+      color:#d4b44a;
+      text-transform:uppercase;
+      margin-bottom:14px;
+      display:flex;align-items:center;gap:10px;
+    }
+    #page-impots .imp-section-title small{
+      font-family:'Share Tech Mono',monospace;
+      font-size:9px;letter-spacing:2px;
+      color:rgba(255,255,255,0.35);
+      font-weight:400;
+      margin-left:auto;
+      text-transform:uppercase;
+    }
+    /* Barre de progression */
+    #page-impots .imp-progress-wrap{
+      display:flex;align-items:flex-end;justify-content:space-between;
+      gap:20px;margin-bottom:12px;flex-wrap:wrap;
+    }
+    #page-impots .imp-progress-left{display:flex;align-items:baseline;gap:14px}
+    #page-impots .imp-progress-overline{
+      font-family:'Share Tech Mono',monospace;
+      font-size:9px;letter-spacing:2.5px;
+      color:rgba(255,255,255,0.4);text-transform:uppercase;
+      margin-bottom:6px;
+    }
+    #page-impots .imp-progress-pct{
+      font-family:'Cinzel',serif;
+      font-size:38px;font-weight:900;
+      color:#16a34a;
+      line-height:1;
+      letter-spacing:-1px;
+    }
+    #page-impots .imp-progress-pct.warn{color:#d97706}
+    #page-impots .imp-progress-pct.bad{color:#dc2626}
+    #page-impots .imp-progress-badge{
+      display:inline-block;
+      padding:5px 12px;border-radius:4px;
+      font-family:'Share Tech Mono',monospace;
+      font-size:10px;letter-spacing:2px;
+      font-weight:700;text-transform:uppercase;
+    }
+    #page-impots .imp-progress-badge.good{background:rgba(22,163,74,0.15);color:#22c55e;border:1px solid rgba(22,163,74,0.35)}
+    #page-impots .imp-progress-badge.warn{background:rgba(217,119,6,0.15);color:#f59e0b;border:1px solid rgba(217,119,6,0.35)}
+    #page-impots .imp-progress-badge.bad{background:rgba(220,38,38,0.15);color:#ef4444;border:1px solid rgba(220,38,38,0.35)}
+    #page-impots .imp-progress-right{text-align:right}
+    #page-impots .imp-progress-count{
+      font-family:'Cinzel',serif;
+      font-size:24px;font-weight:700;
+      color:var(--gold2);
+    }
+    #page-impots .imp-progress-bar{
+      height:10px;border-radius:5px;
+      background:rgba(255,255,255,0.06);
+      overflow:hidden;position:relative;
+      border:1px solid rgba(180,140,20,0.18);
+    }
+    #page-impots .imp-progress-fill{
+      height:100%;
+      background:linear-gradient(90deg,#22c55e 0%,#16a34a 100%);
+      border-radius:5px 0 0 5px;
+      transition:width .4s cubic-bezier(.22,.68,0,1.2);
+      box-shadow:0 0 10px rgba(22,163,74,0.4);
+    }
+    #page-impots .imp-progress-fill.warn{background:linear-gradient(90deg,#f59e0b,#d97706);box-shadow:0 0 10px rgba(217,119,6,0.4)}
+    #page-impots .imp-progress-fill.bad{background:linear-gradient(90deg,#ef4444,#dc2626);box-shadow:0 0 10px rgba(220,38,38,0.4)}
+    #page-impots .imp-progress-axis{
+      display:flex;justify-content:space-between;
+      font-family:'Share Tech Mono',monospace;
+      font-size:8.5px;color:rgba(255,255,255,0.3);
+      letter-spacing:1.5px;margin-top:6px;
+    }
+
+    /* Stat cards spécifiques impôts */
+    #page-impots .imp-stats{
+      display:grid;
+      grid-template-columns:repeat(auto-fit,minmax(160px,1fr));
+      gap:12px;margin-bottom:16px;
+    }
+    #page-impots .imp-stat{
+      background:rgba(20,16,9,0.96);
+      border:1px solid rgba(180,140,20,0.18);
+      border-radius:10px;
+      padding:16px 18px;
+      position:relative;overflow:hidden;
+      box-shadow:0 4px 14px rgba(0,0,0,0.3);
+    }
+    #page-impots .imp-stat::after{
+      content:'';position:absolute;bottom:0;left:0;right:0;height:3px;
+      background:var(--stat-color,var(--gold));
+      opacity:0.7;
+    }
+    #page-impots .imp-stat .lbl{
+      font-family:'Share Tech Mono',monospace;
+      font-size:8.5px;letter-spacing:2px;
+      color:rgba(255,255,255,0.45);
+      text-transform:uppercase;
+      margin-bottom:8px;
+    }
+    #page-impots .imp-stat .val{
+      font-family:'Cinzel',serif;
+      font-size:26px;font-weight:900;
+      color:var(--text);line-height:1;
+    }
+    #page-impots .imp-stat .val .ryos{
+      font-size:14px;color:var(--gold);font-weight:600;margin-left:4px;letter-spacing:1px;
+    }
+    #page-impots .imp-stat.green .val{color:#22c55e}
+    #page-impots .imp-stat.red .val{color:#ef4444}
+    #page-impots .imp-stat.gold .val{color:var(--gold2)}
+
+    /* Encart info */
+    #page-impots .imp-info{
+      background:rgba(59,130,246,0.06);
+      border:1px solid rgba(59,130,246,0.2);
+      border-left:3px solid #3b82f6;
+      border-radius:6px;
+      padding:10px 14px;
+      font-size:12px;color:rgba(240,232,208,0.7);
+      margin-bottom:16px;
+      display:flex;align-items:center;gap:10px;
+    }
+    #page-impots .imp-info strong{color:#60a5fa;font-weight:600}
+
+    /* Zone actions Direction */
+    #page-impots .imp-direction{
+      background:linear-gradient(135deg,rgba(120,80,20,0.08),rgba(192,65,14,0.04));
+      border:1px solid rgba(180,140,20,0.25);
+      border-radius:10px;
+      padding:14px 18px;
+      margin-bottom:16px;
+    }
+    #page-impots .imp-direction-head{
+      display:flex;align-items:center;gap:8px;margin-bottom:6px;
+    }
+    #page-impots .imp-direction-head .icon{color:#d4b44a}
+    #page-impots .imp-direction-head h4{
+      font-family:'Share Tech Mono',monospace;
+      font-size:10px;letter-spacing:2.5px;
+      color:#d4b44a;text-transform:uppercase;font-weight:700;
+    }
+    #page-impots .imp-direction-sub{
+      font-family:'Share Tech Mono',monospace;
+      font-size:9px;letter-spacing:1.5px;
+      color:rgba(255,255,255,0.4);
+      margin-bottom:12px;
+    }
+    #page-impots .imp-direction-actions{
+      display:flex;gap:10px;flex-wrap:wrap;
+    }
+    #page-impots .imp-direction-actions .btn{
+      flex:1;min-width:200px;
+      font-family:'Share Tech Mono',monospace;
+      font-size:10px;letter-spacing:2px;
+      padding:10px 14px;
+      text-transform:uppercase;
+    }
+
+    /* Formulaire ajout */
+    #page-impots .imp-add{
+      background:rgba(20,16,9,0.96);
+      border:1px solid rgba(180,140,20,0.2);
+      border-radius:10px;
+      padding:14px 18px;margin-bottom:16px;
+    }
+    #page-impots .imp-add-head{
+      font-family:'Share Tech Mono',monospace;
+      font-size:10px;letter-spacing:2.5px;
+      color:#a78bfa;text-transform:uppercase;font-weight:700;
+      margin-bottom:12px;display:flex;align-items:center;gap:8px;
+    }
+    #page-impots .imp-add-row{
+      display:grid;grid-template-columns:1fr 220px auto;gap:10px;align-items:end;
+    }
+    @media(max-width:768px){#page-impots .imp-add-row{grid-template-columns:1fr}}
+    #page-impots .imp-add label{
+      font-family:'Share Tech Mono',monospace;
+      font-size:8.5px;letter-spacing:2px;
+      color:rgba(255,255,255,0.45);text-transform:uppercase;
+      display:block;margin-bottom:5px;
+    }
+
+    /* Tableau ninjas */
+    #page-impots .imp-toolbar{
+      display:flex;gap:10px;align-items:center;
+      margin-bottom:12px;flex-wrap:wrap;
+    }
+    #page-impots .imp-toolbar input{flex:1;min-width:200px}
+    #page-impots .imp-toolbar .imp-filters{display:flex;gap:6px;flex-wrap:wrap}
+    #page-impots .imp-fbtn{
+      padding:7px 14px;cursor:pointer;
+      background:rgba(255,255,255,0.04);
+      border:1px solid rgba(180,140,20,0.2);
+      border-radius:6px;
+      font-family:'Share Tech Mono',monospace;
+      font-size:10px;letter-spacing:1.5px;
+      color:rgba(255,255,255,0.55);text-transform:uppercase;
+      transition:all .15s;
+    }
+    #page-impots .imp-fbtn:hover{color:#fff;border-color:rgba(180,140,20,0.4)}
+    #page-impots .imp-fbtn.active.all   {background:linear-gradient(135deg,#a16207,#854d0e);color:#fff;border-color:#a16207}
+    #page-impots .imp-fbtn.active.paid  {background:linear-gradient(135deg,#16a34a,#166534);color:#fff;border-color:#16a34a}
+    #page-impots .imp-fbtn.active.unpaid{background:linear-gradient(135deg,#dc2626,#991b1b);color:#fff;border-color:#dc2626}
+
+    #page-impots .imp-table{
+      background:rgba(20,16,9,0.96);
+      border:1px solid rgba(180,140,20,0.18);
+      border-radius:10px;
+      overflow:hidden;
+      box-shadow:0 4px 18px rgba(0,0,0,0.3);
+    }
+    #page-impots .imp-thead{
+      display:grid;
+      grid-template-columns:2fr 1.4fr 1fr 1fr 1.6fr 56px;
+      gap:10px;padding:11px 16px;
+      background:rgba(180,140,20,0.06);
+      border-bottom:1px solid rgba(180,140,20,0.18);
+      font-family:'Share Tech Mono',monospace;
+      font-size:8.5px;letter-spacing:2px;
+      color:rgba(255,255,255,0.45);text-transform:uppercase;
+    }
+    #page-impots .imp-row{
+      display:grid;
+      grid-template-columns:2fr 1.4fr 1fr 1fr 1.6fr 56px;
+      gap:10px;padding:9px 16px;align-items:center;
+      border-bottom:1px solid rgba(180,140,20,0.08);
+      transition:background .15s;
+    }
+    #page-impots .imp-row:hover{background:rgba(180,140,20,0.04)}
+    #page-impots .imp-row:last-child{border-bottom:none}
+    #page-impots .imp-row .nom{font-weight:600;color:var(--text);font-size:13px}
+    #page-impots .imp-row .montant{
+      font-family:'Cinzel',serif;font-weight:700;
+      color:var(--gold2);font-size:13.5px;
+    }
+    #page-impots .imp-row .montant .ryos-lbl{color:rgba(255,255,255,0.4);font-size:10px;font-weight:400;margin-left:3px;font-family:'Share Tech Mono',monospace}
+    #page-impots .imp-row select{
+      padding:5px 8px;border-radius:5px;
+      background:rgba(255,255,255,0.04);
+      border:1px solid rgba(180,140,20,0.2);
+      color:var(--text);font-size:11.5px;
+      font-family:'Barlow',sans-serif;
+      cursor:pointer;
+    }
+    #page-impots .imp-row select.paid{
+      background:rgba(22,163,74,0.15);
+      border-color:rgba(22,163,74,0.45);
+      color:#22c55e;font-weight:600;
+    }
+    #page-impots .imp-row select.unpaid{
+      background:rgba(220,38,38,0.12);
+      border-color:rgba(220,38,38,0.4);
+      color:#f87171;font-weight:600;
+    }
+    #page-impots .imp-row select.exempt{
+      background:rgba(107,114,128,0.12);
+      border-color:rgba(107,114,128,0.3);
+      color:#9ca3af;font-style:italic;
+    }
+    #page-impots .imp-row .collecteur-cell{font-size:11.5px;color:rgba(255,255,255,0.6)}
+    #page-impots .imp-row .btn-row-del{
+      background:rgba(220,38,38,0.1);
+      border:1px solid rgba(220,38,38,0.25);
+      color:#f87171;
+      padding:5px 10px;border-radius:5px;
+      cursor:pointer;font-size:12px;
+      transition:all .15s;
+    }
+    #page-impots .imp-row .btn-row-del:hover{background:rgba(220,38,38,0.22)}
+    #page-impots .imp-empty{
+      padding:50px 20px;text-align:center;
+      color:rgba(255,255,255,0.3);
+      font-family:'Cinzel',serif;font-size:13px;letter-spacing:1px;
+    }
+    @media(max-width:768px){
+      #page-impots .imp-thead{display:none}
+      #page-impots .imp-row{
+        grid-template-columns:1fr 56px;
+        grid-auto-rows:auto;padding:11px;gap:6px;
+      }
+      #page-impots .imp-row .nom{grid-column:1/2}
+      #page-impots .imp-row .grade-cell,
+      #page-impots .imp-row .montant,
+      #page-impots .imp-row .statut-cell,
+      #page-impots .imp-row .collecteur-cell{
+        grid-column:1/2;font-size:11px;
+        display:flex;align-items:center;gap:8px;
+      }
+      #page-impots .imp-row .grade-cell::before{content:"Grade :";color:rgba(255,255,255,0.4);font-size:10px;font-family:'Share Tech Mono',monospace;letter-spacing:1px}
+      #page-impots .imp-row .montant::before{content:"Montant :";color:rgba(255,255,255,0.4);font-size:10px;font-family:'Share Tech Mono',monospace;letter-spacing:1px}
+      #page-impots .imp-row .statut-cell::before{content:"Statut :";color:rgba(255,255,255,0.4);font-size:10px;font-family:'Share Tech Mono',monospace;letter-spacing:1px}
+      #page-impots .imp-row .collecteur-cell::before{content:"Collecteur :";color:rgba(255,255,255,0.4);font-size:10px;font-family:'Share Tech Mono',monospace;letter-spacing:1px}
+      #page-impots .imp-row .btn-row-del{grid-column:2/3;grid-row:1/6;align-self:start}
+    }
+
+    /* Historique des collecteurs */
+    #page-impots .imp-collecteur-card{
+      background:rgba(20,16,9,0.96);
+      border:1px solid rgba(180,140,20,0.18);
+      border-radius:8px;
+      margin-bottom:8px;
+      overflow:hidden;
+      transition:border-color .15s;
+    }
+    #page-impots .imp-collecteur-card:hover{border-color:rgba(180,140,20,0.35)}
+    #page-impots .imp-collecteur-head{
+      padding:12px 16px;
+      display:grid;
+      grid-template-columns:36px 1fr auto auto;
+      gap:12px;align-items:center;
+      cursor:pointer;
+    }
+    #page-impots .imp-collecteur-avatar{
+      width:36px;height:36px;border-radius:50%;
+      background:linear-gradient(135deg,#a16207,#854d0e);
+      display:flex;align-items:center;justify-content:center;
+      font-family:'Cinzel',serif;font-weight:700;font-size:12px;
+      color:#fff;
+      box-shadow:0 2px 6px rgba(0,0,0,0.3);
+    }
+    #page-impots .imp-collecteur-info .nm{font-weight:600;color:var(--text);font-size:13.5px}
+    #page-impots .imp-collecteur-info .sub{font-family:'Share Tech Mono',monospace;font-size:9px;letter-spacing:1.5px;color:rgba(255,255,255,0.4);margin-top:2px}
+    #page-impots .imp-collecteur-amt{text-align:right}
+    #page-impots .imp-collecteur-amt .lbl{font-family:'Share Tech Mono',monospace;font-size:8.5px;letter-spacing:1.5px;color:rgba(255,255,255,0.4);text-transform:uppercase}
+    #page-impots .imp-collecteur-amt .val{font-family:'Cinzel',serif;font-weight:700;color:#22c55e;font-size:15px;margin-top:2px}
+    #page-impots .imp-collecteur-arrow{
+      color:rgba(255,255,255,0.4);font-size:11px;
+      transition:transform .2s;
+    }
+    #page-impots .imp-collecteur-card.open .imp-collecteur-arrow{transform:rotate(180deg)}
+    #page-impots .imp-collecteur-detail{
+      display:none;
+      padding:0 16px 14px;
+      border-top:1px solid rgba(180,140,20,0.1);
+      background:rgba(0,0,0,0.18);
+    }
+    #page-impots .imp-collecteur-card.open .imp-collecteur-detail{display:block}
+    #page-impots .imp-collecteur-detail .det-row{
+      display:flex;justify-content:space-between;align-items:center;
+      padding:9px 0;border-bottom:1px solid rgba(180,140,20,0.06);
+      font-size:12px;
+    }
+    #page-impots .imp-collecteur-detail .det-row:last-child{border-bottom:none}
+    #page-impots .imp-collecteur-detail .det-row .nm{color:var(--text)}
+    #page-impots .imp-collecteur-detail .det-row .grade{
+      font-family:'Share Tech Mono',monospace;font-size:9.5px;
+      color:rgba(255,255,255,0.45);letter-spacing:1px;margin-left:6px;
+    }
+    #page-impots .imp-collecteur-detail .det-row .am{color:#fbbf24;font-weight:600;font-family:'Cinzel',serif}
+    #page-impots .imp-collecteur-detail .det-actions{
+      display:flex;gap:8px;margin-top:10px;padding-top:10px;
+      border-top:1px solid rgba(180,140,20,0.1);
+    }
+    #page-impots .imp-collecteur-detail .btn-recup{
+      background:linear-gradient(135deg,#16a34a,#15803d);color:#fff;
+      font-family:'Share Tech Mono',monospace;font-size:10px;letter-spacing:1.5px;
+      padding:7px 14px;text-transform:uppercase;
+    }
+
+    /* Historique récup direction */
+    #page-impots .imp-recup-card{
+      background:rgba(20,16,9,0.96);
+      border:1px solid rgba(180,140,20,0.18);
+      border-radius:8px;
+      margin-bottom:8px;
+      overflow:hidden;
+    }
+    #page-impots .imp-recup-head{
+      padding:12px 16px;
+      display:grid;
+      grid-template-columns:36px 1fr auto auto;
+      gap:12px;align-items:center;
+      cursor:pointer;
+    }
+    #page-impots .imp-recup-avatar{
+      width:36px;height:36px;border-radius:50%;
+      background:linear-gradient(135deg,#7a4e08,#5a3705);
+      display:flex;align-items:center;justify-content:center;
+      font-size:14px;color:#d4b44a;
+      box-shadow:0 2px 6px rgba(0,0,0,0.3);
+    }
+    #page-impots .imp-recup-info .nm{font-weight:600;color:var(--text);font-size:13.5px}
+    #page-impots .imp-recup-info .sub{font-family:'Share Tech Mono',monospace;font-size:9px;letter-spacing:1.5px;color:rgba(255,255,255,0.4);margin-top:2px}
+    #page-impots .imp-recup-amt{
+      font-family:'Cinzel',serif;font-weight:700;
+      color:var(--gold2);font-size:16px;text-align:right;
+    }
+    #page-impots .imp-recup-amt .lbl{display:block;font-size:9px;font-family:'Share Tech Mono',monospace;color:rgba(255,255,255,0.4);font-weight:400;letter-spacing:1px;margin-top:2px}
+    #page-impots .imp-recup-detail{display:none;background:rgba(0,0,0,0.2);border-top:1px solid rgba(180,140,20,0.1)}
+    #page-impots .imp-recup-card.open .imp-recup-detail{display:block}
+    #page-impots .imp-recup-card.open .imp-recup-arrow{transform:rotate(180deg)}
+    #page-impots .imp-recup-arrow{color:rgba(255,255,255,0.4);font-size:11px;transition:transform .2s}
+    #page-impots .imp-recup-detail .det-row{
+      display:grid;grid-template-columns:1fr auto;gap:10px;
+      padding:8px 16px;border-bottom:1px solid rgba(180,140,20,0.06);
+      align-items:center;font-size:12px;
+    }
+    #page-impots .imp-recup-detail .det-row:last-of-type{border-bottom:none}
+    #page-impots .imp-recup-detail .det-row .nm{color:var(--text)}
+    #page-impots .imp-recup-detail .det-row .grade-pill{
+      display:inline-block;font-family:'Share Tech Mono',monospace;
+      font-size:9px;letter-spacing:1px;padding:2px 8px;border-radius:4px;
+      margin-left:6px;
+    }
+    #page-impots .imp-recup-detail .det-row .am{
+      color:#fbbf24;font-weight:600;font-family:'Cinzel',serif;font-size:12.5px;
+    }
+    #page-impots .imp-recup-detail .det-foot{
+      padding:10px 16px;
+      display:flex;justify-content:flex-end;
+      border-top:1px solid rgba(180,140,20,0.12);
+      background:rgba(0,0,0,0.15);
+    }
+
+    /* Total à récupérer banner */
+    #page-impots .imp-total-banner{
+      background:linear-gradient(135deg,rgba(180,140,20,0.06),rgba(120,80,20,0.04));
+      border:1px solid rgba(180,140,20,0.25);
+      border-radius:10px;
+      padding:18px 22px;text-align:center;
+      margin-bottom:14px;
+      position:relative;overflow:hidden;
+    }
+    #page-impots .imp-total-banner::before{
+      content:'';position:absolute;inset:0;
+      background:radial-gradient(ellipse at center,rgba(201,162,39,0.06),transparent 60%);
+      pointer-events:none;
+    }
+    #page-impots .imp-total-banner .lbl{
+      font-family:'Share Tech Mono',monospace;
+      font-size:9px;letter-spacing:3px;
+      color:rgba(255,255,255,0.45);text-transform:uppercase;
+      margin-bottom:6px;display:flex;align-items:center;justify-content:center;gap:8px;
+    }
+    #page-impots .imp-total-banner .val{
+      font-family:'Cinzel',serif;
+      font-size:34px;font-weight:900;
+      color:var(--gold2);letter-spacing:1px;
+      text-shadow:0 0 24px rgba(212,180,74,0.25);
+    }
+    #page-impots .imp-total-banner .val .ryos{font-size:16px;color:rgba(212,180,74,0.7);font-weight:600;margin-left:6px;letter-spacing:2px}
+
+    /* Gestion grades (admin) */
+    #page-impots .imp-grades-grid{
+      display:grid;
+      grid-template-columns:repeat(auto-fill,minmax(220px,1fr));
+      gap:10px;
+    }
+    #page-impots .imp-grade-row{
+      display:flex;align-items:center;gap:8px;
+      background:rgba(255,255,255,0.04);
+      border:1px solid rgba(180,140,20,0.18);
+      border-radius:6px;
+      padding:8px 10px;
+    }
+    #page-impots .imp-grade-row label{
+      flex:1;color:var(--text);font-size:12.5px;font-weight:500;
+    }
+    #page-impots .imp-grade-row input[type="number"]{
+      width:90px;padding:5px 8px;
+      background:rgba(255,255,255,0.04);
+      border:1px solid rgba(180,140,20,0.2);
+      border-radius:5px;color:var(--text);font-size:12px;
+      font-family:'Share Tech Mono',monospace;
+      text-align:right;
+    }
+    #page-impots .imp-grade-row .ryos{font-size:9.5px;color:rgba(255,255,255,0.4);font-family:'Share Tech Mono',monospace;letter-spacing:1px}
+    #page-impots .imp-grade-row.exempt input{opacity:0.4}
+    #page-impots .imp-grade-row .exempt-toggle{
+      font-family:'Share Tech Mono',monospace;font-size:9px;
+      letter-spacing:1px;cursor:pointer;
+      color:rgba(255,255,255,0.5);
+      padding:3px 8px;border-radius:4px;
+      border:1px solid rgba(180,140,20,0.2);
+      background:rgba(255,255,255,0.03);
+    }
+    #page-impots .imp-grade-row .exempt-toggle.on{
+      background:rgba(107,114,128,0.2);
+      color:#9ca3af;border-color:rgba(107,114,128,0.35);
+    }
+    </style>
+
+    <div class="section-header">
+      <div>
+        <div class="section-title">Impôts</div>
+        <div class="section-sub">REGISTRE DES CONTRIBUTIONS NINJA</div>
+      </div>
+    </div>
+
+    <!-- BARRE PROGRESSION -->
+    <div class="imp-section">
+      <div class="imp-progress-wrap">
+        <div>
+          <div class="imp-progress-overline">Taux de paiement des impôts</div>
+          <div class="imp-progress-left">
+            <div class="imp-progress-pct" id="imp-pct">0<span style="font-size:22px;color:rgba(255,255,255,0.4)">%</span></div>
+            <div class="imp-progress-badge good" id="imp-pct-badge">EXCELLENT</div>
+          </div>
+        </div>
+        <div class="imp-progress-right">
+          <div class="imp-progress-overline">Ninjas ayant payé</div>
+          <div class="imp-progress-count" id="imp-paid-count">0 / 0</div>
+        </div>
+      </div>
+      <div class="imp-progress-bar"><div class="imp-progress-fill" id="imp-bar" style="width:0%"></div></div>
+      <div class="imp-progress-axis"><span>0%</span><span>25%</span><span>50%</span><span>75%</span><span>100%</span></div>
+    </div>
+
+    <!-- STATS -->
+    <div class="imp-stats">
+      <div class="imp-stat" style="--stat-color:var(--gold)"><div class="lbl">Ninjas enregistrés</div><div class="val" id="imp-s-total">0</div></div>
+      <div class="imp-stat green" style="--stat-color:#22c55e"><div class="lbl">Ont payé</div><div class="val" id="imp-s-paid">0</div></div>
+      <div class="imp-stat red" style="--stat-color:#ef4444"><div class="lbl">N'ont pas payé</div><div class="val" id="imp-s-unpaid">0</div></div>
+      <div class="imp-stat gold" style="--stat-color:#fbbf24"><div class="lbl">Total dû</div><div class="val" id="imp-s-due">0<span class="ryos">RYOS</span></div></div>
+      <div class="imp-stat green" style="--stat-color:#22c55e"><div class="lbl">Collecté en cours</div><div class="val" id="imp-s-collected">0<span class="ryos">RYOS</span></div></div>
+      <div class="imp-stat gold" style="--stat-color:#d4b44a"><div class="lbl">Total historique</div><div class="val" id="imp-s-historical">0<span class="ryos">RYOS</span></div></div>
+    </div>
+
+    <!-- Info exonération -->
+    <div class="imp-info" id="imp-exempt-info" style="display:none">
+      <span style="font-size:14px">ℹ️</span>
+      <div><strong id="imp-exempt-list">—</strong> <span id="imp-exempt-msg">sont exonérés d'impôts et ne sont pas comptabilisés dans le total dû.</span></div>
+    </div>
+
+    <!-- ACTIONS DIRECTION (admin) -->
+    <div class="imp-direction" id="imp-direction-panel" style="display:none">
+      <div class="imp-direction-head"><span class="icon">👑</span><h4>Actions Direction</h4></div>
+      <div class="imp-direction-sub">Réservé Direction · Admin uniquement</div>
+      <div class="imp-direction-actions">
+        <button class="btn btn-outline" onclick="impGradesEditor()">⚙️ Gérer grades & montants</button>
+        <button class="btn btn-outline" onclick="impResetCycle()" style="border-color:rgba(220,38,38,0.4);color:#f87171">🔄 Remettre tout à zéro (nouveau cycle)</button>
+      </div>
+    </div>
+
+    <!-- Éditeur de grades (admin, caché par défaut) -->
+    <div class="imp-section" id="imp-grades-section" style="display:none">
+      <div class="imp-section-title"><span>⚙️</span>Grades & montants d'impôts <small>cliquez sur "Exonérer" pour retirer un grade du calcul</small></div>
+      <div class="imp-grades-grid" id="imp-grades-list"></div>
+      <div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap">
+        <button class="btn btn-primary" onclick="impSaveGrades()">💾 Enregistrer</button>
+        <button class="btn btn-outline btn-sm" onclick="impAddGradeRow()">+ Ajouter un grade</button>
+        <button class="btn btn-outline btn-sm" onclick="document.getElementById('imp-grades-section').style.display='none'">Fermer</button>
+      </div>
+    </div>
+
+    <!-- AJOUT NINJA (admin) -->
+    <div class="imp-add" id="imp-add-panel" style="display:none">
+      <div class="imp-add-head"><span style="font-size:14px">+</span>Ajouter un ninja au registre</div>
+      <div class="imp-add-row">
+        <div><label>Nom et prénom</label><input type="text" id="imp-add-nom" class="form-control" placeholder="Ex : Naruto Uzumaki"></div>
+        <div><label>Grade</label><select id="imp-add-grade" class="form-control"></select></div>
+        <button class="btn btn-primary" onclick="impAddNinja()" style="height:38px">+ Ajouter</button>
+      </div>
+    </div>
+
+    <!-- TOOLBAR + TABLE -->
+    <div class="imp-toolbar">
+      <input type="text" id="imp-search" class="form-control" placeholder="🔎  Rechercher par nom et prénom..." oninput="renderImpotsList()">
+      <div class="imp-filters">
+        <button class="imp-fbtn active all" data-f="all" onclick="impSetFilter('all',this)">Tous</button>
+        <button class="imp-fbtn paid" data-f="paid" onclick="impSetFilter('paid',this)">✓ Payés</button>
+        <button class="imp-fbtn unpaid" data-f="unpaid" onclick="impSetFilter('unpaid',this)">✗ Non payés</button>
+      </div>
+    </div>
+    <div class="imp-table">
+      <div class="imp-thead">
+        <div>Nom et prénom</div>
+        <div>Grade</div>
+        <div style="text-align:right">Montant</div>
+        <div>Statut</div>
+        <div>Action / Collecteur</div>
+        <div></div>
+      </div>
+      <div id="imp-rows"></div>
+    </div>
+
+    <!-- HISTORIQUE COLLECTEURS (membres) -->
+    <div class="imp-section" style="margin-top:20px">
+      <div class="imp-section-title"><span>📊</span>Historique des collecteurs</div>
+      <div class="imp-total-banner">
+        <div class="lbl"><span style="color:#d4b44a">⏳</span>Total du groupe à récupérer</div>
+        <div class="val"><span id="imp-group-total">0</span><span class="ryos">RYOS</span></div>
+      </div>
+      <div style="font-size:11.5px;color:rgba(255,255,255,0.4);margin-bottom:10px;font-style:italic">
+        Cliquez sur un agent pour voir qui a payé. Le bouton "Récupérer" archive les collectes et remet le compteur de l'agent à zéro.
+      </div>
+      <div id="imp-collecteurs-list"></div>
+    </div>
+
+    <!-- HISTORIQUE RÉCUPÉRATIONS DIRECTION (admin) -->
+    <div class="imp-section" id="imp-recup-section" style="display:none;margin-top:20px">
+      <div class="imp-section-title"><span style="color:#d4b44a">👑</span>Historique récupérations Direction</div>
+      <div style="display:flex;align-items:center;gap:6px;font-size:11px;color:rgba(255,255,255,0.45);margin-bottom:12px">
+        <span>🔒</span>Visible uniquement par Direction & Admin
+      </div>
+      <div class="imp-total-banner">
+        <div class="lbl">Total récupéré (toutes opérations)</div>
+        <div class="val"><span id="imp-recup-total">0</span><span class="ryos">RYOS</span></div>
+      </div>
+      <div id="imp-recup-list"></div>
+    </div>
+  </div>
+
   <!-- ADMIN -->
   <div class="page-content" id="page-admin">
     <div class="section-header">
@@ -6564,7 +7184,7 @@ function saveCommNameAdmin(){
 }
 
 // NAV
-const PAGES={dashboard:"Tableau de bord",annonces:"Annonces",recensement:"Recensement",recrutement:"Recrutement",plaintes:"Plaintes",dossiers:"Dossiers criminels",codepenal:"Code Pénal",histoire:"Histoire & Lore",operations:"Opérations",effectifs:"Effectifs",hierarchie:"Hiérarchie",sanctions:"Sanctions & Promotions",admin:"Panel Admin",messagerie:"Messagerie",profil:"Mon profil",bingobook:"Bingo Book"};
+const PAGES={dashboard:"Tableau de bord",annonces:"Annonces",recensement:"Recensement",recrutement:"Recrutement",plaintes:"Plaintes",dossiers:"Dossiers criminels",codepenal:"Code Pénal",histoire:"Histoire & Lore",operations:"Opérations",effectifs:"Effectifs",hierarchie:"Hiérarchie",sanctions:"Sanctions & Promotions",impots:"Impôts",admin:"Panel Admin",messagerie:"Messagerie",profil:"Mon profil",bingobook:"Bingo Book"};
 const VISITOR_PAGES=["dashboard","annonces","recensement","recrutement","plaintes","codepenal","histoire","profil","bingobook"];
 
 // Mapping page → bnav-item id (pour les 4 onglets directs de la barre)
@@ -6619,6 +7239,7 @@ function renderPage(name){
   if(name==="operations"){renderOperations();initFeatureMap();setTimeout(_syncTeaserBg,150);opsBriefingRender();}
   if(name==="effectifs")renderEffectifs();
   if(name==="sanctions")renderSanctions();
+  if(name==="impots")renderImpots();
   if(name==="admin"){
     el("admin-comm-input").value=DB.commissaire||"";applyLogo();loadNotifPrefs();refreshNotifCounts();renderNotifHistory();
     var _fmSaved=(DB.features&&typeof DB.features.map_active!=='undefined')?!!DB.features.map_active:false;try{if(!DB.features||typeof DB.features.map_active==='undefined')_fmSaved=localStorage.getItem('feat_map_active')==='1';}catch(e){} _syncFeatureMapUI(_fmSaved);
@@ -9285,6 +9906,450 @@ u.statut=u.statut==="Actif"?"Désactivé":"Actif";
 addTimeline(`${u.nom} : compte ${u.statut==="Actif"?"réactivé":"désactivé"} par ${currentUser?currentUser.nom:"admin"}`);
 _lastFbArrays.users=DB.users.map(x=>JSON.parse(JSON.stringify(x)));
 saveData();renderAdmin();syncDashboard();
+}
+
+// ═══════════════════════════════════════════════════════════
+// IMPÔTS — Système de collecte des contributions ninja
+// ═══════════════════════════════════════════════════════════
+
+// Grades par défaut (modifiables par admin)
+function impDefaultGrades(){
+  return [
+    { name: 'Genin',                 amount: 0,    exempt: true  },
+    { name: 'Genin Confirmé',        amount: 1200, exempt: false },
+    { name: 'Chunin',                amount: 3600, exempt: false },
+    { name: 'Tokubetsu Jonin',       amount: 6000, exempt: false },
+    { name: 'Jonin',                 amount: 7200, exempt: false },
+    { name: 'Commandant Jonin',      amount: 7000, exempt: false },
+    { name: 'Kakunin',               amount: 4800, exempt: false },
+  ];
+}
+
+// Init du sous-objet DB.impots si absent
+function impInitDB(){
+  if(!DB.impots) DB.impots = {};
+  if(!Array.isArray(DB.impots.grades) || !DB.impots.grades.length){
+    DB.impots.grades = impDefaultGrades();
+  }
+  if(!Array.isArray(DB.impots.ninjas))    DB.impots.ninjas    = [];
+  if(!Array.isArray(DB.impots.recups))    DB.impots.recups    = [];
+  if(typeof DB.impots.totalHistorical !== 'number') DB.impots.totalHistorical = 0;
+}
+
+let _impFilter = 'all';
+
+function impGradeData(name){
+  impInitDB();
+  return DB.impots.grades.find(g => g.name === name) || { amount: 0, exempt: false };
+}
+function impMontantFor(grade){
+  const g = impGradeData(grade);
+  return g.exempt ? 0 : (parseInt(g.amount,10) || 0);
+}
+function impIsExempt(grade){
+  return !!impGradeData(grade).exempt;
+}
+function impFmt(n){
+  n = parseInt(n,10) || 0;
+  return n.toLocaleString('fr-FR').replace(/\u202f/g,' ');
+}
+function impInitials(name){
+  if(!name) return '?';
+  const parts = String(name).trim().split(/\s+/);
+  return ((parts[0]||'?')[0] + (parts[1]?parts[1][0]:'')).toUpperCase();
+}
+
+function renderImpots(){
+  impInitDB();
+  const isAdmin = currentUser && currentUser.role === 'admin';
+  const showDirection = isAdmin;
+  document.getElementById('imp-direction-panel').style.display = showDirection ? '' : 'none';
+  document.getElementById('imp-add-panel').style.display = isAdmin ? '' : 'none';
+  document.getElementById('imp-recup-section').style.display = showDirection ? '' : 'none';
+
+  // Remplir select grades du formulaire d'ajout
+  const sel = document.getElementById('imp-add-grade');
+  if(sel){
+    sel.innerHTML = DB.impots.grades.map(g =>
+      '<option value="'+esc(g.name)+'">'+esc(g.name)+(g.exempt?' (exonéré)':'')+'</option>'
+    ).join('');
+  }
+
+  // Liste des grades exonérés pour l'encart info
+  const exemptGrades = DB.impots.grades.filter(g => g.exempt).map(g => 'Les '+g.name);
+  const infoBox = document.getElementById('imp-exempt-info');
+  if(exemptGrades.length){
+    infoBox.style.display = 'flex';
+    document.getElementById('imp-exempt-list').textContent =
+      exemptGrades.length === 1 ? exemptGrades[0] : exemptGrades.join(', ');
+    document.getElementById('imp-exempt-msg').textContent =
+      exemptGrades.length === 1
+        ? "sont exonérés d'impôts et ne sont pas comptabilisés dans le total dû."
+        : "sont exonérés d'impôts et ne sont pas comptabilisés dans le total dû.";
+  } else {
+    infoBox.style.display = 'none';
+  }
+
+  renderImpotsStats();
+  renderImpotsList();
+  renderImpotsCollecteurs();
+  renderImpotsRecups();
+}
+
+function renderImpotsStats(){
+  impInitDB();
+  const ninjas = DB.impots.ninjas;
+  const taxables = ninjas.filter(n => !impIsExempt(n.grade));
+  const paid = taxables.filter(n => n.paid).length;
+  const unpaid = taxables.length - paid;
+  const totalDue = taxables.reduce((s,n) => s + (n.paid ? 0 : impMontantFor(n.grade)), 0);
+  const collected = taxables.reduce((s,n) => s + (n.paid ? impMontantFor(n.grade) : 0), 0);
+  const pct = taxables.length ? Math.round(paid / taxables.length * 100) : 0;
+
+  document.getElementById('imp-pct').innerHTML = pct + '<span style="font-size:22px;color:rgba(255,255,255,0.4)">%</span>';
+  document.getElementById('imp-bar').style.width = pct + '%';
+  document.getElementById('imp-paid-count').textContent = paid + ' / ' + taxables.length;
+  document.getElementById('imp-s-total').textContent    = ninjas.length;
+  document.getElementById('imp-s-paid').textContent     = paid;
+  document.getElementById('imp-s-unpaid').textContent   = unpaid;
+  document.getElementById('imp-s-due').innerHTML        = impFmt(totalDue) + '<span class="ryos">RYOS</span>';
+  document.getElementById('imp-s-collected').innerHTML  = impFmt(collected) + '<span class="ryos">RYOS</span>';
+  document.getElementById('imp-s-historical').innerHTML = impFmt(DB.impots.totalHistorical||0) + '<span class="ryos">RYOS</span>';
+
+  // Couleur du %
+  const pctEl = document.getElementById('imp-pct');
+  const badge = document.getElementById('imp-pct-badge');
+  const bar   = document.getElementById('imp-bar');
+  pctEl.classList.remove('warn','bad');
+  badge.classList.remove('warn','bad','good');
+  bar.classList.remove('warn','bad');
+  if(pct >= 75)      { badge.classList.add('good'); badge.textContent = 'EXCELLENT'; }
+  else if(pct >= 50) { badge.classList.add('warn'); badge.textContent = 'MOYEN'; pctEl.classList.add('warn'); bar.classList.add('warn'); }
+  else               { badge.classList.add('bad');  badge.textContent = 'INSUFFISANT'; pctEl.classList.add('bad'); bar.classList.add('bad'); }
+}
+
+function impSetFilter(f, btn){
+  _impFilter = f;
+  document.querySelectorAll('#page-impots .imp-fbtn').forEach(b => b.classList.remove('active'));
+  if(btn && btn.classList) btn.classList.add('active');
+  renderImpotsList();
+}
+
+function renderImpotsList(){
+  impInitDB();
+  const isAdmin = currentUser && currentUser.role === 'admin';
+  const isMember = currentUser && currentUser.role !== 'visiteur';
+  const q = (document.getElementById('imp-search')?.value || '').toLowerCase();
+  let list = DB.impots.ninjas.slice();
+  if(q) list = list.filter(n => (n.nom||'').toLowerCase().includes(q));
+  if(_impFilter === 'paid')   list = list.filter(n => n.paid);
+  if(_impFilter === 'unpaid') list = list.filter(n => !n.paid && !impIsExempt(n.grade));
+
+  const rowsEl = document.getElementById('imp-rows');
+  if(!list.length){
+    rowsEl.innerHTML = '<div class="imp-empty">— Aucun ninja dans ce filtre —</div>';
+    return;
+  }
+  rowsEl.innerHTML = list.map(n => {
+    const exempt = impIsExempt(n.grade);
+    const montant = impMontantFor(n.grade);
+    const statutClass = exempt ? 'exempt' : (n.paid ? 'paid' : 'unpaid');
+    const statutOptions = exempt
+      ? '<option value="exempt" selected>— Exonéré —</option>'
+      : ('<option value="unpaid"' + (!n.paid?' selected':'') + '>✗ Non payé</option>'
+        +'<option value="paid"'  + ( n.paid?' selected':'') + '>✓ Payé</option>');
+    const collecteurDisplay = exempt
+      ? '<span style="color:rgba(255,255,255,0.3);font-style:italic">— Aucun —</span>'
+      : (n.paid && n.collecteur
+          ? esc(n.collecteur)
+          : '<span style="color:rgba(255,255,255,0.3);font-style:italic">— En attente —</span>');
+    const grades = DB.impots.grades.map(g =>
+      '<option value="'+esc(g.name)+'"'+(g.name===n.grade?' selected':'')+'>'+esc(g.name)+'</option>'
+    ).join('');
+
+    return '<div class="imp-row" data-id="'+n.id+'">'
+      + '<div class="nom">'+esc(n.nom||'—')+'</div>'
+      + '<div class="grade-cell">'
+      +   (isAdmin
+            ? '<select onchange="impChangeGrade('+n.id+',this.value)">'+grades+'</select>'
+            : '<span style="color:rgba(255,255,255,0.7);font-size:12px">'+esc(n.grade||'—')+'</span>')
+      + '</div>'
+      + '<div class="montant" style="text-align:right">'+(exempt ? '<span style="color:rgba(255,255,255,0.3);font-style:italic;font-size:11px">Exonéré</span>' : (impFmt(montant)+'<span class="ryos-lbl">Ryos</span>'))+'</div>'
+      + '<div class="statut-cell">'
+      +   (isMember && !exempt
+            ? '<select class="'+statutClass+'" onchange="impChangeStatut('+n.id+',this.value)">'+statutOptions+'</select>'
+            : '<select class="'+statutClass+'" disabled>'+statutOptions+'</select>')
+      + '</div>'
+      + '<div class="collecteur-cell">'+collecteurDisplay+'</div>'
+      + '<div>'+(isAdmin ? '<button class="btn-row-del" onclick="impDeleteNinja('+n.id+')" title="Retirer du registre">🗑</button>' : '')+'</div>'
+      + '</div>';
+  }).join('');
+}
+
+function impAddNinja(){
+  if(!currentUser || currentUser.role !== 'admin'){
+    showToast('⛔ Action réservée aux administrateurs.', 'error'); return;
+  }
+  impInitDB();
+  const nom = document.getElementById('imp-add-nom').value.trim();
+  const grade = document.getElementById('imp-add-grade').value;
+  if(!nom){ showToast('Indiquez un nom.', 'error'); return; }
+  if(!grade){ showToast('Sélectionnez un grade.', 'error'); return; }
+  DB.impots.ninjas.push({
+    id: Date.now() + Math.floor(Math.random()*1000),
+    nom: nom, grade: grade, paid: false, collecteur: '', paidAt: null
+  });
+  saveData();
+  document.getElementById('imp-add-nom').value = '';
+  renderImpots();
+  showToast('✅ '+nom+' ajouté(e) au registre.', 'success');
+}
+
+function impDeleteNinja(id){
+  if(!currentUser || currentUser.role !== 'admin') return;
+  askDelete('Retirer ce ninja du registre des impôts ?', function(){
+    impInitDB();
+    DB.impots.ninjas = DB.impots.ninjas.filter(n => n.id !== id);
+    saveData(); renderImpots();
+    showToast('Ninja retiré du registre.', 'info');
+  }, '🗑 Retirer');
+}
+
+function impChangeGrade(id, grade){
+  if(!currentUser || currentUser.role !== 'admin') return;
+  impInitDB();
+  const n = DB.impots.ninjas.find(x => x.id === id);
+  if(!n) return;
+  n.grade = grade;
+  // Si grade nouvellement exonéré, on retire le statut payé
+  if(impIsExempt(grade)){ n.paid = false; n.collecteur = ''; n.paidAt = null; }
+  saveData(); renderImpots();
+}
+
+function impChangeStatut(id, val){
+  impInitDB();
+  if(!currentUser || currentUser.role === 'visiteur') return;
+  const n = DB.impots.ninjas.find(x => x.id === id);
+  if(!n) return;
+  if(val === 'paid'){
+    n.paid = true;
+    n.collecteur = currentUser.nom || '';
+    n.paidAt = Date.now();
+  } else if(val === 'unpaid'){
+    n.paid = false;
+    n.collecteur = '';
+    n.paidAt = null;
+  }
+  saveData(); renderImpots();
+}
+
+function impResetCycle(){
+  if(!currentUser || currentUser.role !== 'admin') return;
+  askDelete('Lancer un nouveau cycle ? Tous les ninjas repassent en "Non payé" et le compteur "Collecté en cours" est remis à zéro. Le total historique et les récupérations Direction sont conservés.',
+    function(){
+      impInitDB();
+      DB.impots.ninjas.forEach(n => { n.paid = false; n.collecteur = ''; n.paidAt = null; });
+      saveData(); renderImpots();
+      showToast('🔄 Nouveau cycle lancé — tous les statuts remis à zéro.', 'info');
+    }, '🔄 Nouveau cycle');
+}
+
+// ─── Historique des collecteurs (groupé par membre ayant collecté) ───
+function renderImpotsCollecteurs(){
+  impInitDB();
+  const isAdmin = currentUser && currentUser.role === 'admin';
+  const ninjas = DB.impots.ninjas.filter(n => n.paid && n.collecteur);
+  const byCol = {};
+  ninjas.forEach(n => {
+    const k = n.collecteur;
+    if(!byCol[k]) byCol[k] = { nom: k, items: [], total: 0 };
+    const m = impMontantFor(n.grade);
+    byCol[k].items.push({ nom: n.nom, grade: n.grade, montant: m, paidAt: n.paidAt, ninjaId: n.id });
+    byCol[k].total += m;
+  });
+  const arr = Object.values(byCol).sort((a,b) => b.total - a.total);
+  const groupTotal = arr.reduce((s,c) => s + c.total, 0);
+  document.getElementById('imp-group-total').textContent = impFmt(groupTotal);
+
+  const list = document.getElementById('imp-collecteurs-list');
+  if(!arr.length){
+    list.innerHTML = '<div class="imp-empty" style="border:1px dashed rgba(180,140,20,0.2);border-radius:8px">— Aucun collecteur actif sur ce cycle —</div>';
+    return;
+  }
+  list.innerHTML = arr.map((c, idx) => {
+    const detRows = c.items.map(it =>
+      '<div class="det-row"><div><span class="nm">'+esc(it.nom)+'</span><span class="grade">· '+esc(it.grade)+'</span></div><div class="am">'+impFmt(it.montant)+' Ryos</div></div>'
+    ).join('');
+    const recupBtn = isAdmin
+      ? '<div class="det-actions"><button class="btn btn-recup" onclick="impRecupCollecteur('+JSON.stringify(c.nom).replace(/"/g,'&quot;')+')">👑 Récupérer auprès de '+esc(c.nom)+'</button></div>'
+      : '';
+    return '<div class="imp-collecteur-card" data-idx="'+idx+'">'
+      + '<div class="imp-collecteur-head" onclick="impToggleCollecteur('+idx+')">'
+      +   '<div class="imp-collecteur-avatar">'+impInitials(c.nom)+'</div>'
+      +   '<div class="imp-collecteur-info"><div class="nm">'+esc(c.nom)+'</div><div class="sub">'+c.items.length+' collecte'+(c.items.length>1?'s':'')+'</div></div>'
+      +   '<div class="imp-collecteur-amt"><div class="lbl">Total à récupérer</div><div class="val">'+impFmt(c.total)+' Ryos</div></div>'
+      +   '<div class="imp-collecteur-arrow">▼</div>'
+      + '</div>'
+      + '<div class="imp-collecteur-detail">'+detRows+recupBtn+'</div>'
+      + '</div>';
+  }).join('');
+}
+function impToggleCollecteur(idx){
+  const card = document.querySelector('#imp-collecteurs-list .imp-collecteur-card[data-idx="'+idx+'"]');
+  if(card) card.classList.toggle('open');
+}
+
+// Direction récupère les fonds d'un agent
+function impRecupCollecteur(nom){
+  if(!currentUser || currentUser.role !== 'admin') return;
+  impInitDB();
+  const items = DB.impots.ninjas.filter(n => n.paid && n.collecteur === nom);
+  if(!items.length){ showToast('Aucune collecte à récupérer.', 'info'); return; }
+  const total = items.reduce((s,n) => s + impMontantFor(n.grade), 0);
+  askDelete('Récupérer '+impFmt(total)+' Ryos auprès de '+nom+' ?\n\nL\'archive sera créée et les '+items.length+' collecte(s) seront retirées du registre courant.', function(){
+    DB.impots.recups.push({
+      id: Date.now() + Math.floor(Math.random()*1000),
+      nom: nom,
+      collecteur: nom,
+      collectedBy: currentUser.nom,
+      total: total,
+      count: items.length,
+      date: Date.now(),
+      items: items.map(it => ({ nom: it.nom, grade: it.grade, montant: impMontantFor(it.grade), paidAt: it.paidAt }))
+    });
+    DB.impots.totalHistorical = (DB.impots.totalHistorical||0) + total;
+    // Retire ces ninjas du cycle courant (ils seront réintégrés au prochain cycle ou ré-ajoutés)
+    // Pour préserver le registre, on les remet juste à "non payé" plutôt que de les supprimer
+    const ids = new Set(items.map(it => it.id));
+    DB.impots.ninjas.forEach(n => { if(ids.has(n.id)){ n.paid = false; n.collecteur = ''; n.paidAt = null; } });
+    saveData(); renderImpots();
+    showToast('👑 '+impFmt(total)+' Ryos récupérés auprès de '+nom+'.', 'success');
+  }, '👑 Récupérer');
+}
+
+// ─── Historique des récupérations Direction ───
+function renderImpotsRecups(){
+  impInitDB();
+  const recups = (DB.impots.recups||[]).slice().sort((a,b) => b.date - a.date);
+  const total = recups.reduce((s,r) => s + (r.total||0), 0);
+  document.getElementById('imp-recup-total').textContent = impFmt(total);
+
+  const list = document.getElementById('imp-recup-list');
+  if(!recups.length){
+    list.innerHTML = '<div class="imp-empty" style="border:1px dashed rgba(180,140,20,0.2);border-radius:8px">— Aucune récupération enregistrée —</div>';
+    return;
+  }
+  list.innerHTML = recups.map((r, idx) => {
+    const dateStr = new Date(r.date).toLocaleDateString('fr-FR');
+    const detRows = (r.items||[]).map(it => {
+      const gColor = impGradeColorFor(it.grade);
+      return '<div class="det-row"><div><span class="nm">'+esc(it.nom)+'</span><span class="grade-pill" style="background:'+gColor.bg+';color:'+gColor.fg+';border:1px solid '+gColor.border+'">'+esc(it.grade)+'</span></div><div class="am">'+impFmt(it.montant)+' Ryos</div></div>';
+    }).join('');
+    return '<div class="imp-recup-card" data-idx="'+idx+'">'
+      + '<div class="imp-recup-head" onclick="impToggleRecup('+idx+')">'
+      +   '<div class="imp-recup-avatar">👑</div>'
+      +   '<div class="imp-recup-info"><div class="nm">Récupération par '+esc(r.collectedBy||'?')+'</div><div class="sub">Sur '+esc(r.collecteur||r.nom)+' · '+(r.count||0)+' collecte(s) · '+dateStr+'</div></div>'
+      +   '<div class="imp-recup-amt">'+impFmt(r.total)+'<span class="lbl">Ryos</span></div>'
+      +   '<div class="imp-recup-arrow">▼</div>'
+      + '</div>'
+      + '<div class="imp-recup-detail">'+detRows
+      +   '<div class="det-foot"><button class="btn btn-danger btn-sm" onclick="impDeleteRecup('+r.id+')">🗑 Supprimer cette entrée</button></div>'
+      + '</div>'
+      + '</div>';
+  }).join('');
+}
+function impToggleRecup(idx){
+  const card = document.querySelector('#imp-recup-list .imp-recup-card[data-idx="'+idx+'"]');
+  if(card) card.classList.toggle('open');
+}
+function impDeleteRecup(id){
+  if(!currentUser || currentUser.role !== 'admin') return;
+  askDelete('Supprimer cette entrée d\'historique ? Le total historique sera ajusté.', function(){
+    impInitDB();
+    const r = DB.impots.recups.find(x => x.id === id);
+    if(r){ DB.impots.totalHistorical = Math.max(0, (DB.impots.totalHistorical||0) - (r.total||0)); }
+    DB.impots.recups = DB.impots.recups.filter(x => x.id !== id);
+    saveData(); renderImpots();
+    showToast('Entrée supprimée.', 'info');
+  }, '🗑 Supprimer');
+}
+
+// Couleurs des pilules de grade dans l'historique
+function impGradeColorFor(grade){
+  // Petit nuancier basé sur des couleurs sympa par grade
+  const map = {
+    'Genin':                { bg:'rgba(34,197,94,0.15)',  fg:'#22c55e', border:'rgba(34,197,94,0.35)' },
+    'Genin Confirmé':       { bg:'rgba(34,197,94,0.15)',  fg:'#22c55e', border:'rgba(34,197,94,0.35)' },
+    'Chunin':               { bg:'rgba(168,85,247,0.15)', fg:'#a855f7', border:'rgba(168,85,247,0.35)' },
+    'Tokubetsu Jonin':      { bg:'rgba(59,130,246,0.15)', fg:'#3b82f6', border:'rgba(59,130,246,0.35)' },
+    'Jonin':                { bg:'rgba(217,119,6,0.18)',  fg:'#f59e0b', border:'rgba(217,119,6,0.35)' },
+    'Commandant Jonin':     { bg:'rgba(217,119,6,0.18)',  fg:'#f59e0b', border:'rgba(217,119,6,0.35)' },
+    'Kakunin':              { bg:'rgba(34,197,94,0.15)',  fg:'#22c55e', border:'rgba(34,197,94,0.35)' },
+  };
+  return map[grade] || { bg:'rgba(180,140,20,0.12)', fg:'#d4b44a', border:'rgba(180,140,20,0.3)' };
+}
+
+// ─── Éditeur de grades ───
+function impGradesEditor(){
+  if(!currentUser || currentUser.role !== 'admin') return;
+  impInitDB();
+  const sec = document.getElementById('imp-grades-section');
+  sec.style.display = sec.style.display === 'none' ? '' : 'none';
+  if(sec.style.display !== 'none') impRenderGradesList();
+}
+function impRenderGradesList(){
+  impInitDB();
+  const list = document.getElementById('imp-grades-list');
+  list.innerHTML = DB.impots.grades.map((g,i) => 
+    '<div class="imp-grade-row'+(g.exempt?' exempt':'')+'" data-i="'+i+'">'
+    + '<input type="text" class="form-control" style="flex:1;background:rgba(255,255,255,0.04);border:1px solid rgba(180,140,20,0.2);padding:5px 8px;font-size:12px;color:var(--text)" value="'+esc(g.name)+'" data-field="name">'
+    + '<input type="number" min="0" step="100" value="'+(g.amount||0)+'" data-field="amount">'
+    + '<span class="ryos">RYOS</span>'
+    + '<span class="exempt-toggle'+(g.exempt?' on':'')+'" onclick="impToggleExempt('+i+')">'+(g.exempt?'Exonéré':'Taxer')+'</span>'
+    + '<button class="btn-row-del" onclick="impRemoveGrade('+i+')" style="background:rgba(220,38,38,0.1);border:1px solid rgba(220,38,38,0.25);color:#f87171;padding:4px 8px;border-radius:5px;cursor:pointer">🗑</button>'
+    + '</div>'
+  ).join('');
+}
+function impToggleExempt(i){
+  impInitDB();
+  if(!DB.impots.grades[i]) return;
+  DB.impots.grades[i].exempt = !DB.impots.grades[i].exempt;
+  impRenderGradesList();
+}
+function impRemoveGrade(i){
+  impInitDB();
+  if(!DB.impots.grades[i]) return;
+  const g = DB.impots.grades[i];
+  // Vérifier qu'aucun ninja n'utilise ce grade
+  const used = DB.impots.ninjas.filter(n => n.grade === g.name).length;
+  if(used > 0){
+    showToast('Impossible : '+used+' ninja(s) utilisent encore ce grade.', 'error');
+    return;
+  }
+  DB.impots.grades.splice(i, 1);
+  impRenderGradesList();
+}
+function impAddGradeRow(){
+  impInitDB();
+  DB.impots.grades.push({ name: 'Nouveau grade', amount: 0, exempt: false });
+  impRenderGradesList();
+}
+function impSaveGrades(){
+  impInitDB();
+  const rows = document.querySelectorAll('#imp-grades-list .imp-grade-row');
+  const newGrades = [];
+  rows.forEach(r => {
+    const name = r.querySelector('input[data-field="name"]').value.trim();
+    const amount = parseInt(r.querySelector('input[data-field="amount"]').value, 10) || 0;
+    const exempt = r.classList.contains('exempt');
+    if(name) newGrades.push({ name: name, amount: amount, exempt: exempt });
+  });
+  if(!newGrades.length){ showToast('Au moins un grade est requis.', 'error'); return; }
+  DB.impots.grades = newGrades;
+  saveData();
+  document.getElementById('imp-grades-section').style.display = 'none';
+  renderImpots();
+  showToast('✅ Grades enregistrés.', 'success');
 }
 
 // CODE PÉNAL
