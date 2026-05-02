@@ -283,7 +283,9 @@ textarea.form-control{resize:vertical;min-height:80px}
   display:flex;flex-direction:column;align-items:center;justify-content:flex-start;
   background:#0a0806;overflow-y:auto;overflow-x:hidden;
   -webkit-overflow-scrolling:touch;
-  overscroll-behavior:contain;
+  /* IMPORTANT : pas de overscroll-behavior:contain ici → cassait le scroll mobile
+     en bloquant le momentum iOS quand on arrivait en bord d'écran. */
+  overscroll-behavior:auto;
   font-family:'Rajdhani',sans-serif;color:#f0e8d0;
   scroll-behavior:smooth;
 }
@@ -599,8 +601,9 @@ textarea.form-control{resize:vertical;min-height:80px}
     width:100%;
     /* Désactiver la sélection de texte accidentelle au toucher */
     -webkit-user-select:none;user-select:none;
-    /* Forcer le rendu GPU */
-    -webkit-transform:translateZ(0);transform:translateZ(0);
+    /* IMPORTANT : pas de transform:translateZ(0) ici sur le body, sinon ça crée
+       un containing block qui casse le position:fixed du #login-screen sur iOS
+       (le login se bloque en scroll synchronisé au lieu de scroller librement). */
   }
   /* Réactiver la sélection dans les champs */
   input,textarea{-webkit-user-select:text;user-select:text}
@@ -10298,6 +10301,8 @@ async function getDefaultPassHash(){return await _DEFAULT_PASS_HASH;}
 
 function defaultData(){
   // Le mot de passe sera remplacé par son hash à l'init (voir window.onload)
+  // Le compte admin est CONSERVÉ : il est indispensable pour pouvoir se connecter
+  // au moins une fois après une réinitialisation. À renommer/sécuriser via le panel.
   return{commissaire:"Commissaire à définir",
     logo:"",
     grades:["Gérant","Co-Gérant","Sergent","Officier","Stagiaire"],
@@ -10516,29 +10521,22 @@ function lgRenderBingoBook(){
     var grid = document.getElementById('lg-bb-grid');
     if(!grid) return;
     var ninjas = null;
-    // Si bbGetNinjas est dispo (utilisateur connecté ou DB chargée),
-    // on l'utilise — ça applique le fallback exemples + déduplication
+    // Préférer bbGetNinjas si dispo (logique unifiée)
     if(typeof bbGetNinjas === 'function'){
       try { ninjas = bbGetNinjas(); } catch(e){}
     }
-    if(!ninjas){
-      // Fallback : lecture directe localStorage avec la même logique
+    if(ninjas === null || ninjas === undefined){
+      // Fallback : lecture directe localStorage
       try{
         var raw = localStorage.getItem('bb_ninjas');
         if(raw === null){
-          ninjas = (typeof bbDefaultNinjas === 'function') ? bbDefaultNinjas() : null;
+          // Première visite, jamais initialisé → exemples par défaut
+          ninjas = (typeof bbDefaultNinjas === 'function') ? bbDefaultNinjas() : [];
         } else {
           var parsed = JSON.parse(raw);
-          if(Array.isArray(parsed)){
-            if(parsed.length === 0){
-              var explicit = localStorage.getItem('bb_ninjas_set') === '1';
-              ninjas = explicit ? [] : ((typeof bbDefaultNinjas === 'function') ? bbDefaultNinjas() : []);
-            } else {
-              ninjas = parsed;
-            }
-          }
+          ninjas = Array.isArray(parsed) ? parsed : [];
         }
-      }catch(e){}
+      }catch(e){ ninjas = []; }
     }
     if(!ninjas || !ninjas.length){
       grid.innerHTML = '<div class="lg-bb-empty">— Aucun avis de recherche actif pour le moment —</div>';
@@ -10633,6 +10631,14 @@ function lgRenderLoreExample(){
   var ex=document.getElementById('lg-lore-example');
   if(!ex)return;
   var d=lpGetData();
+  // Si rien à afficher, on cache simplement la zone (pas de placeholder vide
+  // qui occuperait inutilement l'espace de l'écran de connexion).
+  if(!d || ((!d.sections||!d.sections.length) && (!d.cards||!d.cards.length) && (!d.quote||!d.quote.text))){
+    ex.innerHTML='';
+    ex.style.display='none';
+    return;
+  }
+  ex.style.display='';
   var leftHTML='';
   (d.sections||[]).forEach(function(s,i){
     if(i>0)leftHTML+='<div class="lg-lore-divider"><span>✦</span></div>';
@@ -21612,18 +21618,16 @@ function bbGetNinjas() {
   try {
     var raw = localStorage.getItem('bb_ninjas');
     if (raw === null) {
-      // Aucune donnée enregistrée → afficher les exemples par défaut
+      // Vraiment aucune donnée → afficher les exemples par défaut (premier lancement)
       list = bbDefaultNinjas();
     } else {
       var parsed = JSON.parse(raw);
       if (!Array.isArray(parsed)) {
         list = bbDefaultNinjas();
-      } else if (parsed.length === 0) {
-        // Liste vide : on regarde si l'utilisateur a explicitement choisi ça
-        // (flag posé après une vraie modification). Sinon → exemples par défaut.
-        var explicit = localStorage.getItem('bb_ninjas_set') === '1';
-        list = explicit ? [] : bbDefaultNinjas();
       } else {
+        // Tableau valide même vide → on RESPECTE le choix de l'utilisateur.
+        // Si Firebase a synchronisé un tableau vide (= tout supprimé sur un autre
+        // appareil), on doit l'afficher vide pour rester cohérent partout.
         list = parsed;
       }
     }
@@ -21681,13 +21685,8 @@ function bbComputeNextId(list) {
   return Math.max(max + 1, 100);
 }
 function bbDefaultNinjas() {
-  return [
-    {id:1,nom:'Sasori',prenom:'—',grade:'S-Rank',danger:'eleve',recompense:120000,village:'Suna (déserteur)',portrait:'',vu:'Repaire au nord du Pays du Vent',desc:"Ancien marionnettiste de Suna, déserteur passé à l'organisation criminelle Akatsuki. Maîtrise les Cents Marionnettes et l'Iron Sand hérité du 3ème Kazekage. Extrêmement dangereux — ne pas engager seul."},
-    {id:2,nom:'Yashamaru',prenom:'—',grade:'Jonin',danger:'eleve',recompense:35000,village:'Suna (traître)',portrait:'',vu:'Frontière sud, zones désertiques',desc:"Ancien shinobi médical de Suna soupçonné de complot interne contre la lignée Kazekage. A fui après l'enquête. Connaît les protocoles internes du village."},
-    {id:3,nom:'Baki',prenom:'le Renégat',grade:'Inconnu',danger:'eleve',recompense:60000,village:'Suna (déserteur)',portrait:'',vu:'Caravanes du désert oriental',desc:"Ex-instructeur de Suna ayant trahi lors de l'attaque conjointe avec Otogakure. Spécialiste du Fûton et des lames de vent. Voyage souvent en groupes restreints."},
-    {id:4,nom:'Hokiri',prenom:'—',grade:'Chunin',danger:'moyen',recompense:18000,village:'Suna (évasion)',portrait:'',vu:'Prison de Suna — évasion récente',desc:"Évadé de la prison militaire de Sunagakure. Voleur de parchemins classifiés. Probablement en route vers les frontières du Pays de la Rivière."},
-    {id:5,nom:'Kuro',prenom:'le Sablier',grade:'Genin',danger:'faible',recompense:5000,village:'Pays de la Pluie',portrait:'',vu:'Bordure ouest du désert',desc:"Espion infiltré soupçonné de surveiller les routes commerciales de Suna. Capacités offensives modérées mais haute valeur stratégique en interrogatoire."},
-  ];
+  // Aucune fiche démo — le Bingo Book démarre vide
+  return [];
 }
 
 function bbDangerClass(d){ return {eleve:'bb-badge-eleve',moyen:'bb-badge-moyen',faible:'bb-badge-faible'}[d]||'bb-badge-faible'; }
@@ -21976,10 +21975,20 @@ document.addEventListener('DOMContentLoaded', function(){
         var r = window._fbRef(window._fbDB, 'sunagakure/bingobook');
         window._fbOnValue(r, function(snap){
           var val = snap.val();
-          if (val && Array.isArray(val) && val.length) {
+          // Important : accepter aussi un tableau VIDE.
+          // Si Firebase contient [] (= quelqu'un a tout supprimé sur un autre
+          // appareil), on doit propager cette liste vide à TOUS les appareils.
+          // L'ancienne condition "&& val.length" laissait les anciennes fiches
+          // affichées sur les autres appareils → bug bien réel.
+          if (Array.isArray(val)) {
             try { localStorage.setItem('bb_ninjas', JSON.stringify(val)); } catch(e){}
-            bbRender();
+            if(typeof bbRender === 'function') bbRender();
             if(typeof lgRenderBingoBook === 'function') lgRenderBingoBook();
+          } else if (val === null) {
+            // Firebase a renvoyé null (= jamais initialisé OU branche supprimée).
+            // On ne touche pas au localStorage : on garde ce qu'on a en cache.
+            // (Si on écrasait par [], on perdrait des données quand Firebase
+            // est temporairement indisponible.)
           }
         });
       } catch(e){}
