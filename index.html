@@ -2047,6 +2047,116 @@ document.addEventListener('DOMContentLoaded',function(){if(localStorage.getItem(
     <!-- Article d'exemple (affiché si aucun publié) — contenu géré via panneau admin -->
     <div id="lg-lore-example"></div>
 
+    <!-- ATTRIBUTIONS DE LA POLICE -->
+    <div class="lg-att-section" id="lg-att-section">
+      <style>
+      .lg-att-section{
+        max-width:1200px;
+        margin:48px auto 0;
+        padding:48px 32px 32px;
+        border-top:1px solid rgba(201,162,39,0.12);
+      }
+      .lg-att-overline{
+        font-family:'Share Tech Mono',monospace;
+        font-size:9px;letter-spacing:4px;
+        color:#c9a227;text-transform:uppercase;
+        font-weight:700;
+        background:rgba(201,162,39,0.1);
+        border:1px solid rgba(201,162,39,0.3);
+        border-radius:3px;
+        padding:6px 12px;
+        display:inline-block;
+        margin-bottom:14px;
+      }
+      .lg-att-title{
+        font-family:'Cinzel',serif;
+        font-size:clamp(26px,3.5vw,34px);
+        font-weight:700;
+        color:#e8dfc8;
+        letter-spacing:1px;
+        margin-bottom:30px;
+        line-height:1.1;
+      }
+      .lg-att-list{
+        background:linear-gradient(180deg,rgba(20,16,9,0.85) 0%,rgba(15,12,7,0.85) 100%);
+        border:1px solid rgba(201,162,39,0.18);
+        border-radius:10px;
+        padding:8px 24px;
+        box-shadow:0 4px 20px rgba(0,0,0,0.3);
+      }
+      .lg-att-item{
+        display:flex;align-items:flex-start;gap:14px;
+        padding:18px 4px;
+        border-bottom:1px dashed rgba(201,162,39,0.12);
+        transition:padding-left .2s ease;
+      }
+      .lg-att-item:last-child{border-bottom:none}
+      .lg-att-item:hover{padding-left:8px}
+      .lg-att-icon{
+        font-size:22px;
+        flex-shrink:0;
+        width:32px;
+        text-align:center;
+        line-height:1;
+        margin-top:1px;
+      }
+      .lg-att-text{
+        font-family:'EB Garamond',Georgia,serif;
+        font-size:14.5px;
+        line-height:1.6;
+        color:rgba(232,223,200,0.7);
+      }
+      .lg-att-text strong{
+        font-family:'Barlow',sans-serif;
+        font-weight:700;
+        color:#e8dfc8;
+        font-size:14px;
+        letter-spacing:0.2px;
+      }
+      .lg-att-text strong::after{
+        content:' — ';
+        color:rgba(201,162,39,0.4);
+        font-weight:400;
+      }
+      </style>
+      <div class="lg-att-overline">Missions & Responsabilités</div>
+      <h2 class="lg-att-title">Les attributions de la Police</h2>
+      <div class="lg-att-list">
+        <div class="lg-att-item">
+          <span class="lg-att-icon">⚖️</span>
+          <div class="lg-att-text"><strong>Maintien de l'ordre</strong>Patrouilles dans le village, prévention et arrestation des contrevenants au code pénal de Sunagakure.</div>
+        </div>
+        <div class="lg-att-item">
+          <span class="lg-att-icon">📃</span>
+          <div class="lg-att-text"><strong>Émission d'amendes</strong>Sanctions financières pour les infractions mineures à majeures, selon le barème officiel des trois paliers.</div>
+        </div>
+        <div class="lg-att-item">
+          <span class="lg-att-icon">🗂️</span>
+          <div class="lg-att-text"><strong>Gestion des casiers judiciaires</strong>Constitution, mise à jour et transmission des dossiers au Tribunal pour jugement.</div>
+        </div>
+        <div class="lg-att-item">
+          <span class="lg-att-icon">🔒</span>
+          <div class="lg-att-text"><strong>Détention en cellules</strong>Mise en cellule provisoire des suspects en attente de jugement ou de transfert vers le palais.</div>
+        </div>
+        <div class="lg-att-item">
+          <span class="lg-att-icon">💰</span>
+          <div class="lg-att-text"><strong>Collecte des impôts</strong>Récupération des taxes ninja selon le grade auprès des shinobis du village.</div>
+        </div>
+        <div class="lg-att-item">
+          <span class="lg-att-icon">🚪</span>
+          <div class="lg-att-text"><strong>Contrôle des Portes du village</strong>Validation des sorties d'équipes ninja, registre des entrées/sorties, gestion des missions à l'extérieur.</div>
+        </div>
+        <div class="lg-att-item">
+          <span class="lg-att-icon">📕</span>
+          <div class="lg-att-text"><strong>Bingo Book</strong>Tenue du registre officiel des fugitifs et déserteurs recherchés par le village.</div>
+        </div>
+        <div class="lg-att-item">
+          <span class="lg-att-icon">📝</span>
+          <div class="lg-att-text"><strong>Rédaction de rapports</strong>Documentation des interventions, missions et incidents à transmettre à la hiérarchie ou au Tribunal sur demande.</div>
+        </div>
+      </div>
+    </div>
+
     <!-- BARÈME DES IMPÔTS -->
     <div class="lg-tax-section" id="lg-tax-section">
       <style>
