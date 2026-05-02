@@ -2180,6 +2180,328 @@ body.dark .skeleton,body.dark .timeline-item::before{
   *{-webkit-tap-highlight-color:transparent}
 }
 
+/* ═══════════════════════════════════════════════════════════════════
+   CHECKUP MOBILE V2 — Corrections systématiques
+   ─────────────────────────────────────────────────────────────────
+   Ce bloc corrige les bugs mobile détectés à l'audit complet :
+   • z-index modales pour qu'elles passent au-dessus du login
+   • Safe-area iOS pour bottom-nav, drawers et inputs
+   • font-size:16px minimum sur tous les inputs (anti-zoom iOS)
+   • position:sticky robuste, scroll fluide partout
+   • Tableaux scrollables tactiles
+   • Tap-highlight global et touch-action optimisé
+   ─────────────────────────────────────────────────────────────────── */
+
+/* ─── Z-INDEX : modales TOUJOURS au-dessus du login (z=300) ─── */
+.modal-overlay{z-index:9000 !important}
+.modal-overlay.open{z-index:9000 !important}
+/* Confirm modal en particulier (askDelete) doit pouvoir s'afficher
+   sur n'importe quel écran y compris le login */
+#modal-confirm{z-index:9999 !important}
+/* Toast et indicateurs au-dessus de tout */
+#toast-container{z-index:10000 !important}
+#fb-status-indicator{z-index:10001 !important}
+
+/* ─── ANTI-ZOOM iOS : font-size minimum 16px sur tous les inputs ─── */
+@media(max-width:768px){
+  input[type="text"],input[type="number"],input[type="email"],
+  input[type="password"],input[type="search"],input[type="tel"],
+  input[type="url"],input[type="date"],input[type="time"],
+  input[type="datetime-local"],input:not([type]),
+  textarea, select{
+    font-size:16px !important;
+  }
+  /* Exception pour les sliders et checkboxes/radio */
+  input[type="checkbox"],input[type="radio"],input[type="range"],
+  input[type="color"],input[type="file"]{font-size:inherit !important}
+}
+
+/* ─── SAFE-AREA iOS pour bottom-nav et drawer ─── */
+@media(max-width:768px){
+  #bottom-nav{
+    padding-bottom:env(safe-area-inset-bottom,0px) !important;
+  }
+  #more-drawer{
+    padding-bottom:calc(env(safe-area-inset-bottom,0px) + 12px) !important;
+  }
+  /* Modales bottom-sheet : safe area déjà OK mais on renforce */
+  .modal-overlay .modal{
+    padding-bottom:calc(env(safe-area-inset-bottom,0px) + 14px) !important;
+  }
+  /* Quand sidebar ouverte, ses contrôles bas doivent rester accessibles */
+  #sidebar{
+    padding-bottom:env(safe-area-inset-bottom,0px) !important;
+  }
+}
+
+/* ─── SCROLL FLUIDE iOS partout ─── */
+@media(max-width:768px){
+  .table-scroll-wrapper,
+  .modal,
+  .lore-wrap,
+  #login-screen,
+  #sidebar,
+  .msg-list,
+  .msg-thread-wrap,
+  #imp-collecteurs-list,
+  #imp-recup-list,
+  .cp-articles-grid,
+  .bb-grid,
+  #dossiers-tbody{
+    -webkit-overflow-scrolling:touch !important;
+  }
+}
+
+/* ─── TAP HIGHLIGHT : suppression globale du flash bleu iOS ─── */
+html{-webkit-tap-highlight-color:transparent}
+*, *::before, *::after{-webkit-tap-highlight-color:transparent}
+/* Mais garder un feedback visuel via :active sur les boutons */
+@media(max-width:768px){
+  .btn:active, .nav-item:active, .bnav-item:active,
+  .drawer-item:active, .imp-fbtn:active, .cp-tab:active,
+  .dc-fbtn:active, .lg-mr-card:active, .adm-tab:active{
+    opacity:0.7;
+    transform:scale(0.97);
+  }
+}
+
+/* ─── TABLEAUX HORIZONTAUX : indicateur visuel de scroll ─── */
+@media(max-width:768px){
+  .table-scroll-wrapper{
+    position:relative;
+    overflow-x:auto !important;
+    overflow-y:visible !important;
+  }
+  /* Ombre sur le bord droit pour suggérer du contenu scrollable */
+  .table-scroll-wrapper::after{
+    content:'';
+    position:sticky;right:0;top:0;
+    width:24px;height:100%;
+    background:linear-gradient(90deg,transparent,rgba(20,16,9,0.85));
+    pointer-events:none;
+    display:block;
+    margin-top:-100%;
+    float:right;
+  }
+  /* Tables : largeur min pour forcer le scroll si trop étroit */
+  .data-table{min-width:560px}
+}
+
+/* ─── DOSSIERS CRIMINELS : tableau dense → mode adapté ─── */
+@media(max-width:768px){
+  /* Cacher les colonnes les moins critiques sur mobile */
+  #page-dossiers .data-table thead th:nth-child(7),  /* Agent */
+  #page-dossiers .data-table tbody td:nth-child(7),
+  #page-dossiers .data-table thead th:nth-child(8),  /* Tags */
+  #page-dossiers .data-table tbody td:nth-child(8){
+    display:none;
+  }
+  /* Réduire taille des cellules */
+  #page-dossiers .data-table th,
+  #page-dossiers .data-table td{
+    padding:8px 6px !important;
+    font-size:11.5px !important;
+  }
+  #page-dossiers .data-table th{font-size:8.5px !important;letter-spacing:1px !important}
+  /* Photo plus petite */
+  #page-dossiers .data-table tbody td:nth-child(1) img,
+  #page-dossiers .data-table tbody td:nth-child(1) > div{
+    width:30px !important;height:38px !important;
+  }
+}
+
+/* ─── FORMULAIRES MODAUX : input padding + height ─── */
+@media(max-width:768px){
+  .modal .form-control,
+  .modal input[type="text"],
+  .modal input[type="number"],
+  .modal textarea,
+  .modal select{
+    padding:11px 12px !important;
+    border-radius:8px !important;
+  }
+  /* Boutons modaux pleinement tactiles */
+  .modal-footer .btn{min-height:44px;padding:10px 14px !important}
+  /* Footer responsive */
+  .modal-footer{flex-wrap:wrap !important}
+  .modal-footer .btn{flex:1 1 calc(50% - 4px);min-width:0}
+  /* Modal recense / dossier : photo zone plus compacte */
+  #r-photo-zone, #d-photo-zone{padding:10px !important;gap:10px !important}
+}
+
+/* ─── BOUTON SUPPRIMER PHOTO : zone tactile ─── */
+@media(max-width:768px){
+  #r-photo-remove, #d-photo-remove,
+  .modal button[onclick*="remove"]{
+    min-width:34px;min-height:34px;
+    display:flex !important;align-items:center;justify-content:center;
+  }
+}
+
+/* ─── SIDEBAR MOBILE : items mieux espacés ─── */
+@media(max-width:768px){
+  .nav-item{
+    padding:11px 16px !important;
+    font-size:13px !important;
+  }
+  .nav-section{
+    padding:14px 16px 6px !important;
+    font-size:9px !important;
+  }
+}
+
+/* ─── BOTTOM-NAV : items équitablement espacés + badges visibles ─── */
+@media(max-width:768px){
+  .bnav-item{
+    flex:1 1 0;
+    min-width:0;
+    -webkit-tap-highlight-color:transparent;
+  }
+  .bnav-icon{font-size:19px}
+  .bnav-label{font-size:9px;letter-spacing:0.5px}
+  .bnav-badge{
+    position:absolute;
+    top:6px;right:calc(50% - 14px);
+    background:#dc2626;color:#fff;
+    font-size:9px;font-weight:700;
+    padding:1px 5px;border-radius:8px;
+    min-width:14px;text-align:center;
+    box-shadow:0 1px 3px rgba(0,0,0,0.4);
+  }
+}
+
+/* ─── DRAWER MOBILE : items lisibles ─── */
+@media(max-width:768px){
+  .drawer-item{
+    min-height:46px;
+    padding:11px 16px !important;
+    font-size:13.5px !important;
+    display:flex !important;align-items:center;gap:12px;
+  }
+  .drawer-section-label{
+    padding:14px 16px 6px !important;
+    font-size:9px !important;
+    letter-spacing:2px !important;
+  }
+}
+
+/* ─── PROFIL : grilles stat adaptées ─── */
+@media(max-width:768px){
+  .profile-hero{padding:18px 16px !important;flex-direction:column;text-align:center;gap:14px !important}
+  .profile-stat-grid{grid-template-columns:1fr 1fr !important;gap:10px !important}
+  .profile-stat-item{padding:14px 12px !important}
+}
+
+/* ─── DOUBLE TAP ZOOM : désactivé sur les zones interactives ─── */
+@media(max-width:768px){
+  .nav-item,.btn,.bnav-item,.drawer-item,.adm-tab,.cp-tab,
+  .imp-fbtn,.dc-fbtn,.bb-card-btn,.bb-fbtn,
+  .msg-c,.msg-bubble,.msg-react,.msg-react-add,
+  button,a[onclick],input[type="button"],input[type="submit"]{
+    touch-action:manipulation;
+  }
+}
+
+/* ─── TOAST MOBILE : centré bas, lisible ─── */
+@media(max-width:768px){
+  #toast-container{
+    bottom:calc(80px + env(safe-area-inset-bottom,0px)) !important;
+    left:14px !important;right:14px !important;
+    width:auto !important;
+  }
+  #toast-container > div{
+    width:100% !important;
+    font-size:13px !important;
+  }
+}
+
+/* ─── SCROLLABLE LISTS : scroll-snap pour fluidité ─── */
+@media(max-width:768px){
+  .msg-list, #imp-collecteurs-list, #imp-recup-list,
+  #lore-published-zone, .cp-articles-grid{
+    scroll-behavior:smooth;
+  }
+}
+
+/* ─── INPUTS spécifiques qu'on avait laissés ─── */
+@media(max-width:768px){
+  /* lh-search dans Admin → était à 12px */
+  #lh-search{font-size:16px !important}
+  /* tag-custom-input → était à 11px */
+  .tag-custom-input{font-size:14px !important;width:100% !important;max-width:100% !important}
+  /* ops-search-input placeholder */
+  #ops-search-input{font-size:14px !important}
+  #ops-search-input::placeholder{font-size:12px !important}
+  /* lore-meta inputs → 12px */
+  .lore-meta-field input,.lore-meta-field select{font-size:16px !important;padding:10px 12px !important}
+  /* lp-input → 12px */
+  .lp-input{font-size:16px !important;padding:10px 12px !important}
+  /* yuno-api-input */
+  .yuno-api-input{font-size:14px !important}
+}
+
+/* ─── MODAL BINGO BOOK : bottom-sheet plein écran ─── */
+@media(max-width:768px){
+  #bb-dossier-modal .modal{
+    max-width:100% !important;
+    width:100% !important;
+    height:auto !important;
+    max-height:92dvh !important;
+    border-radius:18px 18px 0 0 !important;
+    margin:0 !important;
+  }
+  /* Empêcher le contenu d'être coupé par la barre iOS */
+  #bb-modal-body{
+    padding-bottom:calc(env(safe-area-inset-bottom,0px) + 12px) !important;
+    max-height:78dvh !important;
+    overflow-y:auto !important;
+    -webkit-overflow-scrolling:touch;
+  }
+}
+
+/* ─── MESSAGERIE : protection contre le clavier qui pousse l'input ─── */
+@media(max-width:768px){
+  #page-messagerie .msg-shell{
+    /* interactive-widget=resizes-visual → la viewport se redimensionne avec le clavier */
+    height:calc(100dvh - 56px - 64px - env(safe-area-inset-bottom,0px)) !important;
+    max-height:calc(100dvh - 56px - 64px - env(safe-area-inset-bottom,0px)) !important;
+  }
+  #page-messagerie .msg-input-row{
+    padding-bottom:calc(env(safe-area-inset-bottom,0px) + 10px) !important;
+  }
+}
+
+/* ─── PAGE HEADER : titre et sous-titre adaptés mobile ─── */
+@media(max-width:768px){
+  .section-header{
+    margin-bottom:14px !important;
+  }
+  .section-title{
+    font-size:18px !important;
+    letter-spacing:0.3px !important;
+    line-height:1.2 !important;
+  }
+  .section-sub{font-size:8.5px !important;letter-spacing:1.2px !important}
+  /* Boutons d'action dans le header */
+  .section-header .btn{font-size:11px !important;padding:8px 12px !important}
+}
+
+/* ─── ÉVITER LE SCROLL HORIZONTAL ACCIDENTEL DU BODY ─── */
+@media(max-width:768px){
+  body{
+    overflow-x:hidden !important;
+  }
+  /* Tous les conteneurs principaux : pas de débordement horizontal */
+  #main, .page-content, .card, .modal{
+    max-width:100% !important;
+    overflow-x:visible;
+  }
+  /* Sauf les zones explicitement scrollables */
+  .table-scroll-wrapper, .lg-tax-grid, .msg-thread-wrap{
+    overflow-x:auto !important;
+  }
+}
+
 </style>
 </head>
 <body>
