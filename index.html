@@ -17660,18 +17660,36 @@ if(isMobile){
   document.body.appendChild(ptrWrap);
 
   var ptr_sy=0,ptr_active=false,ptr_triggered=false,PTR_THRESH=80;
+  var ptr_lastFire=0; // anti-spam
   var ptrIcon=document.getElementById('ptr-icon');
 
+  // Détermine si le PTR doit être actif dans le contexte courant
+  function _ptrAllowed(){
+    // 1. Pas sur l'écran de connexion (le scroll y est très long, ça spammait)
+    var login=document.getElementById('login-screen');
+    if(login && getComputedStyle(login).display!=='none') return false;
+    // 2. Pas si une modale est ouverte
+    if(document.querySelector('.modal-overlay.open')) return false;
+    // 3. Pas si la sidebar est ouverte
+    if($sidebar&&$sidebar.classList.contains('open')) return false;
+    // 4. Pas si le drawer "Plus" est ouvert
+    var drawer=document.getElementById('more-drawer');
+    if(drawer && drawer.classList.contains('open')) return false;
+    // 5. Pas en cooldown (évite le spam)
+    if(Date.now() - ptr_lastFire < 2000) return false;
+    return true;
+  }
+
   document.addEventListener('touchstart',function(e){
-    if(document.querySelector('.modal-overlay.open')) return;
+    if(!_ptrAllowed()){ptr_active=false;return;}
     var page=document.querySelector('#main > .page-content.active');
     if(!page||page.scrollTop>6) return;
-    if($sidebar&&$sidebar.classList.contains('open')) return;
     ptr_sy=e.touches[0].clientY; ptr_active=true; ptr_triggered=false;
   },{passive:true});
 
   document.addEventListener('touchmove',function(e){
     if(!ptr_active) return;
+    if(!_ptrAllowed()){ptr_active=false;ptrWrap.style.cssText='';return;}
     var page=document.querySelector('#main > .page-content.active');
     if(!page||page.scrollTop>6){ptr_active=false;ptrWrap.style.cssText='';return;}
     var dy=e.touches[0].clientY-ptr_sy;
@@ -17690,6 +17708,7 @@ if(isMobile){
     if(!ptr_active) return;
     ptr_active=false;
     if(ptr_triggered){
+      ptr_lastFire=Date.now();
       // Spinner de chargement
       if(ptrIcon){ptrIcon.style.transform='';ptrIcon.style.animation='ptrSpin .7s linear infinite';ptrIcon.textContent='⟳';}
       ptrWrap.style.opacity='1';
