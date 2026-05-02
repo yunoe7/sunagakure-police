@@ -7042,11 +7042,12 @@ function doReimportCP(){
     showToast('⛔ Action réservée aux administrateurs.', 'error');
     return;
   }
-  if(!confirm('Réimporter le Code Pénal officiel de Sunagakure ?\nCela écrasera toutes les infractions actuelles.')) return;
-  DB.infractions=[];
-  localStorage.removeItem('suna_cp_seeded');
-  seedCodePenal(true);
-  if(typeof showToast==='function') showToast('Code Pénal importé avec succès !','success');
+  askDelete('Réimporter le Code Pénal officiel de Sunagakure ? Cela écrasera toutes les infractions actuelles.', function() {
+    DB.infractions=[];
+    localStorage.removeItem('suna_cp_seeded');
+    seedCodePenal(true);
+    if(typeof showToast==='function') showToast('Code Pénal importé avec succès !','success');
+  });
 }
 
 /* ══════════════════════════════════════════════════════════
@@ -13896,11 +13897,12 @@ function bbDeleteFiche() {
   bbCancelForm();
 }
 function bbDeleteById(id) {
-  if (!confirm('Supprimer cette fiche du Bingo Book ?')) return;
-  var list = bbGetNinjas().filter(function(x){return x.id!==id});
-  bbSaveNinjas(list);
-  bbRender();
-  if(typeof showToast==='function') showToast('Fiche supprimée du registre', 'info');
+  askDelete('Supprimer cette fiche du Bingo Book ?', function() {
+    var list = bbGetNinjas().filter(function(x){return x.id!==id});
+    bbSaveNinjas(list);
+    bbRender();
+    if(typeof showToast==='function') showToast('Fiche supprimée du registre', 'info');
+  });
 }
 
 function bbCancelForm() {
