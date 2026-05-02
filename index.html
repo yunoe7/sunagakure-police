@@ -2299,7 +2299,7 @@ document.addEventListener('DOMContentLoaded',function(){if(localStorage.getItem(
             <div class="lg-check-box">✓</div>
             Se souvenir de moi
           </label>
-          <a class="lg-forgot-link" href="#">Accès perdu ?</a>
+          <a class="lg-forgot-link" href="#" onclick="event.preventDefault();openForgotAccess()">Accès perdu ?</a>
         </div>
 
         <button class="lg-btn-connect" id="btn-login" onclick="doLogin()">
@@ -8205,6 +8205,49 @@ document.addEventListener('DOMContentLoaded',function(){if(localStorage.getItem(
 
 <!-- ===== MODALS ===== -->
 
+<!-- Accès perdu / Réinitialisation mot de passe -->
+<div class="modal-overlay" role="dialog" aria-modal="true" id="modal-forgot">
+  <div class="modal" style="max-width:480px">
+    <div class="modal-header">
+      <h3>🔑 Récupération d'accès</h3>
+      <span class="modal-close" aria-label="Fermer" onclick="closeModal('modal-forgot')">✕</span>
+    </div>
+    <div class="modal-body">
+      <div style="background:rgba(59,130,246,0.08);border:1px solid rgba(59,130,246,0.25);border-left:3px solid #3b82f6;border-radius:6px;padding:12px 14px;margin-bottom:18px;font-size:12.5px;line-height:1.55;color:rgba(240,232,208,0.75)">
+        <div style="display:flex;align-items:flex-start;gap:8px">
+          <span style="font-size:16px;flex-shrink:0">ℹ️</span>
+          <div>Remplis ce formulaire pour demander la <strong style="color:#60a5fa">réinitialisation de ton mot de passe</strong>. Un message sera envoyé à l'administrateur qui te répondra dans les meilleurs délais.</div>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Ton identifiant <span style="color:#dc2626">*</span></label>
+        <input type="text" id="forgot-login" class="form-control" placeholder="Ex : badge123" autocomplete="off">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Ton nom complet (RP) <span style="color:#dc2626">*</span></label>
+        <input type="text" id="forgot-nom" class="form-control" placeholder="Ex : Shun Sabaku" autocomplete="off">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Ton Discord <span style="color:rgba(240,232,208,0.4);font-weight:400">(facultatif mais recommandé)</span></label>
+        <input type="text" id="forgot-discord" class="form-control" placeholder="Ex : pseudo#1234 ou @pseudo" autocomplete="off">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Précisions <span style="color:rgba(240,232,208,0.4);font-weight:400">(facultatif)</span></label>
+        <textarea id="forgot-message" class="form-control" rows="3" placeholder="Ex : Je n'ai plus accès à mon compte depuis hier..."></textarea>
+      </div>
+
+      <div style="font-size:11px;color:rgba(240,232,208,0.45);font-family:'Share Tech Mono',monospace;letter-spacing:1px;margin-top:10px;padding-top:10px;border-top:1px solid rgba(180,140,20,0.12)">
+        ✉ La demande sera envoyée à <strong style="color:#c9a227">yunoo.collab@gmail.com</strong>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('modal-forgot')">Annuler</button>
+      <button class="btn btn-primary" onclick="submitForgotAccess()">📧 Envoyer la demande</button>
+    </div>
+  </div>
+</div>
+
 <!-- Annonce -->
 <div class="modal-overlay" role="dialog" aria-modal="true" id="modal-annonce">
   <div class="modal">
@@ -9205,6 +9248,102 @@ if(document.readyState==='loading'){document.addEventListener('DOMContentLoaded'
 else{lgRenderTaxBareme();}
 // Re-render au cas où Firebase mette à jour DB.impots après le chargement
 window.addEventListener('load', function(){ setTimeout(lgRenderTaxBareme, 500); setTimeout(lgRenderTaxBareme, 2000); });
+
+// ─── ACCÈS PERDU — Demande de réinitialisation par mail ───
+function openForgotAccess(){
+  // Pré-remplir l'identifiant si déjà saisi dans le formulaire de connexion
+  try{
+    var loginInput = document.getElementById('login-user');
+    var forgotLogin = document.getElementById('forgot-login');
+    if(loginInput && forgotLogin && loginInput.value){
+      forgotLogin.value = loginInput.value.trim();
+    }
+  }catch(e){}
+  if(typeof openModal==='function') openModal('modal-forgot');
+  else{
+    var m = document.getElementById('modal-forgot');
+    if(m) m.classList.add('open');
+  }
+}
+
+function submitForgotAccess(){
+  var loginVal   = (document.getElementById('forgot-login')||{}).value || '';
+  var nomVal     = (document.getElementById('forgot-nom')||{}).value || '';
+  var discordVal = (document.getElementById('forgot-discord')||{}).value || '';
+  var msgVal     = (document.getElementById('forgot-message')||{}).value || '';
+  loginVal = loginVal.trim();
+  nomVal = nomVal.trim();
+  discordVal = discordVal.trim();
+  msgVal = msgVal.trim();
+
+  if(!loginVal){
+    if(typeof showToast==='function') showToast('Identifiant requis', 'error');
+    var li = document.getElementById('forgot-login');
+    if(li) li.focus();
+    return;
+  }
+  if(!nomVal){
+    if(typeof showToast==='function') showToast('Nom complet requis', 'error');
+    var ni = document.getElementById('forgot-nom');
+    if(ni) ni.focus();
+    return;
+  }
+
+  // Construction du mail
+  var dateStr = new Date().toLocaleString('fr-FR');
+  var ua = navigator.userAgent || 'Inconnu';
+  var subject = '[Police Sunagakure] Demande de récupération d\'accès — ' + nomVal;
+  var bodyLines = [
+    '🔑 DEMANDE DE RÉCUPÉRATION D\'ACCÈS',
+    '',
+    'Bonjour,',
+    '',
+    'Je sollicite une réinitialisation de mon mot de passe pour accéder à l\'intranet de la Police de Sunagakure.',
+    '',
+    '────────────────────────────────────────',
+    'INFORMATIONS DU COMPTE',
+    '────────────────────────────────────────',
+    'Identifiant : ' + loginVal,
+    'Nom complet (RP) : ' + nomVal,
+    'Discord : ' + (discordVal || '— non renseigné —'),
+    '',
+    '────────────────────────────────────────',
+    'PRÉCISIONS',
+    '────────────────────────────────────────',
+    msgVal || '(aucune précision fournie)',
+    '',
+    '────────────────────────────────────────',
+    'DONNÉES TECHNIQUES',
+    '────────────────────────────────────────',
+    'Date de la demande : ' + dateStr,
+    'Navigateur : ' + ua,
+    '',
+    'Merci de me recontacter dès que possible.',
+    'Cordialement.'
+  ];
+  var body = bodyLines.join('\n');
+
+  var mailto = 'mailto:yunoo.collab@gmail.com'
+    + '?subject=' + encodeURIComponent(subject)
+    + '&body=' + encodeURIComponent(body);
+
+  // Tentative d'ouverture du client mail
+  try{
+    window.location.href = mailto;
+  }catch(e){}
+
+  // Fermeture de la modal et toast de confirmation
+  if(typeof closeModal==='function') closeModal('modal-forgot');
+  if(typeof showToast==='function') showToast('📧 Votre client mail s\'ouvre — il ne reste plus qu\'à envoyer la demande.', 'success');
+
+  // Reset du formulaire
+  setTimeout(function(){
+    ['forgot-login','forgot-nom','forgot-discord','forgot-message'].forEach(function(id){
+      var el = document.getElementById(id);
+      if(el) el.value = '';
+    });
+  }, 500);
+}
 
 // ─── BINGO BOOK sur la page login ───
 // Affiche les fiches du Bingo Book stockées dans localStorage (clé bb_ninjas).
