@@ -4400,16 +4400,308 @@ document.addEventListener('DOMContentLoaded',function(){if(localStorage.getItem(
 
   <!-- DOSSIERS -->
   <div class="page-content" id="page-dossiers">
-    <div class="section-header">
-      <div><div class="section-title">Dossiers criminels</div><div class="section-sub">BASE DE DONNÉES JUDICIAIRE</div></div>
-      <div style="display:flex;gap:8px;flex-wrap:wrap">
-        <button class="btn btn-export" onclick="exportCSV('dossiers')" data-export-btn style="display:none">⬇️ Export CSV</button>
-        <button class="btn btn-primary" id="btn-new-dossier" onclick="clearDossierPhoto();buildTagPicker('d',[]);openModal('modal-dossier')" style="display:none">+ Nouveau dossier</button>
+    <style>
+    /* ═══════════════════════════════════════════════════════════
+       DOSSIERS CRIMINELS — Refonte « Fiche FBI / Interpol »
+       ═══════════════════════════════════════════════════════════ */
+    /* Hero institutionnel */
+    #page-dossiers .dc-hero{
+      background:linear-gradient(135deg,#15110b 0%,#1f1610 100%);
+      border:1px solid rgba(220,38,38,0.25);
+      border-radius:14px;
+      padding:30px 36px 26px;
+      margin-bottom:18px;
+      position:relative;
+      overflow:hidden;
+      box-shadow:0 6px 28px rgba(0,0,0,0.45);
+    }
+    /* Bandes diagonales rouge type "TOP SECRET" */
+    #page-dossiers .dc-hero::before{
+      content:'';position:absolute;inset:0;
+      background-image:repeating-linear-gradient(
+        135deg,
+        transparent 0,
+        transparent 30px,
+        rgba(220,38,38,0.04) 30px,
+        rgba(220,38,38,0.04) 35px
+      );
+      pointer-events:none;
+    }
+    #page-dossiers .dc-hero::after{
+      content:'';position:absolute;top:0;left:0;right:0;height:3px;
+      background:linear-gradient(90deg,#dc2626 0%,#fbbf24 50%,#dc2626 100%);
+    }
+    #page-dossiers .dc-hero-row{
+      display:flex;align-items:flex-start;gap:18px;
+      position:relative;z-index:1;
+      flex-wrap:wrap;
+    }
+    #page-dossiers .dc-hero-seal{
+      width:64px;height:64px;border-radius:50%;
+      background:radial-gradient(circle at 30% 30%,#fef3c7,#a16207);
+      border:3px solid #78350f;
+      display:flex;align-items:center;justify-content:center;
+      font-family:'Cinzel',serif;font-size:22px;font-weight:900;
+      color:#3a1f06;flex-shrink:0;
+      box-shadow:0 4px 12px rgba(0,0,0,0.4),inset 0 2px 4px rgba(255,255,255,0.3);
+    }
+    #page-dossiers .dc-hero-text{flex:1;min-width:200px}
+    #page-dossiers .dc-hero-overline{
+      font-family:'Share Tech Mono',monospace;
+      font-size:9px;letter-spacing:5px;
+      color:#dc2626;text-transform:uppercase;
+      margin-bottom:8px;font-weight:700;
+      display:flex;align-items:center;gap:10px;
+    }
+    #page-dossiers .dc-hero-overline::before,
+    #page-dossiers .dc-hero-overline::after{
+      content:'';flex:0 0 30px;height:1px;
+      background:rgba(220,38,38,0.5);
+    }
+    #page-dossiers .dc-hero h1{
+      font-family:'Cinzel',serif;
+      font-size:clamp(22px,3vw,30px);
+      font-weight:700;
+      letter-spacing:2.5px;
+      color:#f0e8d0;
+      text-transform:uppercase;
+      line-height:1;
+      margin-bottom:6px;
+    }
+    #page-dossiers .dc-hero h1 span{
+      background:linear-gradient(135deg,#fbbf24,#dc2626);
+      -webkit-background-clip:text;
+      -webkit-text-fill-color:transparent;
+      background-clip:text;
+    }
+    #page-dossiers .dc-hero-quote{
+      font-family:'EB Garamond',Georgia,serif;
+      font-style:italic;font-size:13px;
+      color:rgba(232,223,200,0.5);
+      margin-top:10px;
+      letter-spacing:0.3px;
+    }
+    #page-dossiers .dc-hero-actions{
+      display:flex;gap:8px;flex-wrap:wrap;
+      margin-left:auto;flex-shrink:0;
+    }
+
+    /* Stats */
+    #page-dossiers .dc-stats{
+      display:grid;
+      grid-template-columns:repeat(5,1fr);
+      gap:10px;margin-bottom:18px;
+    }
+    @media(max-width:1100px){#page-dossiers .dc-stats{grid-template-columns:repeat(3,1fr)}}
+    @media(max-width:680px){#page-dossiers .dc-stats{grid-template-columns:repeat(2,1fr)}}
+    #page-dossiers .dc-stat{
+      background:rgba(20,16,9,0.95);
+      border:1px solid rgba(180,140,20,0.18);
+      border-radius:10px;
+      padding:14px 16px;
+      position:relative;overflow:hidden;
+      transition:transform .18s ease,border-color .18s ease;
+    }
+    #page-dossiers .dc-stat:hover{transform:translateY(-2px);border-color:rgba(180,140,20,0.35)}
+    #page-dossiers .dc-stat::after{
+      content:'';position:absolute;bottom:0;left:0;right:0;height:3px;
+      background:var(--stat-c,#c9a227);opacity:0.7;
+    }
+    #page-dossiers .dc-stat .lbl{
+      font-family:'Share Tech Mono',monospace;
+      font-size:8.5px;letter-spacing:2px;
+      color:rgba(255,255,255,0.45);
+      text-transform:uppercase;
+      margin-bottom:6px;
+      display:flex;align-items:center;gap:6px;
+    }
+    #page-dossiers .dc-stat .val{
+      font-family:'Cinzel',serif;
+      font-size:24px;font-weight:900;
+      color:var(--stat-c,#f0e8d0);
+      line-height:1;letter-spacing:-0.5px;
+    }
+    #page-dossiers .dc-stat .val .ryos{
+      font-size:10px;font-weight:600;
+      color:rgba(255,255,255,0.4);
+      margin-left:4px;letter-spacing:1px;
+      font-family:'Share Tech Mono',monospace;
+    }
+
+    /* Toolbar : recherche + filtres + tri */
+    #page-dossiers .dc-toolbar{
+      background:rgba(20,16,9,0.95);
+      border:1px solid rgba(180,140,20,0.2);
+      border-radius:10px;
+      padding:12px 14px;
+      margin-bottom:14px;
+      display:flex;flex-wrap:wrap;gap:10px;align-items:center;
+    }
+    #page-dossiers .dc-search{
+      flex:1;min-width:240px;
+      padding:9px 12px 9px 36px !important;
+      background:rgba(255,255,255,0.05) !important;
+      border:1px solid rgba(180,140,20,0.22) !important;
+      border-radius:8px !important;
+      color:#f0e8d0 !important;
+      font-size:13px !important;
+      font-family:'Barlow',sans-serif !important;
+    }
+    #page-dossiers .dc-search-wrap{
+      flex:1;min-width:240px;position:relative;
+    }
+    #page-dossiers .dc-search-wrap::before{
+      content:'🔍';
+      position:absolute;left:11px;top:50%;
+      transform:translateY(-50%);
+      pointer-events:none;
+      opacity:0.5;font-size:12px;
+    }
+    #page-dossiers .dc-search:focus{
+      border-color:rgba(180,140,20,0.5) !important;
+      background:rgba(255,255,255,0.07) !important;
+      outline:none !important;
+      box-shadow:0 0 0 3px rgba(180,140,20,0.1) !important;
+    }
+    #page-dossiers .dc-search::placeholder{color:rgba(255,255,255,0.3) !important}
+
+    #page-dossiers .dc-sort{
+      padding:9px 12px;
+      background:rgba(255,255,255,0.05);
+      border:1px solid rgba(180,140,20,0.22);
+      border-radius:8px;
+      color:#f0e8d0;
+      font-family:'Share Tech Mono',monospace;
+      font-size:11px;letter-spacing:1.5px;
+      cursor:pointer;
+    }
+    #page-dossiers .dc-sort option{background:#1a1510;color:#f0e8d0}
+
+    /* Filtres rapides — pilules */
+    #page-dossiers .dc-filters{
+      display:flex;gap:8px;flex-wrap:wrap;
+      margin-bottom:14px;
+      align-items:center;
+    }
+    #page-dossiers .dc-filter-grp{
+      display:flex;gap:4px;align-items:center;
+      background:rgba(20,16,9,0.7);
+      border:1px solid rgba(180,140,20,0.15);
+      border-radius:8px;
+      padding:4px;
+    }
+    #page-dossiers .dc-filter-grp .lbl{
+      font-family:'Share Tech Mono',monospace;
+      font-size:8.5px;letter-spacing:1.5px;
+      color:rgba(255,255,255,0.4);
+      text-transform:uppercase;
+      padding:0 8px 0 6px;font-weight:700;
+    }
+    #page-dossiers .dc-fbtn{
+      padding:6px 11px;border-radius:5px;
+      background:transparent;border:none;
+      cursor:pointer;
+      font-family:'Share Tech Mono',monospace;
+      font-size:9.5px;letter-spacing:1.2px;
+      color:rgba(255,255,255,0.55);
+      text-transform:uppercase;font-weight:600;
+      transition:all .15s ease;
+    }
+    #page-dossiers .dc-fbtn:hover{color:#fff;background:rgba(255,255,255,0.05)}
+    #page-dossiers .dc-fbtn.active{
+      background:linear-gradient(135deg,rgba(192,65,14,0.3),rgba(192,65,14,0.15));
+      color:#fff;
+      box-shadow:inset 0 -2px 0 #e05c1a;
+    }
+    /* Variantes danger */
+    #page-dossiers .dc-fbtn.f-faible.active   {background:linear-gradient(135deg,rgba(22,163,74,0.3),rgba(22,163,74,0.12));box-shadow:inset 0 -2px 0 #22c55e}
+    #page-dossiers .dc-fbtn.f-modere.active   {background:linear-gradient(135deg,rgba(37,99,235,0.3),rgba(37,99,235,0.12));box-shadow:inset 0 -2px 0 #3b82f6}
+    #page-dossiers .dc-fbtn.f-eleve.active    {background:linear-gradient(135deg,rgba(217,119,6,0.3),rgba(217,119,6,0.12));box-shadow:inset 0 -2px 0 #f59e0b}
+    #page-dossiers .dc-fbtn.f-extreme.active  {background:linear-gradient(135deg,rgba(220,38,38,0.3),rgba(220,38,38,0.12));box-shadow:inset 0 -2px 0 #ef4444}
+    /* Variantes statut */
+    #page-dossiers .dc-fbtn.s-recherche.active{background:linear-gradient(135deg,rgba(220,38,38,0.3),rgba(220,38,38,0.12));box-shadow:inset 0 -2px 0 #ef4444}
+    #page-dossiers .dc-fbtn.s-gav.active      {background:linear-gradient(135deg,rgba(217,119,6,0.3),rgba(217,119,6,0.12));box-shadow:inset 0 -2px 0 #f59e0b}
+    #page-dossiers .dc-fbtn.s-incarcere.active{background:linear-gradient(135deg,rgba(124,58,237,0.3),rgba(124,58,237,0.12));box-shadow:inset 0 -2px 0 #a855f7}
+    #page-dossiers .dc-fbtn.s-libere.active   {background:linear-gradient(135deg,rgba(22,163,74,0.3),rgba(22,163,74,0.12));box-shadow:inset 0 -2px 0 #22c55e}
+    #page-dossiers .dc-fbtn.s-surveille.active{background:linear-gradient(135deg,rgba(234,88,12,0.3),rgba(234,88,12,0.12));box-shadow:inset 0 -2px 0 #fb923c}
+
+    /* Mobile */
+    @media(max-width:768px){
+      #page-dossiers .dc-hero{padding:20px 18px 18px}
+      #page-dossiers .dc-hero h1{font-size:20px;letter-spacing:1.5px}
+      #page-dossiers .dc-hero-actions{margin-left:0;width:100%}
+      #page-dossiers .dc-hero-actions .btn{flex:1}
+      #page-dossiers .dc-stat{padding:11px 13px}
+      #page-dossiers .dc-stat .val{font-size:20px}
+      #page-dossiers .dc-toolbar{padding:10px}
+      #page-dossiers .dc-search-wrap{min-width:0;width:100%}
+      #page-dossiers .dc-sort{width:100%;flex:1}
+      #page-dossiers .dc-filter-grp{flex-wrap:wrap;width:100%}
+      #page-dossiers .dc-filter-grp .lbl{flex:1 0 100%;padding:4px 6px 6px}
+    }
+    </style>
+
+    <!-- HERO -->
+    <div class="dc-hero">
+      <div class="dc-hero-row">
+        <div class="dc-hero-seal">⚖</div>
+        <div class="dc-hero-text">
+          <div class="dc-hero-overline">Police de Sunagakure — Service des Affaires Criminelles</div>
+          <h1>Dossiers <span>Criminels</span></h1>
+          <div class="dc-hero-quote">« Que nul individu fiché n'échappe à la mémoire du Désert. »</div>
+        </div>
+        <div class="dc-hero-actions">
+          <button class="btn btn-export" onclick="exportCSV('dossiers')" data-export-btn style="display:none">⬇️ Export CSV</button>
+          <button class="btn btn-primary" id="btn-new-dossier" onclick="clearDossierPhoto();buildTagPicker('d',[]);openModal('modal-dossier')" style="display:none">+ Nouveau dossier</button>
+        </div>
       </div>
     </div>
-    <div class="card mb-4"><div class="card-body">
-      <input type="text" id="search-dossier" class="form-control" placeholder="🔍  Nom, infraction..." oninput="renderDossiers()" style="max-width:320px">
-    </div></div>
+
+    <!-- STATS -->
+    <div class="dc-stats" id="dc-stats">
+      <div class="dc-stat" style="--stat-c:#fbbf24"><div class="lbl">📂 Total dossiers</div><div class="val" id="dc-s-total">0</div></div>
+      <div class="dc-stat" style="--stat-c:#ef4444"><div class="lbl">🚨 Recherchés</div><div class="val" id="dc-s-rech">0</div></div>
+      <div class="dc-stat" style="--stat-c:#a855f7"><div class="lbl">🔒 Incarcérés</div><div class="val" id="dc-s-incarc">0</div></div>
+      <div class="dc-stat" style="--stat-c:#22c55e"><div class="lbl">✓ Libérés</div><div class="val" id="dc-s-lib">0</div></div>
+      <div class="dc-stat" style="--stat-c:#f59e0b"><div class="lbl">💰 Amendes dues</div><div class="val" id="dc-s-due">0<span class="ryos">RYOS</span></div></div>
+    </div>
+
+    <!-- TOOLBAR : recherche + tri -->
+    <div class="dc-toolbar">
+      <div class="dc-search-wrap">
+        <input type="text" id="search-dossier" class="dc-search" placeholder="Nom, infraction, agent..." oninput="renderDossiers()">
+      </div>
+      <select class="dc-sort" id="dc-sort" onchange="renderDossiers()">
+        <option value="recent">⌚ Récents en premier</option>
+        <option value="ancien">⌚ Anciens en premier</option>
+        <option value="danger">⚠️ Dangerosité ↓</option>
+        <option value="due">💰 Amende due ↓</option>
+        <option value="nom">🅰 Nom A-Z</option>
+      </select>
+    </div>
+
+    <!-- FILTRES RAPIDES -->
+    <div class="dc-filters">
+      <div class="dc-filter-grp">
+        <span class="lbl">Dangerosité</span>
+        <button class="dc-fbtn active" data-filter="danger" data-val="all" onclick="dcSetFilter('danger','all',this)">Tous</button>
+        <button class="dc-fbtn f-faible"  data-filter="danger" data-val="Faible"  onclick="dcSetFilter('danger','Faible',this)">Faible</button>
+        <button class="dc-fbtn f-modere"  data-filter="danger" data-val="Modéré"  onclick="dcSetFilter('danger','Modéré',this)">Modéré</button>
+        <button class="dc-fbtn f-eleve"   data-filter="danger" data-val="Élevé"   onclick="dcSetFilter('danger','Élevé',this)">Élevé</button>
+        <button class="dc-fbtn f-extreme" data-filter="danger" data-val="Extrême" onclick="dcSetFilter('danger','Extrême',this)">Extrême</button>
+      </div>
+      <div class="dc-filter-grp">
+        <span class="lbl">Statut</span>
+        <button class="dc-fbtn active" data-filter="statut" data-val="all" onclick="dcSetFilter('statut','all',this)">Tous</button>
+        <button class="dc-fbtn s-recherche" data-filter="statut" data-val="Recherché"      onclick="dcSetFilter('statut','Recherché',this)">Recherché</button>
+        <button class="dc-fbtn s-gav"       data-filter="statut" data-val="En garde à vue" onclick="dcSetFilter('statut','En garde à vue',this)">G.À.V</button>
+        <button class="dc-fbtn s-incarcere" data-filter="statut" data-val="Incarcéré"      onclick="dcSetFilter('statut','Incarcéré',this)">Incarcéré</button>
+        <button class="dc-fbtn s-libere"    data-filter="statut" data-val="Libéré"         onclick="dcSetFilter('statut','Libéré',this)">Libéré</button>
+        <button class="dc-fbtn s-surveille" data-filter="statut" data-val="Surveillé"      onclick="dcSetFilter('statut','Surveillé',this)">Surveillé</button>
+      </div>
+    </div>
+
+    <!-- TABLEAU PRINCIPAL -->
     <div class="card" style="overflow:visible">
       <div class="table-scroll-wrapper">
         <table class="data-table">
@@ -8369,7 +8661,7 @@ document.addEventListener('DOMContentLoaded',function(){if(localStorage.getItem(
           <option value="Edge">🔷 Edge</option>
           <option value="Opera">🔴 Opera</option>
         </select>
-        <select id="lh-filter-member" class="form-control" style="max-width:170px;font-size:12px;padding:6px 8px" onchange="renderLoginHistory()" id="lh-filter-member">
+        <select id="lh-filter-member" class="form-control" style="max-width:170px;font-size:12px;padding:6px 8px" onchange="renderLoginHistory()">
           <option value="">Tous les membres</option>
         </select>
         <select id="lh-filter-date" class="form-control" style="max-width:140px;font-size:12px;padding:6px 8px" onchange="renderLoginHistory()">
@@ -10680,6 +10972,8 @@ function doLogout(){
   _msgInitDone=false;
   if(_msgAllUnsubscribe){_msgAllUnsubscribe();_msgAllUnsubscribe=null;}
   if(_msgUnsubscribe){_msgUnsubscribe();_msgUnsubscribe=null;}
+  // Couper la présence (heartbeat + listeners typing/présence) avant de perdre currentUser
+  if(typeof _msgStopPresence === 'function') try{_msgStopPresence();}catch(e){}
   _currentMsgContact=null;
   // Vider la mémoire de la dernière page pour éviter qu'un visiteur atterrisse sur une page membre
   try{sessionStorage.removeItem("suna_active_page");}catch(e){}
@@ -11764,41 +12058,97 @@ function viewDossier(id){
   openModal("modal-view-dossier");
 }
 
+// État des filtres rapides Dossiers
+var _dcFilters = { danger: 'all', statut: 'all' };
+function dcSetFilter(group, val, btn){
+  _dcFilters[group] = val;
+  // Toggle visuel : retirer .active de tous les boutons du même groupe
+  document.querySelectorAll('#page-dossiers .dc-fbtn[data-filter="'+group+'"]').forEach(function(b){b.classList.remove('active')});
+  if(btn) btn.classList.add('active');
+  renderDossiers();
+}
+function _dcDangerWeight(d){
+  return {Faible:1,Modéré:2,'Modere':2,Élevé:3,'Eleve':3,Extrême:4,'Extreme':4}[d] || 0;
+}
+
 function renderDossiers(){
-  const q=(el("search-dossier")?.value||"").toLowerCase();
-  let list=DB.dossiers;if(q)list=list.filter(d=>(d.nom+" "+d.infractions).toLowerCase().includes(q));
-  el("dossiers-tbody").innerHTML=list.map(d=>{
-    const photoCell=d.photo
-      ?`<img src="${safeImgSrc(d.photo)}" style="width:36px;height:44px;object-fit:cover;border-radius:5px;border:1px solid rgba(180,140,20,0.2);box-shadow:0 2px 6px rgba(0,0,0,0.12)">`
-      :`<div style="width:36px;height:44px;border-radius:5px;border:1px dashed rgba(0,0,0,0.12);display:flex;align-items:center;justify-content:center;font-size:18px;opacity:0.25">👤</div>`;
-    return `<tr>
-      <td>${photoCell}</td>
-      <td><b>${esc(d.nom)}</b></td>
-      <td style="font-size:11.5px">${esc(d.infractions)}</td>
-      <td><span class="badge ${dangerBadge(d.danger)}">${esc(d.danger)}</span></td>
-      <td><span class="badge ${dossierStatutBadge(d.statut)}">${esc(d.statut)}</span></td>
-      <td style="font-size:11px;white-space:nowrap">
-        ${(d.amendePayee||0)>0?`<div style="color:#166534;font-family:'Share Tech Mono',monospace">✅ ${Number(d.amendePayee).toLocaleString()} Ryos</div>`:""}
-        ${(d.amendeImpayee||0)>0?`<div style="color:#991b1b;font-family:'Share Tech Mono',monospace">❌ ${Number(d.amendeImpayee).toLocaleString()} Ryos</div>`:""}
-        ${(!d.amendePayee&&!d.amendeImpayee)?`<span style="color:var(--muted);font-size:10px">—</span>`:""}
-      </td>
-      <td style="font-size:11.5px">${esc(d.auteur)}</td>
-      <td style="max-width:140px">
-        <div style="display:flex;flex-wrap:wrap;gap:3px;align-items:center">
-          ${(d.tags||[]).slice(0,3).map(tid=>{const t=DOSSIER_TAGS.find(x=>x.id===tid);return t?`<span class="tag-pill" style="background:${t.bg};color:${t.color};border:1px solid ${t.border}">${t.label}</span>`:tid?`<span class="tag-pill" style="background:rgba(109,40,217,0.08);color:#5b21b6;border:1px solid rgba(109,40,217,0.2)">${esc(tid)}</span>`:''}).join('')}
-          ${(d.tags||[]).length>3?`<span class="tag-pill" style="background:rgba(0,0,0,0.06);color:var(--muted);border:1px solid rgba(0,0,0,0.1)">+${(d.tags||[]).length-3}</span>`:''}
-          ${!(d.tags&&d.tags.length)&&canModify()?`<span style="font-size:9px;color:var(--muted);font-family:'Share Tech Mono',monospace;opacity:0.5">—</span>`:''}
-        </div>
-      </td>
-      <td style="white-space:nowrap">
-        <button class="btn btn-outline btn-sm" onclick="viewDossier(${d.id})" title="Voir le dossier">👁</button>
-        ${canModify()?`
-          <button class="btn btn-gold btn-sm" onclick="openEditDossier(${d.id})" style="margin-left:4px" title="Modifier">✏️</button>
-          <button class="btn btn-danger btn-sm" onclick="deleteDossier(${d.id})" style="margin-left:4px">🗑</button>
-        `:""}
-      </td>
-    </tr>`;
-  }).join("")||`<tr><td colspan="9" style="text-align:center;color:var(--muted);padding:18px">Aucun dossier</td></tr>`;
+  // Liste source
+  var all = DB.dossiers || [];
+
+  // ─── STATS (calculées sur l'ensemble, pas sur la liste filtrée) ───
+  var nbTotal = all.length;
+  var nbRech  = all.filter(function(d){return d.statut==='Recherché'}).length;
+  var nbIncarc= all.filter(function(d){return d.statut==='Incarcéré'}).length;
+  var nbLib   = all.filter(function(d){return d.statut==='Libéré'}).length;
+  var totalDue= all.reduce(function(s,d){return s + (parseInt(d.amendeImpayee,10)||0)},0);
+  var setStat = function(id,val){var e=document.getElementById(id);if(e) e.innerHTML=val};
+  setStat('dc-s-total',  nbTotal);
+  setStat('dc-s-rech',   nbRech);
+  setStat('dc-s-incarc', nbIncarc);
+  setStat('dc-s-lib',    nbLib);
+  setStat('dc-s-due',    (totalDue.toLocaleString('fr-FR'))+'<span class="ryos">RYOS</span>');
+
+  // ─── FILTRES + RECHERCHE ───
+  var q = (el("search-dossier")?.value || "").toLowerCase();
+  var list = all.slice();
+  if(q) list = list.filter(function(d){
+    var hay = (d.nom||'')+' '+(d.infractions||'')+' '+(d.auteur||'');
+    return hay.toLowerCase().includes(q);
+  });
+  if(_dcFilters.danger !== 'all') list = list.filter(function(d){return d.danger === _dcFilters.danger});
+  if(_dcFilters.statut !== 'all') list = list.filter(function(d){return d.statut === _dcFilters.statut});
+
+  // ─── TRI ───
+  var sortMode = (document.getElementById('dc-sort')||{}).value || 'recent';
+  list.sort(function(a,b){
+    if(sortMode === 'recent')  return (b.id||0) - (a.id||0);
+    if(sortMode === 'ancien')  return (a.id||0) - (b.id||0);
+    if(sortMode === 'danger')  return _dcDangerWeight(b.danger) - _dcDangerWeight(a.danger);
+    if(sortMode === 'due')     return ((b.amendeImpayee||0) - (a.amendeImpayee||0));
+    if(sortMode === 'nom')     return (a.nom||'').localeCompare(b.nom||'');
+    return 0;
+  });
+
+  // ─── RENDU TABLEAU ───
+  var tbody = el("dossiers-tbody");
+  if(!tbody) return;
+  tbody.innerHTML = list.map(function(d){
+    var photoCell = d.photo
+      ? '<img src="'+safeImgSrc(d.photo)+'" style="width:36px;height:44px;object-fit:cover;border-radius:5px;border:1px solid rgba(180,140,20,0.2);box-shadow:0 2px 6px rgba(0,0,0,0.12)">'
+      : '<div style="width:36px;height:44px;border-radius:5px;border:1px dashed rgba(255,255,255,0.15);display:flex;align-items:center;justify-content:center;font-size:18px;opacity:0.35">👤</div>';
+    return '<tr>'
+      +'<td>'+photoCell+'</td>'
+      +'<td><b>'+esc(d.nom)+'</b></td>'
+      +'<td style="font-size:11.5px">'+esc(d.infractions)+'</td>'
+      +'<td><span class="badge '+dangerBadge(d.danger)+'">'+esc(d.danger)+'</span></td>'
+      +'<td><span class="badge '+dossierStatutBadge(d.statut)+'">'+esc(d.statut)+'</span></td>'
+      +'<td style="font-size:11px;white-space:nowrap">'
+      + ((d.amendePayee||0)>0  ? '<div style="color:#22c55e;font-family:\'Share Tech Mono\',monospace">✅ '+Number(d.amendePayee).toLocaleString()+' Ryos</div>' : '')
+      + ((d.amendeImpayee||0)>0? '<div style="color:#f87171;font-family:\'Share Tech Mono\',monospace">❌ '+Number(d.amendeImpayee).toLocaleString()+' Ryos</div>' : '')
+      + ((!d.amendePayee&&!d.amendeImpayee) ? '<span style="color:var(--muted);font-size:10px">—</span>' : '')
+      +'</td>'
+      +'<td style="font-size:11.5px">'+esc(d.auteur||'')+'</td>'
+      +'<td style="max-width:140px">'
+      +'<div style="display:flex;flex-wrap:wrap;gap:3px;align-items:center">'
+      + (d.tags||[]).slice(0,3).map(function(tid){
+          var t = DOSSIER_TAGS.find(function(x){return x.id===tid});
+          return t
+            ? '<span class="tag-pill" style="background:'+t.bg+';color:'+t.color+';border:1px solid '+t.border+'">'+t.label+'</span>'
+            : (tid ? '<span class="tag-pill" style="background:rgba(109,40,217,0.08);color:#a78bfa;border:1px solid rgba(109,40,217,0.2)">'+esc(tid)+'</span>' : '');
+        }).join('')
+      + ((d.tags||[]).length>3 ? '<span class="tag-pill" style="background:rgba(255,255,255,0.06);color:var(--muted);border:1px solid rgba(255,255,255,0.1)">+'+((d.tags||[]).length-3)+'</span>' : '')
+      + (!(d.tags&&d.tags.length)&&canModify() ? '<span style="font-size:9px;color:var(--muted);font-family:\'Share Tech Mono\',monospace;opacity:0.5">—</span>' : '')
+      +'</div>'
+      +'</td>'
+      +'<td style="white-space:nowrap">'
+      +'<button class="btn btn-outline btn-sm" onclick="viewDossier('+d.id+')" title="Voir le dossier">👁</button>'
+      + (canModify()
+          ? '<button class="btn btn-gold btn-sm" onclick="openEditDossier('+d.id+')" style="margin-left:4px" title="Modifier">✏️</button>'
+            +'<button class="btn btn-danger btn-sm" onclick="deleteDossier('+d.id+')" style="margin-left:4px">🗑</button>'
+          : '')
+      +'</td>'
+      +'</tr>';
+  }).join('') || '<tr><td colspan="9" style="text-align:center;color:var(--muted);padding:40px;font-family:\'Share Tech Mono\',monospace;letter-spacing:1.5px;text-transform:uppercase;font-size:11px">— Aucun dossier ne correspond à ces filtres —</td></tr>';
 }
 function checkDoublonSuspect(){
   const nom=(el("d-nom").value||"").trim().toLowerCase();
