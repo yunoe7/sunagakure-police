@@ -1539,8 +1539,8 @@ body.dark .msg-input-row{background:rgba(18,20,36,0.9)!important;border-top-colo
 .map-legend-item{display:flex;align-items:center;gap:5px;font-size:9px;font-family:'Share Tech Mono',monospace;color:rgba(255,255,255,0.7);letter-spacing:0.5px}
 .map-legend-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
 /* Pins */
-.op-pin{position:absolute;transform:translate(-50%,-100%) scale(var(--pin-inv-scale,1));cursor:pointer;z-index:10;transition:transform 0.15s;transform-origin:50% 100%}
-.op-pin:hover{transform:translate(-50%,-100%) scale(calc(var(--pin-inv-scale,1) * 1.18));z-index:20}
+.op-pin{position:absolute;transform:translate(-50%,-100%);cursor:pointer;z-index:10;transition:transform 0.15s}
+.op-pin:hover{transform:translate(-50%,-100%) scale(1.18);z-index:20}
 .op-pin-dot{width:14px;height:14px;border-radius:50%;border:2px solid rgba(255,255,255,0.9);box-shadow:0 2px 8px rgba(0,0,0,0.5),0 0 0 3px rgba(255,255,255,0.15);transition:all 0.15s}
 .op-pin-line{width:2px;height:10px;margin:0 auto;border-radius:1px;opacity:0.8}
 .op-pin.active .op-pin-dot{background:#16a34a;border-color:#fff;box-shadow:0 2px 12px rgba(22,163,74,0.7),0 0 0 4px rgba(22,163,74,0.2);animation:pin-pulse 1.8s ease-in-out infinite}
@@ -7694,44 +7694,46 @@ function _opsApplyTransform(){
       }
     }
 
-    // Synchroniser le conteneur des pins avec le zoom/pan de la carte
-    // Les pins sont positionnés en % de la carte ORIGINALE (mapX/mapY) ; sans
-    // cette transformation, ils restent collés au conteneur écran et dérivent
-    // par rapport à la carte qui zoome via viewBox.
-    // Le viewBox réel utilisé peut avoir été clampé : on doit donc en déduire
-    // le pan effectif (en pixels écran) plutôt que d'utiliser _opsPanX brut.
+    // Repositionner chaque pin individuellement à partir de son mapX/mapY
+    // et du viewBox SVG courant.
     //
-    // ORDRE DU TRANSFORM CSS : "scale(S) translate(T)" signifie en réalité
-    // "appliquer translate D'ABORD, puis scale". Pour un pin à position p :
-    //   p → p + T → (p + T) * S = S*p + S*T
-    // C'est ce qu'on veut : le pin doit être à S*p (zoom appliqué à sa position)
-    // PLUS le pan effectif (déjà exprimé en pixels écran après-zoom).
-    // L'ordre inverse "translate(T) scale(S)" donnerait S*p + T (sans zoom du
-    // pan), ce qui causait la dérive des pins observée.
+    // Le SVG occupe TOUJOURS la même boîte écran (wrapW × wrapH). C'est son
+    // viewBox qui détermine quelle portion de la carte y est affichée.
+    // Pour un pin à mapX% (donc à la position monde-carte X = origVBx + mapX/100 * origVBw),
+    // sa position écran est :
+    //   screenX = (X - vbX) / vbW * wrapW
+    // Avec vbW = origVBw / Z, ça se réduit à :
+    //   screenX% = (mapX% - dxRatio*100) * Z   où dxRatio = (vbX - origVBx) / origVBw
     var pinsEl = document.getElementById('ops-map-pins');
     if(pinsEl){
       var wrap2 = document.getElementById('ops-map-img-wrap');
       if(wrap2 && _svgReady && _svgOrigVBw > 0 && _svgOrigVBh > 0){
-        var wrapW2 = wrap2.clientWidth || 1;
-        var wrapH2 = wrap2.clientHeight || 1;
-        // Pan écran effectif (déduit du viewBox réel, qui a pu être clampé)
-        // exprimé en pixels écran APRÈS-zoom (cad du point de vue du pin déjà
-        // mis à l'échelle).
-        var dxRatio = (_svgVBx - _svgOrigVBx) / _svgOrigVBw; // 0..1
-        var dyRatio = (_svgVBy - _svgOrigVBy) / _svgOrigVBh;
-        // Pan en coords pré-scale (à passer à translate AVANT scale)
-        var preScalePanX = -dxRatio * wrapW2 / _opsZoom;
-        var preScalePanY = -dyRatio * wrapH2 / _opsZoom;
-        pinsEl.style.transformOrigin = '0 0';
-        pinsEl.style.transform = 'scale('+_opsZoom+') translate('+preScalePanX+'px,'+preScalePanY+'px)';
-        // Compense la mise à l'échelle pour que les pins gardent une taille constante
+        var dxRatioPct = (_svgVBx - _svgOrigVBx) / _svgOrigVBw * 100;
+        var dyRatioPct = (_svgVBy - _svgOrigVBy) / _svgOrigVBh * 100;
         var pins = pinsEl.querySelectorAll('.op-pin');
-        var inv = 1 / _opsZoom;
         for(var i=0; i<pins.length; i++){
-          pins[i].style.setProperty('--pin-inv-scale', inv);
+          var pin = pins[i];
+          var mx = parseFloat(pin.dataset.mapx);
+          var my = parseFloat(pin.dataset.mapy);
+          if(isNaN(mx) || isNaN(my)) continue;
+          var sxPct = (mx - dxRatioPct) * _opsZoom;
+          var syPct = (my - dyRatioPct) * _opsZoom;
+          pin.style.left = sxPct + '%';
+          pin.style.top  = syPct + '%';
+          // Masquer les pins hors viewport visible
+          var visible = sxPct >= -5 && sxPct <= 105 && syPct >= -5 && syPct <= 105;
+          if(!visible && pin.style.visibility !== 'hidden') pin.style.visibility = 'hidden';
+          else if(visible && pin.style.visibility === 'hidden') pin.style.visibility = '';
         }
-      } else {
-        pinsEl.style.transform = '';
+      }
+      // Le conteneur ne subit aucun transform : reset au cas où une exécution
+      // précédente en aurait laissé un.
+      pinsEl.style.transform = '';
+      // Pas de contre-scale nécessaire : les pins gardent leur taille
+      // (le conteneur n'est pas scalé). On reset la variable au cas où.
+      var allPins = pinsEl.querySelectorAll('.op-pin');
+      for(var j=0; j<allPins.length; j++){
+        allPins[j].style.removeProperty('--pin-inv-scale');
       }
     }
   });
@@ -7980,11 +7982,18 @@ function renderOpsMap(){
     if(c.id !== 'ops-map-tooltip') pinsEl.removeChild(c);
   });
   ops.forEach(function(op){
+    // Les opérations terminées sont retirées de la carte automatiquement
+    // (la carte ne montre que ce qui est "en cours" ou "à venir").
+    if(op.statut === 'Terminée') return;
     var px = op.mapX != null ? op.mapX : _pinHash(op.id, 1, 8, 88);
     var py = op.mapY != null ? op.mapY : _pinHash(op.id, 7, 12, 82);
     var cls = op.statut === 'Active' ? 'active' : op.statut === 'Planifiée' ? 'planifiee' : 'terminee';
     var pin = document.createElement('div');
     pin.className = 'op-pin ' + cls;
+    // Coordonnées de référence (en % de la carte ORIGINALE) — servent à
+    // _opsApplyTransform pour repositionner le pin après chaque zoom/pan.
+    pin.dataset.mapx = px;
+    pin.dataset.mapy = py;
     pin.style.left = px + '%';
     pin.style.top  = py + '%';
     pin.dataset.id = op.id;
@@ -7997,6 +8006,8 @@ function renderOpsMap(){
     });
     pinsEl.appendChild(pin);
   });
+  // Repositionner immédiatement selon le zoom/pan courant
+  if(typeof _opsApplyTransform === 'function') _opsApplyTransform();
 }
 
 function showOpsMapTooltip(op, px, py, pinsEl){
@@ -8013,20 +8024,18 @@ function showOpsMapTooltip(op, px, py, pinsEl){
     '<span style="font-size:9px;font-family:\'Share Tech Mono\',monospace;padding:2px 7px;border-radius:4px;background:rgba(192,65,14,0.15);color:#e05c1a;border:1px solid rgba(192,65,14,0.25)">'+typeIcon+' '+(op.type||'')+'</span>';
   document.getElementById('tt-resp').textContent = op.resp ? '👤 ' + op.resp : '';
   document.getElementById('tt-desc').textContent = op.desc ? (op.desc.length > 80 ? op.desc.slice(0,80)+'…' : op.desc) : '';
-  // Le tooltip n'est plus enfant de #ops-map-pins (qui est désormais transformé
-  // pour suivre le zoom/pan de la carte). Il faut donc calculer sa position en
-  // pixels écran à partir de la position visible réelle du pin.
-  // Position visible = S * (p + preScalePan) où p = px/100 * wrap.
+  // Le tooltip n'est plus enfant de #ops-map-pins. Il faut calculer sa position
+  // en pixels écran à partir de la position visible réelle du pin.
+  // screenX = (mapX% - dxRatioPct%) × Z × wrapW / 100
   var wrapW = pinsEl.offsetWidth || 1;
   var wrapH = pinsEl.offsetHeight || 1;
-  // Pan écran effectif (au point de vue post-scale = unités écran finales)
-  var effPanX = 0, effPanY = 0;
+  var dxRatioPct = 0, dyRatioPct = 0;
   if(_svgReady && _svgOrigVBw > 0 && _svgOrigVBh > 0){
-    effPanX = -((_svgVBx - _svgOrigVBx) / _svgOrigVBw) * wrapW;
-    effPanY = -((_svgVBy - _svgOrigVBy) / _svgOrigVBh) * wrapH;
+    dxRatioPct = (_svgVBx - _svgOrigVBx) / _svgOrigVBw * 100;
+    dyRatioPct = (_svgVBy - _svgOrigVBy) / _svgOrigVBh * 100;
   }
-  var pinPx = (px / 100 * wrapW) * _opsZoom + effPanX;
-  var pinPy = (py / 100 * wrapH) * _opsZoom + effPanY;
+  var pinPx = (px - dxRatioPct) * _opsZoom * wrapW / 100;
+  var pinPy = (py - dyRatioPct) * _opsZoom * wrapH / 100;
   var ttW = 240, leftVal = pinPx + 18;
   if(leftVal + ttW > wrapW - 10) leftVal = pinPx - ttW - 18;
   var topVal = pinPy - 100;
@@ -8107,9 +8116,8 @@ function opsCenterOnPin(opId){
   // Flash du pin ciblé
   var pin = document.querySelector('.op-pin[data-id="'+opId+'"]');
   if(pin){
-    var inv = 1 / (_opsZoom || 1);
     pin.style.transition = 'transform 0.2s';
-    pin.style.transform = 'translate(-50%,-100%) scale('+(inv * 1.6)+')';
+    pin.style.transform = 'translate(-50%,-100%) scale(1.6)';
     setTimeout(function(){ pin.style.transform = ''; pin.style.transition = ''; }, 500);
     setTimeout(function(){ showOpsMapTooltip(op, px, py, document.getElementById('ops-map-pins')); }, 300);
   }
@@ -8230,6 +8238,7 @@ function cycleOpStatut(id){
   op.statut=next;
   addTimeline(`Opération "${op.nom}" → ${next}`);
   saveData();renderOperations();syncDashboard();updateBadges();
+  if(typeof renderOpsMap==='function') renderOpsMap();
   showToast(`Statut mis à jour : ${next}`,"success");
 }
 function saveOperation(){
@@ -8237,9 +8246,9 @@ function saveOperation(){
   DB.operations.push({id:Date.now(),nom,type:v("op-type"),statut:v("op-statut"),resp:v("op-resp"),dateOp:v("op-date"),desc:v("op-desc"),date:now()});
   addTimeline(`Opération "${nom}" créée`);
   flashSubmitSuccess(document.querySelector('#modal-operation .modal-footer .btn-primary'), 'Opération créée');
-  setTimeout(function(){ saveData();closeModal("modal-operation");renderOperations();syncDashboard();clearForm(["op-nom","op-resp","op-desc","op-date"]); }, 600);
+  setTimeout(function(){ saveData();closeModal("modal-operation");renderOperations();syncDashboard();if(typeof renderOpsMap==='function') renderOpsMap();clearForm(["op-nom","op-resp","op-desc","op-date"]); }, 600);
 }
-function deleteOperation(id){id=parseInt(id);askDelete("Supprimer cette opération ?",()=>{_markDeleted("operations",id);DB.operations=DB.operations.filter(o=>String(o.id)!==String(id));saveData();renderOperations();syncDashboard()})}
+function deleteOperation(id){id=parseInt(id);askDelete("Supprimer cette opération ?",()=>{_markDeleted("operations",id);DB.operations=DB.operations.filter(o=>String(o.id)!==String(id));saveData();renderOperations();syncDashboard();if(typeof renderOpsMap==='function') renderOpsMap();})}
 
 // GRADES MANAGEMENT
 // Noms réservés aux rôles système — aucun grade ne peut utiliser ces noms ni les modifier
