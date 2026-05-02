@@ -22,7 +22,7 @@
 <link rel="prefetch" href="https://raw.githubusercontent.com/yunoe7/sunagakure-police/main/cartographie-nrp.svg" as="fetch" crossorigin>
 <!-- Préchargement de Chart.js -->
 <link rel="prefetch" href="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js" as="script">
-<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;900&family=Barlow+Condensed:wght@400;600;700;900&family=Barlow:wght@300;400;500;600&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;900&family=Barlow+Condensed:wght@400;600;700;900&family=Barlow:wght@300;400;500;600&family=Rajdhani:wght@300;400;500;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
 <style>
 :root{
   --bg:#f0ede8;
@@ -270,198 +270,190 @@ textarea.form-control{resize:vertical;min-height:80px}
 .effectif-card-inner{text-align:center;padding:22px 16px}
 .effectif-avatar{width:56px;height:56px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:700;margin:0 auto 10px;border:2px solid rgba(180,140,20,0.25);background:linear-gradient(135deg,rgba(192,65,14,0.15),rgba(180,140,20,0.1))}
 
-/* LOGIN — refonte complète */
-/* =====================================================
-   LOGIN SCREEN — design centré, immersif, sans split
-   ===================================================== */
+/* LOGIN — nouveau design Sunagakure */
 #login-screen{
+  --sand:#c9a227;--sand2:#e8c255;--rust:#c0410e;--rust2:#e05c1a;
+  --dark:#0a0806;--dark2:#110e09;--dark3:#1a1510;--dark4:#221c13;
+  --lg-text:#f0e8d0;--lg-muted:rgba(240,232,208,0.45);
+  --lg-border:rgba(201,162,39,0.2);--lg-border2:rgba(201,162,39,0.5);
   position:fixed;inset:0;z-index:300;
-  display:flex;align-items:center;justify-content:center;
-  padding:20px;
-  background:#08090f;
-  overflow-y:auto;
+  display:flex;flex-direction:column;align-items:center;justify-content:flex-start;
+  background:#0a0806;overflow-y:auto;overflow-x:hidden;
+  font-family:'Rajdhani',sans-serif;color:#f0e8d0;
+  scroll-behavior:smooth;
 }
+/* Canvas */
+#login-canvas-bg{position:absolute;inset:0;z-index:0}
+/* BG Layer */
+.lg-bg-layer{position:absolute;inset:0;z-index:1;pointer-events:none}
+.lg-bg-layer::before{content:'';position:absolute;inset:0;
+  background:radial-gradient(ellipse 80% 60% at 50% 100%,rgba(192,65,14,0.18) 0%,transparent 60%),
+             radial-gradient(ellipse 60% 40% at 50% 0%,rgba(201,162,39,0.08) 0%,transparent 50%),
+             radial-gradient(ellipse 100% 100% at 50% 50%,rgba(10,8,6,0.5) 0%,transparent 100%)}
+/* Scanlines */
+.lg-scanlines{position:absolute;inset:0;z-index:2;pointer-events:none;
+  background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,0.08) 2px,rgba(0,0,0,0.08) 4px);
+  animation:lgScanMove 8s linear infinite}
+@keyframes lgScanMove{from{background-position:0 0}to{background-position:0 100px}}
+/* Corners */
+.lg-corner{position:absolute;width:80px;height:80px;z-index:3;pointer-events:none}
+.lg-corner::before,.lg-corner::after{content:'';position:absolute;background:#c9a227;opacity:0.4}
+.lg-corner::before{width:2px;height:40px}.lg-corner::after{width:40px;height:2px}
+.lg-corner-tl{top:20px;left:20px}
+.lg-corner-tr{top:20px;right:20px}
+.lg-corner-tr::before{right:0;left:auto}.lg-corner-tr::after{right:0;left:auto}
+.lg-corner-bl{bottom:20px;left:20px}
+.lg-corner-bl::before{bottom:0;top:auto}.lg-corner-bl::after{bottom:0;top:auto}
+.lg-corner-br{bottom:20px;right:20px}
+.lg-corner-br::before{right:0;left:auto;bottom:0;top:auto}
+.lg-corner-br::after{right:0;left:auto;bottom:0;top:auto}
+/* Top bar */
+.lg-top-status-bar{position:absolute;top:0;left:0;right:0;z-index:10;height:36px;
+  background:rgba(10,8,6,0.8);border-bottom:1px solid rgba(201,162,39,0.2);
+  display:flex;align-items:center;padding:0 24px;gap:24px;backdrop-filter:blur(10px)}
+.lg-status-item{display:flex;align-items:center;gap:7px;font-family:'Share Tech Mono',monospace;
+  font-size:10px;color:rgba(240,232,208,0.45);letter-spacing:1px}
+.lg-status-dot-live{width:6px;height:6px;border-radius:50%;background:#22c55e;
+  box-shadow:0 0 6px rgba(34,197,94,0.8);animation:lgPulseLive 2s ease-in-out infinite}
+@keyframes lgPulseLive{0%,100%{opacity:1;box-shadow:0 0 6px rgba(34,197,94,0.8)}50%{opacity:0.6;box-shadow:0 0 12px rgba(34,197,94,0.4)}}
+.lg-top-sep{width:1px;height:16px;background:rgba(201,162,39,0.2)}
+.lg-top-date{margin-left:auto}
+/* Side stats */
+.lg-side-stats{position:absolute;left:32px;top:50%;transform:translateY(-50%);z-index:10;
+  display:flex;flex-direction:column;gap:24px;
+  opacity:0;animation:lgSlideInLeft 0.8s ease 1.4s forwards}
+@keyframes lgSlideInLeft{from{opacity:0;transform:translateY(-50%) translateX(-20px)}to{opacity:1;transform:translateY(-50%) translateX(0)}}
+.lg-side-stat{display:flex;flex-direction:column;align-items:center;gap:4px}
+.lg-side-stat-line{width:1px;height:48px;background:linear-gradient(to bottom,transparent,rgba(201,162,39,0.5),transparent);margin:0 auto}
+.lg-side-stat-val{font-family:'Cinzel',serif;font-size:22px;font-weight:700;color:#c9a227;line-height:1;text-shadow:0 0 20px rgba(201,162,39,0.4)}
+.lg-side-stat-lbl{font-family:'Share Tech Mono',monospace;font-size:7px;letter-spacing:2px;color:rgba(240,232,208,0.45);text-transform:uppercase;text-align:center}
+/* Main container */
+.lg-main-container{position:relative;z-index:10;display:flex;align-items:center;gap:0;width:900px;max-width:95vw;margin-top:calc(36px + 60px);padding-bottom:60px}
+/* Left panel */
+.lg-left-panel{flex:1;padding-right:60px;opacity:0;animation:lgFadeInUp 0.7s ease 0.3s forwards}
+@keyframes lgFadeInUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+.lg-badge-wrap{position:relative;width:100px;height:100px;margin-bottom:28px}
+.lg-badge-ring{position:absolute;inset:0;border-radius:50%;border:1.5px solid rgba(201,162,39,0.3);animation:lgRingSpin 12s linear infinite}
+.lg-badge-ring::after{content:'';position:absolute;top:-2px;left:50%;width:4px;height:4px;background:#c9a227;border-radius:50%;transform:translateX(-50%);box-shadow:0 0 8px #c9a227}
+@keyframes lgRingSpin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+.lg-badge-inner{position:absolute;inset:8px;border-radius:50%;background:radial-gradient(circle at 40% 35%,rgba(201,162,39,0.15),rgba(10,8,6,0.9));border:1px solid rgba(201,162,39,0.4);display:flex;align-items:center;justify-content:center;font-size:36px;box-shadow:0 8px 32px rgba(0,0,0,0.6),inset 0 1px 0 rgba(201,162,39,0.2)}
+.lg-badge-glow{position:absolute;inset:-10px;border-radius:50%;background:radial-gradient(circle,rgba(201,162,39,0.08),transparent 70%);animation:lgGlowPulse 3s ease-in-out infinite}
+@keyframes lgGlowPulse{0%,100%{opacity:0.5;transform:scale(1)}50%{opacity:1;transform:scale(1.08)}}
+.lg-dept-tag{font-family:'Share Tech Mono',monospace;font-size:9px;letter-spacing:4px;color:#e05c1a;text-transform:uppercase;margin-bottom:8px;display:flex;align-items:center;gap:10px}
+.lg-dept-tag::after{content:'';flex:1;height:1px;background:linear-gradient(to right,rgba(224,92,26,0.4),transparent);max-width:60px}
+.lg-main-title{font-family:'Cinzel',serif;font-size:52px;font-weight:900;color:#c9a227;letter-spacing:6px;text-transform:uppercase;line-height:0.95;text-shadow:0 4px 40px rgba(201,162,39,0.25);margin-bottom:6px}
+.lg-sub-title{font-family:'Cinzel',serif;font-size:14px;letter-spacing:5px;color:rgba(201,162,39,0.5);text-transform:uppercase;margin-bottom:20px}
+.lg-desc-line{font-size:12px;letter-spacing:2px;color:rgba(240,232,208,0.45);font-family:'Share Tech Mono',monospace;text-transform:uppercase;display:flex;align-items:center;gap:10px}
+.lg-desc-line::before{content:'';width:24px;height:1px;background:rgba(201,162,39,0.5)}
+/* Divider */
+.lg-divider-h{width:1px;height:400px;background:linear-gradient(to bottom,transparent 0%,rgba(201,162,39,0.25) 30%,rgba(201,162,39,0.25) 70%,transparent 100%);position:relative;flex-shrink:0}
+.lg-divider-h::before,.lg-divider-h::after{content:'';position:absolute;left:50%;transform:translateX(-50%);width:5px;height:5px;border-radius:50%;background:#c9a227;box-shadow:0 0 8px #c9a227}
+.lg-divider-h::before{top:0}.lg-divider-h::after{bottom:0}
+/* Right panel */
+.lg-right-panel{flex:1;padding-left:60px;opacity:0;animation:lgFadeInUp 0.7s ease 0.5s forwards}
+/* Tabs */
+.lg-tab-row{display:flex;gap:0;margin-bottom:28px;border-bottom:1px solid rgba(201,162,39,0.2);position:relative}
+.lg-tab-btn{flex:1;padding:11px 0;background:none;border:none;cursor:pointer;font-family:'Share Tech Mono',monospace;font-size:10px;letter-spacing:3px;color:rgba(240,232,208,0.45);text-transform:uppercase;transition:all 0.25s;position:relative;display:flex;align-items:center;justify-content:center;gap:8px}
+.lg-tab-btn.active{color:#c9a227}
+.lg-tab-btn.active::after{content:'';position:absolute;bottom:-1px;left:0;right:0;height:2px;background:linear-gradient(to right,transparent,#c9a227,transparent)}
+.lg-tab-btn:not(.active):hover{color:rgba(240,232,208,0.65)}
+/* Form heading */
+.lg-form-heading{margin-bottom:28px}
+.lg-form-heading h2{font-family:'Cinzel',serif;font-size:22px;font-weight:700;color:#f0e8d0;letter-spacing:1px;margin-bottom:4px}
+.lg-form-heading p{font-size:11px;letter-spacing:2px;color:rgba(240,232,208,0.45);font-family:'Share Tech Mono',monospace;text-transform:uppercase}
+/* Field groups */
+.lg-field-group{margin-bottom:18px}
+.lg-field-label{font-family:'Share Tech Mono',monospace;font-size:9px;letter-spacing:2.5px;color:rgba(201,162,39,0.6);text-transform:uppercase;margin-bottom:8px;display:flex;align-items:center;gap:8px}
+.lg-field-label::before{content:'';width:3px;height:3px;background:#c9a227;border-radius:50%}
+.lg-input-wrap{position:relative}
+.lg-input-field{width:100%;background:rgba(255,255,255,0.03);border:1px solid rgba(201,162,39,0.2);border-radius:6px;padding:13px 46px 13px 16px;font-family:'Rajdhani',sans-serif;font-size:14px;font-weight:500;color:#f0e8d0;outline:none;transition:all 0.25s;letter-spacing:0.5px}
+.lg-input-field::placeholder{color:rgba(240,232,208,0.2);font-weight:400}
+.lg-input-field:focus{border-color:rgba(201,162,39,0.55);background:rgba(201,162,39,0.04);box-shadow:0 0 0 3px rgba(201,162,39,0.08),0 4px 20px rgba(0,0,0,0.3)}
+.lg-input-icon{position:absolute;right:14px;top:50%;transform:translateY(-50%);color:rgba(201,162,39,0.4);font-size:14px;cursor:pointer;transition:color 0.2s;user-select:none}
+.lg-input-icon:hover{color:rgba(201,162,39,0.8)}
+/* Field bottom */
+.lg-field-bottom{display:flex;align-items:center;justify-content:space-between;margin-bottom:24px}
+.lg-check-label{display:flex;align-items:center;gap:8px;cursor:pointer;font-size:11px;letter-spacing:1px;color:rgba(240,232,208,0.45);font-family:'Share Tech Mono',monospace;user-select:none}
+.lg-check-label input{display:none}
+.lg-check-box{width:14px;height:14px;border:1px solid rgba(201,162,39,0.5);border-radius:3px;background:rgba(255,255,255,0.02);display:flex;align-items:center;justify-content:center;font-size:9px;color:#c9a227;transition:all 0.2s;flex-shrink:0}
+.lg-check-label input:checked + .lg-check-box{background:rgba(201,162,39,0.15);border-color:#c9a227}
+.lg-forgot-link{font-family:'Share Tech Mono',monospace;font-size:9px;letter-spacing:1.5px;color:rgba(192,65,14,0.7);cursor:pointer;text-transform:uppercase;transition:color 0.2s;text-decoration:none}
+.lg-forgot-link:hover{color:#e05c1a}
+/* Submit button */
+.lg-btn-connect{width:100%;padding:15px;background:linear-gradient(135deg,#c0410e 0%,#a83609 50%,#c0410e 100%);background-size:200% 100%;border:1px solid rgba(192,65,14,0.6);border-radius:6px;cursor:pointer;font-family:'Share Tech Mono',monospace;font-size:12px;letter-spacing:4px;color:#fff;text-transform:uppercase;position:relative;overflow:hidden;transition:all 0.35s;display:flex;align-items:center;justify-content:center;gap:10px;box-shadow:0 4px 24px rgba(192,65,14,0.35)}
+.lg-btn-connect::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,transparent 30%,rgba(255,255,255,0.08) 50%,transparent 70%);transform:translateX(-100%);transition:transform 0.5s}
+.lg-btn-connect:hover{background-position:100% 0;box-shadow:0 6px 32px rgba(192,65,14,0.55);border-color:rgba(224,92,26,0.8);transform:translateY(-1px)}
+.lg-btn-connect:hover::before{transform:translateX(100%)}
+.lg-btn-connect:active{transform:translateY(0)}
+.lg-btn-icon{font-size:14px}
+/* Security row */
+.lg-security-row{display:flex;align-items:center;gap:8px;margin-top:20px;padding-top:16px;border-top:1px solid rgba(201,162,39,0.2)}
+.lg-security-icon{width:28px;height:28px;border-radius:50%;background:rgba(255,255,255,0.04);border:1px solid rgba(201,162,39,0.2);display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0}
+.lg-security-text{font-family:'Share Tech Mono',monospace;font-size:8px;letter-spacing:1px;color:rgba(240,232,208,0.2);text-transform:uppercase;line-height:1.6}
+/* Alert inside login */
+#login-screen .lg-alert{border-radius:6px;font-size:11px;margin-bottom:16px;background:rgba(220,38,38,0.1);border:1px solid rgba(220,38,38,0.2);border-left:3px solid #dc2626;color:#fca5a5;padding:10px 14px}
+/* Success */
+#login-screen .lg-success{border-radius:6px;font-size:11px;margin-bottom:16px;background:rgba(21,128,61,0.1);border:1px solid rgba(21,128,61,0.2);border-left:3px solid #15803d;color:#86efac;padding:10px 14px}
+/* Bottom tag */
+.lg-bottom-tag{position:absolute;bottom:20px;right:28px;z-index:10;font-family:'Share Tech Mono',monospace;font-size:9px;letter-spacing:2px;color:rgba(201,162,39,0.25);text-transform:uppercase;display:flex;align-items:center;gap:8px}
+.lg-hexbadge{width:32px;height:32px;position:relative;display:flex;align-items:center;justify-content:center}
+.lg-hexbadge svg{position:absolute;inset:0}
+.lg-hexbadge span{font-family:'Cinzel',serif;font-size:9px;font-weight:700;color:#c9a227;position:relative;z-index:1;line-height:1}
+/* Dust particles */
+.lg-dust-particle{position:absolute;width:2px;height:2px;border-radius:50%;background:rgba(201,162,39,0.4);pointer-events:none;z-index:2;animation:lgDustFloat linear infinite}
+@keyframes lgScrollBounce{0%,100%{transform:translateY(0)}50%{transform:translateY(6px)}}
+@keyframes lgDustFloat{0%{opacity:0;transform:translateY(0) translateX(0)}10%{opacity:0.6}90%{opacity:0.3}100%{opacity:0;transform:translateY(-200px) translateX(40px)}}
+/* Responsive */
 
-/* Fond animé — rayons + grille */
-#login-screen::before{
-  content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
-  background:
-    radial-gradient(ellipse 80% 60% at 50% 0%, rgba(192,65,14,0.18) 0%, transparent 60%),
-    radial-gradient(ellipse 60% 40% at 15% 100%, rgba(180,140,20,0.1) 0%, transparent 55%),
-    radial-gradient(ellipse 50% 50% at 85% 80%, rgba(100,30,120,0.08) 0%, transparent 55%);
-}
-#login-screen::after{
-  content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
-  background-image:
-    linear-gradient(rgba(180,140,20,0.03) 1px,transparent 1px),
-    linear-gradient(90deg,rgba(180,140,20,0.03) 1px,transparent 1px);
-  background-size:56px 56px;
-}
+/* ─── LORE PREVIEW on login ─── */
+.lg-lore-section{position:relative;z-index:10;width:100%;max-width:1100px;padding:0 40px 80px;margin-top:0}
+.lg-lore-sep{width:100%;height:1px;background:linear-gradient(to right,transparent,rgba(201,162,39,0.25),transparent);margin:0 0 60px;position:relative;z-index:10}
+.lg-lore-sep::after{content:'✦';position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);background:#0a0806;padding:0 16px;font-size:12px;color:rgba(201,162,39,0.4);font-family:'Cinzel',serif}
+.lg-lore-header{text-align:center;margin-bottom:48px}
+.lg-lore-overline{font-family:'Share Tech Mono',monospace;font-size:9px;letter-spacing:4px;color:#c0410e;text-transform:uppercase;margin-bottom:12px;display:flex;align-items:center;justify-content:center;gap:10px}
+.lg-lore-overline::before,.lg-lore-overline::after{content:'';width:30px;height:1px;background:#c0410e;opacity:.5}
+.lg-lore-title{font-family:'Cinzel',serif;font-size:clamp(22px,3vw,34px);font-weight:700;color:#e8dfc8;letter-spacing:1px;margin-bottom:8px}
+.lg-lore-title span{color:#c9a227}
+.lg-lore-hint{font-family:'Share Tech Mono',monospace;font-size:9px;letter-spacing:2px;color:rgba(201,162,39,0.3);text-transform:uppercase}
+.lg-lore-layout{display:grid;grid-template-columns:1fr 260px;gap:48px;align-items:start;margin-bottom:52px}
+.lg-lore-era-tag{display:inline-flex;align-items:center;gap:7px;background:rgba(201,162,39,0.08);border:1px solid rgba(201,162,39,0.22);border-radius:3px;padding:4px 12px;font-family:'Share Tech Mono',monospace;font-size:8px;letter-spacing:2.5px;color:#c9a227;text-transform:uppercase;margin-bottom:14px}
+.lg-lore-section-title{font-family:'Cinzel',serif;font-size:19px;font-weight:600;color:#e8dfc8;margin-bottom:14px;letter-spacing:.3px}
+.lg-lore-p{font-family:'EB Garamond',Georgia,serif;font-size:16.5px;color:rgba(232,223,200,.72);margin-bottom:12px;line-height:1.8;letter-spacing:.02em}
+.lg-lore-p strong{color:#e8dfc8;font-weight:600}
+.lg-lore-p em{color:#c9a227;font-style:italic}
+.lg-lore-divider{display:flex;align-items:center;gap:14px;margin:32px 0;opacity:.3}
+.lg-lore-divider::before,.lg-lore-divider::after{content:'';flex:1;height:1px;background:linear-gradient(to right,transparent,#c9a227,transparent)}
+.lg-lore-divider span{font-family:'Share Tech Mono',monospace;font-size:10px;color:#c9a227;letter-spacing:3px}
+.lg-lore-card{background:rgba(255,255,255,.025);border:1px solid rgba(201,162,39,.14);border-radius:4px;padding:18px;margin-bottom:10px}
+.lg-lore-card:hover{border-color:rgba(201,162,39,.3)}
+.lg-lore-card-lbl{font-family:'Share Tech Mono',monospace;font-size:8px;letter-spacing:3px;color:#c0410e;text-transform:uppercase;margin-bottom:7px}
+.lg-lore-card-val{font-family:'Cinzel',serif;font-size:14px;font-weight:600;color:#e8dfc8;margin-bottom:3px}
+.lg-lore-card-sub{font-family:'EB Garamond',Georgia,serif;font-size:13px;color:rgba(232,223,200,.45);font-style:italic}
+.lg-lore-quote{border-left:2px solid #c0410e;padding:14px 18px;background:rgba(192,65,14,.05);margin-top:6px}
+.lg-lore-quote p{font-family:'EB Garamond',Georgia,serif;font-size:13.5px;font-style:italic;color:rgba(232,223,200,.6);line-height:1.7;margin-bottom:8px}
+.lg-lore-quote cite{font-family:'Share Tech Mono',monospace;font-size:8px;letter-spacing:2px;color:#c0410e;opacity:.7;font-style:normal}
+.lg-lore-cta{text-align:center;padding:40px 20px;border-top:1px solid rgba(201,162,39,0.12)}
+.lg-lore-cta-text{font-family:'Share Tech Mono',monospace;font-size:10px;letter-spacing:2px;color:rgba(201,162,39,0.35);text-transform:uppercase;margin-bottom:20px}
+.lg-lore-cta-btn{display:inline-flex;align-items:center;gap:8px;padding:12px 28px;border:1px solid rgba(201,162,39,0.4);border-radius:4px;cursor:pointer;font-family:'Share Tech Mono',monospace;font-size:10px;letter-spacing:3px;color:#c9a227;text-transform:uppercase;background:rgba(201,162,39,0.06);transition:all 0.25s;text-decoration:none}
+.lg-lore-cta-btn:hover{background:rgba(201,162,39,0.12);border-color:#c9a227;box-shadow:0 0 20px rgba(201,162,39,0.1)}
+.lg-lore-articles{width:100%}
+.lg-lore-article-item{margin-bottom:52px}
+@media(max-width:860px){.lg-lore-layout{grid-template-columns:1fr}.lg-lore-section{padding:0 20px 60px}}
 
-/* Wrapper central */
-.login-box{
-  width:100%;max-width:460px;
-  position:relative;z-index:1;
-  animation:loginReveal 0.65s cubic-bezier(0.22,1,0.36,1) both;
+@media(max-width:860px){
+  .lg-main-container{flex-direction:column;gap:32px;padding-top:50px}
+  .lg-left-panel{padding-right:0;text-align:center;padding-bottom:0}
+  .lg-left-panel .lg-dept-tag,.lg-left-panel .lg-desc-line{justify-content:center}
+  .lg-divider-h{width:80%;height:1px;background:linear-gradient(to right,transparent,rgba(201,162,39,0.25),transparent)}
+  .lg-divider-h::before,.lg-divider-h::after{display:none}
+  .lg-right-panel{padding-left:0;width:100%;max-width:440px}
+  .lg-side-stats{display:none}
+  .lg-main-title{font-size:38px}
 }
-@keyframes loginReveal{from{opacity:0;transform:translateY(28px) scale(0.97)}to{opacity:1;transform:translateY(0) scale(1)}}
-
-/* En-tête — logo + titre */
-.login-header{
-  text-align:center;margin-bottom:28px;display:block!important;
+@media(max-width:480px){
+  .lg-main-title{font-size:30px;letter-spacing:4px}
+  .lg-main-container{padding:50px 16px 16px}
 }
-.login-emblem{
-  width:90px;height:90px;margin:0 auto 16px;
-  border-radius:50%;
-  border:1.5px solid rgba(180,140,20,0.55);
-  background:radial-gradient(circle at 40% 35%,rgba(192,65,14,0.22),rgba(10,10,20,0.8));
-  display:flex;align-items:center;justify-content:center;
-  box-shadow:0 0 0 10px rgba(180,140,20,0.04),0 0 50px rgba(180,140,20,0.22),0 10px 40px rgba(0,0,0,0.6);
-  overflow:hidden;
-  animation:emblemPulse 4s ease-in-out infinite;
-}
-.login-emblem img{width:64px;height:64px;object-fit:contain}
-@keyframes emblemPulse{
-  0%,100%{box-shadow:0 0 0 10px rgba(180,140,20,0.04),0 0 50px rgba(180,140,20,0.22),0 10px 40px rgba(0,0,0,0.6)}
-  50%{box-shadow:0 0 0 16px rgba(180,140,20,0.07),0 0 80px rgba(180,140,20,0.32),0 10px 40px rgba(0,0,0,0.6)}
-}
-.login-brand-title{
-  font-family:'Cinzel',serif;font-size:30px;font-weight:900;letter-spacing:7px;
-  color:#d4b44a;text-shadow:0 0 28px rgba(180,140,20,0.4);
-  margin-bottom:3px;
-}
-.login-brand-sub{
-  font-family:'Cinzel',serif;font-size:12px;letter-spacing:5px;font-weight:600;
-  color:rgba(192,65,14,0.9);margin-bottom:6px;
-}
-.login-brand-desc{
-  font-size:9px;letter-spacing:2.5px;color:rgba(255,255,255,0.22);
-  font-family:'Share Tech Mono',monospace;
-}
-.login-divider{display:none}
-.login-stats{display:none}
-
-/* Carte principale */
-.login-card{
-  background:rgba(255,255,255,0.045) !important;
-  border:1px solid rgba(180,140,20,0.18) !important;
-  border-radius:18px !important;
-  padding:32px !important;
-  backdrop-filter:blur(24px) !important;
-  box-shadow:0 2px 0 rgba(180,140,20,0.12) inset,0 30px 80px rgba(0,0,0,0.5) !important;
-  width:100%;
-}
-
-/* Onglets */
-.login-tabs{
-  display:flex;gap:0;width:100%;margin-bottom:26px;
-  background:rgba(0,0,0,0.25);
-  border:1px solid rgba(255,255,255,0.06);
-  border-radius:12px;padding:4px;
-}
-.login-tab-btn{
-  flex:1;padding:10px 0;text-align:center;border-radius:9px;cursor:pointer;
-  font-size:10px;font-weight:700;letter-spacing:2px;color:rgba(255,255,255,0.3);
-  transition:all 0.2s ease;text-transform:uppercase;font-family:'Share Tech Mono',monospace;
-  border:none;background:transparent;
-}
-.login-tab-btn.active{
-  background:linear-gradient(135deg,#c0410e,#7a2006);color:#fff;
-  box-shadow:0 2px 14px rgba(192,65,14,0.45),0 1px 0 rgba(255,255,255,0.08) inset;
-}
-.login-tab-btn:not(.active):hover{color:rgba(255,255,255,0.65);background:rgba(255,255,255,0.05)}
-
-/* Titres dans la card */
-.login-form-title{
-  font-family:'Cinzel',serif;font-size:16px;font-weight:700;letter-spacing:1.5px;
-  color:#fff;margin-bottom:4px;
-}
-.login-form-hint{
-  font-size:9px;color:rgba(255,255,255,0.25);font-family:'Share Tech Mono',monospace;
-  letter-spacing:1.5px;margin-bottom:22px;
-}
-
-/* Labels */
-.login-card .form-group{margin-bottom:15px}
-.login-card .form-label{
-  color:rgba(255,255,255,0.4) !important;font-size:9px !important;letter-spacing:2px !important;
-  text-transform:uppercase;font-family:'Share Tech Mono',monospace;margin-bottom:7px;display:block
-}
-
-/* Inputs */
-.login-card .form-control{
-  background:rgba(0,0,0,0.3) !important;
-  border:1.5px solid rgba(255,255,255,0.08) !important;
-  color:#fff !important;-webkit-text-fill-color:#fff !important;
-  caret-color:#d4b44a;border-radius:10px !important;
-  padding:13px 16px !important;font-size:13.5px !important;
-  transition:all 0.2s ease !important;
-}
-.login-card .form-control:focus{
-  border-color:rgba(180,140,20,0.55) !important;
-  background:rgba(0,0,0,0.4) !important;
-  box-shadow:0 0 0 3px rgba(180,140,20,0.1),0 0 16px rgba(180,140,20,0.08) !important;
-  color:#fff !important;
-}
-.login-card .form-control::placeholder{color:rgba(255,255,255,0.18) !important}
-
-/* Bouton */
-.login-card .btn-primary{
-  width:100%;justify-content:center;font-size:12.5px;letter-spacing:2.5px;
-  padding:14px !important;border-radius:11px !important;margin-top:4px;
-  background:linear-gradient(135deg,#d0480f 0%,#8a2c08 100%) !important;
-  box-shadow:0 4px 24px rgba(192,65,14,0.4),0 1px 0 rgba(255,255,255,0.1) inset !important;
-  transition:all 0.2s ease !important;position:relative;overflow:hidden;border:none;
-}
-.login-card .btn-primary::before{
-  content:'';position:absolute;top:0;left:-100%;width:100%;height:100%;
-  background:linear-gradient(90deg,transparent,rgba(255,255,255,0.08),transparent);
-  transition:left 0.5s ease;
-}
-.login-card .btn-primary:hover::before{left:100%}
-.login-card .btn-primary:hover{
-  transform:translateY(-2px) !important;
-  box-shadow:0 8px 32px rgba(192,65,14,0.55),0 1px 0 rgba(255,255,255,0.12) inset !important;
-}
-.login-card .btn-primary:active{transform:translateY(0) !important}
-
-/* Checkbox */
-.remember-row{display:flex;align-items:center;gap:9px;margin:12px 0 20px}
-.remember-row input[type=checkbox]{
-  width:15px;height:15px;accent-color:#c0410e;cursor:pointer;flex-shrink:0
-}
-.remember-row label{
-  font-size:11px;color:rgba(255,255,255,0.3);cursor:pointer;
-  font-family:'Share Tech Mono',monospace;letter-spacing:0.5px
-}
-
-/* Alertes */
-.login-card .alert{
-  border-radius:9px !important;font-size:12px !important;margin-bottom:16px !important;
-  background:rgba(220,38,38,0.1) !important;
-  border:1px solid rgba(220,38,38,0.2) !important;
-  border-left:3px solid #dc2626 !important;
-  color:#fca5a5 !important;padding:10px 14px !important;
-}
-
-/* Éléments non utilisés */
-.login-or,.login-stats,.login-divider,#login-right,#login-left,#login-right-footer{display:none!important}
-
-/* RESPONSIVE */
-@media(max-width:520px){
-  .login-box{max-width:100%}
-  .login-card{padding:24px 20px !important;border-radius:16px !important}
-  .login-brand-title{font-size:24px;letter-spacing:5px}
-  .login-emblem{width:76px;height:76px}
-  .login-emblem img{width:54px;height:54px}
-}
-
-/* Tablettes portrait & grands smartphones (521-768px) */
-@media(min-width:521px) and (max-width:768px){
-  .login-brand-title{font-size:26px;letter-spacing:5px}
-  .login-brand-sub{font-size:11px;letter-spacing:4px}
-}
-
 /* SEPARATOR */
 .sep{height:1px;background:linear-gradient(90deg,transparent,rgba(180,140,20,0.2),transparent);margin:10px 0}
 
@@ -1635,82 +1627,261 @@ document.addEventListener('DOMContentLoaded',function(){if(localStorage.getItem(
 
 <!-- LOGIN -->
 <div id="login-screen">
-  <div class="login-box">
 
-    <!-- En-tête branding -->
-    <div class="login-header">
-      <div class="login-emblem"><img src="data:image/png;base64,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" alt="logo"></div>
-      <div class="login-brand-title">POLICE</div>
-      <div class="login-brand-sub">SUNAGAKURE</div>
-      <div class="login-brand-desc">PORTAIL INTRANET — ACCÈS RESTREINT</div>
-      <!-- Stats live -->
-      <div id="login-live-stats" style="
-        display:flex;gap:0;margin-top:18px;margin-bottom:4px;
-        background:rgba(255,255,255,0.04);
-        border:1px solid rgba(180,140,20,0.18);
-        border-radius:14px;overflow:hidden;width:100%;
-      ">
-        <div style="flex:1;text-align:center;padding:12px 8px;border-right:1px solid rgba(180,140,20,0.12)">
-          <div style="font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:900;color:#d4b44a;line-height:1">24/7</div>
-          <div style="font-size:8px;letter-spacing:1.5px;color:rgba(255,255,255,0.28);font-family:'Share Tech Mono',monospace;margin-top:4px;text-transform:uppercase">En service</div>
-          <div style="width:6px;height:6px;border-radius:50%;background:#15803d;margin:5px auto 0;box-shadow:0 0 6px rgba(22,163,74,0.7);animation:blink 2s infinite"></div>
+  <!-- Canvas background -->
+  <canvas id="login-canvas-bg"></canvas>
+
+  <!-- BG layers -->
+  <div class="lg-bg-layer"></div>
+  <div class="lg-scanlines"></div>
+
+  <!-- Corners -->
+  <div class="lg-corner lg-corner-tl"></div>
+  <div class="lg-corner lg-corner-tr"></div>
+  <div class="lg-corner lg-corner-bl"></div>
+  <div class="lg-corner lg-corner-br"></div>
+
+  <!-- Top status bar -->
+  <div class="lg-top-status-bar">
+    <div class="lg-status-item">
+      <div class="lg-status-dot-live"></div>
+      <span>SYSTÈME OPÉRATIONNEL</span>
+    </div>
+    <div class="lg-top-sep"></div>
+    <div class="lg-status-item">🛡 RÉSEAU SÉCURISÉ — INTRANET SUNA</div>
+    <div class="lg-top-sep"></div>
+    <div class="lg-status-item">⚡ CHIFFREMENT AES-256</div>
+    <div class="lg-status-item lg-top-date" id="lg-topdate">—</div>
+  </div>
+
+  <!-- Side stats -->
+  <div class="lg-side-stats">
+    <div class="lg-side-stat">
+      <div class="lg-side-stat-val">24/7</div>
+      <div class="lg-side-stat-lbl">En service</div>
+    </div>
+    <div class="lg-side-stat-line"></div>
+    <div class="lg-side-stat">
+      <div class="lg-side-stat-val" id="ls-effectifs">—</div>
+      <div class="lg-side-stat-lbl">Effectifs</div>
+    </div>
+    <div class="lg-side-stat-line"></div>
+    <div class="lg-side-stat">
+      <div class="lg-side-stat-val" id="ls-dossiers">—</div>
+      <div class="lg-side-stat-lbl">Dossiers</div>
+    </div>
+  </div>
+
+  <!-- Main container -->
+  <div class="lg-main-container">
+
+    <!-- Left panel -->
+    <div class="lg-left-panel">
+      <div class="lg-badge-wrap">
+        <div class="lg-badge-glow"></div>
+        <div class="lg-badge-ring"></div>
+        <div class="lg-badge-inner">⚔️</div>
+      </div>
+      <div class="lg-dept-tag">Département Sécurité</div>
+      <div class="lg-main-title">POLICE</div>
+      <div class="lg-sub-title">Sunagakure</div>
+      <div class="lg-desc-line">Portail intranet — accès restreint</div>
+    </div>
+
+    <!-- Divider -->
+    <div class="lg-divider-h"></div>
+
+    <!-- Right panel (formulaires) -->
+    <div class="lg-right-panel">
+
+      <!-- Tabs -->
+      <div class="lg-tab-row">
+        <button class="lg-tab-btn active" id="tab-login-btn" onclick="switchLoginTab('login')">
+          🔐 Connexion
+        </button>
+        <button class="lg-tab-btn" id="tab-register-btn" onclick="switchLoginTab('register')">
+          📋 Créer un compte
+        </button>
+      </div>
+
+      <!-- FORMULAIRE CONNEXION -->
+      <div id="form-login">
+        <div class="lg-form-heading">
+          <h2>Bon retour, agent</h2>
+          <p>Identifiez-vous pour continuer</p>
         </div>
-        <div style="flex:1;text-align:center;padding:12px 8px;border-right:1px solid rgba(180,140,20,0.12)">
-          <div id="ls-effectifs" style="font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:900;color:#d4b44a;line-height:1">—</div>
-          <div style="font-size:8px;letter-spacing:1.5px;color:rgba(255,255,255,0.28);font-family:'Share Tech Mono',monospace;margin-top:4px;text-transform:uppercase">Effectifs</div>
+
+        <div id="login-alert" style="display:none" class="lg-alert"></div>
+
+        <div class="lg-field-group">
+          <div class="lg-field-label">Identifiant</div>
+          <div class="lg-input-wrap">
+            <input class="lg-input-field" type="text" id="login-user" placeholder="Votre identifiant" autocomplete="username">
+            <div class="lg-input-icon">👤</div>
+          </div>
         </div>
-        <div style="flex:1;text-align:center;padding:12px 8px">
-          <div id="ls-dossiers" style="font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:900;color:#d4b44a;line-height:1">—</div>
-          <div style="font-size:8px;letter-spacing:1.5px;color:rgba(255,255,255,0.28);font-family:'Share Tech Mono',monospace;margin-top:4px;text-transform:uppercase">Dossiers & plaintes</div>
+
+        <div class="lg-field-group">
+          <div class="lg-field-label">Mot de passe</div>
+          <div class="lg-input-wrap">
+            <input class="lg-input-field" type="password" id="login-pass" placeholder="••••••••" autocomplete="current-password">
+            <div class="lg-input-icon" id="lg-eye-icon" onclick="lgTogglePass()">👁</div>
+          </div>
         </div>
+
+        <div class="lg-field-bottom">
+          <label class="lg-check-label">
+            <input type="checkbox" id="remember-me">
+            <div class="lg-check-box">✓</div>
+            Se souvenir de moi
+          </label>
+          <a class="lg-forgot-link" href="#">Accès perdu ?</a>
+        </div>
+
+        <button class="lg-btn-connect" id="btn-login" onclick="doLogin()">
+          <span class="lg-btn-icon">🛡</span>
+          SE CONNECTER
+        </button>
+
+        <div class="lg-security-row">
+          <div class="lg-security-icon">🔒</div>
+          <div class="lg-security-text">
+            Connexion sécurisée • Toutes les actions sont enregistrées<br>
+            Accès non autorisé passible de sanctions disciplinaires
+          </div>
+        </div>
+      </div>
+
+      <!-- FORMULAIRE INSCRIPTION -->
+      <div id="form-register" style="display:none">
+        <div class="lg-form-heading">
+          <h2>Nouvel agent</h2>
+          <p>Demande de création de compte</p>
+        </div>
+
+        <div id="register-alert" style="display:none" class="lg-alert"></div>
+        <div id="register-success" style="display:none" class="lg-success"></div>
+
+        <div class="lg-field-group">
+          <div class="lg-field-label">Nom de ninja (RP)</div>
+          <div class="lg-input-wrap">
+            <input class="lg-input-field" type="text" id="reg-nom" placeholder="Prénom Nom" autocomplete="off">
+            <div class="lg-input-icon">⚔️</div>
+          </div>
+        </div>
+
+        <div class="lg-field-group">
+          <div class="lg-field-label">Identifiant souhaité</div>
+          <div class="lg-input-wrap">
+            <input class="lg-input-field" type="text" id="reg-login" placeholder="Votre identifiant" autocomplete="off">
+            <div class="lg-input-icon">👤</div>
+          </div>
+        </div>
+
+        <div class="lg-field-group">
+          <div class="lg-field-label">Mot de passe</div>
+          <div class="lg-input-wrap">
+            <input class="lg-input-field" type="password" id="reg-pass" placeholder="Choisissez un mot de passe">
+            <div class="lg-input-icon">🔑</div>
+          </div>
+        </div>
+
+        <div class="lg-field-group">
+          <div class="lg-field-label">Confirmer le mot de passe</div>
+          <div class="lg-input-wrap">
+            <input class="lg-input-field" type="password" id="reg-pass2" placeholder="Confirmez le mot de passe">
+            <div class="lg-input-icon">🔑</div>
+          </div>
+        </div>
+
+        <button class="lg-btn-connect" onclick="doRegister()">
+          <span class="lg-btn-icon">📋</span>
+          ENVOYER LA DEMANDE
+        </button>
+
+        <div class="lg-security-row">
+          <div class="lg-security-icon">⚠️</div>
+          <div class="lg-security-text">
+            Création soumise à validation par un officier supérieur<br>
+            Votre demande sera traitée sous 24h
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /right-panel -->
+  </div><!-- /main-container -->
+
+  <!-- Scroll hint -->
+  <div style="position:relative;z-index:10;text-align:center;padding:16px 0 24px;opacity:0;animation:lgFadeInUp 0.6s ease 1.8s forwards">
+    <div style="display:inline-flex;flex-direction:column;align-items:center;gap:6px;cursor:pointer" onclick="var lp=document.getElementById('lg-lore-preview');if(lp)lp.scrollIntoView({behavior:'smooth'});">
+      <div style="font-family:'Share Tech Mono',monospace;font-size:8px;letter-spacing:3px;color:rgba(201,162,39,0.35);text-transform:uppercase">Archives — Lire avant de rejoindre</div>
+      <div style="animation:lgScrollBounce 1.5s ease infinite;color:rgba(201,162,39,0.4);font-size:16px">↓</div>
+    </div>
+  </div>
+
+  <!-- LORE PREVIEW SECTION -->
+  <div id="lg-lore-preview" class="lg-lore-section">
+
+    <div class="lg-lore-sep"></div>
+
+    <div class="lg-lore-header">
+      <div class="lg-lore-overline">Archives Officielles</div>
+      <div class="lg-lore-title">Histoire de la <span>Police de Sunagakure</span></div>
+      <div class="lg-lore-hint">Consulter les archives — accès libre</div>
+    </div>
+
+    <!-- Articles dynamiques (publiés) -->
+    <div id="lg-lore-articles" class="lg-lore-articles"></div>
+
+    <!-- Article d'exemple (affiché si aucun publié) -->
+    <div id="lg-lore-example">
+      <div class="lg-lore-layout">
+        <div>
+          <div class="lg-lore-section-wrap" style="margin-bottom:44px">
+            <div class="lg-lore-era-tag">Fondation de Sunagakure</div>
+            <h2 class="lg-lore-section-title">La Création — Un ordre né du sable</h2>
+            <p class="lg-lore-p">Peu après la fondation du Village Caché du Sable, le <strong>Kazekage fondateur</strong> prit l'une des décisions les plus marquantes de l'histoire de Sunagakure : la création d'une force de police militaire dédiée à maintenir l'ordre et la sécurité intérieure du village.</p>
+            <p class="lg-lore-p">À cette époque, Suna était encore en pleine construction. Les clans du désert, fiers et indépendants, devaient apprendre à coexister sous une même bannière. Le Kazekage comprit qu'aucune menace extérieure ne pouvait être affrontée sans une cohésion intérieure absolue.</p>
+          </div>
+          <div class="lg-lore-divider"><span>✦</span></div>
+          <div style="margin-bottom:44px">
+            <div class="lg-lore-era-tag">Rôle & Mission</div>
+            <h2 class="lg-lore-section-title">Gardiens du Sable</h2>
+            <p class="lg-lore-p">La Police de Sunagakure fut fondée pour incarner la loi dans chaque grain de sable du village. Une institution d'élite, recrutant parmi les shinobi les plus rigoureux, chargée de faire respecter les lois du Kazekage et de protéger les habitants.</p>
+            <p class="lg-lore-p">Au fil des générations, la Police du Sable s'est forgé une réputation de <strong>discipline absolue</strong> et d'intégrité sans faille, devenant le pilier invisible sur lequel repose la paix de Sunagakure.</p>
+          </div>
+        </div>
+        <aside>
+          <div class="lg-lore-card"><div class="lg-lore-card-lbl">Fondateur</div><div class="lg-lore-card-val">Kazekage</div><div class="lg-lore-card-sub">Père fondateur de l'ordre</div></div>
+          <div class="lg-lore-card"><div class="lg-lore-card-lbl">Symbole</div><div class="lg-lore-card-val">Le Tanuki d'Acier</div><div class="lg-lore-card-sub">Protection et vigilance</div></div>
+          <div class="lg-lore-card"><div class="lg-lore-card-lbl">Devise</div><div class="lg-lore-card-val">Volonté du Vent</div><div class="lg-lore-card-sub">Protéger, servir, perdurer</div></div>
+          <div class="lg-lore-quote"><p>« Le sable efface les traces, mais jamais les crimes commis sous notre ciel. »</p><cite>— Doctrine fondatrice de la Police de Suna</cite></div>
+        </aside>
       </div>
     </div>
 
-    <!-- Onglets -->
-    <div class="login-tabs">
-      <button class="login-tab-btn active" id="tab-login-btn" onclick="switchLoginTab('login')">🔐 Connexion</button>
-      <button class="login-tab-btn" id="tab-register-btn" onclick="switchLoginTab('register')">📝 Créer un compte</button>
-    </div>
-
-    <!-- Formulaire Connexion -->
-    <div id="form-login" class="login-card">
-      <div class="login-form-title">Bon retour</div>
-      <div class="login-form-hint">IDENTIFIEZ-VOUS POUR CONTINUER</div>
-      <div id="login-alert" style="display:none" class="alert alert-error"></div>
-      <div class="form-group">
-        <label class="form-label">Identifiant</label>
-        <input type="text" id="login-user" class="form-control" placeholder="Votre identifiant" autocomplete="username">
-      </div>
-      <div class="form-group">
-        <label class="form-label">Mot de passe</label>
-        <div style="position:relative">
-          <input type="password" id="login-pass" class="form-control" placeholder="••••••••" autocomplete="current-password" style="padding-right:46px">
-          <span onclick="togglePass('login-pass',this)" style="position:absolute;right:14px;top:50%;transform:translateY(-50%);cursor:pointer;font-size:17px;opacity:0.45;transition:opacity 0.2s;user-select:none" title="Afficher/masquer">👁</span>
-        </div>
-      </div>
-      <div class="remember-row">
-        <input type="checkbox" id="remember-me">
-        <label for="remember-me">Se souvenir de moi</label>
-      </div>
-      <button class="btn btn-primary w-full" onclick="doLogin()">🔐 SE CONNECTER</button>
-    </div>
-
-    <!-- Formulaire Inscription -->
-    <div id="form-register" class="login-card" style="display:none">
-      <div class="login-form-title">Nouveau compte</div>
-      <div class="login-form-hint">REMPLISSEZ LES INFORMATIONS CI-DESSOUS</div>
-      <div id="register-alert" style="display:none" class="alert alert-error"></div>
-      <div id="register-success" style="display:none" class="alert alert-success"></div>
-      <div class="form-group"><label class="form-label">Identifiant</label><input type="text" id="reg-login" class="form-control" placeholder="Choisir un identifiant" autocomplete="username"></div>
-      <div class="form-group"><label class="form-label">Nom complet (RP)</label><input type="text" id="reg-nom" class="form-control" placeholder="Prénom Nom"></div>
-      <div class="form-group"><label class="form-label">Mot de passe</label><div style="position:relative"><input type="password" id="reg-pass" class="form-control" placeholder="••••••••" style="padding-right:46px"><span onclick="togglePass('reg-pass',this)" style="position:absolute;right:14px;top:50%;transform:translateY(-50%);cursor:pointer;font-size:17px;opacity:0.45;transition:opacity 0.2s;user-select:none">👁</span></div></div>
-      <div class="form-group"><label class="form-label">Confirmer</label><div style="position:relative"><input type="password" id="reg-pass2" class="form-control" placeholder="••••••••" style="padding-right:46px"><span onclick="togglePass('reg-pass2',this)" style="position:absolute;right:14px;top:50%;transform:translateY(-50%);cursor:pointer;font-size:17px;opacity:0.45;transition:opacity 0.2s;user-select:none">👁</span></div></div>
-      <button class="btn btn-primary w-full" onclick="doRegister()">📝 CRÉER MON COMPTE</button>
+    <!-- CTA connexion -->
+    <div class="lg-lore-cta">
+      <div class="lg-lore-cta-text">Connectez-vous pour accéder à l'intranet complet</div>
+      <a class="lg-lore-cta-btn" onclick="var ls=document.getElementById('login-screen');if(ls)ls.scrollTo({top:0,behavior:'smooth'});">
+        🔐 Se connecter
+      </a>
     </div>
 
   </div>
-</div>
 
+  <!-- Bottom tag -->
+  <div class="lg-bottom-tag" style="position:relative;z-index:10;margin:0 auto 20px;margin-right:28px;align-self:flex-end">
+    v2.4.1 — sunagakure.police
+    <div class="lg-hexbadge">
+      <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <polygon points="16,2 28,9 28,23 16,30 4,23 4,9" fill="none" stroke="rgba(201,162,39,0.4)" stroke-width="1"/>
+      </svg>
+      <span>SP</span>
+    </div>
+  </div>
+
+</div>
 <!-- SIDEBAR -->
 <div id="sidebar">
   <div class="sidebar-logo">
@@ -1729,6 +1900,7 @@ document.addEventListener('DOMContentLoaded',function(){if(localStorage.getItem(
     <div class="nav-item" role="button" tabindex="0" onclick="showPage('dossiers')" data-page="dossiers" data-member-only="true"><span class="icon">🗂️</span> Dossiers criminels <span class="nav-badge" id="badge-dossiers" style="background:var(--purple);display:none">0</span></div>
     <div class="nav-item" role="button" tabindex="0" onclick="showPage('bingobook')" data-page="bingobook"><span class="icon">📕</span> Bingo Book</div>
     <div class="nav-item" role="button" tabindex="0" onclick="showPage('codepenal')" data-page="codepenal"><span class="icon">📜</span> Code Pénal</div>
+    <div class="nav-item" role="button" tabindex="0" onclick="showPage('histoire')" data-page="histoire"><span class="icon">📖</span> Histoire & Lore</div>
     <div class="nav-item" role="button" tabindex="0" onclick="showPage('messagerie')" data-page="messagerie" data-member-only="true"><span class="icon">💬</span> Messagerie <span class="nav-badge" id="badge-messagerie" style="background:var(--cyan);display:none">0</span></div>
     <div class="nav-section" data-member-only="true">Opérations</div>
     <div class="nav-item" role="button" tabindex="0" onclick="showPage('operations')" data-page="operations" data-member-only="true"><span class="icon">🚨</span> Opérations <span class="nav-badge" id="badge-operations" style="background:var(--accent);display:none">0</span></div>
@@ -2046,6 +2218,455 @@ document.addEventListener('DOMContentLoaded',function(){if(localStorage.getItem(
       </div>
     </div>
   </div>
+
+  <!-- HISTOIRE & LORE -->
+  <div class="page-content" id="page-histoire">
+  <style>
+  /* ── HISTOIRE PAGE ── */
+  #page-histoire{background:#0d0b08;min-height:100vh;padding:0;color:#e8dfc8}
+  #page-histoire *{box-sizing:border-box}
+  .lore-wrap{max-width:1100px;margin:0 auto;padding:32px 32px 80px}
+
+  /* HERO */
+  .lore-hero{padding:40px 0 36px;border-bottom:1px solid rgba(201,162,39,0.12);margin-bottom:48px;display:flex;align-items:flex-end;justify-content:space-between;gap:20px;flex-wrap:wrap}
+  .lore-hero-left .lore-overline{font-family:'Share Tech Mono',monospace;font-size:9px;letter-spacing:4px;color:#c0410e;text-transform:uppercase;margin-bottom:12px;display:flex;align-items:center;gap:10px}
+  .lore-hero-left .lore-overline::before{content:'';width:20px;height:1px;background:#c0410e;opacity:.6}
+  .lore-hero-left h1{font-family:'Cinzel',serif;font-size:clamp(26px,4vw,42px);font-weight:700;color:#e8dfc8;line-height:1.1;letter-spacing:1px}
+  .lore-hero-left h1 span{color:#c9a227}
+  .lore-hero-stats{display:flex;gap:24px;flex-shrink:0}
+  .lore-stat{text-align:center}
+  .lore-stat-val{font-family:'Cinzel',serif;font-size:24px;font-weight:700;color:#c9a227;line-height:1;text-shadow:0 0 20px rgba(201,162,39,0.3)}
+  .lore-stat-lbl{font-family:'Share Tech Mono',monospace;font-size:8px;letter-spacing:2px;color:rgba(232,223,200,0.35);text-transform:uppercase;margin-top:4px}
+
+  /* ARTICLE LAYOUT */
+  .lore-layout{display:grid;grid-template-columns:1fr 280px;gap:48px;align-items:start;margin-bottom:64px}
+  .lore-section{margin-bottom:44px}
+  .lore-era-tag{display:inline-flex;align-items:center;gap:7px;background:rgba(201,162,39,0.08);border:1px solid rgba(201,162,39,0.22);border-radius:3px;padding:4px 12px;font-family:'Share Tech Mono',monospace;font-size:8px;letter-spacing:2.5px;color:#c9a227;text-transform:uppercase;margin-bottom:14px}
+  .lore-section-title{font-family:'Cinzel',serif;font-size:19px;font-weight:600;color:#e8dfc8;margin-bottom:14px;letter-spacing:.3px}
+  .lore-p{font-family:'EB Garamond',Georgia,serif;font-size:16.5px;color:rgba(232,223,200,.78);margin-bottom:12px;line-height:1.8;letter-spacing:.02em}
+  .lore-p strong{color:#e8dfc8;font-weight:600}
+  .lore-p em{color:#c9a227;font-style:italic}
+  .lore-divider{display:flex;align-items:center;gap:14px;margin:36px 0;opacity:.35}
+  .lore-divider::before,.lore-divider::after{content:'';flex:1;height:1px;background:linear-gradient(to right,transparent,#c9a227,transparent)}
+  .lore-divider span{font-family:'Share Tech Mono',monospace;font-size:10px;color:#c9a227;letter-spacing:3px}
+
+  /* SIDEBAR CARDS */
+  .lore-sidebar-card{background:rgba(255,255,255,.025);border:1px solid rgba(201,162,39,.14);border-radius:4px;padding:18px;margin-bottom:10px;transition:border-color .2s}
+  .lore-sidebar-card:hover{border-color:rgba(201,162,39,.32)}
+  .lore-sc-label{font-family:'Share Tech Mono',monospace;font-size:8px;letter-spacing:3px;color:#c0410e;text-transform:uppercase;margin-bottom:7px}
+  .lore-sc-value{font-family:'Cinzel',serif;font-size:14px;font-weight:600;color:#e8dfc8;margin-bottom:3px}
+  .lore-sc-sub{font-family:'EB Garamond',Georgia,serif;font-size:13px;color:rgba(232,223,200,.45);font-style:italic}
+  .lore-quote{border-left:2px solid #c0410e;padding:14px 18px;background:rgba(192,65,14,.05);margin-top:6px}
+  .lore-quote p{font-family:'EB Garamond',Georgia,serif;font-size:13.5px;font-style:italic;color:rgba(232,223,200,.65);line-height:1.7;margin-bottom:8px}
+  .lore-quote cite{font-family:'Share Tech Mono',monospace;font-size:8px;letter-spacing:2px;color:#c0410e;opacity:.7;font-style:normal}
+
+  /* ── ÉDITEUR ── */
+  .lore-editor-section{border-top:1px solid rgba(201,162,39,.12);padding-top:52px}
+  .lore-editor-header{margin-bottom:32px}
+  .lore-editor-header .lore-overline{font-family:'Share Tech Mono',monospace;font-size:9px;letter-spacing:4px;color:#c0410e;text-transform:uppercase;margin-bottom:10px;display:flex;align-items:center;gap:10px}
+  .lore-editor-header .lore-overline::before{content:'';width:20px;height:1px;background:#c0410e;opacity:.6}
+  .lore-editor-header h2{font-family:'Cinzel',serif;font-size:26px;font-weight:700;color:#e8dfc8;letter-spacing:1px}
+  .lore-editor-header h2 span{color:#c9a227}
+
+  /* META */
+  .lore-meta{background:rgba(255,255,255,.02);border:1px solid rgba(201,162,39,.14);border-bottom:none;padding:16px 20px;display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  .lore-meta-field label{font-family:'Share Tech Mono',monospace;font-size:8px;letter-spacing:2.5px;color:rgba(201,162,39,.5);text-transform:uppercase;display:block;margin-bottom:5px}
+  .lore-meta-field input,.lore-meta-field select{width:100%;background:rgba(255,255,255,.03);border:1px solid rgba(201,162,39,.15);border-radius:3px;padding:7px 12px;font-family:'Cinzel',serif;font-size:12px;color:#e8dfc8;outline:none;transition:border-color .2s}
+  .lore-meta-field input:focus,.lore-meta-field select:focus{border-color:rgba(201,162,39,.4)}
+  .lore-meta-field input::placeholder{color:rgba(232,223,200,.25);font-style:italic}
+  .lore-meta-field select{font-family:'Share Tech Mono',monospace;font-size:10px;letter-spacing:1px;cursor:pointer}
+  .lore-meta-field select option{background:#1a1610;color:#e8dfc8}
+
+  /* TOOLBAR */
+  .lore-toolbar{display:flex;align-items:center;gap:2px;background:rgba(255,255,255,.02);border:1px solid rgba(201,162,39,.14);border-bottom:none;padding:8px 12px;flex-wrap:wrap}
+  .lore-tb-sep{width:1px;height:22px;background:rgba(201,162,39,.15);margin:0 5px;flex-shrink:0}
+  .lore-tb-btn{width:30px;height:30px;background:none;border:1px solid transparent;border-radius:3px;cursor:pointer;color:rgba(232,223,200,.4);font-size:12px;display:flex;align-items:center;justify-content:center;transition:all .15s;font-family:'Share Tech Mono',monospace;user-select:none;flex-shrink:0}
+  .lore-tb-btn:hover{background:rgba(201,162,39,.08);border-color:rgba(201,162,39,.2);color:#c9a227}
+  .lore-tb-select{background:transparent;border:1px solid rgba(201,162,39,.15);border-radius:3px;color:rgba(232,223,200,.45);font-family:'Share Tech Mono',monospace;font-size:9px;letter-spacing:1px;padding:4px 8px;cursor:pointer;outline:none;transition:all .15s}
+  .lore-tb-select:hover,.lore-tb-select:focus{border-color:rgba(201,162,39,.35);color:#c9a227}
+  .lore-tb-select option{background:#1a1610;color:#e8dfc8}
+
+  /* EDITABLE */
+  #lore-editor-content{min-height:280px;background:rgba(255,255,255,.018);border:1px solid rgba(201,162,39,.14);border-radius:0 0 4px 4px;padding:26px 30px;outline:none;font-family:'EB Garamond',Georgia,serif;font-size:17px;color:#e8dfc8;line-height:1.8;caret-color:#c9a227;transition:border-color .2s}
+  #lore-editor-content:focus{border-color:rgba(201,162,39,.3)}
+  #lore-editor-content:empty::before{content:attr(data-placeholder);color:rgba(232,223,200,.18);pointer-events:none;font-style:italic}
+  #lore-editor-content h1{font-family:'Cinzel',serif;font-size:28px;font-weight:700;color:#e8dfc8;margin:22px 0 10px;border-bottom:1px solid rgba(201,162,39,.15);padding-bottom:8px}
+  #lore-editor-content h2{font-family:'Cinzel',serif;font-size:20px;font-weight:600;color:#e8dfc8;margin:18px 0 10px}
+  #lore-editor-content h3{font-family:'Share Tech Mono',monospace;font-size:10px;letter-spacing:3px;color:#c9a227;text-transform:uppercase;margin:16px 0 8px}
+  #lore-editor-content p{margin-bottom:12px}
+  #lore-editor-content strong{color:#fff;font-weight:600}
+  #lore-editor-content em{color:#e8c255;font-style:italic}
+  #lore-editor-content blockquote{border-left:2px solid #c0410e;padding:12px 20px;margin:18px 0;background:rgba(192,65,14,.06);font-style:italic;color:rgba(232,223,200,.68);border-radius:0 3px 3px 0}
+  #lore-editor-content ul{padding-left:20px;margin-bottom:12px}
+  #lore-editor-content li{margin-bottom:4px;list-style:none;padding-left:12px;position:relative}
+  #lore-editor-content li::before{content:'—';position:absolute;left:-8px;color:#c9a227;opacity:.5}
+  #lore-editor-content hr{border:none;border-top:1px solid rgba(201,162,39,.15);margin:22px 0}
+  #lore-editor-content .lore-hl{background:rgba(201,162,39,.15);padding:1px 4px;border-radius:2px}
+
+  /* STATUS */
+  .lore-editor-status{display:flex;align-items:center;justify-content:space-between;padding:8px 18px 0;font-family:'Share Tech Mono',monospace;font-size:9px;letter-spacing:1.5px;color:rgba(201,162,39,.3);text-transform:uppercase}
+  .lore-status-dot{width:5px;height:5px;border-radius:50%;background:rgba(201,162,39,.4);display:inline-block;margin-right:6px;transition:background .3s}
+  .lore-status-dot.lore-saved{background:#22c55e}
+
+  /* ACTIONS */
+  .lore-editor-actions{display:flex;align-items:center;gap:10px;margin-top:20px;flex-wrap:wrap}
+  .lore-btn-pub{padding:11px 26px;background:linear-gradient(135deg,#c0410e,#a83609);border:1px solid rgba(192,65,14,.5);border-radius:3px;cursor:pointer;font-family:'Share Tech Mono',monospace;font-size:10px;letter-spacing:3px;color:#fff;text-transform:uppercase;transition:all .25s;display:flex;align-items:center;gap:8px}
+  .lore-btn-pub:hover{box-shadow:0 4px 20px rgba(192,65,14,.4);transform:translateY(-1px)}
+  .lore-btn-draft{padding:11px 22px;background:transparent;border:1px solid rgba(201,162,39,.35);border-radius:3px;cursor:pointer;font-family:'Share Tech Mono',monospace;font-size:10px;letter-spacing:3px;color:#c9a227;text-transform:uppercase;transition:all .25s;display:flex;align-items:center;gap:8px}
+  .lore-btn-draft:hover{background:rgba(201,162,39,.08);border-color:#c9a227}
+  .lore-btn-clear{padding:11px 18px;background:transparent;border:1px solid rgba(201,162,39,.15);border-radius:3px;cursor:pointer;font-family:'Share Tech Mono',monospace;font-size:10px;letter-spacing:2px;color:rgba(232,223,200,.35);text-transform:uppercase;transition:all .2s}
+  .lore-btn-clear:hover{border-color:rgba(201,162,39,.3);color:rgba(232,223,200,.7)}
+  .lore-btn-preview{padding:11px 18px;background:transparent;border:1px solid rgba(201,162,39,.15);border-radius:3px;cursor:pointer;font-family:'Share Tech Mono',monospace;font-size:10px;letter-spacing:2px;color:rgba(232,223,200,.35);text-transform:uppercase;transition:all .2s}
+  .lore-btn-preview:hover{border-color:rgba(201,162,39,.3);color:rgba(232,223,200,.7)}
+
+  /* SAVED LIST */
+  .lore-saved-section{margin-top:52px}
+  .lore-saved-header{font-family:'Share Tech Mono',monospace;font-size:9px;letter-spacing:3px;color:rgba(201,162,39,.35);text-transform:uppercase;margin-bottom:18px;padding-bottom:12px;border-bottom:1px solid rgba(201,162,39,.1);display:flex;align-items:center;gap:12px}
+  .lore-saved-header::after{content:'';flex:1;height:1px;background:rgba(201,162,39,.1)}
+  .lore-saved-list{display:flex;flex-direction:column;gap:8px}
+  .lore-saved-entry{background:rgba(255,255,255,.02);border:1px solid rgba(201,162,39,.12);border-radius:4px;padding:14px 18px;display:grid;grid-template-columns:1fr auto;align-items:center;gap:14px;cursor:pointer;transition:all .2s}
+  .lore-saved-entry:hover{border-color:rgba(201,162,39,.3);background:rgba(201,162,39,.04)}
+  .lore-se-title{font-family:'Cinzel',serif;font-size:14px;color:#e8dfc8;margin-bottom:4px}
+  .lore-se-meta{font-family:'Share Tech Mono',monospace;font-size:8px;letter-spacing:1.5px;color:rgba(232,223,200,.35);text-transform:uppercase;display:flex;gap:14px;align-items:center;flex-wrap:wrap}
+  .lore-se-era{background:rgba(201,162,39,.08);border:1px solid rgba(201,162,39,.18);padding:1px 7px;border-radius:2px;color:#c9a227;font-size:7px}
+  .lore-se-actions{display:flex;gap:6px}
+  .lore-se-btn{width:28px;height:28px;border-radius:3px;background:none;border:1px solid rgba(201,162,39,.15);cursor:pointer;color:rgba(232,223,200,.3);font-size:11px;display:flex;align-items:center;justify-content:center;transition:all .15s}
+  .lore-se-btn:hover{border-color:rgba(201,162,39,.35);color:#c9a227}
+  .lore-se-btn.lore-del:hover{border-color:rgba(192,65,14,.4);color:#c0410e}
+  @media(max-width:768px){
+    .lore-layout{grid-template-columns:1fr}
+    .lore-meta{grid-template-columns:1fr}
+    .lore-hero{flex-direction:column;align-items:flex-start}
+    .lore-hero-stats{gap:16px}
+  }
+  </style>
+
+  <div class="lore-wrap">
+
+    <!-- HERO -->
+    <div class="lore-hero">
+      <div class="lore-hero-left">
+        <div class="lore-overline">Archives Officielles</div>
+        <h1>Histoire de la <span>Police de Sunagakure</span></h1>
+      </div>
+      <div class="lore-hero-stats">
+        <div class="lore-stat">
+          <div class="lore-stat-val" id="lore-count-articles">0</div>
+          <div class="lore-stat-lbl">Articles</div>
+        </div>
+        <div class="lore-stat">
+          <div class="lore-stat-val" id="lore-count-pub">0</div>
+          <div class="lore-stat-lbl">Publiés</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ARTICLES PUBLIÉS -->
+    <div id="lore-published-zone"></div>
+
+    <!-- ARTICLE EXEMPLE (visible si aucun article publié) -->
+    <div id="lore-example-article">
+      <div class="lore-layout">
+        <div class="lore-main">
+          <div class="lore-section">
+            <div class="lore-era-tag">Ère du 2ème Hokage</div>
+            <h2 class="lore-section-title">La Création — Une décision politique</h2>
+            <p class="lore-p">Peu après la fondation du Village Caché de Konoha, le <strong>2ème Hokage</strong> prit l'une des décisions les plus marquantes de l'histoire du village : la création d'une force de police militaire dédiée à maintenir l'ordre intérieur.</p>
+            <p class="lore-p">À cette époque, Konoha était encore fragile. Des dizaines de clans cohabitaient sur un même territoire, chacun portant ses propres valeurs, ses rivalités ancestrales et ses ambitions. Le 2ème Hokage comprit que la paix extérieure ne pouvait tenir sans une paix intérieure maîtrisée.</p>
+          </div>
+          <div class="lore-divider"><span>✦</span></div>
+          <div class="lore-section">
+            <div class="lore-era-tag">Le Choix du Clan</div>
+            <h2 class="lore-section-title">Honneur ou mise à l'écart ?</h2>
+            <p class="lore-p">Le 2ème Hokage confia la direction de cette institution à un clan reconnu pour sa <strong>discipline de fer</strong>. Une mission prestigieuse en apparence, mais isolée du pouvoir réel — une cage dorée, selon certains historiens shinobi.</p>
+            <p class="lore-p">Le clan accepta. Fier de sa mission, il s'y consacra avec une loyauté totale, transformant la Police Militaire en une institution redoutée et respectée dans tout le monde shinobi.</p>
+          </div>
+        </div>
+        <aside>
+          <div class="lore-sidebar-card"><div class="lore-sc-label">Fondateur</div><div class="lore-sc-value">2ème Hokage</div><div class="lore-sc-sub">Père fondateur de l'ordre</div></div>
+          <div class="lore-sidebar-card"><div class="lore-sc-label">Symbole</div><div class="lore-sc-value">L'Éventail</div><div class="lore-sc-sub">Honneur et justice</div></div>
+          <div class="lore-sidebar-card"><div class="lore-sc-label">Devise</div><div class="lore-sc-value">Volonté du Feu</div><div class="lore-sc-sub">Protéger, servir, transmettre</div></div>
+          <div class="lore-quote"><p>« Nul n'est au-dessus des lois. Pas même ceux qui les font respecter. »</p><cite>— Doctrine fondatrice</cite></div>
+        </aside>
+      </div>
+    </div>
+
+    <!-- ══ ÉDITEUR ══ -->
+    <div class="lore-editor-section" id="lore-editor-section">
+
+      <div class="lore-editor-header">
+        <div class="lore-overline">Rédaction des Archives</div>
+        <h2>Rédiger un <span>nouvel article</span></h2>
+      </div>
+
+      <!-- META -->
+      <div class="lore-meta">
+        <div class="lore-meta-field">
+          <label>Titre de l'article</label>
+          <input type="text" id="lore-meta-title" placeholder="Ex : La fondation de la Police…">
+        </div>
+        <div class="lore-meta-field">
+          <label>Période / Ère</label>
+          <select id="lore-meta-era">
+            <option value="">— Sélectionner une ère —</option>
+            <option>Ère du 1er Hokage</option>
+            <option>Ère du 2ème Hokage</option>
+            <option>Ère du 3ème Hokage</option>
+            <option>Ère de la Guerre Ninja</option>
+            <option>Époque Contemporaine</option>
+            <option>Ère Inconnue</option>
+          </select>
+        </div>
+        <div class="lore-meta-field">
+          <label>Catégorie</label>
+          <select id="lore-meta-cat">
+            <option value="">— Catégorie —</option>
+            <option>Histoire & Origines</option>
+            <option>Clan & Familles</option>
+            <option>Conflits & Guerres</option>
+            <option>Législation</option>
+            <option>Personnalités</option>
+            <option>Techniques & Jutsu</option>
+            <option>Opérations</option>
+          </select>
+        </div>
+        <div class="lore-meta-field">
+          <label>Auteur / Archiviste</label>
+          <input type="text" id="lore-meta-author" placeholder="Nom de l'archiviste…">
+        </div>
+      </div>
+
+      <!-- TOOLBAR -->
+      <div class="lore-toolbar">
+        <div style="display:flex;gap:2px">
+          <button class="lore-tb-btn" title="Annuler" onclick="document.execCommand('undo')">↩</button>
+          <button class="lore-tb-btn" title="Rétablir" onclick="document.execCommand('redo')">↪</button>
+        </div>
+        <div class="lore-tb-sep"></div>
+        <select class="lore-tb-select" onchange="loreApplyBlock(this.value);this.value=''">
+          <option value="">Style…</option>
+          <option value="p">Paragraphe</option>
+          <option value="h1">Titre I</option>
+          <option value="h2">Titre II</option>
+          <option value="h3">Titre III</option>
+          <option value="blockquote">Citation</option>
+        </select>
+        <div class="lore-tb-sep"></div>
+        <div style="display:flex;gap:2px">
+          <button class="lore-tb-btn" title="Gras" onclick="loreFmt('bold')"><b>G</b></button>
+          <button class="lore-tb-btn" title="Italique" onclick="loreFmt('italic')"><i>I</i></button>
+          <button class="lore-tb-btn" title="Souligné" onclick="loreFmt('underline')"><u>S</u></button>
+          <button class="lore-tb-btn" title="Barré" onclick="loreFmt('strikeThrough')"><s>B</s></button>
+        </div>
+        <div class="lore-tb-sep"></div>
+        <div style="display:flex;gap:2px">
+          <button class="lore-tb-btn" title="Aligner gauche" onclick="loreFmt('justifyLeft')">⬅</button>
+          <button class="lore-tb-btn" title="Centrer" onclick="loreFmt('justifyCenter')">⬛</button>
+          <button class="lore-tb-btn" title="Aligner droite" onclick="loreFmt('justifyRight')">➡</button>
+          <button class="lore-tb-btn" title="Justifier" onclick="loreFmt('justifyFull')">≡</button>
+        </div>
+        <div class="lore-tb-sep"></div>
+        <div style="display:flex;gap:2px">
+          <button class="lore-tb-btn" title="Liste" onclick="loreFmt('insertUnorderedList')">≣</button>
+          <button class="lore-tb-btn" title="Séparateur" onclick="loreInsertHR()">—</button>
+          <button class="lore-tb-btn" title="Surligner (doré)" onclick="loreWrapHL()" style="color:#c9a227">★</button>
+        </div>
+        <div class="lore-tb-sep"></div>
+        <div style="display:flex;gap:2px">
+          <button class="lore-tb-btn" title="Texte doré" onclick="loreColor('#e8c255')" style="color:#e8c255;font-weight:700">A</button>
+          <button class="lore-tb-btn" title="Texte rouille" onclick="loreColor('#c0410e')" style="color:#c0410e;font-weight:700">A</button>
+          <button class="lore-tb-btn" title="Texte normal" onclick="loreColor('#e8dfc8')" style="color:#e8dfc8;font-weight:700">A</button>
+          <button class="lore-tb-btn" title="Texte atténué" onclick="loreColor('rgba(232,223,200,0.45)')" style="color:rgba(232,223,200,0.45);font-weight:700">A</button>
+        </div>
+        <div class="lore-tb-sep"></div>
+        <button class="lore-tb-btn" title="Effacer formatage" onclick="loreFmt('removeFormat')">✕</button>
+      </div>
+
+      <!-- ZONE ÉDITION -->
+      <div id="lore-editor-content" contenteditable="true"
+        data-placeholder="Commencez à rédiger votre article… Utilisez la barre d'outils pour titres, citations, couleurs et plus encore."></div>
+
+      <!-- STATUS -->
+      <div class="lore-editor-status">
+        <div><span class="lore-status-dot" id="lore-status-dot"></span><span id="lore-status-text">Brouillon</span></div>
+        <div id="lore-word-count">0 mot</div>
+      </div>
+
+      <!-- BOUTONS -->
+      <div class="lore-editor-actions">
+        <button class="lore-btn-pub" onclick="loreSaveArticle()">📜 Publier l'article</button>
+        <button class="lore-btn-draft" onclick="loreSaveDraft()">💾 Sauvegarder brouillon</button>
+        <button class="lore-btn-preview" onclick="lorePreview()">👁 Aperçu</button>
+        <button class="lore-btn-clear" onclick="loreClear()">🗑 Effacer</button>
+      </div>
+
+      <!-- LISTE ARTICLES SAUVEGARDÉS -->
+      <div class="lore-saved-section">
+        <div class="lore-saved-header">Articles sauvegardés</div>
+        <div class="lore-saved-list" id="lore-saved-list"></div>
+      </div>
+
+    </div>
+  </div><!-- /lore-wrap -->
+
+  <script>
+  (function(){
+    var ed = document.getElementById('lore-editor-content');
+    var sdot = document.getElementById('lore-status-dot');
+    var stxt = document.getElementById('lore-status-text');
+    var wc   = document.getElementById('lore-word-count');
+    var loreCurrentId = Date.now();
+    var loreTimer;
+
+    function loreFmt(cmd){ ed.focus(); document.execCommand(cmd,false,null); }
+    function loreApplyBlock(tag){ if(!tag)return; ed.focus(); document.execCommand('formatBlock',false,tag); }
+    function loreColor(c){ ed.focus(); document.execCommand('styleWithCSS',false,true); document.execCommand('foreColor',false,c); }
+    function loreInsertHR(){ ed.focus(); document.execCommand('insertHTML',false,'<hr>'); }
+    function loreWrapHL(){ ed.focus(); var sel=window.getSelection().toString()||'texte'; document.execCommand('insertHTML',false,'<span class="lore-hl">'+sel+'</span>'); }
+    window.loreFmt=loreFmt; window.loreApplyBlock=loreApplyBlock; window.loreColor=loreColor;
+    window.loreInsertHR=loreInsertHR; window.loreWrapHL=loreWrapHL;
+
+    ed.addEventListener('input',function(){
+      var txt=ed.innerText.trim();
+      var words=txt?txt.split(/\s+/).filter(function(w){return w.length>0;}).length:0;
+      wc.textContent=words+(words<=1?' mot':' mots');
+      sdot.classList.remove('lore-saved'); stxt.textContent='Non sauvegardé';
+      clearTimeout(loreTimer);
+      loreTimer=setTimeout(function(){ loreAutoDraft(); sdot.classList.add('lore-saved'); stxt.textContent='Auto-sauvegardé'; },2000);
+    });
+
+    function loreGetArticles(){ try{return JSON.parse(localStorage.getItem('suna_lore_articles')||'[]');}catch(e){return[];} }
+    function loreSetArticles(arr){ try{localStorage.setItem('suna_lore_articles',JSON.stringify(arr));}catch(e){} }
+
+    function loreAutoDraft(){
+      var content=ed.innerHTML.trim(); if(!content)return;
+      var title=document.getElementById('lore-meta-title').value.trim()||'(Sans titre)';
+      var era=document.getElementById('lore-meta-era').value;
+      var cat=document.getElementById('lore-meta-cat').value;
+      var author=document.getElementById('lore-meta-author').value.trim();
+      var articles=loreGetArticles();
+      var idx=articles.findIndex(function(a){return a.id===loreCurrentId;});
+      var entry={id:loreCurrentId,title:title,era:era,cat:cat,author:author,content:content,date:new Date().toLocaleDateString('fr-FR'),published:false};
+      if(idx>-1)articles[idx]=entry; else articles.unshift(entry);
+      loreSetArticles(articles); loreRenderSaved(); loreRenderPublished();
+    }
+
+    window.loreSaveDraft=function(){
+      loreAutoDraft();
+      sdot.classList.add('lore-saved'); stxt.textContent='Brouillon sauvegardé';
+      if(typeof showToast==='function')showToast('💾 Brouillon sauvegardé');
+    };
+
+    window.loreSaveArticle=function(){
+      var title=document.getElementById('lore-meta-title').value.trim();
+      var content=ed.innerHTML.trim();
+      if(!title){if(typeof showToast==='function')showToast('⚠ Veuillez renseigner un titre.');return;}
+      if(!content){if(typeof showToast==='function')showToast('⚠ L\'article est vide.');return;}
+      var articles=loreGetArticles();
+      var idx=articles.findIndex(function(a){return a.id===loreCurrentId;});
+      var era=document.getElementById('lore-meta-era').value;
+      var cat=document.getElementById('lore-meta-cat').value;
+      var author=document.getElementById('lore-meta-author').value.trim();
+      var entry={id:loreCurrentId,title:title,era:era,cat:cat,author:author,content:content,date:new Date().toLocaleDateString('fr-FR'),published:true};
+      if(idx>-1)articles[idx]=entry; else articles.unshift(entry);
+      loreSetArticles(articles); loreRenderSaved(); loreRenderPublished();
+      sdot.classList.add('lore-saved'); stxt.textContent='Publié';
+      if(typeof showToast==='function')showToast('📜 Article publié dans les archives !');
+    };
+
+    window.loreClear=function(){
+      if(ed.innerHTML&&!confirm('Effacer le contenu de l\'éditeur ?'))return;
+      ed.innerHTML='';
+      document.getElementById('lore-meta-title').value='';
+      document.getElementById('lore-meta-era').value='';
+      document.getElementById('lore-meta-cat').value='';
+      document.getElementById('lore-meta-author').value='';
+      loreCurrentId=Date.now();
+      sdot.classList.remove('lore-saved'); stxt.textContent='Brouillon'; wc.textContent='0 mot';
+    };
+
+    window.loreLoadArticle=function(id){
+      var a=loreGetArticles().find(function(x){return x.id===id;});
+      if(!a)return;
+      loreCurrentId=a.id; ed.innerHTML=a.content;
+      document.getElementById('lore-meta-title').value=a.title==='(Sans titre)'?'':a.title;
+      document.getElementById('lore-meta-era').value=a.era||'';
+      document.getElementById('lore-meta-cat').value=a.cat||'';
+      document.getElementById('lore-meta-author').value=a.author||'';
+      stxt.textContent=a.published?'Publié':'Brouillon';
+      if(a.published)sdot.classList.add('lore-saved');
+      document.getElementById('lore-editor-section').scrollIntoView({behavior:'smooth'});
+      if(typeof showToast==='function')showToast('📂 Article chargé dans l\'éditeur');
+    };
+
+    window.loreDeleteArticle=function(id){
+      if(!confirm('Supprimer cet article ?'))return;
+      var articles=loreGetArticles().filter(function(a){return a.id!==id;});
+      loreSetArticles(articles);
+      if(id===loreCurrentId)loreClear();
+      loreRenderSaved(); loreRenderPublished();
+      if(typeof showToast==='function')showToast('🗑 Article supprimé');
+    };
+
+    window.lorePreview=function(){
+      var title=document.getElementById('lore-meta-title').value||'Article sans titre';
+      var era=document.getElementById('lore-meta-era').value||'';
+      var content=ed.innerHTML;
+      var win=window.open('','_blank');
+      win.document.write('<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8"><title>'+title+'</title><link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=EB+Garamond:ital,wght@0,400;0,600;1,400&family=Share+Tech+Mono&display=swap" rel="stylesheet"><style>body{background:#0d0b08;color:#e8dfc8;font-family:"EB Garamond",Georgia,serif;max-width:740px;margin:60px auto;padding:0 32px;font-size:17px;line-height:1.8}h1,h2{font-family:"Cinzel",serif}h1{font-size:36px;margin-bottom:8px;border-bottom:1px solid rgba(201,162,39,.2);padding-bottom:14px}h2{font-size:22px;margin:26px 0 10px}h3{font-family:"Share Tech Mono",monospace;font-size:10px;letter-spacing:3px;text-transform:uppercase;color:#c9a227;margin:16px 0 8px}em{color:#e8c255;font-style:italic}strong{color:#fff;font-weight:600}blockquote{border-left:2px solid #c0410e;padding:12px 20px;background:rgba(192,65,14,.06);font-style:italic;color:rgba(232,223,200,.68);margin:18px 0}hr{border:none;border-top:1px solid rgba(201,162,39,.15);margin:24px 0}.era{font-family:"Share Tech Mono",monospace;font-size:10px;letter-spacing:3px;color:#c9a227;margin-bottom:20px;text-transform:uppercase}.lore-hl{background:rgba(201,162,39,.15);padding:1px 4px;border-radius:2px}</style></head><body>'+(era?'<div class="era">'+era+'</div>':'')+'<h1>'+title+'</h1>'+content+'</body></html>');
+      win.document.close();
+    };
+
+    function loreRenderSaved(){
+      var list=document.getElementById('lore-saved-list');
+      var articles=loreGetArticles();
+      var total=articles.length, pub=articles.filter(function(a){return a.published;}).length;
+      var tc=document.getElementById('lore-count-articles'); if(tc)tc.textContent=total;
+      var pc=document.getElementById('lore-count-pub'); if(pc)pc.textContent=pub;
+      if(!articles.length){
+        list.innerHTML='<div style="font-family:Share Tech Mono,monospace;font-size:9px;letter-spacing:2px;color:rgba(201,162,39,0.22);text-transform:uppercase;padding:20px 0;text-align:center">Aucun article sauvegardé</div>';
+        return;
+      }
+      list.innerHTML=articles.map(function(a){
+        return '<div class="lore-saved-entry" onclick="loreLoadArticle('+a.id+')">'
+          +'<div><div class="lore-se-title">'+a.title+'</div>'
+          +'<div class="lore-se-meta"><span>'+a.date+'</span>'
+          +(a.era?'<span class="lore-se-era">'+a.era+'</span>':'')
+          +(a.cat?'<span>'+a.cat+'</span>':'')
+          +(a.author?'<span>✍ '+a.author+'</span>':'')
+          +'<span style="color:'+(a.published?'#22c55e':'rgba(201,162,39,0.4)')+'">● '+(a.published?'Publié':'Brouillon')+'</span>'
+          +'</div></div>'
+          +'<div class="lore-se-actions" onclick="event.stopPropagation()">'
+          +'<button class="lore-se-btn" onclick="loreLoadArticle('+a.id+')">✏</button>'
+          +'<button class="lore-se-btn lore-del" onclick="loreDeleteArticle('+a.id+')">🗑</button>'
+          +'</div></div>';
+      }).join('');
+    }
+
+    function loreRenderPublished(){
+      var zone=document.getElementById('lore-published-zone');
+      var ex=document.getElementById('lore-example-article');
+      var articles=loreGetArticles().filter(function(a){return a.published;});
+      if(!articles.length){ zone.innerHTML=''; if(ex)ex.style.display=''; return; }
+      if(ex)ex.style.display='none';
+      zone.innerHTML=articles.map(function(a){
+        return '<div style="margin-bottom:52px">'
+          +(a.era?'<div class="lore-era-tag">'+a.era+'</div>':'')
+          +'<h2 class="lore-section-title" style="font-family:Cinzel,serif;font-size:22px;margin-bottom:14px;color:#e8dfc8">'+a.title+'</h2>'
+          +'<div style="font-family:EB Garamond,Georgia,serif;font-size:16.5px;line-height:1.8;color:rgba(232,223,200,.78)">'+a.content+'</div>'
+          +(a.author?'<div style="font-family:Share Tech Mono,monospace;font-size:9px;letter-spacing:2px;color:rgba(201,162,39,0.35);margin-top:14px;text-transform:uppercase">✍ '+a.author+' · '+a.date+'</div>':'')
+          +'<div class="lore-divider" style="margin-top:36px"><span>✦</span></div>'
+          +'</div>';
+      }).join('');
+    }
+
+    // Init
+    loreRenderSaved();
+    loreRenderPublished();
+  })();
+  </script>
+
+  </div><!-- /page-histoire -->
 
   <!-- BINGO BOOK -->
   <div class="page-content" id="page-bingobook">
@@ -3903,6 +4524,132 @@ let currentUser=null;
 let candFilter="all",plaintesFilter="all";
 
 // LOGIN TAB SWITCH
+
+
+// ─── LORE PREVIEW on login ───
+function lgRenderLorePreview(){
+  try{
+    var articles=JSON.parse(localStorage.getItem('suna_lore_articles')||'[]').filter(function(a){return a.published;});
+    var zone=document.getElementById('lg-lore-articles');
+    var ex=document.getElementById('lg-lore-example');
+    if(!zone)return;
+    if(!articles.length){if(ex)ex.style.display='';zone.innerHTML='';return;}
+    if(ex)ex.style.display='none';
+    zone.innerHTML=articles.map(function(a){
+      return '<div class="lg-lore-article-item">'
+        +(a.era?'<div class="lg-lore-era-tag">'+a.era+'</div>':'')
+        +'<h2 class="lg-lore-section-title">'+a.title+'</h2>'
+        +'<div style="font-family:EB Garamond,Georgia,serif;font-size:16.5px;line-height:1.8;color:rgba(232,223,200,.72)">'+a.content+'</div>'
+        +(a.author?'<div style="font-family:Share Tech Mono,monospace;font-size:9px;letter-spacing:2px;color:rgba(201,162,39,0.35);margin-top:14px;text-transform:uppercase">✍ '+a.author+' · '+a.date+'</div>':'')
+        +'<div class="lg-lore-divider" style="margin-top:36px"><span>✦</span></div>'
+        +'</div>';
+    }).join('');
+  }catch(e){}
+}
+if(document.readyState==='loading'){document.addEventListener('DOMContentLoaded',lgRenderLorePreview);}
+else{lgRenderLorePreview();}
+
+// ─── LOGIN CANVAS DUNES ───
+(function(){
+  function lgInitCanvas(){
+    var loginScreen = document.getElementById('login-screen');
+    if(!loginScreen) return;
+    var canvas = document.getElementById('login-canvas-bg');
+    if(!canvas) return;
+    var ctx = canvas.getContext('2d');
+
+    function resize(){
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+      draw();
+    }
+
+    function draw(){
+      var w = canvas.width, h = canvas.height;
+      ctx.clearRect(0,0,w,h);
+      var bg = ctx.createRadialGradient(w/2,h,0,w/2,h/2,h);
+      bg.addColorStop(0,'#1a1208'); bg.addColorStop(0.5,'#0f0b06'); bg.addColorStop(1,'#070503');
+      ctx.fillStyle = bg; ctx.fillRect(0,0,w,h);
+      var dunes=[
+        {offset:0.82,color:'rgba(30,22,12,0.95)',amp:60,freq:0.004,phase:0},
+        {offset:0.75,color:'rgba(40,30,15,0.8)',amp:50,freq:0.006,phase:1},
+        {offset:0.68,color:'rgba(25,18,8,0.7)',amp:40,freq:0.008,phase:2}
+      ];
+      dunes.forEach(function(d){
+        ctx.beginPath(); ctx.moveTo(0,h);
+        var yBase = h*d.offset;
+        for(var x=0;x<=w;x+=2){
+          var y=yBase+Math.sin(x*d.freq+d.phase)*d.amp+Math.sin(x*d.freq*0.5+d.phase+1)*d.amp*0.4;
+          ctx.lineTo(x,y);
+        }
+        ctx.lineTo(w,h); ctx.closePath(); ctx.fillStyle=d.color; ctx.fill();
+        ctx.beginPath();
+        for(var x2=0;x2<=w;x2+=2){
+          var y2=yBase+Math.sin(x2*d.freq+d.phase)*d.amp+Math.sin(x2*d.freq*0.5+d.phase+1)*d.amp*0.4;
+          if(x2===0) ctx.moveTo(x2,y2); else ctx.lineTo(x2,y2);
+        }
+        ctx.strokeStyle='rgba(201,162,39,0.06)'; ctx.lineWidth=1; ctx.stroke();
+      });
+      var stars=[[0.1,0.05],[0.85,0.08],[0.45,0.03],[0.7,0.12],[0.25,0.09],[0.6,0.06],[0.15,0.2],[0.9,0.18],[0.5,0.15],[0.35,0.04],[0.78,0.22],[0.05,0.15]];
+      stars.forEach(function(s){
+        ctx.beginPath(); ctx.arc(s[0]*w,s[1]*h,1,0,Math.PI*2);
+        ctx.fillStyle='rgba(255,240,200,'+(0.3+Math.random()*0.4)+')'; ctx.fill();
+      });
+      var mx=w*0.82,my=h*0.12;
+      var moonGlow=ctx.createRadialGradient(mx,my,0,mx,my,80);
+      moonGlow.addColorStop(0,'rgba(201,162,39,0.12)'); moonGlow.addColorStop(1,'transparent');
+      ctx.fillStyle=moonGlow; ctx.fillRect(mx-80,my-80,160,160);
+      ctx.beginPath(); ctx.arc(mx,my,18,0,Math.PI*2);
+      var mg=ctx.createRadialGradient(mx-4,my-4,0,mx,my,18);
+      mg.addColorStop(0,'rgba(240,220,150,0.9)'); mg.addColorStop(1,'rgba(180,140,60,0.7)');
+      ctx.fillStyle=mg; ctx.fill();
+    }
+
+    window.addEventListener('resize', resize);
+    resize();
+
+    // Date top bar
+    function updateLgDate(){
+      var el = document.getElementById('lg-topdate');
+      if(el){
+        var now = new Date();
+        var opts={weekday:'short',day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit',second:'2-digit'};
+        el.textContent = now.toLocaleString('fr-FR',opts).toUpperCase();
+      }
+    }
+    updateLgDate(); setInterval(updateLgDate,1000);
+
+    // Dust particles
+    function createDust(){
+      var p=document.createElement('div');
+      p.className='lg-dust-particle';
+      p.style.left=Math.random()*100+'vw';
+      p.style.bottom=(Math.random()*40)+'vh';
+      var dur=6+Math.random()*10;
+      p.style.animationDuration=dur+'s';
+      p.style.animationDelay=Math.random()*5+'s';
+      p.style.opacity=0;
+      p.style.width=(1+Math.random()*2)+'px';
+      p.style.height=p.style.width;
+      loginScreen.appendChild(p);
+      setTimeout(function(){if(p.parentNode)p.parentNode.removeChild(p);},(dur+5)*1000);
+    }
+    for(var i=0;i<20;i++) createDust();
+    setInterval(createDust,1000);
+  }
+  // Run after DOM ready
+  if(document.readyState==='loading'){document.addEventListener('DOMContentLoaded',lgInitCanvas);}
+  else{lgInitCanvas();}
+})();
+
+// ─── TOGGLE PASSWORD (nouveau login) ───
+function lgTogglePass(){
+  var inp=document.getElementById('login-pass');
+  var icon=document.getElementById('lg-eye-icon');
+  if(inp.type==='password'){inp.type='text';if(icon)icon.textContent='🙈';}
+  else{inp.type='password';if(icon)icon.textContent='👁';}
+}
+
 function switchLoginTab(tab){
   const isLogin=tab==='login';
   el('form-login').style.display=isLogin?'block':'none';
@@ -4342,8 +5089,8 @@ function saveCommNameAdmin(){
 }
 
 // NAV
-const PAGES={dashboard:"Tableau de bord",annonces:"Annonces",recensement:"Recensement",recrutement:"Recrutement",plaintes:"Plaintes",dossiers:"Dossiers criminels",codepenal:"Code Pénal",operations:"Opérations",effectifs:"Effectifs",hierarchie:"Hiérarchie",sanctions:"Sanctions & Promotions",admin:"Panel Admin",messagerie:"Messagerie",profil:"Mon profil",bingobook:"Bingo Book"};
-const VISITOR_PAGES=["dashboard","annonces","recensement","recrutement","plaintes","codepenal","profil","bingobook"];
+const PAGES={dashboard:"Tableau de bord",annonces:"Annonces",recensement:"Recensement",recrutement:"Recrutement",plaintes:"Plaintes",dossiers:"Dossiers criminels",codepenal:"Code Pénal",histoire:"Histoire & Lore",operations:"Opérations",effectifs:"Effectifs",hierarchie:"Hiérarchie",sanctions:"Sanctions & Promotions",admin:"Panel Admin",messagerie:"Messagerie",profil:"Mon profil",bingobook:"Bingo Book"};
+const VISITOR_PAGES=["dashboard","annonces","recensement","recrutement","plaintes","codepenal","histoire","profil","bingobook"];
 
 // Mapping page → bnav-item id (pour les 4 onglets directs de la barre)
 const BNAV_MAP={dashboard:"bnav-dashboard",annonces:"bnav-annonces",recensement:"bnav-recensement",plaintes:"bnav-plaintes"};
