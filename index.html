@@ -6020,10 +6020,10 @@ function applyLogin(){
   }
   // Éléments admin-only (opérations, effectifs, sanctions)
   const isAdminUser=currentUser&&currentUser.role==="admin";
+  const isMember=!isVisiteur();
   // Panneau éditeur page d'accueil : visible pour tous les membres (non-visiteurs)
   var _lpPanel=document.getElementById('lore-preview-admin-panel');
   if(_lpPanel)_lpPanel.style.display=isMember?'block':'none';
-  const isMember=!isVisiteur();
   document.querySelectorAll('[data-admin-only="true"]').forEach(item=>{
     item.style.display=canModify()?'':'none';
   });
