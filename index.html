@@ -2054,7 +2054,7 @@ document.addEventListener('DOMContentLoaded',function(){if(localStorage.getItem(
     <div class="nav-item" role="button" tabindex="0" onclick="showPage('dossiers')" data-page="dossiers" data-member-only="true"><span class="icon">🗂️</span> Dossiers criminels <span class="nav-badge" id="badge-dossiers" style="background:var(--purple);display:none">0</span></div>
     <div class="nav-item" role="button" tabindex="0" onclick="showPage('bingobook')" data-page="bingobook"><span class="icon">📕</span> Bingo Book</div>
     <div class="nav-item" role="button" tabindex="0" onclick="showPage('codepenal')" data-page="codepenal"><span class="icon">📜</span> Code Pénal</div>
-    <div class="nav-item" role="button" tabindex="0" onclick="showPage('histoire')" data-page="histoire"><span class="icon">📖</span> Histoire & Lore</div>
+    <div class="nav-item" role="button" tabindex="0" onclick="showPage('histoire')" data-page="histoire" data-member-only="true"><span class="icon">📖</span> Histoire & Lore</div>
     <div class="nav-item" role="button" tabindex="0" onclick="showPage('messagerie')" data-page="messagerie" data-member-only="true"><span class="icon">💬</span> Messagerie <span class="nav-badge" id="badge-messagerie" style="background:var(--cyan);display:none">0</span></div>
     <div class="nav-section" data-member-only="true">Opérations</div>
     <div class="nav-item" role="button" tabindex="0" onclick="showPage('operations')" data-page="operations" data-member-only="true"><span class="icon">🚨</span> Opérations <span class="nav-badge" id="badge-operations" style="background:var(--accent);display:none">0</span></div>
@@ -6006,9 +6006,9 @@ function applyLogin(){
   }
   // Éléments admin-only (opérations, effectifs, sanctions)
   const isAdminUser=currentUser&&currentUser.role==="admin";
-  // Panneau éditeur page d'accueil : visible seulement pour les admins
+  // Panneau éditeur page d'accueil : visible pour tous les membres (non-visiteurs)
   var _lpPanel=document.getElementById('lore-preview-admin-panel');
-  if(_lpPanel)_lpPanel.style.display=isAdminUser?'block':'none';
+  if(_lpPanel)_lpPanel.style.display=isMember?'block':'none';
   const isMember=!isVisiteur();
   document.querySelectorAll('[data-admin-only="true"]').forEach(item=>{
     item.style.display=canModify()?'':'none';
@@ -9911,7 +9911,7 @@ window.addEventListener("load",()=>{
   <div class="drawer-item" id="ditem-codepenal">
     <span class="d-icon">📜</span> Code Pénal
   </div>
-  <div class="drawer-item" id="ditem-histoire" onclick="closeMoreDrawer();showPage('histoire')">
+  <div class="drawer-item" id="ditem-histoire" data-member-only="true" onclick="closeMoreDrawer();showPage('histoire')">
     <span class="d-icon">📖</span> Histoire & Lore
   </div>
   <div class="drawer-section-label" id="dsec-ops" style="display:none">Opérations</div>
