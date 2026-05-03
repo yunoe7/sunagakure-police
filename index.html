@@ -9882,6 +9882,58 @@ document.addEventListener('error', function(e){
           inset 0 0 0 1px rgba(150,100,30,0.4);
       }
 
+      /* ─── TAMPON STATUT (capturé / tué / évadé) ─── */
+      .bb-status-stamp{
+        position:absolute;top:50%;left:50%;
+        transform:translate(-50%,-50%) rotate(-14deg);
+        font-family:'Cinzel',serif;font-weight:900;
+        font-size:30px;letter-spacing:5px;
+        padding:7px 18px;
+        border:4px double currentColor;
+        border-radius:6px;
+        z-index:6;pointer-events:none;
+        opacity:0.78;
+        text-shadow:1px 1px 0 rgba(255,255,255,0.15);
+        box-shadow:inset 0 0 0 1px rgba(255,255,255,0.1);
+        white-space:nowrap;
+        background:rgba(255,250,240,0.04);
+      }
+      .bb-status-stamp.s-capture{ color:#1f6f3d; border-color:#1f6f3d; }
+      .bb-status-stamp.s-tue{ color:#8b1a1a; border-color:#8b1a1a; }
+      .bb-status-stamp.s-evade{ color:#8a5a08; border-color:#8a5a08; }
+      .bb-card[data-status="capture"]{ filter:saturate(0.6) brightness(0.92); }
+      .bb-card[data-status="tue"]{ filter:saturate(0.45) brightness(0.78); }
+      .bb-card[data-status="evade"]{ filter:saturate(0.85); }
+      /* Petit badge en coin (visible aussi quand le tampon est masqué pendant hover) */
+      .bb-status-pill{
+        display:inline-flex;align-items:center;gap:4px;
+        font-family:'Share Tech Mono',monospace;
+        font-size:9px;letter-spacing:1.5px;font-weight:700;
+        padding:3px 8px;border-radius:3px;
+        margin-top:4px;
+      }
+      .bb-status-pill.s-actif{ background:rgba(192,65,14,0.15); color:#9c3409; border:1px solid rgba(192,65,14,0.3); }
+      .bb-status-pill.s-capture{ background:rgba(31,111,61,0.15); color:#1f6f3d; border:1px solid rgba(31,111,61,0.35); }
+      .bb-status-pill.s-tue{ background:rgba(139,26,26,0.15); color:#8b1a1a; border:1px solid rgba(139,26,26,0.35); }
+      .bb-status-pill.s-evade{ background:rgba(138,90,8,0.15); color:#8a5a08; border:1px solid rgba(138,90,8,0.35); }
+      /* Stamp dans le dossier modal — plus grand */
+      .bb-dossier-stamp{
+        display:inline-block;
+        font-family:'Cinzel',serif;font-weight:900;
+        font-size:18px;letter-spacing:3px;
+        padding:5px 14px;margin-top:6px;
+        border:3px double currentColor;border-radius:5px;
+        transform:rotate(-3deg);
+      }
+      .bb-dossier-stamp.s-capture{ color:#1f6f3d; }
+      .bb-dossier-stamp.s-tue{ color:#8b1a1a; }
+      .bb-dossier-stamp.s-evade{ color:#8a5a08; }
+      .bb-status-meta{
+        font-family:'Share Tech Mono',monospace;
+        font-size:9.5px;color:rgba(80,50,10,0.7);
+        margin-top:6px;letter-spacing:0.5px;
+      }
+
       /* En-tête de carte */
       .bb-card-header {
         padding: 9px 12px 8px;
@@ -10368,7 +10420,7 @@ document.addEventListener('error', function(e){
         </div>
         <div class="grid grid-3" style="gap:12px;margin-bottom:14px">
           <div class="form-group" style="margin-bottom:0"><label class="form-label">Grade</label>
-            <select id="bb-grade" class="form-control"><option>Genin</option><option>Chunin</option><option>Jonin</option><option>Kage</option><option>Inconnu</option></select>
+            <select id="bb-grade" class="form-control"><option>Genin</option><option>Genin Confirmé</option><option>Chunin</option><option>Tokubetsu Chunin</option><option>Kakunin</option><option>Tokubetsu Jonin</option><option>Jonin</option><option>Commandant Jonin</option><option>Kazekage</option><option>Criminel recherché</option><option>Civil</option><option>Inconnu</option></select>
           </div>
           <div class="form-group" style="margin-bottom:0"><label class="form-label">Niveau de danger</label>
             <select id="bb-danger" class="form-control"><option value="eleve">⚠ Danger élevé</option><option value="moyen">◆ Danger moyen</option><option value="faible">▸ Danger faible</option></select>
@@ -10377,12 +10429,20 @@ document.addEventListener('error', function(e){
         </div>
         <div class="grid grid-2" style="gap:12px;margin-bottom:14px">
           <div class="form-group" style="margin-bottom:0"><label class="form-label">Village d'origine</label><input type="text" id="bb-village" class="form-control" placeholder="Ex: Suna"></div>
-          <div class="form-group" style="margin-bottom:0"><label class="form-label">Portrait</label>
-            <div class="bb-upload-zone" onclick="document.getElementById('bb-portrait-file').click()">
-              <input type="file" id="bb-portrait-file" accept="image/*" style="display:none" onchange="bbHandleImageUpload(event)">
-              <img id="bb-portrait-preview" class="bb-upload-preview" alt="preview">
-              <div class="bb-upload-label" id="bb-upload-label">📷 Cliquer pour choisir une image</div>
-            </div>
+          <div class="form-group" style="margin-bottom:0"><label class="form-label">Statut actuel</label>
+            <select id="bb-status" class="form-control">
+              <option value="actif">🔴 Recherché — Actif</option>
+              <option value="capture">✅ Capturé</option>
+              <option value="tue">⚰️ Tué / Neutralisé</option>
+              <option value="evade">⚠️ Évadé</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group" style="margin-bottom:14px"><label class="form-label">Portrait</label>
+          <div class="bb-upload-zone" onclick="document.getElementById('bb-portrait-file').click()">
+            <input type="file" id="bb-portrait-file" accept="image/*" style="display:none" onchange="bbHandleImageUpload(event)">
+            <img id="bb-portrait-preview" class="bb-upload-preview" alt="preview">
+            <div class="bb-upload-label" id="bb-upload-label">📷 Cliquer pour choisir une image</div>
           </div>
         </div>
         <div class="form-group" style="margin-bottom:14px"><label class="form-label">Vu pour la dernière fois</label><input type="text" id="bb-vu" class="form-control" placeholder="Ex: Forêt interdite, secteur nord..."></div>
@@ -28746,6 +28806,22 @@ function bbDefaultNinjas() {
 
 function bbDangerClass(d){ return {eleve:'bb-badge-eleve',moyen:'bb-badge-moyen',faible:'bb-badge-faible'}[d]||'bb-badge-faible'; }
 function bbDangerLabel(d){ return {eleve:'⚠ DANGER ÉLEVÉ',moyen:'◆ DANGER MOYEN',faible:'▸ DANGER FAIBLE'}[d]||d.toUpperCase(); }
+function bbStatusLabel(s){ return {actif:'RECHERCHÉ',capture:'CAPTURÉ',tue:'TUÉ',evade:'ÉVADÉ'}[s||'actif']||'RECHERCHÉ'; }
+function bbStatusPillLabel(s){ return {actif:'🔴 Actif',capture:'✅ Capturé',tue:'⚰️ Neutralisé',evade:'⚠️ Évadé'}[s||'actif']||'🔴 Actif'; }
+// Change rapide du statut depuis la card (sans rouvrir le formulaire complet)
+function bbQuickSetStatus(id, newStatus){
+  if(typeof canModify === 'function' && !canModify()){ if(typeof showToast==='function') showToast('⛔ Action réservée aux modérateurs.','error'); return; }
+  var list = bbGetNinjas();
+  var n = list.find(function(x){return x.id===id});
+  if(!n) return;
+  n.status = newStatus;
+  n.statusTs = Date.now();
+  n.statusBy = (currentUser && (currentUser.nom||currentUser.login)) || '?';
+  bbSaveNinjas(list);
+  bbRender();
+  var lbl = bbStatusLabel(newStatus);
+  if(typeof showToast==='function') showToast('Statut mis à jour : '+lbl, newStatus==='actif'?'info':'success');
+}
 function bbInitials(n,p){ return (((n||'?')[0])+((p&&p!=='—')?p[0]:'')).toUpperCase(); }
 
 function bbSetFilter(f) {
@@ -28785,7 +28861,8 @@ function bbRender() {
       + '<span style="font-size:20px;color:rgba(80,50,10,0.3);font-family:\'Cinzel\',serif">'+bbInitials(n.nom,n.prenom)+'</span>'
       + '<span class="bb-portrait-placeholder-text">portrait</span>'
       + '</div>';
-    return '<div class="bb-card" onclick="bbOpenDossier('+n.id+')" style="animation:fadeIn 0.22s ease '+(i*0.05)+'s both">'+
+    return '<div class="bb-card" data-status="'+(n.status||'actif')+'" onclick="bbOpenDossier('+n.id+')" style="animation:fadeIn 0.22s ease '+(i*0.05)+'s both">'+
+      ((n.status && n.status!=='actif') ? '<div class="bb-status-stamp s-'+n.status+'">'+bbStatusLabel(n.status)+'</div>' : '')+
       '<div class="bb-card-header">'+
         '<span class="bb-card-fiche-num">Fiche '+(i+1)+'</span>'+
         actionBtns+
@@ -28796,6 +28873,7 @@ function bbRender() {
           '<div class="bb-card-nom">'+n.nom+'</div>'+
           '<div class="bb-card-prenom">'+n.prenom+'</div>'+
           '<span class="'+bbDangerClass(n.danger)+'">'+bbDangerLabel(n.danger)+'</span>'+
+          '<span class="bb-status-pill s-'+(n.status||'actif')+'">'+bbStatusPillLabel(n.status||'actif')+'</span>'+
           '<div class="bb-card-meta">'+
             '<div class="bb-card-row"><span class="bb-card-lbl">Grade</span><span class="bb-card-val">'+n.grade+'</span></div>'+
             '<div class="bb-card-row"><span class="bb-card-lbl">Village</span><span class="bb-card-val">'+n.village+'</span></div>'+
@@ -28834,8 +28912,23 @@ function bbOpenDossier(id) {
       '<div class="bb-dossier-nom">'+n.nom+'</div>'+
       '<div class="bb-dossier-prenom">'+n.prenom+'</div>'+
       '<span class="'+bbDangerClass(n.danger)+'">'+bbDangerLabel(n.danger)+'</span>'+
+      ((n.status && n.status!=='actif')
+        ? '<div class="bb-dossier-stamp s-'+n.status+'">'+bbStatusLabel(n.status)+'</div>'
+        : '<span class="bb-status-pill s-actif" style="margin-top:6px">'+bbStatusPillLabel('actif')+'</span>')+
+      (n.statusTs ? '<div class="bb-status-meta">Mis à jour le '+new Date(n.statusTs).toLocaleDateString('fr-FR')+(n.statusBy?' par '+n.statusBy:'')+'</div>' : '')+
       '<div style="font-family:\'Share Tech Mono\',monospace;font-size:8px;color:rgba(80,50,10,0.4);letter-spacing:1.5px;margin-top:4px">FICHE #'+String(n.id).padStart(3,'0')+'</div>'+
-      (isMod ? '<div class="bb-dossier-actions"><button class="btn btn-gold btn-sm" onclick="bbOpenEdit('+n.id+');bbCloseModal()">✏️ Modifier</button><button class="btn btn-danger btn-sm" onclick="bbDeleteById('+n.id+');bbCloseModal()">🗑</button></div>' : '')+
+      (isMod ? '<div class="bb-dossier-actions" style="flex-direction:column;align-items:stretch;gap:6px">'+
+          '<div style="display:flex;gap:5px;flex-wrap:wrap;justify-content:center">'+
+            (n.status!=='capture'? '<button class="btn btn-sm" style="background:#1f6f3d;color:#fff;border:0" onclick="bbQuickSetStatus('+n.id+',\'capture\');bbCloseModal()">✅ Capturé</button>':'')+
+            (n.status!=='tue'? '<button class="btn btn-sm" style="background:#8b1a1a;color:#fff;border:0" onclick="bbQuickSetStatus('+n.id+',\'tue\');bbCloseModal()">⚰️ Tué</button>':'')+
+            (n.status!=='evade'? '<button class="btn btn-sm" style="background:#8a5a08;color:#fff;border:0" onclick="bbQuickSetStatus('+n.id+',\'evade\');bbCloseModal()">⚠️ Évadé</button>':'')+
+            (n.status && n.status!=='actif' ? '<button class="btn btn-outline btn-sm" onclick="bbQuickSetStatus('+n.id+',\'actif\');bbCloseModal()">🔴 Recherché</button>':'')+
+          '</div>'+
+          '<div style="display:flex;gap:5px;justify-content:center;margin-top:2px">'+
+            '<button class="btn btn-gold btn-sm" onclick="bbOpenEdit('+n.id+');bbCloseModal()">✏️ Modifier</button>'+
+            '<button class="btn btn-danger btn-sm" onclick="bbDeleteById('+n.id+');bbCloseModal()">🗑</button>'+
+          '</div>'+
+        '</div>' : '')+
     '</div>'+
     '<div class="bb-dossier-right">'+
       '<div class="bb-dossier-section-title">Informations générales</div>'+
@@ -28931,6 +29024,7 @@ function bbToggleAddPanel() {
   });
   document.getElementById('bb-grade').value='Chunin';
   document.getElementById('bb-danger').value='eleve';
+  var _stEl = document.getElementById('bb-status'); if(_stEl) _stEl.value='actif';
   document.getElementById('bb-del-btn').style.display='none';
   var prev = document.getElementById('bb-portrait-preview');
   var lbl = document.getElementById('bb-upload-label');
@@ -28953,6 +29047,7 @@ function bbOpenEdit(id) {
   document.getElementById('bb-prenom').value = n.prenom==='—'?'':n.prenom;
   document.getElementById('bb-grade').value = n.grade;
   document.getElementById('bb-danger').value = n.danger;
+  var _stEl2 = document.getElementById('bb-status'); if(_stEl2) _stEl2.value = n.status||'actif';
   document.getElementById('bb-reward').value = n.recompense||'';
   document.getElementById('bb-village').value = n.village;
   document.getElementById('bb-vu').value = n.vu||'';
@@ -28971,11 +29066,21 @@ function bbSaveFiche() {
   var nom = document.getElementById('bb-nom').value.trim();
   if (!nom) { if(typeof showToast==='function') showToast('Le nom est requis', 'error'); return; }
   var list = bbGetNinjas();
+  var newStatus = (document.getElementById('bb-status') && document.getElementById('bb-status').value) || 'actif';
+  // Préserver statusTs/statusBy si statut inchangé en édition, sinon les mettre à jour
+  var prevStatus = null, prevTs = null, prevBy = null;
+  if(bbEditingId){
+    var prevN = list.find(function(x){return x.id===bbEditingId});
+    if(prevN){ prevStatus = prevN.status||'actif'; prevTs = prevN.statusTs||null; prevBy = prevN.statusBy||null; }
+  }
   var data = {
     nom: nom,
     prenom: document.getElementById('bb-prenom').value.trim()||'—',
     grade: document.getElementById('bb-grade').value,
     danger: document.getElementById('bb-danger').value,
+    status: newStatus,
+    statusTs: (prevStatus===newStatus && prevTs) ? prevTs : Date.now(),
+    statusBy: (prevStatus===newStatus && prevBy) ? prevBy : ((currentUser && (currentUser.nom||currentUser.login)) || '?'),
     recompense: parseInt(document.getElementById('bb-reward').value)||0,
     village: document.getElementById('bb-village').value.trim()||'Inconnu',
     portrait: _bbPortraitData,
@@ -28988,7 +29093,7 @@ function bbSaveFiche() {
     if(typeof showToast==='function') showToast('✅ Fiche modifiée', 'success');
   } else {
     data.id = bbComputeNextId(list);
-    bbNextId = data.id + 1; // pour compat éventuelle si ailleurs
+    bbNextId = data.id + 1;
     list.unshift(data);
     if(typeof showToast==='function') showToast('✅ Fiche ajoutée au Bingo Book', 'success');
   }
