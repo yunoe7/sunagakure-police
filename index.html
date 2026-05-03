@@ -14144,6 +14144,7 @@ async function _flushSaveQueue(){
     // Sans ça, si deux utilisateurs sauvegardent en même temps, l'un peut écraser
     // les users de l'autre (car _lastFbArrays peut être obsolète).
     let liveFbUsers=Array.isArray(_lastFbArrays.users)?[..._lastFbArrays.users]:[];
+    let _fbGetOK=false; // bug-fix : track si on a vraiment un état Firebase frais
     if(window._fbGet&&window._fbRef&&window._fbDB){
       try{
         const _snap=await window._fbGet(window._fbRef(window._fbDB,'sunagakure/users'));
@@ -14151,9 +14152,48 @@ async function _flushSaveQueue(){
         if(Array.isArray(_liveArr)&&_liveArr.length>0){
           liveFbUsers=_liveArr.filter(Boolean);
           _lastFbArrays.users=JSON.parse(JSON.stringify(liveFbUsers));
+          _fbGetOK=true;
+        } else if(_liveArr&&typeof _liveArr==='object'){
+          // bug-fix : Firebase RTDB peut renvoyer {0:..,1:..,2:..} au lieu d'un Array
+          // (cas de tableaux avec trous ou ID non séquentiels). Sans ce branch,
+          // tous ces users étaient ignorés → écrasement à l'écriture suivante.
+          var _arrFromObj=Object.values(_liveArr).filter(Boolean);
+          if(_arrFromObj.length>0){
+            liveFbUsers=_arrFromObj;
+            _lastFbArrays.users=JSON.parse(JSON.stringify(_arrFromObj));
+            _fbGetOK=true;
+          }
+        } else if(_liveArr===null){
+          // Branche /users vide ou inaccessible → on ne peut pas conclure, traiter comme échec
+          _fbGetOK=false;
         }
-      }catch(_e){/* on garde liveFbUsers = _lastFbArrays si le GET échoue */}
+      }catch(_e){/* GET échoué */}
     }
+
+    // ── PROTECTION ANTI-PERTE-DE-COMPTES (bug-fix critique) ──
+    // Si on n'a PAS pu confirmer l'état Firebase ET qu'on n'a aucun cache fiable
+    // (premier sync pas encore terminé), NE PAS écraser Firebase avec une vue
+    // locale partielle. Sinon les comptes créés par d'autres utilisateurs
+    // (ex: amis qui se sont inscrits sur leur appareil) seraient effacés
+    // car absents du localStorage de l'utilisateur courant.
+    if(!_fbGetOK && _fbFirstLoad && Array.isArray(toSave.users) && toSave.users.length > 0){
+      console.warn('[FB-SAVE] ⏸ Sauvegarde reportée : état Firebase pas encore confirmé (protection anti-perte de comptes)');
+      _fbSaveQueue = toSave;
+      _fbSaveRunning = false;
+      setTimeout(_flushSaveQueue, 1500);
+      return;
+    }
+    // Garde-fou supplémentaire : si on a des users Firebase confirmés ET qu'on
+    // s'apprête à écrire SIGNIFICATIVEMENT moins d'users, c'est suspect → reporter.
+    if(_fbGetOK && liveFbUsers.length >= 3 && Array.isArray(toSave.users) &&
+       toSave.users.length < Math.floor(liveFbUsers.length / 2)){
+      console.warn('[FB-SAVE] ⏸ Écriture suspecte : '+toSave.users.length+' users locaux vs '+liveFbUsers.length+' sur Firebase. Sauvegarde reportée.');
+      _fbSaveQueue = toSave;
+      _fbSaveRunning = false;
+      setTimeout(_flushSaveQueue, 2000);
+      return;
+    }
+
     // Fusionner les users locaux avec la liste fraîche Firebase
     // LOCAL fait autorité : les suppressions locales sont respectées.
     // On n'ajoute depuis Firebase que les users INCONNUS (créés par un autre admin).
@@ -14228,6 +14268,13 @@ function initFirebaseSync(){
     // On met à jour uniquement _lastFbArrays pour que le prochain save ait un delta frais
     const data=snapshot.val();
     if(data&&typeof data==="object"){
+      // bug-fix : Firebase RTDB renvoie parfois des arrays sous forme d'objets
+      // {0:{},1:{},2:{}} (cas des trous d'index). On normalise en arrays.
+      ['plaintes','dossiers','annonces','candidatures','operations','sanctions','recenses','infractions','timeline','users','loginHistory'].forEach(function(k){
+        if(data[k] && !Array.isArray(data[k]) && typeof data[k] === 'object'){
+          data[k] = Object.values(data[k]).filter(Boolean);
+        }
+      });
       ['plaintes','dossiers','annonces','candidatures','operations','sanctions','recenses','infractions','timeline','users'].forEach(k=>{
         if(Array.isArray(data[k])&&data[k].length>0) _lastFbArrays[k]=data[k];
       });
