@@ -16907,14 +16907,21 @@ function lgLockedSection(name){ lgClickSection(null, '', name); }
 
 // Sync des cards login avec les flags admin (DB.features.login_*_active + localStorage)
 (function(){
+  function isKeyActive(key){
+    // BUG-FIX : vérifier d'abord DB.features (synchronisé via Firebase),
+    // puis fallback sur localStorage. Avant on ne lisait que localStorage,
+    // ce qui ratait les sync entre onglets/appareils différents.
+    if(typeof DB !== 'undefined' && DB && DB.features && typeof DB.features['login_'+key+'_active'] !== 'undefined'){
+      return !!DB.features['login_'+key+'_active'];
+    }
+    try{ return localStorage.getItem('feat_login_'+key+'_active') === '1'; }catch(e){ return false; }
+  }
   function syncCardsFromLocalStorage(){
     var keys = ['juge','avocat','mission','medical','diplomatie'];
     keys.forEach(function(key){
       var card = document.querySelector('.lg-sec-card[data-section="'+key+'"]');
       if(!card) return;
-      var active = false;
-      try{ active = localStorage.getItem('feat_login_'+key+'_active') === '1'; }catch(e){}
-      if(active) card.classList.remove('locked');
+      if(isKeyActive(key)) card.classList.remove('locked');
       else card.classList.add('locked');
     });
   }
@@ -16929,6 +16936,21 @@ function lgLockedSection(name){ lgClickSection(null, '', name); }
     setTimeout(syncCardsFromLocalStorage, 600);
     setTimeout(syncCardsFromLocalStorage, 2200);
   });
+  // BUG-FIX CROSS-TAB : écouter les changements de localStorage faits dans un autre onglet
+  // (ex: admin qui toggle dans onglet 1, login screen ouvert dans onglet 2)
+  window.addEventListener('storage', function(e){
+    if(e.key && e.key.indexOf('feat_login_') === 0){
+      syncCardsFromLocalStorage();
+    }
+  });
+  // BUG-FIX POLLING : tant que l'écran de login est visible, re-check toutes les 3s
+  // (filet de sécurité pour les cas où ni Firebase ni storage event ne sont déclenchés à temps)
+  setInterval(function(){
+    var ls = document.getElementById('login-screen');
+    if(ls && ls.style.display !== 'none' && ls.offsetParent !== null){
+      syncCardsFromLocalStorage();
+    }
+  }, 3000);
   // Exposer la fonction pour qu'elle puisse être appelée depuis le sync Firebase (DB.features)
   window._lgSyncLoginCardsFromLS = syncCardsFromLocalStorage;
 })();
@@ -17606,6 +17628,9 @@ function doLogout(){
   // Vider la mémoire de la dernière page pour éviter qu'un visiteur atterrisse sur une page membre
   try{sessionStorage.removeItem("suna_active_page");}catch(e){}
   el("login-screen").style.display="flex";updateLoginStats();
+  // BUG-FIX : re-synchroniser les cards de section sur le login screen quand on revient
+  // (ça assure que les déverrouillages faits avant le logout sont reflétés visuellement)
+  if(typeof window._lgSyncLoginCardsFromLS === 'function') window._lgSyncLoginCardsFromLS();
   el("nav-admin").style.display="none";
   const _ditAdmin=el("ditem-admin");if(_ditAdmin)_ditAdmin.style.display="none";
   // Masquer explicitement les éléments membres-only (ils restaient visibles après logout)
