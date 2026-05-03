@@ -15086,6 +15086,17 @@ let DB=loadData();
         if(u && u.grade === 'ANBU'){ u.grade = 'Jonin'; _changed = true; }
       });
     }
+    // Migration du barème d'impôts (DB.impots.grades) — important pour la page login
+    if(DB.impots && Array.isArray(DB.impots.grades)){
+      DB.impots.grades.forEach(function(g){
+        if(g && g.name === 'Hokage'){ g.name = 'Kazekage'; _changed = true; }
+      });
+    }
+    if(DB.impots && Array.isArray(DB.impots.ninjas)){
+      DB.impots.ninjas.forEach(function(n){
+        if(n && n.grade === 'Hokage'){ n.grade = 'Kazekage'; _changed = true; }
+      });
+    }
     if(_changed){
       try{ localStorage.setItem(STORE, JSON.stringify(DB)); }catch(e){}
       // saveData() n'est peut-être pas encore défini à ce stade, on tentera plus tard
@@ -15130,9 +15141,11 @@ function lgRenderTaxBareme(){
     if(!grid) return;
     // Récupérer les grades : DB direct ou via localStorage si DB pas chargé
     var grades = null;
+    var sourceIsDb = false;
     try{
       if(window.DB && DB.impots && Array.isArray(DB.impots.grades) && DB.impots.grades.length){
         grades = DB.impots.grades;
+        sourceIsDb = true;
       } else {
         var raw = localStorage.getItem('suna_v4');
         if(raw){
@@ -15143,6 +15156,36 @@ function lgRenderTaxBareme(){
         }
       }
     }catch(e){}
+
+    // ─── MIGRATION AUTO Hokage → Kazekage ───
+    // Cette page est publique (login), elle peut afficher avant que la page Impôts
+    // ne soit ouverte → on migre ICI aussi pour garantir que rien d'ancien ne fuite.
+    if(Array.isArray(grades)){
+      var _migrated = false;
+      grades.forEach(function(g){
+        if(g && g.name === 'Hokage'){ g.name = 'Kazekage'; _migrated = true; }
+      });
+      // Si la source est DB et qu'on a migré, sauvegarder pour propager sur Firebase
+      if(_migrated && sourceIsDb && typeof saveData === 'function'){
+        try{ saveData(); }catch(e){}
+      }
+      // Migrer aussi en localStorage si on lit depuis là
+      if(_migrated && !sourceIsDb){
+        try{
+          var raw2 = localStorage.getItem('suna_v4');
+          if(raw2){
+            var parsed2 = JSON.parse(raw2);
+            if(parsed2 && parsed2.impots && Array.isArray(parsed2.impots.grades)){
+              parsed2.impots.grades.forEach(function(g){
+                if(g && g.name === 'Hokage') g.name = 'Kazekage';
+              });
+              localStorage.setItem('suna_v4', JSON.stringify(parsed2));
+            }
+          }
+        }catch(e){}
+      }
+    }
+
     // Fallback : grades par défaut
     if(!grades || !grades.length){
       grades = [
