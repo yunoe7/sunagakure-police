@@ -1003,11 +1003,9 @@ textarea.form-control{resize:vertical;min-height:80px}
   .drawer-item:active{background:rgba(255,255,255,0.08) !important;transform:scale(0.97) !important}
 
   /* ============================================
-     TOASTS — en haut sur mobile (sous la topbar)
+     TOASTS — positionnement géré par règle "TOAST MOBILE" plus bas
      ============================================ */
   #toast-container{
-    bottom:auto !important;top:64px !important;
-    right:12px !important;left:12px !important;
     align-items:stretch !important;
   }
   #toast-container > div{
@@ -2721,13 +2719,16 @@ html{-webkit-tap-highlight-color:transparent}
 /* ─── TOAST MOBILE : centré bas, lisible ─── */
 @media(max-width:768px){
   #toast-container{
+    top:auto !important;
     bottom:calc(80px + env(safe-area-inset-bottom,0px)) !important;
     left:14px !important;right:14px !important;
     width:auto !important;
+    pointer-events:none !important; /* ne bloque pas le scroll/touch sur mobile */
   }
   #toast-container > div{
     width:100% !important;
     font-size:13px !important;
+    pointer-events:auto !important; /* mais les toasts eux-mêmes restent interactifs */
   }
 }
 
@@ -21819,6 +21820,19 @@ function closeModal(id){
   m.classList.remove("open");
   m.setAttribute("aria-hidden","true");
   if(m._keyHandler){ document.removeEventListener("keydown", m._keyHandler); m._keyHandler = null; }
+  // BUG-FIX MOBILE : reset des styles inline éventuellement laissés par le swipe-to-dismiss
+  // (transform, opacity, transition) pour que la modale s'affiche correctement à la prochaine ouverture
+  var modalEl = m.querySelector('.modal');
+  if(modalEl){
+    modalEl.style.transform = '';
+    modalEl.style.opacity = '';
+    modalEl.style.transition = '';
+    modalEl.classList.remove('is-dragging');
+  }
+  // Reset aussi les styles inline du backdrop éventuellement modifiés par le swipe
+  m.style.background = '';
+  m.style.backdropFilter = '';
+  m.style.transition = '';
   // Restituer le focus à l'élément d'origine
   if(_lastFocusedEl && _lastFocusedEl.focus){ try{ _lastFocusedEl.focus(); }catch(e){} }
   // bug-fix : re-render la page courante après fermeture de modale, au cas où
@@ -21967,6 +21981,41 @@ function closeMoreDrawer(){
   }
 }
 
+// ─── SAFETY NET MOBILE : reset body.overflow si jamais bloqué ───
+// Si l'utilisateur bascule vers une autre app/onglet pendant qu'un drawer est ouvert
+// puis revient, body peut rester en overflow:hidden. Cette détection corrige ça.
+document.addEventListener('visibilitychange', function(){
+  if(document.visibilityState === 'visible'){
+    // Vérifier qu'aucun drawer/sidebar n'est ouvert ; si rien d'ouvert, débloquer le scroll
+    var sidebar = document.getElementById('sidebar');
+    var drawer = document.getElementById('more-drawer');
+    var sidebarOpen = sidebar && sidebar.classList.contains('open');
+    var drawerOpen = drawer && drawer.classList.contains('open');
+    if(!sidebarOpen && !drawerOpen){
+      document.body.style.overflow = '';
+    }
+  }
+});
+
+// ─── SAFETY NET MOBILE : tap n'importe où débloque le scroll si bloqué à tort ───
+// Si après ~2 secondes d'inactivité le body est encore overflow:hidden alors qu'aucun
+// drawer/modal n'est ouvert, on débloque (filet de sécurité ultime).
+(function(){
+  if(window.innerWidth>768) return;
+  setInterval(function(){
+    if(document.body.style.overflow === 'hidden'){
+      var sb = document.getElementById('sidebar');
+      var dr = document.getElementById('more-drawer');
+      var anyModal = document.querySelector('.modal-overlay.open');
+      var sbOpen = sb && sb.classList.contains('open');
+      var drOpen = dr && dr.classList.contains('open');
+      if(!sbOpen && !drOpen && !anyModal){
+        document.body.style.overflow = '';
+      }
+    }
+  }, 2000);
+})();
+
 // Auto-close sidebar on nav click (mobile)
 document.querySelectorAll(".nav-item").forEach(n=>n.addEventListener("click",()=>{if(window.innerWidth<=768)closeSidebar()}));
 function showToast(msg,type="info"){
@@ -21976,12 +22025,14 @@ function showToast(msg,type="info"){
     document.body.appendChild(t);
   }
   const isMob=window.innerWidth<=768;
+  // BUG-FIX MOBILE : utiliser bottom (pas top) pour éviter que le container ne couvre tout l'écran
+  // + pointer-events:none sur le container pour qu'il ne bloque jamais les touches/scroll
   t.style.cssText=isMob
-    ?"position:fixed;top:66px;left:14px;right:14px;z-index:9999;display:flex;flex-direction:column;gap:8px"
-    :"position:fixed;bottom:24px;right:24px;z-index:9999;display:flex;flex-direction:column;gap:8px";
+    ?"position:fixed;bottom:calc(80px + env(safe-area-inset-bottom,0px));left:14px;right:14px;z-index:9999;display:flex;flex-direction:column;gap:8px;pointer-events:none"
+    :"position:fixed;bottom:24px;right:24px;z-index:9999;display:flex;flex-direction:column;gap:8px;pointer-events:none";
   const d=document.createElement("div");
   const colors={success:"rgba(21,128,61,0.96)",error:"rgba(220,38,38,0.96)",info:"rgba(180,140,20,0.96)"};
-  d.style.cssText=`background:${colors[type]||colors.info};color:#fff;padding:13px 18px;border-radius:${isMob?"14px":"10px"};font-size:${isMob?"14px":"13px"};font-family:'Barlow',sans-serif;font-weight:600;box-shadow:0 8px 32px rgba(0,0,0,0.25);max-width:${isMob?"100%":"340px"};animation:toastIn 0.22s cubic-bezier(0.34,1.56,0.64,1);backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,0.12);display:flex;align-items:center;gap:8px`;
+  d.style.cssText=`background:${colors[type]||colors.info};color:#fff;padding:13px 18px;border-radius:${isMob?"14px":"10px"};font-size:${isMob?"14px":"13px"};font-family:'Barlow',sans-serif;font-weight:600;box-shadow:0 8px 32px rgba(0,0,0,0.25);max-width:${isMob?"100%":"340px"};animation:toastIn 0.22s cubic-bezier(0.34,1.56,0.64,1);backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,0.12);display:flex;align-items:center;gap:8px;pointer-events:auto`;
   d.textContent=msg;
   t.appendChild(d);
   setTimeout(()=>{d.style.opacity="0";d.style.transform="translateY(-6px)";d.style.transition="opacity 0.3s,transform 0.3s";setTimeout(()=>d.remove(),300)},3200);
@@ -24050,7 +24101,14 @@ if(isMobile){
       md_m.style.opacity='0';
       var _m=md_m, _o=md_o;
       setTimeout(function(){
-        if(_o) _o.classList.remove('open');
+        // BUG-FIX MOBILE : appeler closeModal() proprement pour nettoyer le keydown listener,
+        // restaurer le focus et appliquer aria-hidden — au lieu de juste retirer .open.
+        // (Sans ça, à chaque swipe-dismiss un listener s'accumulait → fuite mémoire.)
+        if(_o && _o.id && typeof closeModal === 'function'){
+          closeModal(_o.id);
+        } else if(_o){
+          _o.classList.remove('open');
+        }
         if(document.activeElement&&document.activeElement.blur) document.activeElement.blur();
         setTimeout(function(){_m.style.cssText='';},40);
         if(navigator.vibrate) navigator.vibrate(6);
@@ -27771,7 +27829,7 @@ body.dark #online-counter{border-color:rgba(21,128,61,0.22);background:rgba(21,1
 #notif-new-badge .nb-sub{font-size:10px;opacity:0.8;font-weight:500;margin-top:1px;display:block}
 #notif-new-badge .nb-close{cursor:pointer;opacity:0.65;font-size:16px;flex-shrink:0;line-height:1;padding:2px;border-radius:4px;transition:opacity 0.15s}
 #notif-new-badge .nb-close:hover{opacity:1}
-@media(max-width:768px){#notif-new-badge{top:auto;bottom:calc(76px + env(safe-area-inset-bottom,0px) + 12px);right:12px;left:12px;max-width:none}}
+@media(max-width:768px){#notif-new-badge{top:auto;bottom:calc(76px + env(safe-area-inset-bottom,0px) + 12px);right:12px;left:12px;max-width:none;pointer-events:none}#notif-new-badge.show{pointer-events:auto}}
 </style>
 
 <!-- MODAL COMMENTAIRES DOSSIER -->
