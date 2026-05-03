@@ -8198,7 +8198,7 @@ document.addEventListener('error', function(e){
           <div class="pgv2-hero-stat" data-tone="green"><div class="num" id="pgv2-cand-acceptees">0</div><div class="lbl">Acceptées</div></div>
         </div>
         <div class="pgv2-hero-actions">
-          <button class="btn btn-primary" onclick="clearForm(['c-nom','c-age','c-discord','c-motif','c-exp']);openModal('modal-candidature')">+ Déposer une candidature</button>
+          <button class="btn btn-primary" onclick="clearForm(['c-nom','c-age','c-discord','c-motif','c-exp']);if(typeof _syncSectionLockUI==='function')_syncSectionLockUI();openModal('modal-candidature')">+ Déposer une candidature</button>
           <button class="btn btn-export" onclick="exportCSV('candidatures')" id="btn-export-cand" style="display:none">⬇️ Export CSV</button>
         </div>
       </div>
@@ -12868,6 +12868,40 @@ document.addEventListener('error', function(e){
             </div>
             <span style="font-size:9px;font-family:'Share Tech Mono',monospace;padding:2px 8px;border-radius:4px;background:rgba(109,40,217,0.1);color:#7c3aed;border:1px solid rgba(109,40,217,0.2);letter-spacing:1px;flex-shrink:0">BIENTÔT</span>
           </div>
+          <!-- Recrutement Tribunal -->
+          <div id="feat-row-tribunal" style="display:flex;align-items:center;gap:14px;padding:14px 0;border-top:1px solid var(--border)">
+            <div style="width:44px;height:44px;border-radius:10px;background:rgba(180,140,20,0.08);border:1px solid rgba(180,140,20,0.2);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0">⚖️</div>
+            <div style="flex:1;min-width:0">
+              <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:2px">Recrutement — Section Tribunal</div>
+              <div style="font-size:10px;color:var(--muted);font-family:'Share Tech Mono',monospace">Permet aux visiteurs de candidater pour le Tribunal (verrouillé tant que désactivé)</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:10px;flex-shrink:0">
+              <span id="feat-tribunal-badge" style="font-size:9px;font-family:'Share Tech Mono',monospace;padding:2px 8px;border-radius:4px;background:rgba(192,65,14,0.15);color:#e05c1a;border:1px solid rgba(192,65,14,0.3);letter-spacing:1px">VERROUILLÉ</span>
+              <label style="position:relative;display:inline-block;width:46px;height:26px;cursor:pointer">
+                <input type="checkbox" id="toggle-feat-tribunal" style="opacity:0;width:0;height:0;position:absolute" onchange="toggleFeatureTribunal(this.checked)">
+                <span id="feat-tribunal-track" style="position:absolute;inset:0;border-radius:13px;background:rgba(0,0,0,0.2);border:1px solid rgba(0,0,0,0.12);transition:all 0.2s">
+                  <span id="feat-tribunal-thumb" style="position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:#6b7280;box-shadow:0 1px 4px rgba(0,0,0,0.3);transition:all 0.2s"></span>
+                </span>
+              </label>
+            </div>
+          </div>
+          <!-- Recrutement Avocats -->
+          <div id="feat-row-avocats" style="display:flex;align-items:center;gap:14px;padding:14px 0;border-top:1px solid var(--border)">
+            <div style="width:44px;height:44px;border-radius:10px;background:rgba(180,140,20,0.08);border:1px solid rgba(180,140,20,0.2);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0">👨‍💼</div>
+            <div style="flex:1;min-width:0">
+              <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:2px">Recrutement — Section Avocats</div>
+              <div style="font-size:10px;color:var(--muted);font-family:'Share Tech Mono',monospace">Permet aux visiteurs de candidater pour le Cabinet des Avocats (verrouillé tant que désactivé)</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:10px;flex-shrink:0">
+              <span id="feat-avocats-badge" style="font-size:9px;font-family:'Share Tech Mono',monospace;padding:2px 8px;border-radius:4px;background:rgba(192,65,14,0.15);color:#e05c1a;border:1px solid rgba(192,65,14,0.3);letter-spacing:1px">VERROUILLÉ</span>
+              <label style="position:relative;display:inline-block;width:46px;height:26px;cursor:pointer">
+                <input type="checkbox" id="toggle-feat-avocats" style="opacity:0;width:0;height:0;position:absolute" onchange="toggleFeatureAvocats(this.checked)">
+                <span id="feat-avocats-track" style="position:absolute;inset:0;border-radius:13px;background:rgba(0,0,0,0.2);border:1px solid rgba(0,0,0,0.12);transition:all 0.2s">
+                  <span id="feat-avocats-thumb" style="position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:#6b7280;box-shadow:0 1px 4px rgba(0,0,0,0.3);transition:all 0.2s"></span>
+                </span>
+              </label>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -13383,6 +13417,39 @@ document.addEventListener('error', function(e){
 }
 .cdv2-section-card.active .cdv2-section-title{color:var(--gold2)}
 
+/* Section verrouillée (Tribunal/Avocats désactivés) */
+.cdv2-section-card.locked{
+  cursor:not-allowed;
+  opacity:0.45;
+  filter:grayscale(0.6);
+  background:rgba(0,0,0,0.5);
+  border-color:rgba(120,120,120,0.2);
+}
+.cdv2-section-card.locked:hover{
+  transform:none;
+  border-color:rgba(120,120,120,0.25);
+  background:rgba(0,0,0,0.5);
+}
+.cdv2-section-card.locked::before{
+  content:'🔒';
+  position:absolute;top:6px;right:8px;
+  font-size:13px;
+  background:none;
+  width:auto;height:auto;
+  box-shadow:none;
+  z-index:2;
+}
+.cdv2-section-card.locked::after{
+  content:'';
+  display:none;
+}
+.cdv2-section-card.locked .cdv2-section-icon{
+  filter:grayscale(0.9);
+}
+.cdv2-section-card.locked .cdv2-section-title{
+  color:var(--muted);
+}
+
 /* Footer */
 #modal-candidature .modal-footer{
   padding:18px 38px 26px !important;
@@ -13455,11 +13522,11 @@ document.addEventListener('error', function(e){
             <div class="cdv2-section-icon">👮</div>
             <div class="cdv2-section-title">Police</div>
           </div>
-          <div class="cdv2-section-card" data-section="Tribunal" onclick="cdv2SelectSection(this,'Tribunal')">
+          <div class="cdv2-section-card" id="cdv2-card-tribunal" data-section="Tribunal" onclick="cdv2SelectSection(this,'Tribunal')">
             <div class="cdv2-section-icon">⚖️</div>
             <div class="cdv2-section-title">Tribunal</div>
           </div>
-          <div class="cdv2-section-card" data-section="Avocats" onclick="cdv2SelectSection(this,'Avocats')">
+          <div class="cdv2-section-card" id="cdv2-card-avocats" data-section="Avocats" onclick="cdv2SelectSection(this,'Avocats')">
             <div class="cdv2-section-icon">👨‍💼</div>
             <div class="cdv2-section-title">Avocats</div>
           </div>
@@ -13560,10 +13627,44 @@ document.addEventListener('error', function(e){
 <script>
 // Sélection des cards Section visée
 function cdv2SelectSection(el,val){
+  // Empêcher la sélection des sections verrouillées
+  if(el && el.classList && el.classList.contains('locked')){
+    if(typeof showToast==='function') showToast('🔒 Section non disponible — recrutement pas encore ouvert.','info');
+    return;
+  }
   document.querySelectorAll('#cdv2-section-grid .cdv2-section-card').forEach(function(c){c.classList.remove('active');});
   if(el && el.classList) el.classList.add('active');
   var hidden = document.getElementById('c-section');
   if(hidden) hidden.value = val;
+}
+
+// Applique l'état verrouillé/déverrouillé des cards Tribunal et Avocats
+// selon DB.features.tribunal_active / avocats_active.
+// Par défaut (non défini) = verrouillé.
+function _syncSectionLockUI(){
+  var trib  = document.getElementById('cdv2-card-tribunal');
+  var avoc  = document.getElementById('cdv2-card-avocats');
+  var police= document.querySelector('#cdv2-section-grid .cdv2-section-card[data-section="Police"]');
+  var hidden= document.getElementById('c-section');
+  var tribActive = !!(DB.features && DB.features.tribunal_active);
+  var avocActive = !!(DB.features && DB.features.avocats_active);
+  if(trib){
+    if(tribActive) trib.classList.remove('locked');
+    else trib.classList.add('locked');
+  }
+  if(avoc){
+    if(avocActive) avoc.classList.remove('locked');
+    else avoc.classList.add('locked');
+  }
+  // Si la valeur cachée pointe vers une section maintenant verrouillée → revenir à Police
+  if(hidden){
+    var v = hidden.value;
+    if((v==='Tribunal' && !tribActive)||(v==='Avocats' && !avocActive)){
+      hidden.value='Police';
+      document.querySelectorAll('#cdv2-section-grid .cdv2-section-card').forEach(function(c){c.classList.remove('active');});
+      if(police) police.classList.add('active');
+    }
+  }
 }
 </script>
 
@@ -16768,7 +16869,7 @@ function renderPage(name){
   if(name==="dashboard")renderDashboard();
   if(name==="annonces")renderAnnonces();
   if(name==="recensement"){buildNatureCheckboxes();renderRecensement()}
-  if(name==="recrutement"){renderVisitorCandBanner();renderCandidatures();if(!isVisiteur())renderRecrues()}
+  if(name==="recrutement"){renderVisitorCandBanner();renderCandidatures();if(!isVisiteur())renderRecrues();if(typeof _syncSectionLockUI==='function')_syncSectionLockUI();}
   if(name==="plaintes")renderPlaintes();
   if(name==="dossiers")renderDossiers();
   if(name==="codepenal")renderCodePenal();
@@ -16781,6 +16882,8 @@ function renderPage(name){
     var _fmSaved=(DB.features&&typeof DB.features.map_active!=='undefined')?!!DB.features.map_active:false;try{if(!DB.features||typeof DB.features.map_active==='undefined')_fmSaved=localStorage.getItem('feat_map_active')==='1';}catch(e){} _syncFeatureMapUI(_fmSaved);
     // Init toggle Niveau de menace
     if(typeof initFeatureMenace==='function') initFeatureMenace();
+    // Init toggles Recrutement Tribunal/Avocats
+    if(typeof initFeatureSections==='function') initFeatureSections();
     // Forcer une relecture Firebase pour afficher les comptes les plus récents
     // Affichage immédiat avec les données déjà à jour via le listener onValue
     renderAdmin();renderAdminTimeline();renderAuditLog();renderLoginHistory();
@@ -19275,6 +19378,79 @@ function isMenaceFeatureActive(){
 function initFeatureMenace(){
   var saved = isMenaceFeatureActive();
   _syncFeatureMenaceUI(saved);
+}
+
+// ─── RECRUTEMENT — Sections Tribunal & Avocats ─────────────────────
+function toggleFeatureTribunal(enabled){
+  if(typeof isAdmin === 'function' && !isAdmin()){ showToast('⛔ Action réservée aux administrateurs.','error'); _syncFeatureTribunalUI(!enabled); return; }
+  if(!DB.features) DB.features = {};
+  DB.features.tribunal_active = enabled;
+  saveData();
+  try{ localStorage.setItem('feat_tribunal_active', enabled ? '1' : '0'); }catch(e){}
+  _syncFeatureTribunalUI(enabled);
+  if(typeof _syncSectionLockUI === 'function') _syncSectionLockUI();
+  showToast(enabled ? '⚖️ Recrutement Tribunal activé !' : '⚖️ Recrutement Tribunal verrouillé', enabled ? 'success' : 'info');
+}
+function _syncFeatureTribunalUI(enabled){
+  var badge = document.getElementById('feat-tribunal-badge');
+  var track = document.getElementById('feat-tribunal-track');
+  var thumb = document.getElementById('feat-tribunal-thumb');
+  var chk   = document.getElementById('toggle-feat-tribunal');
+  if(chk)   chk.checked = enabled;
+  if(badge){
+    badge.textContent = enabled ? 'OUVERT' : 'VERROUILLÉ';
+    badge.style.background  = enabled ? 'rgba(21,128,61,0.15)'  : 'rgba(192,65,14,0.15)';
+    badge.style.color       = enabled ? '#16a34a'                : '#e05c1a';
+    badge.style.borderColor = enabled ? 'rgba(21,128,61,0.35)'  : 'rgba(192,65,14,0.3)';
+  }
+  if(track) track.style.background = enabled ? 'rgba(21,128,61,0.35)' : 'rgba(0,0,0,0.2)';
+  if(thumb){
+    thumb.style.background = enabled ? '#16a34a' : '#6b7280';
+    thumb.style.transform  = enabled ? 'translateX(20px)' : 'translateX(0)';
+  }
+}
+function isTribunalFeatureActive(){
+  if(DB.features && typeof DB.features.tribunal_active !== 'undefined') return !!DB.features.tribunal_active;
+  try{ return localStorage.getItem('feat_tribunal_active') === '1'; }catch(e){ return false; }
+}
+
+function toggleFeatureAvocats(enabled){
+  if(typeof isAdmin === 'function' && !isAdmin()){ showToast('⛔ Action réservée aux administrateurs.','error'); _syncFeatureAvocatsUI(!enabled); return; }
+  if(!DB.features) DB.features = {};
+  DB.features.avocats_active = enabled;
+  saveData();
+  try{ localStorage.setItem('feat_avocats_active', enabled ? '1' : '0'); }catch(e){}
+  _syncFeatureAvocatsUI(enabled);
+  if(typeof _syncSectionLockUI === 'function') _syncSectionLockUI();
+  showToast(enabled ? '👨‍💼 Recrutement Avocats activé !' : '👨‍💼 Recrutement Avocats verrouillé', enabled ? 'success' : 'info');
+}
+function _syncFeatureAvocatsUI(enabled){
+  var badge = document.getElementById('feat-avocats-badge');
+  var track = document.getElementById('feat-avocats-track');
+  var thumb = document.getElementById('feat-avocats-thumb');
+  var chk   = document.getElementById('toggle-feat-avocats');
+  if(chk)   chk.checked = enabled;
+  if(badge){
+    badge.textContent = enabled ? 'OUVERT' : 'VERROUILLÉ';
+    badge.style.background  = enabled ? 'rgba(21,128,61,0.15)'  : 'rgba(192,65,14,0.15)';
+    badge.style.color       = enabled ? '#16a34a'                : '#e05c1a';
+    badge.style.borderColor = enabled ? 'rgba(21,128,61,0.35)'  : 'rgba(192,65,14,0.3)';
+  }
+  if(track) track.style.background = enabled ? 'rgba(21,128,61,0.35)' : 'rgba(0,0,0,0.2)';
+  if(thumb){
+    thumb.style.background = enabled ? '#16a34a' : '#6b7280';
+    thumb.style.transform  = enabled ? 'translateX(20px)' : 'translateX(0)';
+  }
+}
+function isAvocatsFeatureActive(){
+  if(DB.features && typeof DB.features.avocats_active !== 'undefined') return !!DB.features.avocats_active;
+  try{ return localStorage.getItem('feat_avocats_active') === '1'; }catch(e){ return false; }
+}
+
+function initFeatureSections(){
+  _syncFeatureTribunalUI(isTribunalFeatureActive());
+  _syncFeatureAvocatsUI(isAvocatsFeatureActive());
+  if(typeof _syncSectionLockUI === 'function') _syncSectionLockUI();
 }
 
 function _syncFeatureMapUI(enabled){
