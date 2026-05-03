@@ -12405,6 +12405,8 @@ document.addEventListener('error', function(e){
       <div class="card-header"><span>💾</span><h3>Sauvegarde &amp; Restauration</h3></div>
       <div class="card-body">
         <p style="font-size:12.5px;color:var(--muted);margin-bottom:14px;line-height:1.6">Exportez toutes les données en JSON pour les archiver ou les restaurer en cas de problème.</p>
+        <!-- Bannière de rappel automatique de backup (gérée par _refreshBackupReminder) -->
+        <div id="backup-reminder-banner" style="display:none;margin-bottom:14px;padding:12px 14px;border-radius:9px;font-size:12.5px;line-height:1.55"></div>
         <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
           <button class="btn btn-gold" onclick="backupJSON()">📥 Télécharger la sauvegarde JSON</button>
           <label class="btn btn-outline" style="cursor:pointer">📂 Restaurer depuis JSON<input type="file" id="restore-json-input" accept=".json,application/json" style="display:none" onchange="restoreJSON(this)"></label>
@@ -14342,10 +14344,10 @@ function initFirebaseSync(){
         }
         if(fixed){
           try{localStorage.setItem(STORE,JSON.stringify(DB));}catch(e){}
-          if(window._fbDB&&window._fbRef&&window._fbSet){
-            const wr2=window._fbRef(window._fbDB,"sunagakure");
-            window._fbSet(wr2,JSON.parse(JSON.stringify(DB)));
-          }
+          // bug-fix : utiliser saveData() qui passe par _flushSaveQueue avec
+          // GET-merge frais et garde-fous anti-perte. Un _fbSet direct ici
+          // pouvait écraser des comptes créés pendant le await hashPass.
+          saveData();
         }
       })();
       const afterFbMigration=()=>{
@@ -14393,8 +14395,9 @@ function initFirebaseSync(){
       if(fbNeedsMigration){
         (async()=>{
           for(const u of DB.users){if(!isHashed(u.pass)){const rp=(u.pass==="__PENDING_HASH__"||!u.pass)?DEFAULT_PASS:u.pass;u.pass=await hashPass(rp);}}
-          const wr=window._fbRef(window._fbDB,"sunagakure");
-          window._fbSet(wr,JSON.parse(JSON.stringify(DB)));
+          // bug-fix : ne PAS faire _fbSet direct ici (écrase Firebase entièrement,
+          // perd les comptes créés pendant les await hashPass). saveData() passe
+          // par _flushSaveQueue avec GET-merge frais et protections anti-écrasement.
           saveData();
           afterFbMigration();
         })();
@@ -15404,6 +15407,8 @@ function applyLogin(){
   let lastPage="dashboard";
   try{const lp=sessionStorage.getItem("suna_active_page");if(lp&&PAGES[lp]){if(!isVisiteur()||VISITOR_PAGES.includes(lp))lastPage=lp;}}catch(e){}
   showPage(lastPage);
+  // Rappel de sauvegarde si très ancienne (toast subtil pour les admins/modos)
+  if(typeof _checkBackupReminderAtLogin === 'function') _checkBackupReminderAtLogin();
 }
 
 function showLoginErr(msg){const e=el("login-alert");e.textContent=msg;e.style.display="block"}
@@ -15562,6 +15567,8 @@ function renderPage(name){
     // Forcer une relecture Firebase pour afficher les comptes les plus récents
     // Affichage immédiat avec les données déjà à jour via le listener onValue
     renderAdmin();renderAdminTimeline();renderAuditLog();renderLoginHistory();
+    // Rappel de sauvegarde JSON dans la zone "Sauvegarde & Restauration"
+    if(typeof _refreshBackupReminder === 'function') _refreshBackupReminder();
     // Rendu des alertes du nouveau dashboard à onglets
     if(typeof renderAdmAlerts==='function') renderAdmAlerts();
     // GET Firebase en arrière-plan — re-render uniquement si la liste users a changé
@@ -15569,6 +15576,12 @@ function renderPage(name){
       window._fbGet(window._fbRef(window._fbDB,"sunagakure")).then(function(snap){
         var fbData=snap.val();
         if(fbData&&typeof fbData==="object"){
+          // bug-fix : Firebase RTDB peut renvoyer fbData.users en objet {0:..,1:..}
+          // au lieu d'un array. Sans cette normalisation, l'admin ne voit pas les
+          // nouveaux comptes et _lastFbArrays.users reste obsolète.
+          if(fbData.users && !Array.isArray(fbData.users) && typeof fbData.users === 'object'){
+            fbData.users = Object.values(fbData.users).filter(Boolean);
+          }
           var usersChanged=false;
           if(Array.isArray(fbData.users)&&fbData.users.length>0){
             var prevUsers=JSON.stringify(DB.users);
@@ -16035,6 +16048,14 @@ async function forceFbSync(){
     const snap=await window._fbGet(window._fbRef(window._fbDB,"sunagakure"));
     const data=snap.val();
     if(!data||typeof data!=="object"){showToast("❌ Aucune donnée Firebase trouvée.","error");return;}
+    // bug-fix : Firebase RTDB peut renvoyer les arrays en format objet {0:..,1:..}
+    // (cas des trous d'index). On normalise TOUTES les collections AVANT le merge.
+    const _ARR_KEYS=['users','plaintes','dossiers','annonces','candidatures','operations','sanctions','recenses','infractions','timeline','loginHistory'];
+    _ARR_KEYS.forEach(function(k){
+      if(data[k] && !Array.isArray(data[k]) && typeof data[k] === 'object'){
+        data[k] = Object.values(data[k]).filter(Boolean);
+      }
+    });
     // Fusionner sans jamais supprimer d'utilisateurs existants en local
     const localUserById={};(DB.users||[]).forEach(u=>{if(u&&u.id)localUserById[u.id]=u;});
     const fbUsers=Array.isArray(data.users)?data.users.filter(Boolean):[];
@@ -23560,7 +23581,69 @@ function backupJSON() {
   a.download = 'sunagakure_backup_' + new Date().toISOString().slice(0,10) + '.json';
   document.body.appendChild(a); a.click(); document.body.removeChild(a);
   URL.revokeObjectURL(url);
+  // Mémoriser la date pour le rappel automatique
+  try { localStorage.setItem('suna_last_backup', String(Date.now())); } catch(e){}
+  if (typeof _refreshBackupReminder === 'function') _refreshBackupReminder();
   showToast('💾 Sauvegarde téléchargée avec succès !', 'success');
+}
+
+// ═══ RAPPEL AUTOMATIQUE DE BACKUP ═══
+// Affiche une bannière dans la zone "Sauvegarde & Restauration" et un toast au login
+// si l'utilisateur n'a pas téléchargé de sauvegarde depuis trop longtemps.
+function _getDaysSinceLastBackup() {
+  try {
+    var raw = localStorage.getItem('suna_last_backup');
+    if (!raw) return -1; // jamais fait de backup
+    var ts = parseInt(raw, 10);
+    if (isNaN(ts)) return -1;
+    return Math.floor((Date.now() - ts) / (24 * 60 * 60 * 1000));
+  } catch(e) { return -1; }
+}
+
+function _refreshBackupReminder() {
+  var banner = document.getElementById('backup-reminder-banner');
+  if (!banner) return;
+  // Visible seulement pour les admins/modos qui peuvent réellement backup
+  if (typeof canModify === 'function' && !canModify()) {
+    banner.style.display = 'none';
+    return;
+  }
+  var days = _getDaysSinceLastBackup();
+  if (days === -1) {
+    // Jamais de backup : message d'accueil bleu
+    banner.style.cssText = 'display:block;margin-bottom:14px;padding:12px 14px;border-radius:9px;font-size:12.5px;line-height:1.55;background:rgba(14,116,144,0.12);border:1px solid rgba(14,116,144,0.4);color:#67e8f9';
+    banner.innerHTML = '👋 <strong>Aucune sauvegarde téléchargée pour le moment.</strong> Une sauvegarde JSON régulière protège tes données contre toute perte accidentelle. Pense à en faire une dès maintenant !';
+  } else if (days >= 14) {
+    // > 2 semaines : urgent rouge
+    banner.style.cssText = 'display:block;margin-bottom:14px;padding:12px 14px;border-radius:9px;font-size:12.5px;line-height:1.55;background:rgba(239,68,68,0.13);border:1px solid rgba(239,68,68,0.5);color:#fca5a5';
+    banner.innerHTML = '🚨 <strong>Dernière sauvegarde : il y a '+days+' jours.</strong> C\'est trop ! Télécharge une sauvegarde maintenant pour ne pas risquer de perdre des données.';
+  } else if (days >= 7) {
+    // > 1 semaine : rappel doux jaune
+    banner.style.cssText = 'display:block;margin-bottom:14px;padding:12px 14px;border-radius:9px;font-size:12.5px;line-height:1.55;background:rgba(212,180,74,0.10);border:1px solid rgba(212,180,74,0.4);color:#d4b44a';
+    banner.innerHTML = '⏰ <strong>Dernière sauvegarde : il y a '+days+' jours.</strong> Pense à télécharger une nouvelle sauvegarde pour rester à jour.';
+  } else {
+    // Récent : confirmation discrète verte
+    banner.style.cssText = 'display:block;margin-bottom:14px;padding:10px 14px;border-radius:9px;font-size:12px;line-height:1.5;background:rgba(34,197,94,0.08);border:1px solid rgba(34,197,94,0.3);color:#86efac';
+    banner.innerHTML = '✅ Dernière sauvegarde : il y a '+(days===0?'moins d\'un jour':days+' jour'+(days>1?'s':''))+'. Tout est à jour.';
+  }
+}
+
+// Toast subtil au login si la sauvegarde est très ancienne (> 14j) — pour les utilisateurs
+// qui ne passent jamais par l'onglet Admin.
+function _checkBackupReminderAtLogin() {
+  if (!currentUser) return;
+  if (typeof canModify === 'function' && !canModify()) return; // visiteurs/membres : non concernés
+  var days = _getDaysSinceLastBackup();
+  if (days >= 14 || days === -1) {
+    setTimeout(function() {
+      if (typeof showToast === 'function') {
+        var msg = (days === -1)
+          ? '💾 Pense à faire une sauvegarde JSON dans Admin → Sauvegarde'
+          : '⏰ Dernière sauvegarde : '+days+' jours. Pense à en refaire une !';
+        showToast(msg, 'info');
+      }
+    }, 3500); // après les autres toasts/animations de login
+  }
 }
 
 function restoreJSON(input) {
@@ -27035,6 +27118,13 @@ document.addEventListener('DOMContentLoaded', function(){
         var r = window._fbRef(window._fbDB, 'sunagakure/bingobook');
         window._fbOnValue(r, function(snap){
           var val = snap.val();
+          // bug-fix : Firebase RTDB peut renvoyer un objet {0:..,1:..} au lieu
+          // d'un array (cas trous d'index). Sans cette normalisation, le cache
+          // local restait obsolète → bbSaveNinjas pouvait écraser des fiches
+          // créées par un autre admin.
+          if (val && !Array.isArray(val) && typeof val === 'object') {
+            val = Object.values(val).filter(Boolean);
+          }
           // Important : accepter aussi un tableau VIDE.
           // Si Firebase contient [] (= quelqu'un a tout supprimé sur un autre
           // appareil), on doit propager cette liste vide à TOUS les appareils.
