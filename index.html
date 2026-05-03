@@ -2879,7 +2879,13 @@ html{-webkit-tap-highlight-color:transparent}
   overflow:hidden !important;
   padding:0 !important;
   box-shadow:0 24px 80px rgba(0,0,0,0.7),0 0 0 1px rgba(201,162,39,0.05) !important;
+  display:flex !important;
+  flex-direction:column !important;
+  max-height:90vh !important;
 }
+#modal-recense .modal-header,
+#modal-recense .modal-footer,
+#modal-recense .rcv2-steps{flex-shrink:0 !important}
 #modal-recense .modal-header{
   position:relative;
   padding:22px 28px !important;
@@ -2933,7 +2939,9 @@ html{-webkit-tap-highlight-color:transparent}
 
 #modal-recense .modal-body{
   padding:0 !important;
-  max-height:72vh !important;overflow-y:auto !important;
+  flex:1 !important;
+  min-height:0 !important;
+  overflow-y:auto !important;
   background:transparent !important;
 }
 #modal-recense .modal-body::-webkit-scrollbar{width:6px}
@@ -12026,7 +12034,13 @@ document.addEventListener('error', function(e){
   overflow:hidden !important;
   padding:0 !important;
   box-shadow:0 24px 80px rgba(0,0,0,0.7),0 0 0 1px rgba(201,162,39,0.06) !important;
+  display:flex !important;
+  flex-direction:column !important;
+  max-height:90vh !important;
 }
+#modal-candidature .modal-header,
+#modal-candidature .cdv2-hero,
+#modal-candidature .modal-footer{flex-shrink:0 !important}
 #modal-candidature .modal-header{
   position:relative;
   padding:0 !important;
@@ -12093,7 +12107,8 @@ document.addEventListener('error', function(e){
 /* Body */
 #modal-candidature .modal-body{
   padding:28px 38px !important;
-  max-height:65vh !important;
+  flex:1 !important;
+  min-height:0 !important;
   overflow-y:auto !important;
   background:transparent !important;
 }
@@ -12435,6 +12450,10 @@ function cdv2SelectSection(el,val){
   overflow:hidden !important;
   padding:0 !important;
   box-shadow:0 24px 80px rgba(0,0,0,0.7),0 0 0 1px rgba(201,162,39,0.06) !important;
+  /* Fix layout : flex colonne avec footer toujours visible */
+  display:flex !important;
+  flex-direction:column !important;
+  max-height:90vh !important;
 }
 
 #modal-plainte .modal-header{
@@ -12510,12 +12529,19 @@ function cdv2SelectSection(el,val){
 /* Body du modal */
 #modal-plainte .modal-body{
   padding:28px 38px !important;
-  max-height:65vh !important;
+  flex:1 !important;
+  min-height:0 !important;
   overflow-y:auto !important;
   background:transparent !important;
 }
 #modal-plainte .modal-body::-webkit-scrollbar{width:6px}
 #modal-plainte .modal-body::-webkit-scrollbar-thumb{background:rgba(201,162,39,0.3);border-radius:3px}
+
+#modal-plainte .modal-header,
+#modal-plainte .plv2-hero,
+#modal-plainte .modal-footer{
+  flex-shrink:0 !important;
+}
 
 #modal-plainte .alert{display:none !important}
 
@@ -12825,7 +12851,13 @@ function plv2SelectCible(el,val){
   overflow:hidden !important;
   padding:0 !important;
   box-shadow:0 24px 80px rgba(0,0,0,0.7),0 0 0 1px rgba(201,162,39,0.06) !important;
+  display:flex !important;
+  flex-direction:column !important;
+  max-height:90vh !important;
 }
+#modal-dossier .modal-header,
+#modal-dossier .dsv2-hero,
+#modal-dossier .modal-footer{flex-shrink:0 !important}
 #modal-dossier .modal-header{
   position:relative;
   padding:0 !important;
@@ -12901,7 +12933,8 @@ function plv2SelectCible(el,val){
 /* Body */
 #modal-dossier .modal-body{
   padding:24px 32px !important;
-  max-height:64vh !important;
+  flex:1 !important;
+  min-height:0 !important;
   overflow-y:auto !important;
   background:transparent !important;
 }
