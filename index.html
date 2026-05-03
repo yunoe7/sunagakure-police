@@ -15092,10 +15092,15 @@ async function doRegister(){
     await new Promise(r=>setTimeout(r,1500));
   }
   saveData();
-  // Deuxième sauvegarde : attendre que _flushSaveQueue soit terminé avant de retenter
+  // bug-fix : attendre que _flushSaveQueue soit terminé ET que _fbSaveQueue soit
+  // vide (= la sauvegarde a vraiment été acceptée par Firebase, pas seulement
+  // mise en queue par les garde-fous anti-écrasement).
   await new Promise(r=>{
-    const _chk=(n)=>{if(n<=0||!_fbSaveRunning){r();}else{setTimeout(()=>_chk(n-1),200);}};
-    setTimeout(()=>_chk(15),400);
+    const _chk=(n)=>{
+      if(n<=0||(!_fbSaveRunning && !_fbSaveQueue)){r();}
+      else{setTimeout(()=>_chk(n-1),200);}
+    };
+    setTimeout(()=>_chk(25),400); // jusqu'à ~5,4s d'attente
   });
   if(window._fbDB&&window._fbRef&&window._fbUpdate){
     saveData();
@@ -15104,16 +15109,17 @@ async function doRegister(){
   _registerCount++;
   rs.textContent='✅ Compte créé ! Connexion en cours...';rs.style.display='block';
   _loginInProgress=false;
-  // Attendre que _flushSaveQueue soit terminé avant de connecter (évite toute race condition)
+  // Attendre que la queue soit vraiment vide avant de connecter (évite toute race
+  // condition + garantit que le compte est bien sur Firebase).
   const _waitSaveAndLogin=(tries)=>{
-    if(tries<=0||!_fbSaveRunning){
+    if(tries<=0||(!_fbSaveRunning && !_fbSaveQueue)){
       currentUser=newUser;
       applyLogin();
     } else {
       setTimeout(()=>_waitSaveAndLogin(tries-1),200);
     }
   };
-  setTimeout(()=>_waitSaveAndLogin(20),1000);
+  setTimeout(()=>_waitSaveAndLogin(25),1000);
 }
 
 // _saveDataAndWait : alias de saveData (la nouvelle version gère déjà la fusion Firebase)
@@ -15155,6 +15161,12 @@ function checkRememberMe(){
     // Sécurité supplémentaire : ne jamais auto-connecter un compte visiteur via "Se souvenir de moi".
     // Les visiteurs doivent toujours se connecter manuellement.
     if(user&&user.role!=="visiteur"){currentUser=user;_loginSource='auto';applyLogin();return true}
+    // bug-fix : si user introuvable MAIS qu'on n'a pas encore confirmé l'état Firebase
+    // (premier sync pas terminé OU _lastFbArrays.users vide), NE PAS supprimer la session.
+    // Sinon un cache local partiel pousserait l'utilisateur à se relogger inutilement.
+    if(_fbFirstLoad || !_lastFbArrays.users || _lastFbArrays.users.length === 0){
+      return false; // garde la session pour un retry au prochain checkRememberMe
+    }
   }catch(e){}
   try{ localStorage.removeItem("suna_session"); }catch(e){}
   return false;
@@ -15582,11 +15594,26 @@ function renderPage(name){
           if(fbData.users && !Array.isArray(fbData.users) && typeof fbData.users === 'object'){
             fbData.users = Object.values(fbData.users).filter(Boolean);
           }
+          // bug-fix : NE PAS écraser DB.users si une sauvegarde est en cours
+          // (race condition : on viens de créer un user, la sauvegarde Firebase
+          // n'est pas encore terminée, et le GET retourne les vieilles données).
+          // Sans cette protection, le nouveau user disparaît visuellement.
+          if(_fbSaveRunning){
+            return;
+          }
           var usersChanged=false;
           if(Array.isArray(fbData.users)&&fbData.users.length>0){
+            // bug-fix supplémentaire : MERGE au lieu d'écrasement.
+            // Si DB.users contient des modifs locales (ex: nouveau compte créé
+            // qui n'a pas encore été synchronisé), les préserver.
+            var fbUserById={};fbData.users.forEach(function(u){if(u&&u.id)fbUserById[u.id]=u;});
+            var localOnlyUsers=(DB.users||[]).filter(function(u){
+              return u && u.id && !fbUserById[u.id];
+            });
+            var mergedUsers=fbData.users.concat(localOnlyUsers);
             var prevUsers=JSON.stringify(DB.users);
-            DB.users=fbData.users;
-            _lastFbArrays.users=JSON.parse(JSON.stringify(fbData.users));
+            DB.users=mergedUsers;
+            _lastFbArrays.users=JSON.parse(JSON.stringify(mergedUsers));
             if(JSON.stringify(DB.users)!==prevUsers)usersChanged=true;
           }
           // Ne PAS écraser les autres collections ici : elles sont gérées par onValue
@@ -18681,9 +18708,14 @@ function saveUser(){
     saveData();
     closeModal("modal-adduser");renderAdmin();renderEffectifs();syncDashboard();clearForm(["u-login","u-pass","u-nom"]);
     showToast(`Compte de ${nom} créé.`,"success");
-    // Deuxième sauvegarde silencieuse — attend que _flushSaveQueue soit libre
+    // bug-fix : attendre que la queue Firebase soit VRAIMENT vidée (pas juste
+    // _fbSaveRunning=false). Sans ça, si un garde-fou a reporté la sauvegarde,
+    // elle pourrait être perdue à la fermeture de la page.
     setTimeout(async()=>{
-      if(_fbSaveRunning) await new Promise(r=>setTimeout(r,1000));
+      var maxWait = 15;
+      while((_fbSaveRunning || _fbSaveQueue) && maxWait-- > 0){
+        await new Promise(r=>setTimeout(r,300));
+      }
       if(window._fbDB&&window._fbRef&&window._fbUpdate) saveData();
     },1200);
   });
@@ -22860,6 +22892,17 @@ function _msgStopPresence(){
 }
 // On se déconnecte gracieusement quand on quitte la page
 window.addEventListener('beforeunload', function(){ try{_msgStopPresence();}catch(e){} });
+
+// bug-fix : prévenir l'utilisateur si une sauvegarde Firebase est en attente
+// (queue non vidée). Évite la perte d'un compte fraîchement créé si on ferme trop vite.
+window.addEventListener('beforeunload', function(e){
+  if(_fbSaveRunning || _fbSaveQueue){
+    var msg = '⚠️ Une sauvegarde est en cours. Si vous quittez maintenant, les dernières modifications pourraient ne pas être enregistrées sur le serveur.';
+    e.preventDefault();
+    e.returnValue = msg;
+    return msg;
+  }
+});
 
 function _msgKey(idA, idB){
   return [idA,idB].sort().join('_');
