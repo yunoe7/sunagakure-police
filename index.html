@@ -391,7 +391,66 @@ textarea.form-control{resize:vertical;min-height:80px}
 .lg-right-panel{flex:1;padding-left:60px;opacity:0;animation:lgFadeInUp 0.7s ease 0.5s forwards}
 /* Tabs */
 .lg-tab-row{display:flex;gap:0;margin-bottom:28px;border-bottom:1px solid rgba(201,162,39,0.2);position:relative}
-.lg-tab-btn{flex:1;padding:11px 0;background:none;border:none;cursor:pointer;font-family:'Share Tech Mono',monospace;font-size:10px;letter-spacing:3px;color:rgba(240,232,208,0.45);text-transform:uppercase;transition:all 0.25s;position:relative;display:flex;align-items:center;justify-content:center;gap:8px}
+
+/* ─── GRILLE SECTIONS LOGIN ─── */
+.lg-sections-block{margin-bottom:24px}
+.lg-sections-label{font-family:'Share Tech Mono',monospace;font-size:9px;letter-spacing:2px;color:rgba(201,162,39,0.55);text-transform:uppercase;margin-bottom:11px;display:flex;align-items:center;gap:6px}
+.lg-sections-label::before{content:'';flex:0 0 14px;height:1px;background:rgba(201,162,39,0.4)}
+.lg-sections-label::after{content:'';flex:1;height:1px;background:linear-gradient(to right,rgba(201,162,39,0.4),transparent)}
+.lg-sections-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.lg-sec-card{
+  position:relative;
+  background:rgba(20,16,9,0.6);
+  border:1px solid rgba(201,162,39,0.18);
+  border-radius:9px;
+  padding:13px 6px 10px;
+  display:flex;flex-direction:column;align-items:center;gap:5px;
+  cursor:pointer;
+  transition:all 0.2s ease;
+  overflow:hidden;
+  min-height:74px;
+}
+.lg-sec-card:hover:not(.locked){
+  background:rgba(192,65,14,0.06);
+  border-color:rgba(201,162,39,0.4);
+  transform:translateY(-1px);
+}
+.lg-sec-card.active{
+  background:linear-gradient(135deg,rgba(192,65,14,0.12),rgba(201,162,39,0.06));
+  border-color:rgba(201,162,39,0.7);
+  box-shadow:0 0 0 1px rgba(201,162,39,0.3),0 4px 16px rgba(192,65,14,0.18);
+}
+.lg-sec-card.active::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:2px;
+  background:linear-gradient(to right,transparent,#c9a227,transparent);
+}
+.lg-sec-icon{font-size:22px;line-height:1;filter:drop-shadow(0 1px 2px rgba(0,0,0,0.4))}
+.lg-sec-name{font-family:'Share Tech Mono',monospace;font-size:8.5px;letter-spacing:1.5px;color:rgba(240,232,208,0.85);text-transform:uppercase;text-align:center;font-weight:600}
+.lg-sec-card.active .lg-sec-name{color:#c9a227}
+.lg-sec-card.locked{
+  cursor:not-allowed;
+  opacity:0.45;
+  filter:grayscale(0.7);
+}
+.lg-sec-card.locked:hover{
+  transform:none;
+  background:rgba(20,16,9,0.6);
+  border-color:rgba(201,162,39,0.18);
+}
+.lg-sec-card.locked .lg-sec-icon{filter:grayscale(0.9)}
+.lg-sec-card.locked::after{
+  content:'🔒';
+  position:absolute;top:5px;right:6px;
+  font-size:10px;
+  opacity:0.85;
+}
+
+@media(max-width:768px){
+  .lg-sections-grid{gap:7px}
+  .lg-sec-card{padding:10px 4px 8px;min-height:64px}
+  .lg-sec-icon{font-size:18px}
+  .lg-sec-name{font-size:7.5px;letter-spacing:1px}
+}.lg-tab-btn{flex:1;padding:11px 0;background:none;border:none;cursor:pointer;font-family:'Share Tech Mono',monospace;font-size:10px;letter-spacing:3px;color:rgba(240,232,208,0.45);text-transform:uppercase;transition:all 0.25s;position:relative;display:flex;align-items:center;justify-content:center;gap:8px}
 .lg-tab-btn.active{color:#c9a227}
 .lg-tab-btn.active::after{content:'';position:absolute;bottom:-1px;left:0;right:0;height:2px;background:linear-gradient(to right,transparent,#c9a227,transparent)}
 .lg-tab-btn:not(.active):hover{color:rgba(240,232,208,0.65)}
@@ -5251,6 +5310,37 @@ document.addEventListener('error', function(e){
 
     <!-- Right panel (formulaires) -->
     <div class="lg-right-panel">
+
+      <!-- Sélection de section (Police active, autres verrouillées) -->
+      <div class="lg-sections-block">
+        <div class="lg-sections-label">Sélectionnez votre département</div>
+        <div class="lg-sections-grid">
+          <div class="lg-sec-card active" data-section="police" onclick="lgClickSection(this,'police','Police')">
+            <div class="lg-sec-icon">👮</div>
+            <div class="lg-sec-name">Police</div>
+          </div>
+          <div class="lg-sec-card locked" data-section="juge" onclick="lgClickSection(this,'juge','Juge')">
+            <div class="lg-sec-icon">⚖️</div>
+            <div class="lg-sec-name">Juge</div>
+          </div>
+          <div class="lg-sec-card locked" data-section="avocat" onclick="lgClickSection(this,'avocat','Avocat')">
+            <div class="lg-sec-icon">👨‍💼</div>
+            <div class="lg-sec-name">Avocat</div>
+          </div>
+          <div class="lg-sec-card locked" data-section="mission" onclick="lgClickSection(this,'mission','Mission')">
+            <div class="lg-sec-icon">🎯</div>
+            <div class="lg-sec-name">Mission</div>
+          </div>
+          <div class="lg-sec-card locked" data-section="medical" onclick="lgClickSection(this,'medical','Médical')">
+            <div class="lg-sec-icon">⚕️</div>
+            <div class="lg-sec-name">Médical</div>
+          </div>
+          <div class="lg-sec-card locked" data-section="diplomatie" onclick="lgClickSection(this,'diplomatie','Diplomatie')">
+            <div class="lg-sec-icon">🤝</div>
+            <div class="lg-sec-name">Diplomatie</div>
+          </div>
+        </div>
+      </div>
 
       <!-- Tabs -->
       <div class="lg-tab-row">
@@ -13032,6 +13122,97 @@ document.addEventListener('error', function(e){
               </label>
             </div>
           </div>
+
+          <!-- ═══ Sections de l'écran de connexion ═══ -->
+          <div style="margin-top:18px;padding:10px 0 6px;border-top:1px solid var(--border)">
+            <div style="font-size:10px;color:var(--gold2);font-family:'Share Tech Mono',monospace;letter-spacing:2px;text-transform:uppercase;margin-bottom:2px">🔐 Écran de connexion</div>
+            <div style="font-size:10.5px;color:var(--muted);font-family:'Share Tech Mono',monospace">Active/désactive les départements affichés sur la page de connexion (Police reste toujours actif)</div>
+          </div>
+          <!-- Login : Juge -->
+          <div id="feat-row-juge" style="display:flex;align-items:center;gap:14px;padding:14px 0;border-top:1px solid var(--border)">
+            <div style="width:44px;height:44px;border-radius:10px;background:rgba(180,140,20,0.08);border:1px solid rgba(180,140,20,0.2);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0">⚖️</div>
+            <div style="flex:1;min-width:0">
+              <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:2px">Connexion — Section Juge</div>
+              <div style="font-size:10px;color:var(--muted);font-family:'Share Tech Mono',monospace">Affiche le département Juge sur l'écran de connexion</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:10px;flex-shrink:0">
+              <span id="feat-juge-badge" style="font-size:9px;font-family:'Share Tech Mono',monospace;padding:2px 8px;border-radius:4px;background:rgba(192,65,14,0.15);color:#e05c1a;border:1px solid rgba(192,65,14,0.3);letter-spacing:1px">VERROUILLÉ</span>
+              <label style="position:relative;display:inline-block;width:46px;height:26px;cursor:pointer">
+                <input type="checkbox" id="toggle-feat-juge" style="opacity:0;width:0;height:0;position:absolute" onchange="toggleLoginSection('juge',this.checked)">
+                <span id="feat-juge-track" style="position:absolute;inset:0;border-radius:13px;background:rgba(0,0,0,0.2);border:1px solid rgba(0,0,0,0.12);transition:all 0.2s">
+                  <span id="feat-juge-thumb" style="position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:#6b7280;box-shadow:0 1px 4px rgba(0,0,0,0.3);transition:all 0.2s"></span>
+                </span>
+              </label>
+            </div>
+          </div>
+          <!-- Login : Avocat -->
+          <div id="feat-row-avocat" style="display:flex;align-items:center;gap:14px;padding:14px 0;border-top:1px solid var(--border)">
+            <div style="width:44px;height:44px;border-radius:10px;background:rgba(180,140,20,0.08);border:1px solid rgba(180,140,20,0.2);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0">👨‍💼</div>
+            <div style="flex:1;min-width:0">
+              <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:2px">Connexion — Section Avocat</div>
+              <div style="font-size:10px;color:var(--muted);font-family:'Share Tech Mono',monospace">Affiche le département Avocat sur l'écran de connexion</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:10px;flex-shrink:0">
+              <span id="feat-avocat-badge" style="font-size:9px;font-family:'Share Tech Mono',monospace;padding:2px 8px;border-radius:4px;background:rgba(192,65,14,0.15);color:#e05c1a;border:1px solid rgba(192,65,14,0.3);letter-spacing:1px">VERROUILLÉ</span>
+              <label style="position:relative;display:inline-block;width:46px;height:26px;cursor:pointer">
+                <input type="checkbox" id="toggle-feat-avocat" style="opacity:0;width:0;height:0;position:absolute" onchange="toggleLoginSection('avocat',this.checked)">
+                <span id="feat-avocat-track" style="position:absolute;inset:0;border-radius:13px;background:rgba(0,0,0,0.2);border:1px solid rgba(0,0,0,0.12);transition:all 0.2s">
+                  <span id="feat-avocat-thumb" style="position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:#6b7280;box-shadow:0 1px 4px rgba(0,0,0,0.3);transition:all 0.2s"></span>
+                </span>
+              </label>
+            </div>
+          </div>
+          <!-- Login : Mission -->
+          <div id="feat-row-mission" style="display:flex;align-items:center;gap:14px;padding:14px 0;border-top:1px solid var(--border)">
+            <div style="width:44px;height:44px;border-radius:10px;background:rgba(180,140,20,0.08);border:1px solid rgba(180,140,20,0.2);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0">🎯</div>
+            <div style="flex:1;min-width:0">
+              <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:2px">Connexion — Section Mission</div>
+              <div style="font-size:10px;color:var(--muted);font-family:'Share Tech Mono',monospace">Affiche le département Mission sur l'écran de connexion</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:10px;flex-shrink:0">
+              <span id="feat-mission-badge" style="font-size:9px;font-family:'Share Tech Mono',monospace;padding:2px 8px;border-radius:4px;background:rgba(192,65,14,0.15);color:#e05c1a;border:1px solid rgba(192,65,14,0.3);letter-spacing:1px">VERROUILLÉ</span>
+              <label style="position:relative;display:inline-block;width:46px;height:26px;cursor:pointer">
+                <input type="checkbox" id="toggle-feat-mission" style="opacity:0;width:0;height:0;position:absolute" onchange="toggleLoginSection('mission',this.checked)">
+                <span id="feat-mission-track" style="position:absolute;inset:0;border-radius:13px;background:rgba(0,0,0,0.2);border:1px solid rgba(0,0,0,0.12);transition:all 0.2s">
+                  <span id="feat-mission-thumb" style="position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:#6b7280;box-shadow:0 1px 4px rgba(0,0,0,0.3);transition:all 0.2s"></span>
+                </span>
+              </label>
+            </div>
+          </div>
+          <!-- Login : Médical -->
+          <div id="feat-row-medical" style="display:flex;align-items:center;gap:14px;padding:14px 0;border-top:1px solid var(--border)">
+            <div style="width:44px;height:44px;border-radius:10px;background:rgba(180,140,20,0.08);border:1px solid rgba(180,140,20,0.2);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0">⚕️</div>
+            <div style="flex:1;min-width:0">
+              <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:2px">Connexion — Section Médical</div>
+              <div style="font-size:10px;color:var(--muted);font-family:'Share Tech Mono',monospace">Affiche le département Médical sur l'écran de connexion</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:10px;flex-shrink:0">
+              <span id="feat-medical-badge" style="font-size:9px;font-family:'Share Tech Mono',monospace;padding:2px 8px;border-radius:4px;background:rgba(192,65,14,0.15);color:#e05c1a;border:1px solid rgba(192,65,14,0.3);letter-spacing:1px">VERROUILLÉ</span>
+              <label style="position:relative;display:inline-block;width:46px;height:26px;cursor:pointer">
+                <input type="checkbox" id="toggle-feat-medical" style="opacity:0;width:0;height:0;position:absolute" onchange="toggleLoginSection('medical',this.checked)">
+                <span id="feat-medical-track" style="position:absolute;inset:0;border-radius:13px;background:rgba(0,0,0,0.2);border:1px solid rgba(0,0,0,0.12);transition:all 0.2s">
+                  <span id="feat-medical-thumb" style="position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:#6b7280;box-shadow:0 1px 4px rgba(0,0,0,0.3);transition:all 0.2s"></span>
+                </span>
+              </label>
+            </div>
+          </div>
+          <!-- Login : Diplomatie -->
+          <div id="feat-row-diplomatie" style="display:flex;align-items:center;gap:14px;padding:14px 0;border-top:1px solid var(--border)">
+            <div style="width:44px;height:44px;border-radius:10px;background:rgba(180,140,20,0.08);border:1px solid rgba(180,140,20,0.2);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0">🤝</div>
+            <div style="flex:1;min-width:0">
+              <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:2px">Connexion — Section Diplomatie</div>
+              <div style="font-size:10px;color:var(--muted);font-family:'Share Tech Mono',monospace">Affiche le département Diplomatie sur l'écran de connexion</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:10px;flex-shrink:0">
+              <span id="feat-diplomatie-badge" style="font-size:9px;font-family:'Share Tech Mono',monospace;padding:2px 8px;border-radius:4px;background:rgba(192,65,14,0.15);color:#e05c1a;border:1px solid rgba(192,65,14,0.3);letter-spacing:1px">VERROUILLÉ</span>
+              <label style="position:relative;display:inline-block;width:46px;height:26px;cursor:pointer">
+                <input type="checkbox" id="toggle-feat-diplomatie" style="opacity:0;width:0;height:0;position:absolute" onchange="toggleLoginSection('diplomatie',this.checked)">
+                <span id="feat-diplomatie-track" style="position:absolute;inset:0;border-radius:13px;background:rgba(0,0,0,0.2);border:1px solid rgba(0,0,0,0.12);transition:all 0.2s">
+                  <span id="feat-diplomatie-thumb" style="position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:#6b7280;box-shadow:0 1px 4px rgba(0,0,0,0.3);transition:all 0.2s"></span>
+                </span>
+              </label>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -15186,6 +15367,20 @@ function initFirebaseSync(){
             _featuresChanged = true;
           }
           if(_featuresChanged) _changedKeys.add('features');
+          // Pont vers les clés localStorage utilisées par les cards du login screen
+          // (les visiteurs sur le login peuvent ainsi voir l'état activé/verrouillé même sans être authentifiés)
+          try{
+            var _loginKeys = ['juge','avocat','mission','medical','diplomatie'];
+            _loginKeys.forEach(function(k){
+              if(typeof DB.features['login_'+k+'_active'] !== 'undefined'){
+                localStorage.setItem('feat_login_'+k+'_active', DB.features['login_'+k+'_active'] ? '1' : '0');
+              }
+            });
+            // Resynchroniser les cards login si visibles
+            if(typeof window._lgSyncLoginCardsFromLS === 'function') window._lgSyncLoginCardsFromLS();
+            // Resynchroniser aussi les toggles dans le panel admin si visibles
+            if(typeof initFeatureLoginSections === 'function') initFeatureLoginSections();
+          }catch(e){}
         }
         try{localStorage.setItem(STORE,JSON.stringify(DB));}catch(e){}
 
@@ -16410,6 +16605,73 @@ function lgTogglePass(){
   else{inp.type='password';if(icon)icon.textContent='👁';}
 }
 
+// ─── SECTIONS LOGIN — clic sur une card ───
+// Si verrouillée → toast "indisponible"
+// Si ouverte → marque comme active (visuel), enregistre dans la session (utile pour usage futur)
+function lgClickSection(card, key, name){
+  if(!card) return;
+  if(card.classList.contains('locked')){
+    // Petit toast custom (showToast n'existe pas encore avant le login)
+    var existing=document.getElementById('lg-section-toast');
+    if(existing) existing.remove();
+    var t=document.createElement('div');
+    t.id='lg-section-toast';
+    t.style.cssText='position:fixed;top:20px;left:50%;transform:translateX(-50%);background:rgba(20,16,9,0.96);border:1px solid rgba(192,65,14,0.4);border-radius:10px;padding:11px 18px;color:#f0e8d0;font-family:Barlow,sans-serif;font-size:13px;font-weight:600;letter-spacing:0.5px;box-shadow:0 8px 32px rgba(0,0,0,0.5);z-index:99999;display:flex;align-items:center;gap:10px;backdrop-filter:blur(12px);animation:lgToastIn 0.3s ease both';
+    t.innerHTML='<span style="font-size:16px">🔒</span><span><strong style="color:#c9a227">Section '+name+' verrouillée</strong><br><span style="font-size:11px;opacity:0.7">Cette section n\'est pas encore disponible</span></span>';
+    document.body.appendChild(t);
+    setTimeout(function(){
+      t.style.transition='opacity 0.3s,transform 0.3s';
+      t.style.opacity='0';
+      t.style.transform='translateX(-50%) translateY(-10px)';
+      setTimeout(function(){t.remove();},300);
+    },2400);
+    return;
+  }
+  // Section ouverte → activer visuellement
+  document.querySelectorAll('.lg-sec-card').forEach(function(c){c.classList.remove('active');});
+  card.classList.add('active');
+  try{ sessionStorage.setItem('lg_section_choice', key); }catch(e){}
+}
+
+// Garde l'ancien nom pour rétro-compat (non utilisé désormais via onclick mais peut être référencé)
+function lgLockedSection(name){ lgClickSection(null, '', name); }
+
+// Sync des cards login avec les flags admin (DB.features.login_*_active + localStorage)
+(function(){
+  function syncCardsFromLocalStorage(){
+    var keys = ['juge','avocat','mission','medical','diplomatie'];
+    keys.forEach(function(key){
+      var card = document.querySelector('.lg-sec-card[data-section="'+key+'"]');
+      if(!card) return;
+      var active = false;
+      try{ active = localStorage.getItem('feat_login_'+key+'_active') === '1'; }catch(e){}
+      if(active) card.classList.remove('locked');
+      else card.classList.add('locked');
+    });
+  }
+  // Au chargement initial
+  if(document.readyState==='loading'){
+    document.addEventListener('DOMContentLoaded', syncCardsFromLocalStorage);
+  } else {
+    syncCardsFromLocalStorage();
+  }
+  // Re-sync quelques fois après le load au cas où Firebase pousse des changements
+  window.addEventListener('load', function(){
+    setTimeout(syncCardsFromLocalStorage, 600);
+    setTimeout(syncCardsFromLocalStorage, 2200);
+  });
+  // Exposer la fonction pour qu'elle puisse être appelée depuis le sync Firebase (DB.features)
+  window._lgSyncLoginCardsFromLS = syncCardsFromLocalStorage;
+})();
+// Animation pour le toast
+(function(){
+  if(document.getElementById('lg-toast-style')) return;
+  var s=document.createElement('style');
+  s.id='lg-toast-style';
+  s.textContent='@keyframes lgToastIn{from{opacity:0;transform:translateX(-50%) translateY(-12px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}';
+  document.head.appendChild(s);
+})();
+
 function switchLoginTab(tab){
   const isLogin=tab==='login';
   el('form-login').style.display=isLogin?'block':'none';
@@ -17022,6 +17284,8 @@ function renderPage(name){
     if(typeof initFeatureMenace==='function') initFeatureMenace();
     // Init toggles Recrutement Tribunal/Avocats
     if(typeof initFeatureSections==='function') initFeatureSections();
+    // Init toggles login sections
+    if(typeof initFeatureLoginSections==='function') initFeatureLoginSections();
     // Forcer une relecture Firebase pour afficher les comptes les plus récents
     // Affichage immédiat avec les données déjà à jour via le listener onValue
     renderAdmin();renderAdminTimeline();renderAuditLog();renderLoginHistory();
@@ -19589,6 +19853,69 @@ function initFeatureSections(){
   _syncFeatureTribunalUI(isTribunalFeatureActive());
   _syncFeatureAvocatsUI(isAvocatsFeatureActive());
   if(typeof _syncSectionLockUI === 'function') _syncSectionLockUI();
+}
+
+// ─── ÉCRAN DE CONNEXION : sections (juge, avocat, mission, medical, diplomatie) ───
+// Fonction générique partagée par les 5 toggles.
+var _LOGIN_SECTIONS = ['juge','avocat','mission','medical','diplomatie'];
+
+function toggleLoginSection(key, enabled){
+  if(typeof isAdmin === 'function' && !isAdmin()){
+    showToast('⛔ Action réservée aux administrateurs.','error');
+    _syncLoginSectionUI(key, !enabled);
+    return;
+  }
+  if(!DB.features) DB.features = {};
+  DB.features['login_'+key+'_active'] = !!enabled;
+  saveData();
+  try{ localStorage.setItem('feat_login_'+key+'_active', enabled ? '1' : '0'); }catch(e){}
+  _syncLoginSectionUI(key, enabled);
+  // Mettre à jour la card sur le login screen (si visible)
+  if(typeof _syncLoginCards === 'function') _syncLoginCards();
+  var labels = {juge:'Juge',avocat:'Avocat',mission:'Mission',medical:'Médical',diplomatie:'Diplomatie'};
+  showToast((enabled?'✅ Section ':'🔒 Section ')+(labels[key]||key)+(enabled?' activée':' verrouillée'), enabled?'success':'info');
+}
+
+function _syncLoginSectionUI(key, enabled){
+  var badge = document.getElementById('feat-'+key+'-badge');
+  var track = document.getElementById('feat-'+key+'-track');
+  var thumb = document.getElementById('feat-'+key+'-thumb');
+  var chk   = document.getElementById('toggle-feat-'+key);
+  if(chk) chk.checked = enabled;
+  if(badge){
+    badge.textContent = enabled ? 'OUVERT' : 'VERROUILLÉ';
+    badge.style.background  = enabled ? 'rgba(21,128,61,0.15)' : 'rgba(192,65,14,0.15)';
+    badge.style.color       = enabled ? '#16a34a'              : '#e05c1a';
+    badge.style.borderColor = enabled ? 'rgba(21,128,61,0.35)' : 'rgba(192,65,14,0.3)';
+  }
+  if(track) track.style.background = enabled ? 'rgba(21,128,61,0.35)' : 'rgba(0,0,0,0.2)';
+  if(thumb){
+    thumb.style.background = enabled ? '#16a34a' : '#6b7280';
+    thumb.style.transform  = enabled ? 'translateX(20px)' : 'translateX(0)';
+  }
+}
+
+function isLoginSectionActive(key){
+  if(DB.features && typeof DB.features['login_'+key+'_active'] !== 'undefined') return !!DB.features['login_'+key+'_active'];
+  try{ return localStorage.getItem('feat_login_'+key+'_active') === '1'; }catch(e){ return false; }
+}
+
+// Synchronise l'état des cards sur l'écran de connexion (verrouillage visuel)
+function _syncLoginCards(){
+  _LOGIN_SECTIONS.forEach(function(key){
+    var card = document.querySelector('.lg-sec-card[data-section="'+key+'"]');
+    if(!card) return;
+    var active = isLoginSectionActive(key);
+    if(active) card.classList.remove('locked');
+    else card.classList.add('locked');
+  });
+}
+
+function initFeatureLoginSections(){
+  _LOGIN_SECTIONS.forEach(function(key){
+    _syncLoginSectionUI(key, isLoginSectionActive(key));
+  });
+  _syncLoginCards();
 }
 
 function _syncFeatureMapUI(enabled){
