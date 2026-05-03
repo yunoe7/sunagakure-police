@@ -10908,17 +10908,10 @@ document.addEventListener('error', function(e){
       font-size:13.5px;line-height:1.5;
       position:relative;
       word-wrap:break-word;
-      /* bug-fix : la bulle doit s'adapter à son contenu, pas s'écraser à 1 caractère par ligne.
-         width:fit-content permet à la bulle d'avoir la largeur du texte (jusqu'à max-width). */
-      width:fit-content;
+      /* bug-fix : la bulle s'adapte à son contenu via display:inline-block.
+         (avant : width:fit-content cassait la mise en page sur certains navigateurs). */
+      display:inline-block;
       max-width:100%;
-      /* bug-fix : animation retirée — elle se rejouait à chaque re-render du thread
-         (ex: à chaque caractère tapé via le listener typing Firebase), causant un
-         effet clignotant désagréable. Les nouveaux messages restent fluides
-         car ils apparaissent simplement (le scroll en bas masque la transition). */
-    }
-    #page-messagerie .msg-bubble-row.mine .msg-b-content{
-      align-items:flex-end;
     }
     @keyframes msgPop{
       from{opacity:0;transform:scale(0.94) translateY(4px)}
