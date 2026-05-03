@@ -14106,9 +14106,12 @@ function plv2SelectCible(el,val){
 const NATURES=["Ninjutsu","Genjutsu","Taijutsu","Fuinjutsu","Kenjutsu","Médecine ninja","Doton","Suiton","Katon","Raiton","Fûton","Hyoton","Jinchuriki","Kekkei Genkai","Autre"];
 const NATURE_BADGE={Ninjutsu:"badge-blue",Genjutsu:"badge-purple",Taijutsu:"badge-red",Fuinjutsu:"badge-gold",Kenjutsu:"badge-gray","Médecine ninja":"badge-green",Doton:"badge-gold",Suiton:"badge-cyan",Katon:"badge-red",Raiton:"badge-gold","Fûton":"badge-blue",Hyoton:"badge-cyan",Jinchuriki:"badge-purple","Kekkei Genkai":"badge-purple",Autre:"badge-gray"};
 const STORE="suna_v4";
-// Mot de passe admin par défaut — À CHANGER IMMÉDIATEMENT après le premier déploiement
-// via le panel admin > modifier le compte admin.
-const DEFAULT_PASS="aysenLM69001toz";
+// bug-fix sécurité : la constante DEFAULT_PASS hardcodée a été RETIRÉE.
+// - Au premier setup, un mot de passe admin aléatoire est généré et affiché UNE FOIS
+//   via une popup au chargement (voir _generateRandomPass + migratePasswords).
+// - Pour réinitialiser un compte corrompu, l'admin doit définir manuellement un
+//   nouveau mot de passe via Admin → Membres → Modifier le compte.
+// - emergencyReset() demande désormais un nouveau mot de passe à l'utilisateur.
 
 // ========== FIREBASE SYNC ==========
 let _fbSaveTimeout=null;
@@ -14358,21 +14361,23 @@ function initFirebaseSync(){
       // Migration des mots de passe en clair reçus depuis Firebase
       // Détecter aussi les mots de passe corrompus (hash de "__PENDING_HASH__" au lieu du vrai mot de passe)
       const fbNeedsMigration=DB.users&&DB.users.some(u=>!isHashed(u.pass));
-      // On lance toujours une vérification asynchrone des hashes corrompus
+      // On lance toujours une vérification asynchrone des hashes corrompus.
+      // bug-fix sécurité : on ne réinitialise plus avec un mot de passe public.
+      // Les comptes au hash invalide sont marqués "__NEEDS_RESET__" + désactivés.
+      // L'admin doit reset manuellement via Admin → Membres → Modifier.
       const fixCorrupted=(async()=>{
-        const badHash=await hashPass("__PENDING_HASH__");
         let fixed=false;
         for(const u of DB.users){
-          if(u.pass===badHash||(u.login==="admin"&&!isHashed(u.pass))){
-            u.pass=await hashPass(DEFAULT_PASS);
-            fixed=true;
+          if(u.pass==='__PENDING_HASH__' || (u.pass && !isHashed(u.pass) && u.pass !== '__NEEDS_RESET__')){
+            u.pass = '__NEEDS_RESET__';
+            u.statut = 'Désactivé';
+            fixed = true;
           }
         }
         if(fixed){
           try{localStorage.setItem(STORE,JSON.stringify(DB));}catch(e){}
           // bug-fix : utiliser saveData() qui passe par _flushSaveQueue avec
-          // GET-merge frais et garde-fous anti-perte. Un _fbSet direct ici
-          // pouvait écraser des comptes créés pendant le await hashPass.
+          // GET-merge frais et garde-fous anti-perte.
           saveData();
         }
       })();
@@ -14420,10 +14425,21 @@ function initFirebaseSync(){
       };
       if(fbNeedsMigration){
         (async()=>{
-          for(const u of DB.users){if(!isHashed(u.pass)){const rp=(u.pass==="__PENDING_HASH__"||!u.pass)?DEFAULT_PASS:u.pass;u.pass=await hashPass(rp);}}
-          // bug-fix : ne PAS faire _fbSet direct ici (écrase Firebase entièrement,
-          // perd les comptes créés pendant les await hashPass). saveData() passe
-          // par _flushSaveQueue avec GET-merge frais et protections anti-écrasement.
+          // bug-fix sécurité : on ne migre plus les passwords en clair vers DEFAULT_PASS.
+          // - Si u.pass ressemble à un mot de passe en clair (rare bug ancien), on le hashe en PBKDF2
+          // - Si u.pass est __PENDING_HASH__, vide ou invalide → marquer comme à reset
+          for(const u of DB.users){
+            if(!isHashed(u.pass)){
+              if(typeof u.pass === 'string' && u.pass && u.pass !== '__PENDING_HASH__' && u.pass !== '__NEEDS_RESET__' && u.pass.length >= 4 && !/^[0-9a-f]{64}$/.test(u.pass)){
+                // Probable mot de passe en clair → migrer vers PBKDF2
+                u.pass = await hashPass(u.pass);
+              } else {
+                // Hash invalide / placeholder → marquer comme à réinitialiser
+                u.pass = '__NEEDS_RESET__';
+                u.statut = 'Désactivé';
+              }
+            }
+          }
           saveData();
           afterFbMigration();
         })();
@@ -14458,21 +14474,106 @@ function initFirebaseSync(){
   });
 }
 
-// ========== HACHAGE ==========
+// ════════════════════════════════════════════════════════════════
+// HACHAGE & VÉRIFICATION DES MOTS DE PASSE
+// ════════════════════════════════════════════════════════════════
+// Sécurité : PBKDF2 avec sel aléatoire et 100 000 itérations (recommandation OWASP).
+// Format de sortie : "pbkdf2$<iterations>$<salt_hex>$<hash_hex>"
+// Rétro-compatibilité : verifyPass() accepte aussi les anciens hashes SHA-256
+// (64 caractères hex). Quand un utilisateur se connecte avec un hash legacy,
+// le code re-hashe automatiquement son mot de passe en PBKDF2 (migration silencieuse).
+
+const _PBKDF2_ITERATIONS = 100000; // 100k itérations SHA-256
+const _PBKDF2_SALT_BYTES = 16;
+const _PBKDF2_HASH_BITS = 256;
+
 async function hashPass(plain){
-  const buf=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(plain));
-  return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,"0")).join("");
+  if(typeof plain !== 'string' || !plain){
+    throw new Error('hashPass: input must be a non-empty string');
+  }
+  const salt = crypto.getRandomValues(new Uint8Array(_PBKDF2_SALT_BYTES));
+  const enc = new TextEncoder();
+  const keyMat = await crypto.subtle.importKey(
+    'raw', enc.encode(plain), { name: 'PBKDF2' }, false, ['deriveBits']
+  );
+  const bits = await crypto.subtle.deriveBits(
+    { name: 'PBKDF2', salt: salt, iterations: _PBKDF2_ITERATIONS, hash: 'SHA-256' },
+    keyMat, _PBKDF2_HASH_BITS
+  );
+  const hashHex = Array.from(new Uint8Array(bits))
+    .map(b => b.toString(16).padStart(2,'0')).join('');
+  const saltHex = Array.from(salt)
+    .map(b => b.toString(16).padStart(2,'0')).join('');
+  return 'pbkdf2$' + _PBKDF2_ITERATIONS + '$' + saltHex + '$' + hashHex;
 }
-// Version synchrone approximative (pour les vérifications déjà hachées)
-// "__PENDING_HASH__" est explicitement exclu : il doit toujours être migré
-function isHashed(s){return typeof s==="string"&&s.length===64&&/^[0-9a-f]+$/.test(s)&&s!=="__PENDING_HASH__"}
 
-const _DEFAULT_PASS_HASH=(async()=>{
-  // Pré-calcul du hash du mot de passe par défaut
-  return await hashPass(DEFAULT_PASS);
-})();
+// Comparaison en temps constant (anti timing-attack)
+function _constTimeEq(a, b){
+  if(typeof a !== 'string' || typeof b !== 'string') return false;
+  if(a.length !== b.length) return false;
+  let r = 0;
+  for(let i = 0; i < a.length; i++) r |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  return r === 0;
+}
 
-async function getDefaultPassHash(){return await _DEFAULT_PASS_HASH;}
+// Vérifie un mot de passe en clair contre un hash stocké.
+// Accepte les deux formats : PBKDF2 (nouveau) et SHA-256 (legacy).
+async function verifyPass(plain, stored){
+  if(!plain || !stored || typeof stored !== 'string') return false;
+  // Format PBKDF2 (nouveau)
+  if(stored.startsWith('pbkdf2$')){
+    const parts = stored.split('$');
+    if(parts.length !== 4) return false;
+    const iterations = parseInt(parts[1], 10);
+    if(!iterations || iterations < 1000) return false;
+    try{
+      const saltHex = parts[2];
+      const expected = parts[3];
+      const salt = new Uint8Array(saltHex.match(/.{2}/g).map(h => parseInt(h, 16)));
+      const enc = new TextEncoder();
+      const keyMat = await crypto.subtle.importKey(
+        'raw', enc.encode(plain), { name: 'PBKDF2' }, false, ['deriveBits']
+      );
+      const bits = await crypto.subtle.deriveBits(
+        { name: 'PBKDF2', salt: salt, iterations: iterations, hash: 'SHA-256' },
+        keyMat, _PBKDF2_HASH_BITS
+      );
+      const hashHex = Array.from(new Uint8Array(bits))
+        .map(b => b.toString(16).padStart(2,'0')).join('');
+      return _constTimeEq(hashHex, expected);
+    }catch(e){ return false; }
+  }
+  // Format SHA-256 legacy (64 hex chars) — pour la migration transparente
+  if(/^[0-9a-f]{64}$/.test(stored)){
+    const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(plain));
+    const hashHex = Array.from(new Uint8Array(buf))
+      .map(b => b.toString(16).padStart(2,'0')).join('');
+    return _constTimeEq(hashHex, stored);
+  }
+  return false;
+}
+
+// Vérifie qu'une chaîne ressemble à un hash valide (PBKDF2 ou SHA-256 legacy)
+function isHashed(s){
+  if(typeof s !== 'string' || !s) return false;
+  if(s === '__PENDING_HASH__' || s === '__NEEDS_RESET__') return false;
+  // PBKDF2 : pbkdf2$iter$salt$hash
+  if(s.startsWith('pbkdf2$')){
+    const parts = s.split('$');
+    return parts.length === 4 && /^\d+$/.test(parts[1]) && /^[0-9a-f]+$/.test(parts[2]) && /^[0-9a-f]+$/.test(parts[3]);
+  }
+  // SHA-256 legacy : 64 hex chars
+  return s.length === 64 && /^[0-9a-f]+$/.test(s);
+}
+
+// _DEFAULT_PASS_HASH retiré : on n'utilise plus de mot de passe par défaut public.
+// Voir _generateRandomPass() pour la création initiale du compte admin.
+function _generateRandomPass(){
+  // Mot de passe alphanumérique cryptographiquement sûr (ambigus exclus : 0/O, 1/l/I)
+  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789abcdefghijkmnopqrstuvwxyz";
+  const arr = crypto.getRandomValues(new Uint8Array(16));
+  return Array.from(arr).map(b => chars[b % chars.length]).join("");
+}
 
 function defaultData(){
   // Le mot de passe sera remplacé par son hash à l'init (voir window.onload)
@@ -15218,23 +15319,46 @@ function doLogin(){
   const pass=el("login-pass").value;
   showLoginErr("");
   el("login-alert").style.display="none";
-  // Afficher un indicateur de chargement
-  // Toujours lire Firebase avant de vérifier les identifiants (pour avoir les comptes récents)
-  const _doLoginCheck=async function(hashed){
+  // bug-fix : avec PBKDF2 + sel aléatoire, hashPass(pass) donne un hash différent
+  // à chaque appel. On ne peut plus comparer u.pass === hashed.
+  // À la place, on parcourt les users et on appelle verifyPass(pass, u.pass) qui
+  // gère à la fois le nouveau format PBKDF2 et l'ancien SHA-256 (rétro-compat).
+  const _doLoginCheck=async function(){
     _loginInProgress=false;
-    // Pas de GET Firebase — DB.users est déjà maintenu à jour par le listener onValue en temps réel.
-    // Si un compte a encore __PENDING_HASH__ ou le hash corrompu, le migrer maintenant
-    const badHash2=await hashPass("__PENDING_HASH__");
-    const toMigrate=DB.users.filter(u=>!isHashed(u.pass)||u.pass===badHash2);
-    if(toMigrate.length>0){
-      for(const u of toMigrate){
-        const isCorrupted=u.pass===badHash2;
-        const rp=(u.pass==="__PENDING_HASH__"||isCorrupted||!u.pass)?DEFAULT_PASS:u.pass;
-        u.pass=await hashPass(rp);
+    // Marquer comme désactivés les comptes au hash invalide (corruption/migration ratée)
+    // ATTENTION : on ne réécrit plus avec un mot de passe par défaut public — l'admin
+    // doit reset manuellement les comptes "__NEEDS_RESET__".
+    let needsSave = false;
+    for(const u of DB.users){
+      if(u.pass === '__PENDING_HASH__' && u.statut !== 'Désactivé'){
+        u.pass = '__NEEDS_RESET__';
+        u.statut = 'Désactivé';
+        needsSave = true;
       }
-      saveData();
     }
-    const user=DB.users.find(u=>u.login===login&&u.pass===hashed&&u.statut!=="Désactivé");
+    if(needsSave) saveData();
+
+    // Chercher l'user qui matche login + password (verifyPass async)
+    let user = null;
+    for(const u of DB.users){
+      if(u.login !== login) continue;
+      if(u.statut === "Désactivé") continue;
+      if(!isHashed(u.pass)) continue; // hash invalide / __NEEDS_RESET__
+      if(await verifyPass(pass, u.pass)){
+        user = u;
+        break;
+      }
+    }
+
+    // Auto-migration : si l'user a été trouvé via un hash SHA-256 legacy, on
+    // ré-hashe son mot de passe en PBKDF2 (transparent pour l'utilisateur).
+    if(user && user.pass && !user.pass.startsWith('pbkdf2$')){
+      try{
+        user.pass = await hashPass(pass);
+        saveData();
+      }catch(e){ /* migration échouée — non bloquant */ }
+    }
+
     if(!user){
       _loginFailCount++;
       // Journaliser la tentative échouée
@@ -15263,39 +15387,55 @@ function doLogin(){
     }
     applyLogin();
   };
-  hashPass(pass).then(_doLoginCheck);
+  // bug-fix : on n'appelle plus hashPass(pass).then(_doLoginCheck) car PBKDF2 + sel
+  // donne un hash différent à chaque fois. _doLoginCheck utilise verifyPass() en interne.
+  _doLoginCheck();
 }
 
 // Reset d'urgence : efface le localStorage et réinitialise sans rechargement
-function emergencyReset(){
+async function emergencyReset(){
   const code=prompt("🔒 Accès restreint — Entrez le mot de passe administrateur pour réinitialiser :");
   if(code===null)return;
   const adminAcc=DB.users.find(u=>u.role==="admin");
   if(!adminAcc){alert("❌ Aucun compte admin trouvé.");return;}
-  hashPass(code).then(hashed=>{
-    if(hashed!==adminAcc.pass){alert("❌ Mot de passe incorrect. Accès refusé.");return;}
-    askDelete(
-      "⚠️ Réinitialiser toutes les données ? Le compte admin (identifiant : admin) sera restauré avec son mot de passe par défaut. Cette action est irréversible.",
-      ()=>{
-        try{ localStorage.removeItem(STORE); }catch(e){}
-        try{ localStorage.removeItem("suna_session"); }catch(e){}
-        DB = defaultData();
-        // Hacher le mot de passe par défaut avant de sauvegarder
-        hashPass(DEFAULT_PASS).then(h=>{
-          const a=DB.users.find(u=>u.role==="admin");
-          if(a)a.pass=h;
-          if(window._fbDB&&window._fbRef&&window._fbSet){
-            const r=window._fbRef(window._fbDB,"sunagakure");
-            window._fbSet(r,JSON.parse(JSON.stringify(DB)));
-          }
-          saveData();
-          forceLogout();
-          el("login-user").value="admin";
-          showToast("Données réinitialisées. Connectez-vous avec vos identifiants.","success");
-        });
+  // bug-fix : on utilise verifyPass au lieu de comparer hash === hash (PBKDF2+sel)
+  const ok = await verifyPass(code, adminAcc.pass);
+  if(!ok){alert("❌ Mot de passe incorrect. Accès refusé.");return;}
+
+  // bug-fix sécurité : on ne réinitialise plus avec un mot de passe par défaut
+  // public hardcodé. L'admin doit choisir un nouveau mot de passe.
+  const newPass = prompt("🔑 Choisissez le NOUVEAU mot de passe pour le compte admin (8 caractères minimum) :");
+  if(newPass === null) return;
+  if(typeof newPass !== 'string' || newPass.length < 8){
+    alert("❌ Mot de passe trop court (8 caractères minimum). Réinitialisation annulée.");
+    return;
+  }
+  const newPass2 = prompt("🔑 Confirmez le nouveau mot de passe :");
+  if(newPass !== newPass2){
+    alert("❌ Les mots de passe ne correspondent pas. Réinitialisation annulée.");
+    return;
+  }
+
+  askDelete(
+    "⚠️ Réinitialiser toutes les données ? Le compte admin (identifiant : admin) sera recréé avec le mot de passe que vous venez de choisir. Cette action est irréversible.",
+    async ()=>{
+      try{ localStorage.removeItem(STORE); }catch(e){}
+      try{ localStorage.removeItem("suna_session"); }catch(e){}
+      DB = defaultData();
+      // Hasher le nouveau mot de passe choisi par l'admin
+      const h = await hashPass(newPass);
+      const a = DB.users.find(u=>u.role==="admin");
+      if(a) a.pass = h;
+      if(window._fbDB&&window._fbRef&&window._fbSet){
+        const r = window._fbRef(window._fbDB,"sunagakure");
+        window._fbSet(r,JSON.parse(JSON.stringify(DB)));
       }
-    );
-  });
+      saveData();
+      forceLogout();
+      el("login-user").value="admin";
+      showToast("Données réinitialisées. Connectez-vous avec votre nouveau mot de passe.","success");
+    }
+  );
 }
 
 function isVisiteur(){return currentUser&&currentUser.role==="visiteur"}
@@ -20384,21 +20524,29 @@ window.addEventListener("load",()=>{
   if(devAcc)devAcc.nom="Développeur";
   // S'assurer qu'il existe toujours un compte admin fonctionnel
   const adminExists=DB.users.find(u=>u.role==="admin"&&u.statut!=="Désactivé");
-  // Migration des mots de passe en clair + hash du mot de passe par défaut
-  // DEFAULT_PASS est défini en constante globale en haut du script
+  // Migration des mots de passe en clair + hash du mot de passe par défaut.
+  // bug-fix sécurité : on ne stocke plus de mot de passe par défaut public hardcodé.
+  // - Comptes au hash invalide → marqués "__NEEDS_RESET__" + désactivés
+  // - Si aucun admin n'existe → on génère un mot de passe aléatoire et on l'AFFICHE
+  //   UNE FOIS dans une popup pour que le créateur du déploiement le note.
+  let _firstAdminTempPass = null; // si défini, sera affiché à la fin du load
   const migratePasswords=async()=>{
     let changed=false;
-    const badHashVal=await hashPass("__PENDING_HASH__");
     for(const u of DB.users){
-      if(!isHashed(u.pass)||u.pass===badHashVal){
-        // Mot de passe en clair, __PENDING_HASH__, ou hash corrompu → remplacer par le vrai hash
-        const rawPass=(u.pass==="__PENDING_HASH__"||u.pass===badHashVal||!u.pass)?DEFAULT_PASS:u.pass;
-        u.pass=await hashPass(rawPass);
-        changed=true;
+      if(!isHashed(u.pass)){
+        // Hash absent / invalide / placeholder → marquer comme à réinitialiser.
+        // L'admin pourra reset depuis Admin → Membres → Modifier.
+        if(u.pass !== '__NEEDS_RESET__'){
+          u.pass = '__NEEDS_RESET__';
+          u.statut = 'Désactivé';
+          changed = true;
+        }
       }
     }
     if(!adminExists){
-      const h=await hashPass(DEFAULT_PASS);
+      // Premier setup : générer un mot de passe aléatoire pour le compte admin.
+      _firstAdminTempPass = _generateRandomPass();
+      const h = await hashPass(_firstAdminTempPass);
       DB.users.push({id:1,login:"admin",pass:h,nom:"Développeur",grade:"Gérant",role:"admin",statut:"Actif",photo:"",created:now()});
       changed=true;
     }
@@ -20408,6 +20556,19 @@ window.addEventListener("load",()=>{
     populateGradeSelects();
     applyLogo();
     loadNotifPrefs();
+    // bug-fix sécurité : si on vient de générer un mot de passe admin aléatoire au
+    // premier setup, on l'affiche UNE FOIS via une popup persistante (à noter !).
+    if(_firstAdminTempPass){
+      setTimeout(function(){
+        var msg = "⚠️ NOTEZ CE MOT DE PASSE — il est affiché UNE SEULE FOIS\n\n"
+                + "Identifiant : admin\n"
+                + "Mot de passe : " + _firstAdminTempPass + "\n\n"
+                + "Connectez-vous immédiatement et changez-le via :\n"
+                + "Admin → Membres → Modifier mon compte.";
+        try{ alert(msg); }catch(e){}
+        _firstAdminTempPass = null; // ne plus l'afficher au prochain rendu
+      }, 1500);
+    }
 
     // Afficher un écran de chargement Firebase
     const loginScreen=el("login-screen");
