@@ -3517,6 +3517,365 @@ html{-webkit-tap-highlight-color:transparent}
   .rcv2-pill{min-width:0}
 }
 
+/* ═══════════════════════════════════════════════════════════════
+   ▓▓▓  PAGES V2 — Hero & composants partagés
+   ═══════════════════════════════════════════════════════════════ */
+
+/* Hero générique - même style que rcv2-hero mais réutilisable partout */
+.pgv2-hero{
+  position:relative;
+  margin-bottom:22px;
+  padding:24px 28px;
+  background:
+    linear-gradient(135deg,rgba(201,162,39,0.08) 0%,rgba(192,65,14,0.05) 50%,transparent 100%),
+    linear-gradient(180deg,rgba(20,16,9,0.95),rgba(12,10,7,0.95));
+  border:1px solid rgba(201,162,39,0.25);
+  border-radius:16px;
+  overflow:hidden;
+  box-shadow:0 8px 32px rgba(0,0,0,0.35),inset 0 1px 0 rgba(255,255,255,0.04);
+}
+.pgv2-hero::before{
+  content:'';position:absolute;inset:0;pointer-events:none;
+  background:
+    radial-gradient(circle at 100% 0%,rgba(201,162,39,0.12),transparent 50%),
+    radial-gradient(circle at 0% 100%,rgba(192,65,14,0.08),transparent 50%);
+}
+.pgv2-hero::after{
+  content:'';position:absolute;top:0;right:0;bottom:0;width:240px;
+  background-image:url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' stroke='%23c9a227' stroke-opacity='0.08' stroke-width='1'%3E%3Ccircle cx='30' cy='30' r='28'/%3E%3Ccircle cx='30' cy='30' r='20'/%3E%3Ccircle cx='30' cy='30' r='12'/%3E%3C/g%3E%3C/svg%3E");
+  background-position:right center;background-repeat:no-repeat;opacity:0.5;
+  pointer-events:none;
+}
+.pgv2-hero-inner{position:relative;z-index:2;display:flex;align-items:center;gap:24px;flex-wrap:wrap}
+.pgv2-hero-icon{
+  width:64px;height:64px;border-radius:14px;flex-shrink:0;
+  background:linear-gradient(135deg,rgba(201,162,39,0.2),rgba(192,65,14,0.15));
+  border:1px solid rgba(201,162,39,0.4);
+  display:flex;align-items:center;justify-content:center;
+  font-size:28px;
+  box-shadow:0 4px 16px rgba(192,65,14,0.2),inset 0 1px 0 rgba(255,255,255,0.1);
+}
+.pgv2-hero-text{flex:1;min-width:200px}
+.pgv2-hero-tag{
+  display:inline-block;font-family:'Share Tech Mono',monospace;font-size:9px;letter-spacing:3px;
+  color:var(--gold);text-transform:uppercase;margin-bottom:6px;
+  padding:3px 9px;border:1px solid rgba(201,162,39,0.3);border-radius:3px;
+  background:rgba(201,162,39,0.06);
+}
+.pgv2-hero-title{
+  font-family:'Cinzel',serif;font-size:28px;font-weight:700;letter-spacing:2px;
+  color:var(--text);margin-bottom:4px;
+  text-shadow:0 2px 12px rgba(201,162,39,0.15);
+}
+.pgv2-hero-sub{font-size:12px;color:var(--text2);font-family:'Barlow',sans-serif;letter-spacing:0.5px;line-height:1.5}
+.pgv2-hero-stats{display:flex;gap:14px;flex-wrap:wrap;margin-left:auto;align-items:center}
+.pgv2-hero-stat{
+  text-align:center;padding:8px 14px;
+  background:rgba(0,0,0,0.25);border:1px solid rgba(201,162,39,0.18);
+  border-radius:8px;min-width:78px;
+  transition:all 0.2s;
+}
+.pgv2-hero-stat:hover{border-color:rgba(201,162,39,0.4);background:rgba(0,0,0,0.4)}
+.pgv2-hero-stat .num{font-family:'Barlow Condensed',sans-serif;font-size:24px;font-weight:900;color:var(--gold2);line-height:1}
+.pgv2-hero-stat .lbl{font-family:'Share Tech Mono',monospace;font-size:8px;color:var(--muted);letter-spacing:2px;text-transform:uppercase;margin-top:3px}
+.pgv2-hero-stat[data-tone="red"] .num{color:#fca5a5}
+.pgv2-hero-stat[data-tone="green"] .num{color:#86efac}
+.pgv2-hero-stat[data-tone="blue"] .num{color:#93c5fd}
+.pgv2-hero-stat[data-tone="purple"] .num{color:#c4b5fd}
+.pgv2-hero-stat[data-tone="cyan"] .num{color:#67e8f9}
+.pgv2-hero-actions{display:flex;gap:10px;flex-wrap:wrap}
+
+/* Variantes par teinte de hero (selon page) */
+.pgv2-hero[data-tone="dashboard"]{
+  background:
+    linear-gradient(135deg,rgba(201,162,39,0.1) 0%,rgba(212,180,74,0.05) 50%,transparent 100%),
+    linear-gradient(180deg,rgba(20,16,9,0.95),rgba(12,10,7,0.95));
+}
+.pgv2-hero[data-tone="annonces"]{
+  background:
+    linear-gradient(135deg,rgba(59,130,246,0.08) 0%,rgba(201,162,39,0.04) 50%,transparent 100%),
+    linear-gradient(180deg,rgba(20,16,9,0.95),rgba(12,10,7,0.95));
+  border-color:rgba(201,162,39,0.25);
+}
+.pgv2-hero[data-tone="recrutement"]{
+  background:
+    linear-gradient(135deg,rgba(34,197,94,0.08) 0%,rgba(201,162,39,0.04) 50%,transparent 100%),
+    linear-gradient(180deg,rgba(20,16,9,0.95),rgba(12,10,7,0.95));
+}
+.pgv2-hero[data-tone="plaintes"]{
+  background:
+    linear-gradient(135deg,rgba(239,68,68,0.08) 0%,rgba(192,65,14,0.05) 50%,transparent 100%),
+    linear-gradient(180deg,rgba(20,16,9,0.95),rgba(12,10,7,0.95));
+}
+.pgv2-hero[data-tone="dossiers"]{
+  background:
+    linear-gradient(135deg,rgba(192,65,14,0.1) 0%,rgba(120,30,30,0.06) 50%,transparent 100%),
+    linear-gradient(180deg,rgba(20,16,9,0.95),rgba(12,10,7,0.95));
+}
+.pgv2-hero[data-tone="effectifs"]{
+  background:
+    linear-gradient(135deg,rgba(6,182,212,0.07) 0%,rgba(201,162,39,0.05) 50%,transparent 100%),
+    linear-gradient(180deg,rgba(20,16,9,0.95),rgba(12,10,7,0.95));
+}
+.pgv2-hero[data-tone="sanctions"]{
+  background:
+    linear-gradient(135deg,rgba(139,92,246,0.07) 0%,rgba(201,162,39,0.04) 50%,transparent 100%),
+    linear-gradient(180deg,rgba(20,16,9,0.95),rgba(12,10,7,0.95));
+}
+.pgv2-hero[data-tone="profil"]{
+  background:
+    linear-gradient(135deg,rgba(212,180,74,0.12) 0%,rgba(192,65,14,0.05) 50%,transparent 100%),
+    linear-gradient(180deg,rgba(20,16,9,0.95),rgba(12,10,7,0.95));
+}
+
+/* Section title "panel" générique */
+.pgv2-panel{
+  background:linear-gradient(180deg,rgba(20,16,9,0.95),rgba(14,11,7,0.95));
+  border:1px solid rgba(201,162,39,0.16);
+  border-radius:14px;
+  margin-bottom:18px;
+  overflow:hidden;
+  box-shadow:0 4px 20px rgba(0,0,0,0.3);
+}
+.pgv2-panel-header{
+  padding:14px 20px;
+  background:linear-gradient(90deg,rgba(201,162,39,0.06),transparent);
+  border-bottom:1px solid rgba(201,162,39,0.12);
+  display:flex;align-items:center;gap:12px;flex-wrap:wrap;
+}
+.pgv2-panel-title{
+  font-family:'Cinzel',serif;
+  font-size:14px;font-weight:600;letter-spacing:2px;
+  color:var(--gold2);
+  text-transform:uppercase;
+  display:flex;align-items:center;gap:8px;
+}
+.pgv2-panel-title::before{
+  content:'';width:4px;height:14px;border-radius:2px;
+  background:linear-gradient(180deg,var(--gold),var(--accent));
+}
+.pgv2-panel-sub{
+  font-family:'Share Tech Mono',monospace;
+  font-size:9px;letter-spacing:2px;
+  color:var(--muted);text-transform:uppercase;
+  margin-left:auto;
+}
+.pgv2-panel-body{padding:18px 20px}
+
+/* Filtres premium réutilisables */
+.pgv2-filters{
+  display:flex;align-items:center;gap:10px;flex-wrap:wrap;
+  padding:12px 14px;margin-bottom:18px;
+  background:rgba(20,16,9,0.7);
+  border:1px solid rgba(201,162,39,0.14);
+  border-radius:12px;
+  backdrop-filter:blur(8px);
+  box-shadow:0 4px 16px rgba(0,0,0,0.25);
+}
+.pgv2-filter-search{flex:1;min-width:220px;position:relative}
+.pgv2-filter-search input{
+  width:100%;padding:10px 14px 10px 38px;
+  background:rgba(0,0,0,0.35);
+  border:1px solid rgba(201,162,39,0.18);
+  border-radius:8px;
+  color:var(--text);font-size:13px;font-family:'Barlow',sans-serif;
+  transition:all 0.2s;
+}
+.pgv2-filter-search input:focus{
+  outline:none;border-color:rgba(201,162,39,0.5);
+  background:rgba(0,0,0,0.5);box-shadow:0 0 0 3px rgba(201,162,39,0.1);
+}
+.pgv2-filter-search::before{
+  content:'🔍';position:absolute;left:12px;top:50%;transform:translateY(-50%);
+  font-size:14px;opacity:0.5;pointer-events:none;
+}
+.pgv2-filter-select{
+  padding:10px 32px 10px 14px;
+  background:rgba(0,0,0,0.35) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath fill='%23c9a227' d='M5 6L0 0h10z'/%3E%3C/svg%3E") right 12px center no-repeat;
+  border:1px solid rgba(201,162,39,0.18);
+  border-radius:8px;
+  color:var(--text);font-size:12.5px;font-family:'Barlow',sans-serif;
+  appearance:none;-webkit-appearance:none;cursor:pointer;
+  min-width:150px;transition:all 0.2s;
+}
+.pgv2-filter-select:hover{border-color:rgba(201,162,39,0.35)}
+.pgv2-filter-select:focus{outline:none;border-color:rgba(201,162,39,0.5);box-shadow:0 0 0 3px rgba(201,162,39,0.1)}
+.pgv2-filter-count{
+  margin-left:auto;
+  font-family:'Share Tech Mono',monospace;
+  font-size:10px;letter-spacing:2px;
+  color:var(--muted);text-transform:uppercase;
+  padding:5px 12px;
+  background:rgba(201,162,39,0.06);
+  border:1px solid rgba(201,162,39,0.15);
+  border-radius:6px;
+}
+
+/* Tabs premium */
+.pgv2-tabs{
+  display:flex;gap:2px;
+  background:rgba(20,16,9,0.7);
+  border:1px solid rgba(201,162,39,0.14);
+  border-radius:10px;
+  padding:4px;margin-bottom:18px;
+  overflow-x:auto;scrollbar-width:none;
+}
+.pgv2-tabs::-webkit-scrollbar{display:none}
+.pgv2-tab{
+  padding:8px 16px;
+  background:transparent;border:none;
+  color:var(--muted);
+  font-family:'Share Tech Mono',monospace;
+  font-size:10.5px;letter-spacing:1.5px;text-transform:uppercase;
+  font-weight:600;cursor:pointer;
+  border-radius:6px;
+  transition:all 0.18s;white-space:nowrap;
+  display:inline-flex;align-items:center;gap:6px;
+}
+.pgv2-tab:hover{background:rgba(201,162,39,0.06);color:var(--text2)}
+.pgv2-tab.active{
+  background:linear-gradient(135deg,rgba(201,162,39,0.18),rgba(192,65,14,0.1));
+  color:var(--gold2);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,0.06);
+}
+.pgv2-tab-count{
+  background:rgba(0,0,0,0.4);
+  padding:1px 7px;
+  border-radius:10px;
+  font-size:9px;
+  border:1px solid rgba(201,162,39,0.2);
+}
+
+/* Grid d'items premium */
+.pgv2-grid{display:grid;gap:16px;grid-template-columns:repeat(auto-fill,minmax(320px,1fr))}
+.pgv2-grid.cols-2{grid-template-columns:repeat(auto-fill,minmax(420px,1fr))}
+
+/* Card item générique */
+.pgv2-item-card{
+  position:relative;
+  background:linear-gradient(180deg,rgba(26,21,16,0.95),rgba(18,14,9,0.98));
+  border:1px solid rgba(201,162,39,0.16);
+  border-radius:12px;
+  padding:16px 18px;
+  transition:all 0.25s cubic-bezier(0.4,0,0.2,1);
+  box-shadow:0 4px 18px rgba(0,0,0,0.3);
+  display:flex;flex-direction:column;gap:10px;
+}
+.pgv2-item-card::before{
+  content:'';position:absolute;top:0;left:0;width:3px;height:100%;
+  background:linear-gradient(180deg,var(--gold),var(--accent));
+  opacity:0.6;border-radius:12px 0 0 12px;
+}
+.pgv2-item-card[data-tone="red"]::before{background:linear-gradient(180deg,#ef4444,#b91c1c)}
+.pgv2-item-card[data-tone="green"]::before{background:linear-gradient(180deg,#22c55e,#16a34a)}
+.pgv2-item-card[data-tone="blue"]::before{background:linear-gradient(180deg,#3b82f6,#1e40af)}
+.pgv2-item-card[data-tone="purple"]::before{background:linear-gradient(180deg,#8b5cf6,#5b21b6)}
+.pgv2-item-card[data-tone="cyan"]::before{background:linear-gradient(180deg,#06b6d4,#0891b2)}
+.pgv2-item-card:hover{
+  transform:translateY(-2px);
+  border-color:rgba(201,162,39,0.4);
+  box-shadow:0 10px 32px rgba(0,0,0,0.45);
+}
+.pgv2-item-card .pgv2-item-head{
+  display:flex;align-items:flex-start;gap:12px;margin-bottom:4px;
+}
+.pgv2-item-card .pgv2-item-title{
+  flex:1;min-width:0;
+  font-family:'Cinzel',serif;font-size:15px;font-weight:600;
+  color:var(--text);letter-spacing:0.5px;line-height:1.3;
+}
+.pgv2-item-card .pgv2-item-meta{
+  font-family:'Share Tech Mono',monospace;
+  font-size:9px;letter-spacing:1.5px;
+  color:var(--muted);text-transform:uppercase;
+  margin-top:3px;
+}
+.pgv2-item-card .pgv2-item-body{
+  font-size:12.5px;color:var(--text2);
+  line-height:1.55;
+  padding:8px 0;
+}
+.pgv2-item-card .pgv2-item-footer{
+  margin-top:auto;padding-top:8px;
+  border-top:1px solid rgba(201,162,39,0.08);
+  display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;
+}
+
+/* Empty state générique */
+.pgv2-empty{
+  grid-column:1/-1;
+  text-align:center;padding:60px 24px;
+  background:rgba(20,16,9,0.5);
+  border:1px dashed rgba(201,162,39,0.2);
+  border-radius:14px;
+}
+.pgv2-empty-icon{font-size:48px;margin-bottom:14px;opacity:0.4}
+.pgv2-empty-title{font-family:'Cinzel',serif;font-size:16px;color:var(--text);margin-bottom:4px;letter-spacing:1px}
+.pgv2-empty-sub{font-size:11px;color:var(--muted);font-family:'Share Tech Mono',monospace;letter-spacing:1.5px}
+
+/* Quick stat tile (dashboard) */
+.pgv2-stat-tile{
+  position:relative;
+  background:linear-gradient(180deg,rgba(26,21,16,0.95),rgba(18,14,9,0.98));
+  border:1px solid rgba(201,162,39,0.16);
+  border-radius:14px;
+  padding:18px 20px;
+  overflow:hidden;
+  transition:all 0.25s cubic-bezier(0.4,0,0.2,1);
+  cursor:pointer;
+  box-shadow:0 4px 18px rgba(0,0,0,0.3);
+}
+.pgv2-stat-tile::before{
+  content:'';position:absolute;top:0;right:0;width:90px;height:90px;
+  background:radial-gradient(circle,var(--tile-c,rgba(201,162,39,0.15)),transparent 70%);
+  pointer-events:none;
+}
+.pgv2-stat-tile::after{
+  content:'';position:absolute;bottom:0;left:0;right:0;height:3px;
+  background:var(--tile-c,var(--gold));
+  opacity:0.7;
+}
+.pgv2-stat-tile:hover{
+  transform:translateY(-3px);
+  border-color:rgba(201,162,39,0.4);
+  box-shadow:0 12px 36px rgba(0,0,0,0.45);
+}
+.pgv2-stat-row{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px}
+.pgv2-stat-lbl{
+  font-family:'Share Tech Mono',monospace;
+  font-size:9.5px;letter-spacing:2.5px;
+  color:var(--muted);text-transform:uppercase;
+  font-weight:600;
+}
+.pgv2-stat-icon{
+  font-size:20px;opacity:0.75;line-height:1;
+  filter:drop-shadow(0 2px 6px rgba(0,0,0,0.4));
+}
+.pgv2-stat-num{
+  font-family:'Barlow Condensed',sans-serif;
+  font-size:38px;font-weight:900;line-height:1;
+  color:var(--text);
+  text-shadow:0 2px 12px rgba(0,0,0,0.4);
+}
+.pgv2-stat-foot{
+  font-family:'Share Tech Mono',monospace;
+  font-size:9px;letter-spacing:1.5px;
+  color:var(--muted);text-transform:uppercase;
+  margin-top:6px;
+}
+
+/* Mobile shared */
+@media(max-width:720px){
+  .pgv2-hero{padding:18px 20px}
+  .pgv2-hero-inner{flex-direction:column;align-items:flex-start;gap:14px}
+  .pgv2-hero-stats{margin-left:0}
+  .pgv2-hero-title{font-size:22px}
+  .pgv2-grid,.pgv2-grid.cols-2{grid-template-columns:1fr;gap:12px}
+  .pgv2-filters{flex-direction:column;align-items:stretch}
+  .pgv2-filter-search{min-width:0}
+  .pgv2-filter-count{margin-left:0}
+}
+
 </style>
 </head>
 <body>
@@ -6604,11 +6963,24 @@ document.addEventListener('error', function(e){
 
   <!-- RECRUTEMENT -->
   <div class="page-content" id="page-recrutement">
-    <div class="section-header">
-      <div><div class="section-title">Recrutement</div><div class="section-sub">CANDIDATURES À LA POLICE</div></div>
-      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-        <button class="btn btn-primary" onclick="clearForm(['c-nom','c-age','c-discord','c-motif','c-exp']);openModal('modal-candidature')">+ Déposer une candidature</button>
-        <button class="btn btn-export" onclick="exportCSV('candidatures')" id="btn-export-cand" style="display:none">⬇️ Export CSV</button>
+    <!-- Hero premium -->
+    <div class="pgv2-hero" data-tone="recrutement">
+      <div class="pgv2-hero-inner">
+        <div class="pgv2-hero-icon">🎖️</div>
+        <div class="pgv2-hero-text">
+          <div class="pgv2-hero-tag">Bureau du Recrutement</div>
+          <div class="pgv2-hero-title">Recrutement</div>
+          <div class="pgv2-hero-sub">Candidatures officielles à la Police de Sunagakure</div>
+        </div>
+        <div class="pgv2-hero-stats">
+          <div class="pgv2-hero-stat"><div class="num" id="pgv2-cand-total">0</div><div class="lbl">Total</div></div>
+          <div class="pgv2-hero-stat" data-tone="cyan"><div class="num" id="pgv2-cand-attente">0</div><div class="lbl">En attente</div></div>
+          <div class="pgv2-hero-stat" data-tone="green"><div class="num" id="pgv2-cand-acceptees">0</div><div class="lbl">Acceptées</div></div>
+        </div>
+        <div class="pgv2-hero-actions">
+          <button class="btn btn-primary" onclick="clearForm(['c-nom','c-age','c-discord','c-motif','c-exp']);openModal('modal-candidature')">+ Déposer une candidature</button>
+          <button class="btn btn-export" onclick="exportCSV('candidatures')" id="btn-export-cand" style="display:none">⬇️ Export CSV</button>
+        </div>
       </div>
     </div>
     <!-- Bandeau visiteur : ma candidature -->
@@ -6646,11 +7018,24 @@ document.addEventListener('error', function(e){
 
   <!-- PLAINTES -->
   <div class="page-content" id="page-plaintes">
-    <div class="section-header">
-      <div><div class="section-title">Plaintes civiles</div><div class="section-sub">DÉPÔT ET SUIVI</div></div>
-      <div style="display:flex;gap:8px;flex-wrap:wrap">
-        <button class="btn btn-export" onclick="exportCSV('plaintes')" data-export-btn style="display:none">⬇️ Export CSV</button>
-        <button class="btn btn-primary" onclick="clearForm(['p-plaignant','p-accuse','p-desc','p-date']);openModal('modal-plainte')">+ Déposer une plainte</button>
+    <!-- Hero premium -->
+    <div class="pgv2-hero" data-tone="plaintes">
+      <div class="pgv2-hero-inner">
+        <div class="pgv2-hero-icon">⚖️</div>
+        <div class="pgv2-hero-text">
+          <div class="pgv2-hero-tag">Bureau Judiciaire</div>
+          <div class="pgv2-hero-title">Plaintes civiles</div>
+          <div class="pgv2-hero-sub">Dépôt et suivi des plaintes officielles</div>
+        </div>
+        <div class="pgv2-hero-stats">
+          <div class="pgv2-hero-stat"><div class="num" id="pgv2-pl-total">0</div><div class="lbl">Total</div></div>
+          <div class="pgv2-hero-stat" data-tone="red"><div class="num" id="pgv2-pl-ouvertes">0</div><div class="lbl">Ouvertes</div></div>
+          <div class="pgv2-hero-stat" data-tone="cyan"><div class="num" id="pgv2-pl-cours">0</div><div class="lbl">En cours</div></div>
+        </div>
+        <div class="pgv2-hero-actions">
+          <button class="btn btn-export" onclick="exportCSV('plaintes')" data-export-btn style="display:none">⬇️ Export CSV</button>
+          <button class="btn btn-primary" onclick="clearForm(['p-plaignant','p-accuse','p-desc','p-date']);openModal('modal-plainte')">+ Déposer une plainte</button>
+        </div>
       </div>
     </div>
     <div class="tab-row">
@@ -9563,9 +9948,19 @@ document.addEventListener('error', function(e){
 
   <!-- PROFIL -->
   <div class="page-content" id="page-profil">
-    <div class="section-header">
-      <div><div class="section-title">Mon profil</div><div class="section-sub">INFORMATIONS PERSONNELLES & STATISTIQUES</div></div>
-      <button class="btn btn-gold" onclick="openModal('modal-change-pass')">🔒 Changer mot de passe</button>
+    <!-- Hero premium -->
+    <div class="pgv2-hero" data-tone="profil">
+      <div class="pgv2-hero-inner">
+        <div class="pgv2-hero-icon">⚜</div>
+        <div class="pgv2-hero-text">
+          <div class="pgv2-hero-tag">Espace Personnel</div>
+          <div class="pgv2-hero-title">Mon profil</div>
+          <div class="pgv2-hero-sub">Informations personnelles, statistiques et historique d'activité</div>
+        </div>
+        <div class="pgv2-hero-actions">
+          <button class="btn btn-gold" onclick="openModal('modal-change-pass')">🔒 Changer mot de passe</button>
+        </div>
+      </div>
     </div>
     <div class="profile-hero" id="profil-hero">
       <div class="profile-hero-avatar" id="profil-avatar">?</div>
@@ -9605,13 +10000,23 @@ document.addEventListener('error', function(e){
     </div>
   </div>
   <div class="page-content" id="page-effectifs">
-    <div class="section-header">
-      <div>
-        <div class="section-title">Effectifs</div>
-        <div class="section-sub">PERSONNELS EN SERVICE</div>
-      </div>
-      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-        <input type="text" id="search-effectifs" class="form-control" placeholder="🔍 Rechercher un agent..." oninput="renderEffectifs()" style="max-width:240px;margin:0">
+    <!-- Hero premium -->
+    <div class="pgv2-hero" data-tone="effectifs">
+      <div class="pgv2-hero-inner">
+        <div class="pgv2-hero-icon">👮</div>
+        <div class="pgv2-hero-text">
+          <div class="pgv2-hero-tag">Roster Officiel</div>
+          <div class="pgv2-hero-title">Effectifs</div>
+          <div class="pgv2-hero-sub">Personnels en service de la Police de Sunagakure</div>
+        </div>
+        <div class="pgv2-hero-stats">
+          <div class="pgv2-hero-stat" data-tone="green"><div class="num" id="pgv2-eff-total">0</div><div class="lbl">En service</div></div>
+          <div class="pgv2-hero-stat"><div class="num" id="pgv2-eff-admin">0</div><div class="lbl">Admins</div></div>
+          <div class="pgv2-hero-stat" data-tone="blue"><div class="num" id="pgv2-eff-officiers">0</div><div class="lbl">Officiers</div></div>
+        </div>
+        <div class="pgv2-hero-actions">
+          <input type="text" id="search-effectifs" class="form-control" placeholder="🔍 Rechercher un agent..." oninput="renderEffectifs()" style="max-width:240px;margin:0">
+        </div>
       </div>
     </div>
     <!-- Stats rapides -->
@@ -9663,11 +10068,24 @@ document.addEventListener('error', function(e){
   </div>
   <!-- SANCTIONS -->
   <div class="page-content" id="page-sanctions">
-    <div class="section-header">
-      <div><div class="section-title">Sanctions & Promotions</div><div class="section-sub">GESTION DISCIPLINAIRE ET AVANCEMENT</div></div>
-      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-        <button class="btn btn-primary" id="btn-new-sanction" onclick="clearForm(['s-cible','s-motif']);openModal('modal-sanction')" style="display:none">+ Ajouter</button>
-        <button class="btn btn-export" onclick="exportCSV('sanctions')" id="btn-export-sanctions" style="display:none">⬇️ Export CSV</button>
+    <!-- Hero premium -->
+    <div class="pgv2-hero" data-tone="sanctions">
+      <div class="pgv2-hero-inner">
+        <div class="pgv2-hero-icon">⚖</div>
+        <div class="pgv2-hero-text">
+          <div class="pgv2-hero-tag">Conseil Disciplinaire</div>
+          <div class="pgv2-hero-title">Sanctions & Promotions</div>
+          <div class="pgv2-hero-sub">Gestion disciplinaire et avancement de carrière des agents</div>
+        </div>
+        <div class="pgv2-hero-stats">
+          <div class="pgv2-hero-stat" data-tone="green"><div class="num" id="pgv2-s-promo">0</div><div class="lbl">Promotions</div></div>
+          <div class="pgv2-hero-stat"><div class="num" id="pgv2-s-fel">0</div><div class="lbl">Félicitations</div></div>
+          <div class="pgv2-hero-stat" data-tone="red"><div class="num" id="pgv2-s-sanc">0</div><div class="lbl">Sanctions</div></div>
+        </div>
+        <div class="pgv2-hero-actions">
+          <button class="btn btn-primary" id="btn-new-sanction" onclick="clearForm(['s-cible','s-motif']);openModal('modal-sanction')" style="display:none">+ Ajouter</button>
+          <button class="btn btn-export" onclick="exportCSV('sanctions')" id="btn-export-sanctions" style="display:none">⬇️ Export CSV</button>
+        </div>
       </div>
     </div>
     <!-- Stats sanctions -->
@@ -14536,6 +14954,12 @@ function filterCandidatures(f,e){candFilter=f;document.querySelectorAll("#page-r
 function candNumero(id){const sorted=[...DB.candidatures].sort((a,b)=>a.id-b.id);const idx=sorted.findIndex(c=>c.id===id);return idx>=0?idx+1:'?';}
 function renderCandidatures(){
   let list=DB.candidatures;if(candFilter!=="all")list=list.filter(c=>c.statut===candFilter);
+  // Stats hero V2
+  var allCand=DB.candidatures||[];
+  var sT=el("pgv2-cand-total");if(sT)sT.textContent=allCand.length;
+  var sA=el("pgv2-cand-attente");if(sA)sA.textContent=allCand.filter(c=>c.statut==="en_attente").length;
+  var sAc=el("pgv2-cand-acceptees");if(sAc)sAc.textContent=allCand.filter(c=>c.statut==="acceptee").length;
+
   el("candidatures-tbody").innerHTML=list.map(c=>{
     const isOwn=currentUser&&c.authorId===currentUser.id;
     let actions='—';
@@ -14703,6 +15127,12 @@ function setCandidature(id,statut){
 function filterPlaintes(f,e){plaintesFilter=f;document.querySelectorAll("#page-plaintes .tab-btn").forEach(b=>b.classList.remove("active"));e.classList.add("active");renderPlaintes()}
 function renderPlaintes(){
   let list=DB.plaintes;if(plaintesFilter!=="all")list=list.filter(p=>p.statut===plaintesFilter);
+  // Stats hero V2
+  var allP=DB.plaintes||[];
+  var sT=el("pgv2-pl-total");if(sT)sT.textContent=allP.length;
+  var sO=el("pgv2-pl-ouvertes");if(sO)sO.textContent=allP.filter(p=>p.statut==="ouverte").length;
+  var sC=el("pgv2-pl-cours");if(sC)sC.textContent=allP.filter(p=>p.statut==="en_cours").length;
+
   el("plaintes-tbody").innerHTML=list.map(p=>`<tr><td class="mono">#${p.id}</td><td>${esc(p.plaignant)}</td><td>${esc(p.accuse)}</td><td>${esc(p.type)}</td><td><span class="badge ${statutPlainte(p.statut)}">${fmtStatut(p.statut)}</span></td><td class="mono">${fmtDate(p.date)}</td><td><button class="btn btn-outline btn-sm" onclick="viewPlainte(${p.id})">👁</button>${canModify()?` <button class="btn btn-gold btn-sm" onclick="openEditPlainte(${p.id})" title="Modifier">✏️</button> <button class="btn btn-danger btn-sm" onclick="deletePlainte(${p.id})">🗑</button>`:""}</td></tr>`).join("")||`<tr><td colspan="7" style="text-align:center;color:var(--muted);padding:18px">Aucune plainte</td></tr>`;
 }
 let _plaintePhoto="";
@@ -16108,6 +16538,10 @@ function _renderEffectifsOrig(){
   if(el("eff-stat-admin"))el("eff-stat-admin").textContent=actifs.filter(u=>u.role==="admin").length;
   if(el("eff-stat-officiers"))el("eff-stat-officiers").textContent=actifs.filter(u=>["officier","sergent","gerant","cogerant"].includes(u.role)).length;
   if(el("eff-stat-membres"))el("eff-stat-membres").textContent=actifs.filter(u=>["membre","stagiaire","visiteur"].includes(u.role)).length;
+  // Stats hero V2
+  if(el("pgv2-eff-total"))el("pgv2-eff-total").textContent=actifs.length;
+  if(el("pgv2-eff-admin"))el("pgv2-eff-admin").textContent=actifs.filter(u=>u.role==="admin").length;
+  if(el("pgv2-eff-officiers"))el("pgv2-eff-officiers").textContent=actifs.filter(u=>["officier","sergent","gerant","cogerant"].includes(u.role)).length;
   // Filtre recherche
   const q=(el("search-effectifs")?.value||"").toLowerCase();
   let users=actifs;
@@ -16369,6 +16803,10 @@ function renderSanctions(){
   if(el("s-stat-fel"))el("s-stat-fel").textContent=all.filter(s=>s.type==="Félicitation").length;
   if(el("s-stat-avert"))el("s-stat-avert").textContent=all.filter(s=>s.type==="Avertissement").length;
   if(el("s-stat-excl"))el("s-stat-excl").textContent=all.filter(s=>s.type==="Exclusion").length;
+  // Stats hero V2
+  if(el("pgv2-s-promo"))el("pgv2-s-promo").textContent=all.filter(s=>s.type==="Promotion").length;
+  if(el("pgv2-s-fel"))el("pgv2-s-fel").textContent=all.filter(s=>s.type==="Félicitation").length;
+  if(el("pgv2-s-sanc"))el("pgv2-s-sanc").textContent=all.filter(s=>s.type==="Avertissement"||s.type==="Exclusion").length;
   const q=(el("search-sanctions")?.value||"").toLowerCase();
   const showDel=canModify();
   if(el("sanction-del-th"))el("sanction-del-th").style.display=showDel?"":"none";
