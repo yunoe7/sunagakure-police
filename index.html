@@ -10912,7 +10912,10 @@ document.addEventListener('error', function(e){
          width:fit-content permet à la bulle d'avoir la largeur du texte (jusqu'à max-width). */
       width:fit-content;
       max-width:100%;
-      animation:msgPop .25s cubic-bezier(.22,.68,0,1.2);
+      /* bug-fix : animation retirée — elle se rejouait à chaque re-render du thread
+         (ex: à chaque caractère tapé via le listener typing Firebase), causant un
+         effet clignotant désagréable. Les nouveaux messages restent fluides
+         car ils apparaissent simplement (le scroll en bas masque la transition). */
     }
     #page-messagerie .msg-bubble-row.mine .msg-b-content{
       align-items:flex-end;
@@ -24363,6 +24366,22 @@ function renderMsgThread(){
   var key = _msgKey(currentUser.id, _currentMsgContact.id);
   var msgs = Object.values((DB.messages||{})[key]||{});
   msgs.sort(function(a,b){return (a.ts||0)-(b.ts||0);});
+  // bug-fix anti-clignotement : ne re-render que si l'empreinte des messages
+  // a changé. Sans ça, chaque caractère tapé déclenchait un re-render complet
+  // via le listener typing Firebase, qui rejouait toutes les animations.
+  var fingerprint = key + '|' + msgs.length + '|' +
+    msgs.map(function(m){
+      var reactCount = m.reactions ? Object.keys(m.reactions).reduce(function(s,k){
+        return s + (m.reactions[k]||[]).length;
+      }, 0) : 0;
+      return (m.id||0)+':'+(m.read?'1':'0')+':'+reactCount;
+    }).join(',');
+  if(threadWrap._lastFingerprint === fingerprint){
+    // Aucun changement → ne pas re-render. On laisse simplement
+    // l'indicateur typing se mettre à jour séparément.
+    return;
+  }
+  threadWrap._lastFingerprint = fingerprint;
   if(!msgs.length){
     threadWrap.innerHTML='<div class="msg-thread"><div style="text-align:center;color:rgba(255,255,255,0.4);font-size:12px;padding:40px;font-family:\'Share Tech Mono\',monospace;letter-spacing:1.5px;text-transform:uppercase">— Aucun message — Démarrez la conversation —</div></div>';
     return;
