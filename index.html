@@ -13417,39 +13417,37 @@ document.addEventListener('error', function(e){
 }
 .cdv2-section-card.active .cdv2-section-title{color:var(--gold2)}
 
-/* Section verrouillée (Tribunal/Avocats désactivés) — cadenas visible */
+/* Section verrouillée (Tribunal/Avocats désactivés) */
 .cdv2-section-card.locked{
   cursor:not-allowed;
-  background:rgba(0,0,0,0.55);
-  border-color:rgba(180,140,20,0.25);
+  opacity:0.5;
+  filter:grayscale(0.6);
+  background:rgba(0,0,0,0.5);
+  border-color:rgba(120,120,120,0.25);
 }
 .cdv2-section-card.locked:hover{
   transform:none;
-  border-color:rgba(180,140,20,0.35);
-  background:rgba(0,0,0,0.55);
+  border-color:rgba(120,120,120,0.3);
+  background:rgba(0,0,0,0.5);
+}
+.cdv2-section-card.locked::before{
+  content:'🔒';
+  position:absolute;top:7px;right:9px;
+  font-size:13px;
+  background:none;
+  width:auto;height:auto;
+  box-shadow:none;
+  z-index:2;
+}
+.cdv2-section-card.locked::after{
+  content:'';
+  display:none;
 }
 .cdv2-section-card.locked .cdv2-section-icon{
-  opacity:0;
-  transition:opacity 0.3s;
+  filter:grayscale(0.85);
 }
 .cdv2-section-card.locked .cdv2-section-title{
-  color:rgba(201,162,39,0.55);
-}
-.cdv2-padlock-overlay{
-  position:absolute;
-  top:50%;
-  left:50%;
-  transform:translate(-50%,-58%);
-  width:42px;
-  height:54px;
-  pointer-events:none;
-  opacity:0;
-  transition:opacity 0.35s ease, transform 0.35s ease;
-  z-index:5;
-  filter:drop-shadow(0 2px 6px rgba(0,0,0,0.6));
-}
-.cdv2-section-card.locked .cdv2-padlock-overlay{
-  opacity:1;
+  color:var(--muted);
 }
 
 /* Footer */
@@ -13527,58 +13525,10 @@ document.addEventListener('error', function(e){
           <div class="cdv2-section-card" id="cdv2-card-tribunal" data-section="Tribunal" onclick="cdv2SelectSection(this,'Tribunal')">
             <div class="cdv2-section-icon">⚖️</div>
             <div class="cdv2-section-title">Tribunal</div>
-            <svg class="cdv2-padlock-overlay" viewBox="0 0 42 54" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-              <defs>
-                <linearGradient id="padGoldT" x1="0%" y1="0%" x2="0%" y2="100%">
-                  <stop offset="0%" stop-color="#f5d777"/>
-                  <stop offset="35%" stop-color="#c9a227"/>
-                  <stop offset="65%" stop-color="#8a6e1a"/>
-                  <stop offset="100%" stop-color="#d8b53e"/>
-                </linearGradient>
-                <linearGradient id="padShineT" x1="0%" y1="0%" x2="0%" y2="100%">
-                  <stop offset="0%" stop-color="rgba(255,240,180,0.6)"/>
-                  <stop offset="100%" stop-color="rgba(255,240,180,0)"/>
-                </linearGradient>
-              </defs>
-              <!-- Anse (shackle) -->
-              <path d="M 11 24 L 11 14 Q 11 5 21 5 Q 31 5 31 14 L 31 24" fill="none" stroke="url(#padGoldT)" stroke-width="4.2" stroke-linecap="round"/>
-              <path d="M 11 24 L 11 14 Q 11 5 21 5 Q 31 5 31 14 L 31 24" fill="none" stroke="rgba(255,240,180,0.35)" stroke-width="1.4" stroke-linecap="round"/>
-              <!-- Corps -->
-              <rect x="5" y="22" width="32" height="28" rx="4" fill="url(#padGoldT)" stroke="#5a4410" stroke-width="0.8"/>
-              <!-- Reflet brillance -->
-              <rect x="7" y="24" width="28" height="9" rx="2.5" fill="url(#padShineT)"/>
-              <!-- Trou de serrure -->
-              <circle cx="21" cy="34" r="3.2" fill="#1a1208"/>
-              <path d="M 19.5 34 L 22.5 34 L 23.2 42 L 18.8 42 Z" fill="#1a1208"/>
-            </svg>
           </div>
           <div class="cdv2-section-card" id="cdv2-card-avocats" data-section="Avocats" onclick="cdv2SelectSection(this,'Avocats')">
             <div class="cdv2-section-icon">👨‍💼</div>
             <div class="cdv2-section-title">Avocats</div>
-            <svg class="cdv2-padlock-overlay" viewBox="0 0 42 54" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-              <defs>
-                <linearGradient id="padGoldA" x1="0%" y1="0%" x2="0%" y2="100%">
-                  <stop offset="0%" stop-color="#f5d777"/>
-                  <stop offset="35%" stop-color="#c9a227"/>
-                  <stop offset="65%" stop-color="#8a6e1a"/>
-                  <stop offset="100%" stop-color="#d8b53e"/>
-                </linearGradient>
-                <linearGradient id="padShineA" x1="0%" y1="0%" x2="0%" y2="100%">
-                  <stop offset="0%" stop-color="rgba(255,240,180,0.6)"/>
-                  <stop offset="100%" stop-color="rgba(255,240,180,0)"/>
-                </linearGradient>
-              </defs>
-              <!-- Anse (shackle) -->
-              <path d="M 11 24 L 11 14 Q 11 5 21 5 Q 31 5 31 14 L 31 24" fill="none" stroke="url(#padGoldA)" stroke-width="4.2" stroke-linecap="round"/>
-              <path d="M 11 24 L 11 14 Q 11 5 21 5 Q 31 5 31 14 L 31 24" fill="none" stroke="rgba(255,240,180,0.35)" stroke-width="1.4" stroke-linecap="round"/>
-              <!-- Corps -->
-              <rect x="5" y="22" width="32" height="28" rx="4" fill="url(#padGoldA)" stroke="#5a4410" stroke-width="0.8"/>
-              <!-- Reflet brillance -->
-              <rect x="7" y="24" width="28" height="9" rx="2.5" fill="url(#padShineA)"/>
-              <!-- Trou de serrure -->
-              <circle cx="21" cy="34" r="3.2" fill="#1a1208"/>
-              <path d="M 19.5 34 L 22.5 34 L 23.2 42 L 18.8 42 Z" fill="#1a1208"/>
-            </svg>
           </div>
         </div>
         <input type="hidden" id="c-section" value="Police">
@@ -14076,7 +14026,7 @@ function _syncSectionLockUI(){
       <!-- Accusé -->
       <div class="plv2-fld">
         <label class="plv2-fld-label">Nom et prénom du mis en cause <span class="req">*</span></label>
-        <input type="text" id="p-accuse" class="form-control" placeholder="Ex: Orochimaru Senju">
+        <input type="text" id="p-accuse" class="form-control" placeholder="Ex: jiyds le fou">
       </div>
 
       <!-- Type d'infraction -->
