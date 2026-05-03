@@ -3876,6 +3876,77 @@ html{-webkit-tap-highlight-color:transparent}
   .pgv2-filter-count{margin-left:0}
 }
 
+/* ═══════════════════════════════════════════════════════════════
+   ▓▓▓  CORRECTIONS LISIBILITÉ — Texte invisible sur fond clair
+   ═══════════════════════════════════════════════════════════════ */
+#main .page-content > .tab-row,
+#main .page-content .section-header .tab-row,
+#main .page-content > div .tab-row{
+  background:rgba(20,16,9,0.5) !important;
+  border:1px solid rgba(201,162,39,0.25) !important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,0.03);
+}
+#main .page-content > .tab-row .tab-btn:not(.active),
+#main .page-content .section-header .tab-row .tab-btn:not(.active),
+#main .page-content > div .tab-row .tab-btn:not(.active){
+  color:rgba(240,232,208,0.65) !important;
+  background:transparent !important;
+}
+#main .page-content > .tab-row .tab-btn:not(.active):hover,
+#main .page-content .section-header .tab-row .tab-btn:not(.active):hover,
+#main .page-content > div .tab-row .tab-btn:not(.active):hover{
+  color:var(--gold2) !important;
+  background:rgba(201,162,39,0.08) !important;
+}
+#main .page-content > .tab-row .tab-btn.active,
+#main .page-content .section-header .tab-row .tab-btn.active,
+#main .page-content > div .tab-row .tab-btn.active{
+  background:linear-gradient(135deg,var(--accent),#a03408) !important;
+  color:#fff !important;
+  box-shadow:0 2px 10px rgba(192,65,14,0.45) !important;
+}
+
+/* Profile-hero : lisibilité forte sur fond clair */
+.profile-hero{
+  background:linear-gradient(135deg,rgba(26,21,16,0.95),rgba(18,14,9,0.95)) !important;
+  border:1px solid rgba(201,162,39,0.3) !important;
+  box-shadow:0 6px 24px rgba(0,0,0,0.35);
+}
+.profile-hero #profil-name,
+.profile-hero [id="profil-name"]{
+  color:var(--text) !important;
+  text-shadow:0 1px 8px rgba(201,162,39,0.15);
+}
+.profile-hero #profil-grade,
+.profile-hero [id="profil-grade"]{
+  color:var(--gold2) !important;
+  font-weight:700 !important;
+  text-shadow:0 1px 4px rgba(0,0,0,0.4);
+}
+.profile-hero #profil-login,
+.profile-hero [id="profil-login"]{
+  color:rgba(240,232,208,0.7) !important;
+}
+
+/* Stat-card : lisibilité des labels sur fond translucide */
+.profile-stat-grid .profile-stat-item,
+.profile-stat-item{
+  background:linear-gradient(180deg,rgba(26,21,16,0.95),rgba(18,14,9,0.95)) !important;
+  border:1px solid rgba(201,162,39,0.2) !important;
+}
+.profile-stat-item .profile-stat-val{color:var(--gold2) !important}
+.profile-stat-item .profile-stat-label{color:rgba(240,232,208,0.7) !important}
+
+/* Card body texts pour éviter les blancs de profil */
+#profil-plaintes-list,
+#profil-timeline,
+#profil-sanctions-list,
+#profil-login-history{color:var(--text2)}
+#profil-plaintes-list *,
+#profil-timeline *,
+#profil-sanctions-list *,
+#profil-login-history *{color:inherit}
+
 </style>
 </head>
 <body>
