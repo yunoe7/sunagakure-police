@@ -333,7 +333,7 @@ textarea.form-control{resize:vertical;min-height:80px}
 .lg-side-stat{display:flex;flex-direction:column;align-items:center;gap:4px}
 .lg-side-stat-line{width:1px;height:48px;background:linear-gradient(to bottom,transparent,rgba(201,162,39,0.5),transparent);margin:0 auto}
 .lg-side-stat-val{font-family:'Cinzel',serif;font-size:22px;font-weight:700;color:#c9a227;line-height:1;text-shadow:0 0 20px rgba(201,162,39,0.4)}
-.lg-side-stat-lbl{font-family:'Share Tech Mono',monospace;font-size:7px;letter-spacing:2px;color:rgba(240,232,208,0.45);text-transform:uppercase;text-align:center}
+.lg-side-stat-lbl{font-family:'Share Tech Mono',monospace;font-size:9px;letter-spacing:2px;color:rgba(240,232,208,0.45);text-transform:uppercase;text-align:center}
 /* Main container */
 .lg-main-container{position:relative;z-index:10;display:flex;align-items:center;gap:0;width:900px;max-width:95vw;margin-top:calc(36px + 60px);padding-bottom:60px}
 /* Left panel */
@@ -2509,9 +2509,55 @@ html{-webkit-tap-highlight-color:transparent}
 </head>
 <body>
 <script>
+/* ─────────────────────────────────────────────────────────────────
+   safeStorage — Wrapper sécurisé sur localStorage
+   Dans Safari en navigation privée, localStorage.setItem peut throw
+   QuotaExceededError. Cette protection évite que toute l'app crash.
+   ───────────────────────────────────────────────────────────────── */
+window._lsGet = function(key, fallback){
+  try { var v = localStorage.getItem(key); return v === null ? (fallback||null) : v; }
+  catch(e){ return fallback || null; }
+};
+window._lsSet = function(key, value){
+  try { localStorage.setItem(key, value); return true; }
+  catch(e){ return false; }
+};
+window._lsRm = function(key){
+  try { localStorage.removeItem(key); return true; }
+  catch(e){ return false; }
+};
+
 /* Appliquer le mode sombre IMMÉDIATEMENT pour éviter le flash de thème clair */
-if(localStorage.getItem('suna_darkmode')==='1'){document.documentElement.classList.add('dark-pending');document.body&&document.body.classList.add('dark');}
-document.addEventListener('DOMContentLoaded',function(){if(localStorage.getItem('suna_darkmode')==='1'){document.body.classList.add('dark');}});
+try{ if(localStorage.getItem('suna_darkmode')==='1'){document.documentElement.classList.add('dark-pending');document.body&&document.body.classList.add('dark');} }catch(e){}
+document.addEventListener('DOMContentLoaded',function(){try{if(localStorage.getItem('suna_darkmode')==='1'){document.body.classList.add('dark');}}catch(e){}});
+
+/* ─────────────────────────────────────────────────────────────────
+   Gestionnaire global pour les images cassées : si une <img> ne se
+   charge pas (URL morte, fichier supprimé, hors-ligne…), on la cache
+   au lieu de laisser l'icône cassée du navigateur.
+   ───────────────────────────────────────────────────────────────── */
+document.addEventListener('error', function(e){
+  var t = e.target;
+  if(t && t.tagName === 'IMG' && !t.dataset.imgErrHandled){
+    t.dataset.imgErrHandled = '1';
+    // Cache l'image cassée et affiche un placeholder neutre à la place
+    t.style.opacity = '0';
+    t.style.visibility = 'hidden';
+    // Si l'image a un parent qui faisait office de "frame", on peut y mettre
+    // un fallback texte
+    var parent = t.parentElement;
+    if(parent && !parent.querySelector('.img-broken-fallback')){
+      var fb = document.createElement('div');
+      fb.className = 'img-broken-fallback';
+      fb.style.cssText = 'position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(20,16,9,0.6);color:rgba(255,255,255,0.3);font-size:11px;font-family:\'Share Tech Mono\',monospace;pointer-events:none;letter-spacing:1px';
+      fb.textContent = '— image —';
+      // S'assurer que le parent peut accueillir le fallback
+      var pPos = getComputedStyle(parent).position;
+      if(pPos === 'static') parent.style.position = 'relative';
+      parent.appendChild(fb);
+    }
+  }
+}, true); // Capture phase pour intercepter avant le navigateur
 </script>
 
 <!-- LOGIN -->
@@ -3220,7 +3266,7 @@ document.addEventListener('DOMContentLoaded',function(){if(localStorage.getItem(
             <div class="lg-trib-tag">Institution Judiciaire</div>
             <h3 class="lg-trib-h3">Les Juges, gardiens de la justice shinobi</h3>
             <p class="lg-trib-p">Au cœur du Pays du Vent, le <strong>Tribunal de Sunagakure</strong> est l'institution chargée de rendre la justice. Composé de juges expérimentés, il statue sur les affaires les plus graves portées par la Police de Sunagakure : trahisons, homicides, conspirations, infractions majeures au code shinobi.</p>
-            <p class="lg-trib-p">Chaque juge prête serment de juger sans favoritisme, en respect de la <strong>Volonté du Vent</strong>. Leur autorité est reconnue par le Kazekage lui-même, et leurs décisions s'appliquent à tous — du Genin au Hokage.</p>
+            <p class="lg-trib-p">Chaque juge prête serment de juger sans favoritisme, en respect de la <strong>Volonté du Vent</strong>. Leur autorité est reconnue par le Kazekage lui-même, et leurs décisions s'appliquent à tous — du Genin au Kazekage.</p>
           </div>
 
           <div class="lg-trib-attribs-tag">Missions & Responsabilités</div>
@@ -4376,7 +4422,7 @@ document.addEventListener('DOMContentLoaded',function(){if(localStorage.getItem(
       .lg-bb-danger{
         display:inline-flex;align-items:center;gap:4px;
         font-family:'Share Tech Mono',monospace;
-        font-size:7.5px;letter-spacing:1px;
+        font-size:9.5px;letter-spacing:1px;
         padding:2px 7px;border-radius:2px;
         font-weight:700;text-transform:uppercase;
       }
@@ -4393,7 +4439,7 @@ document.addEventListener('DOMContentLoaded',function(){if(localStorage.getItem(
       .lg-bb-meta-row{display:flex;gap:5px;align-items:baseline}
       .lg-bb-meta-lbl{
         font-family:'Share Tech Mono',monospace;
-        font-size:7.5px;letter-spacing:0.5px;
+        font-size:9.5px;letter-spacing:0.5px;
         color:rgba(120,75,15,0.7);
         text-transform:uppercase;
         flex-shrink:0;
@@ -4407,7 +4453,7 @@ document.addEventListener('DOMContentLoaded',function(){if(localStorage.getItem(
       }
       .lg-bb-reward-lbl{
         font-family:'Share Tech Mono',monospace;
-        font-size:7px;letter-spacing:1px;
+        font-size:9px;letter-spacing:1px;
         color:rgba(100,65,15,0.5);
         text-transform:uppercase;
       }
@@ -5642,7 +5688,7 @@ document.addEventListener('DOMContentLoaded',function(){if(localStorage.getItem(
   .lore-saved-entry:hover{border-color:rgba(201,162,39,.3);background:rgba(201,162,39,.04)}
   .lore-se-title{font-family:'Cinzel',serif;font-size:14px;color:#e8dfc8;margin-bottom:4px}
   .lore-se-meta{font-family:'Share Tech Mono',monospace;font-size:8px;letter-spacing:1.5px;color:rgba(232,223,200,.35);text-transform:uppercase;display:flex;gap:14px;align-items:center;flex-wrap:wrap}
-  .lore-se-era{background:rgba(201,162,39,.08);border:1px solid rgba(201,162,39,.18);padding:1px 7px;border-radius:2px;color:#c9a227;font-size:7px}
+  .lore-se-era{background:rgba(201,162,39,.08);border:1px solid rgba(201,162,39,.18);padding:1px 7px;border-radius:2px;color:#c9a227;font-size:9px}
   .lore-se-actions{display:flex;gap:6px}
   .lore-se-btn{width:28px;height:28px;border-radius:3px;background:none;border:1px solid rgba(201,162,39,.15);cursor:pointer;color:rgba(232,223,200,.3);font-size:11px;display:flex;align-items:center;justify-content:center;transition:all .15s}
   .lore-se-btn:hover{border-color:rgba(201,162,39,.35);color:#c9a227}
@@ -6504,7 +6550,7 @@ document.addEventListener('DOMContentLoaded',function(){if(localStorage.getItem(
       }
       .bb-reward-label {
         font-family: 'Share Tech Mono', monospace;
-        font-size: 7.5px;
+        font-size:9.5px;
         color: rgba(100,65,15,0.5);
         letter-spacing: 1px;
         text-transform: uppercase;
@@ -10106,7 +10152,6 @@ async function _flushSaveQueue(){
     const payload=JSON.parse(JSON.stringify(toSave));
     delete payload.messages; // messages gérés séparément
     await window._fbSet(window._fbRef(window._fbDB,"sunagakure"),payload);
-    console.log('[FB-SAVE] ✅ OK — users:', (mergedUsers||[]).length);
   }catch(err){
     console.error('[FB-SAVE] ❌ Erreur:', err.message||err);
     try{localStorage.setItem(STORE,JSON.stringify(toSave));}catch(e){}
@@ -10232,7 +10277,7 @@ function initFirebaseSync(){
             }catch(e){}
           } else {
             // Utilisateur désactivé ou supprimé → déconnexion forcée
-            localStorage.removeItem("suna_session");
+            try{ localStorage.removeItem("suna_session"); }catch(e){}
             forceLogout();
             return;
           }
@@ -10568,7 +10613,7 @@ function lgRenderBingoBook(){
     grid.innerHTML = ninjas.map(function(n, i){
       var portraitHtml = (n.portrait && /^data:image|^https?:/.test(n.portrait))
         ? '<img src="'+escLg(n.portrait)+'" alt="portrait" onerror="this.style.display=\'none\'">'
-        : '<div style="text-align:center;line-height:1.1">'+bbInitialsLg(n.nom,n.prenom)+'<div style="font-family:\'Share Tech Mono\',monospace;font-size:7px;color:rgba(80,50,10,0.4);margin-top:3px;letter-spacing:1px">PORTRAIT</div></div>';
+        : '<div style="text-align:center;line-height:1.1">'+bbInitialsLg(n.nom,n.prenom)+'<div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:rgba(80,50,10,0.4);margin-top:3px;letter-spacing:1px">PORTRAIT</div></div>';
       var num = String(i+1).padStart(3,'0');
       var idStr = String(n.id||0).padStart(3,'0');
       return '<div class="lg-bb-card">'
@@ -11007,7 +11052,7 @@ function checkRememberMe(){
     // Les visiteurs doivent toujours se connecter manuellement.
     if(user&&user.role!=="visiteur"){currentUser=user;_loginSource='auto';applyLogin();return true}
   }catch(e){}
-  localStorage.removeItem("suna_session");
+  try{ localStorage.removeItem("suna_session"); }catch(e){}
   return false;
 }
 
@@ -11072,7 +11117,7 @@ function doLogin(){
       // Stocker l'ID + le hash du mot de passe EN LOCAL UNIQUEMENT
       localStorage.setItem("suna_session",JSON.stringify({id:user.id,passHash:user.pass}));
     } else {
-      localStorage.removeItem("suna_session");
+      try{ localStorage.removeItem("suna_session"); }catch(e){}
     }
     applyLogin();
   };
@@ -11090,8 +11135,8 @@ function emergencyReset(){
     askDelete(
       "⚠️ Réinitialiser toutes les données ? Le compte admin (identifiant : admin) sera restauré avec son mot de passe par défaut. Cette action est irréversible.",
       ()=>{
-        localStorage.removeItem(STORE);
-        localStorage.removeItem("suna_session");
+        try{ localStorage.removeItem(STORE); }catch(e){}
+        try{ localStorage.removeItem("suna_session"); }catch(e){}
         DB = defaultData();
         // Hacher le mot de passe par défaut avant de sauvegarder
         hashPass(DEFAULT_PASS).then(h=>{
@@ -11294,7 +11339,7 @@ function doLogout(){
     if(DB.loginHistory.length>200)DB.loginHistory=DB.loginHistory.slice(-200);
     saveData();
   }
-  localStorage.removeItem("suna_session");
+  try{ localStorage.removeItem("suna_session"); }catch(e){}
   currentUser=null;
   document.body.classList.remove('is-visitor');
   _msgInitDone=false;
@@ -11892,7 +11937,7 @@ function renderRecensement(){
     const initials=((r.prenom||"?").charAt(0)+((r.nom||"").charAt(0)||"")).toUpperCase();
     const isCrim=r.rang==="Criminel recherché";
     const avatarStyle=isCrim?"background:rgba(220,38,38,0.25);border:2px solid var(--red)":r.rang==="Kage"?"background:rgba(180,140,20,0.15);border:2px solid var(--gold)":"background:linear-gradient(135deg,rgba(224,92,26,0.25),rgba(212,160,23,0.15));border:2px solid rgba(180,140,20,0.3)";
-    const avatarContent=r.photo&&safeImgSrc(r.photo)?`<img src="${safeImgSrc(r.photo)}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`:`${initials}`;
+    const avatarContent=r.photo&&safeImgSrc(r.photo)?`<img alt="Photo" src="${safeImgSrc(r.photo)}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`:`${initials}`;
     return `<div class="recense-card"><div class="recense-card-header"><div class="recense-avatar" style="${avatarStyle}${r.photo?';padding:0;overflow:hidden':''}">${avatarContent}</div><div style="flex:1;min-width:0"><div style="font-weight:700;font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(r.prenom)} ${esc(r.nom)}</div><div style="font-size:9.5px;color:var(--muted);font-family:'Share Tech Mono',monospace">${esc(r.faction)||"—"}</div></div><span class="badge ${rangBadge(r.rang)}" style="flex-shrink:0">${esc(r.rang)}</span></div><div class="recense-card-body"><div class="recense-row"><span class="lbl">Âge / Sexe</span><span class="val">${esc(r.age)} ans · ${esc(r.sexe)}</span></div><div class="recense-row"><span class="lbl">Compétences</span><span class="val" style="font-size:10.5px;max-width:140px">${esc(r.competences)||"—"}</span></div>${r.natures&&r.natures.length?`<div style="margin-top:7px"><div class="nature-bar">${r.natures.map(n=>`<span class="badge ${NATURE_BADGE[n]||"badge-gray"}">${esc(n)}</span>`).join("")}</div></div>`:""}
 <div style="margin-top:9px;padding:9px 11px;background:linear-gradient(90deg,rgba(192,65,14,0.07),rgba(180,140,20,0.04));border:1px solid rgba(192,65,14,0.22);border-radius:8px;cursor:not-allowed;position:relative;overflow:hidden" title="Fonctionnalité bientôt disponible">
   <div style="position:absolute;inset:0;background:repeating-linear-gradient(90deg,transparent,transparent 6px,rgba(192,65,14,0.025) 6px,rgba(192,65,14,0.025) 7px);pointer-events:none"></div>
@@ -11901,7 +11946,7 @@ function renderRecensement(){
     <div style="flex:1;min-width:0">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:5px">
         <span style="font-family:'Share Tech Mono',monospace;font-size:8px;color:rgba(192,65,14,0.6);letter-spacing:2px;text-transform:uppercase;font-weight:600">Niveau de menace</span>
-        <span style="font-size:7.5px;background:rgba(192,65,14,0.12);color:#c05010;border:1px solid rgba(192,65,14,0.3);border-radius:3px;padding:1px 5px;letter-spacing:1.5px;font-family:'Share Tech Mono',monospace">BIENTÔT</span>
+        <span style="font-size:9.5px;background:rgba(192,65,14,0.12);color:#c05010;border:1px solid rgba(192,65,14,0.3);border-radius:3px;padding:1px 5px;letter-spacing:1.5px;font-family:'Share Tech Mono',monospace">BIENTÔT</span>
       </div>
       <div style="display:flex;gap:3px;align-items:center">
         ${[1,2,3,4,5].map(i=>`<div style="height:6px;flex:1;border-radius:3px;background:rgba(0,0,0,0.08);border:1px solid rgba(0,0,0,0.06);position:relative;overflow:hidden"><div style="position:absolute;inset:0;background:linear-gradient(90deg,rgba(255,255,255,0.05),transparent)"></div></div>`).join("")}
@@ -11936,7 +11981,7 @@ function openEditRecense(id){
   _recensePhoto = r.photo||"";
   const prev = document.getElementById("r-photo-avatar-preview");
   const rem = document.getElementById("r-photo-remove");
-  if(prev) prev.innerHTML = r.photo ? `<img src="${safeImgSrc(r.photo)}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">` : '👤';
+  if(prev) prev.innerHTML = r.photo ? `<img alt="Photo" src="${safeImgSrc(r.photo)}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">` : '👤';
   if(rem) rem.style.display = r.photo ? "inline-flex" : "none";
   // Changer le titre et bouton
   const header = document.querySelector("#modal-recense .modal-header h3");
@@ -12004,7 +12049,7 @@ function handleRecenseDrop(e){
 function applyRecensePhoto(src){
   _recensePhoto=src;
   const av=el("r-photo-avatar-preview");
-  av.innerHTML=`<img src="${src}" style="width:100%;height:100%;object-fit:cover">`;
+  av.innerHTML=`<img src="${esc(src)}" alt="Photo recensé" style="width:100%;height:100%;object-fit:cover">`;
   el("r-photo-placeholder").innerHTML='<div style="font-size:11px;color:var(--green);font-weight:600">✓ Photo chargée</div><div style="font-size:10px;color:var(--muted);margin-top:2px">Cliquez pour changer</div>';
   el("r-photo-remove").style.display="block";
 }
@@ -12034,7 +12079,7 @@ function viewRecense(id){
   vrTitle.textContent=`Fiche — ${r.prenom} ${r.nom}`;
   const isCrim=r.rang==="Criminel recherché";
   const avatarStyle=isCrim?"background:rgba(220,38,38,0.25);border:2px solid var(--red)":r.rang==="Kage"?"background:rgba(180,140,20,0.15);border:2px solid var(--gold)":"background:linear-gradient(135deg,rgba(224,92,26,0.25),rgba(212,160,23,0.15));border:2px solid rgba(180,140,20,0.3)";
-  const photoBlock=r.photo&&safeImgSrc(r.photo)?`<div style="display:flex;justify-content:center;margin-bottom:16px"><div style="width:90px;height:90px;border-radius:50%;overflow:hidden;border:3px solid rgba(180,140,20,0.4);box-shadow:0 4px 16px rgba(0,0,0,0.12)"><img src="${safeImgSrc(r.photo)}" style="width:100%;height:100%;object-fit:cover"></div></div>`:'';
+  const photoBlock=r.photo&&safeImgSrc(r.photo)?`<div style="display:flex;justify-content:center;margin-bottom:16px"><div style="width:90px;height:90px;border-radius:50%;overflow:hidden;border:3px solid rgba(180,140,20,0.4);box-shadow:0 4px 16px rgba(0,0,0,0.12)"><img alt="Photo" src="${safeImgSrc(r.photo)}" style="width:100%;height:100%;object-fit:cover"></div></div>`:'';
   vrBody.innerHTML=`${photoBlock}<div class="grid grid-2"><div class="form-group"><label class="form-label">Prénom</label><div style="font-size:14px;font-weight:600">${esc(r.prenom)}</div></div><div class="form-group"><label class="form-label">Nom</label><div style="font-size:14px;font-weight:600">${esc(r.nom)}</div></div><div class="form-group"><label class="form-label">Âge</label><div>${esc(r.age)} ans</div></div><div class="form-group"><label class="form-label">Sexe</label><div>${esc(r.sexe)}</div></div></div><div class="form-group"><label class="form-label">Faction / Village</label><div style="font-size:13.5px">${esc(r.faction)||"—"}</div></div><div class="form-group"><label class="form-label">Rang</label><span class="badge badge-orange">${esc(r.rang)}</span></div><div class="form-group"><label class="form-label">Compétences</label><div style="font-size:12.5px;color:rgba(240,232,208,0.65)">${esc(r.competences)||"—"}</div></div>${r.natures&&r.natures.length?`<div class="form-group"><label class="form-label">Natures & Maîtrises</label><div class="nature-bar">${r.natures.map(n=>`<span class="badge ${NATURE_BADGE[n]||"badge-gray"}">${esc(n)}</span>`).join("")}</div></div>`:""}<div class="form-group"><label class="form-label">Notes</label><div style="font-size:12.5px;color:rgba(240,232,208,0.65);line-height:1.65;white-space:pre-wrap">${esc(r.notes)||"—"}</div></div><div class="form-group"><label class="form-label">Recensé par</label><div style="font-size:11px;color:var(--muted)">${esc(r.auteur)} — ${fmtDate(r.date)}</div></div>`;
   openModal("modal-view-recense");
 }
@@ -12221,7 +12266,7 @@ function loadPlaintePhoto(input){
   reader.onload=function(e){
     _plaintePhoto=e.target.result;
     const av=el("p-photo-avatar");
-    av.innerHTML=`<img src="${e.target.result}" style="width:100%;height:100%;object-fit:cover">`;
+    av.innerHTML=`<img alt="" src="${e.target.result}" style="width:100%;height:100%;object-fit:cover">`;
     av.style.borderColor="rgba(180,140,20,0.6)";
     el("p-photo-placeholder").innerHTML='<div style="font-size:11.5px;color:var(--green);font-weight:600">✓ Photo chargée</div><div style="font-size:10px;color:var(--muted);margin-top:2px">Cliquez pour changer</div>';
     el("p-photo-remove").style.display="block";
@@ -12273,7 +12318,7 @@ function openEditPlainte(id){
   _plaintePhoto = p.photo||"";
   const av = document.getElementById("p-photo-avatar");
   const rem = document.getElementById("p-photo-remove");
-  if(av) av.innerHTML = p.photo ? `<img src="${safeImgSrc(p.photo)}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">` : '👤';
+  if(av) av.innerHTML = p.photo ? `<img alt="Photo" src="${safeImgSrc(p.photo)}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">` : '👤';
   if(rem) rem.style.display = p.photo ? "inline-flex" : "none";
   const ph = document.getElementById("p-photo-placeholder");
   if(ph) ph.style.display = p.photo ? "none" : "";
@@ -12367,7 +12412,7 @@ function viewDossier(id){
     m.addEventListener("click",function(e){if(e.target===m)m.classList.remove("open");});
   }
   document.getElementById("vd-title").textContent="🗂️ Dossier — "+d.nom;
-  const photoHTML=d.photo&&safeImgSrc(d.photo)?`<div style="display:flex;justify-content:center;margin-bottom:14px"><img src="${safeImgSrc(d.photo)}" style="max-width:120px;max-height:150px;border-radius:10px;object-fit:cover;border:2px solid rgba(180,140,20,0.25)"></div>`:"";
+  const photoHTML=d.photo&&safeImgSrc(d.photo)?`<div style="display:flex;justify-content:center;margin-bottom:14px"><img alt="Photo" src="${safeImgSrc(d.photo)}" style="max-width:120px;max-height:150px;border-radius:10px;object-fit:cover;border:2px solid rgba(180,140,20,0.25)"></div>`:"";
   document.getElementById("vd-body").innerHTML=`${photoHTML}
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
       <div class="form-group" style="margin:0"><label class="form-label">Suspect</label><div style="font-weight:700;font-size:14px">${esc(d.nom)}</div></div>
@@ -12442,7 +12487,7 @@ function renderDossiers(){
   if(!tbody) return;
   tbody.innerHTML = list.map(function(d){
     var photoCell = d.photo
-      ? '<img src="'+safeImgSrc(d.photo)+'" style="width:36px;height:44px;object-fit:cover;border-radius:5px;border:1px solid rgba(180,140,20,0.2);box-shadow:0 2px 6px rgba(0,0,0,0.12)">'
+      ? '<img alt="Photo" src="'+safeImgSrc(d.photo)+'" style="width:36px;height:44px;object-fit:cover;border-radius:5px;border:1px solid rgba(180,140,20,0.2);box-shadow:0 2px 6px rgba(0,0,0,0.12)">'
       : '<div style="width:36px;height:44px;border-radius:5px;border:1px dashed rgba(255,255,255,0.15);display:flex;align-items:center;justify-content:center;font-size:18px;opacity:0.35">👤</div>';
     return '<tr>'
       +'<td>'+photoCell+'</td>'
@@ -12642,7 +12687,7 @@ async function pasteDossierPhoto(){
 function applyDossierPhoto(src){
   el("d-photo-data").value=src;
   const prev=el("d-photo-preview");
-  prev.innerHTML=`<img src="${src}" style="width:100%;height:100%;object-fit:cover;border-radius:6px">`;
+  prev.innerHTML=`<img src="${esc(src)}" alt="Photo dossier" style="width:100%;height:100%;object-fit:cover;border-radius:6px">`;
   prev.style.border="2px solid rgba(180,140,20,0.5)";
   if(el("d-photo-clear"))el("d-photo-clear").style.display="";
 }
@@ -12674,7 +12719,7 @@ function openEditDossier(id){
   el("ed-photo-data").value=d.photo||"";
   const prev=el("ed-photo-preview");
   if(d.photo){
-    prev.innerHTML=`<img src="${safeImgSrc(d.photo)}" style="width:100%;height:100%;object-fit:cover;border-radius:6px">`;
+    prev.innerHTML=`<img alt="Photo" src="${safeImgSrc(d.photo)}" style="width:100%;height:100%;object-fit:cover;border-radius:6px">`;
     prev.style.border="2px solid rgba(180,140,20,0.5)";
     el("ed-photo-clear").style.display="";
   } else {
@@ -12730,7 +12775,7 @@ async function pasteEditDossierPhoto(){
 function applyEditDossierPhoto(src){
   el("ed-photo-data").value=src;
   const prev=el("ed-photo-preview");
-  prev.innerHTML=`<img src="${src}" style="width:100%;height:100%;object-fit:cover;border-radius:6px">`;
+  prev.innerHTML=`<img src="${esc(src)}" alt="Photo dossier" style="width:100%;height:100%;object-fit:cover;border-radius:6px">`;
   prev.style.border="2px solid rgba(180,140,20,0.5)";
   if(el("ed-photo-clear"))el("ed-photo-clear").style.display="";
 }
@@ -13530,19 +13575,19 @@ function applyLogo(){
   // sidebar badge
   const badgeIcon=document.querySelector(".badge-icon");
   if(badgeIcon){
-    if(logo){badgeIcon.innerHTML=`<img src="${logo}" style="width:54px;height:54px;object-fit:contain">`}
-    else{badgeIcon.innerHTML=`<img src="${ORIGINAL_LOGO}" alt="logo">`}
+    if(logo){badgeIcon.innerHTML=`<img src="${esc(safeImgSrc(logo))}" alt="Logo Police Sunagakure" style="width:54px;height:54px;object-fit:contain">`}
+    else{badgeIcon.innerHTML=`<img src="${ORIGINAL_LOGO}" alt="Logo Police Sunagakure">`}
   }
   // login badge
   const loginBadge=document.querySelector(".login-badge");
   if(loginBadge){
-    if(logo){loginBadge.innerHTML=`<img src="${logo}" style="width:66px;height:66px;object-fit:contain">`}
-    else{loginBadge.innerHTML=`<img src="${ORIGINAL_LOGO}" alt="logo">`}
+    if(logo){loginBadge.innerHTML=`<img src="${esc(safeImgSrc(logo))}" alt="Logo Police Sunagakure" style="width:66px;height:66px;object-fit:contain">`}
+    else{loginBadge.innerHTML=`<img src="${ORIGINAL_LOGO}" alt="Logo Police Sunagakure">`}
   }
   // admin preview
   const prev=el("logo-preview-admin");
   if(prev){
-    if(logo){prev.innerHTML=`<img src="${logo}" style="width:100%;height:100%;object-fit:contain;border-radius:50%">`}
+    if(logo){prev.innerHTML=`<img alt="Logo Police Sunagakure" src="${logo}" style="width:100%;height:100%;object-fit:contain;border-radius:50%">`}
     else{prev.innerHTML=`<span style="font-size:26px;opacity:0.4">🛡️</span>`}
   }
 }
@@ -13574,7 +13619,7 @@ function applyNotifPrefs(p){
   });
 }
 function resetNotifs(){
-  localStorage.removeItem("suna_notifs");
+  try{ localStorage.removeItem("suna_notifs"); }catch(e){}
   NOTIF_KEYS.forEach(k=>{const cb=el("notif-"+k);if(cb)cb.checked=true;});
   applyNotifPrefs({});
   updateBadges();
@@ -13641,7 +13686,7 @@ function _renderEffectifsOrig(){
         <div style="display:flex;align-items:center;gap:14px;margin-bottom:14px">
           <div style="position:relative;flex-shrink:0">
             ${u.photo
-              ?`<img src="${safeImgSrc(u.photo)}" style="width:54px;height:54px;border-radius:50%;object-fit:cover;border:2px solid rgba(180,140,20,0.35);display:block;box-shadow:0 4px 12px rgba(0,0,0,0.15)">`
+              ?`<img alt="Photo" src="${safeImgSrc(u.photo)}" style="width:54px;height:54px;border-radius:50%;object-fit:cover;border:2px solid rgba(180,140,20,0.35);display:block;box-shadow:0 4px 12px rgba(0,0,0,0.15)">`
               :`<div style="width:54px;height:54px;border-radius:50%;background:${avatarBg};display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:700;color:#fff;box-shadow:0 4px 12px rgba(0,0,0,0.2);border:2px solid rgba(255,255,255,0.1)">${initiale}</div>`
             }
             <span style="position:absolute;bottom:1px;right:1px;width:13px;height:13px;border-radius:50%;background:${statusColor};border:2px solid #fff;box-shadow:0 0 6px ${statusColor};z-index:2"></span>
@@ -13736,7 +13781,7 @@ function renderRecrues(){
   grid.innerHTML=list.map(c=>`<div class="card"><div class="card-body" style="text-align:center;padding:20px 15px">
     <div style="position:relative;width:56px;margin:0 auto 10px">
       ${c.photo
-        ?`<img src="${safeImgSrc(c.photo)}" style="width:56px;height:56px;border-radius:50%;object-fit:cover;border:2px solid rgba(180,140,20,0.3);display:block">`
+        ?`<img alt="Photo" src="${safeImgSrc(c.photo)}" style="width:56px;height:56px;border-radius:50%;object-fit:cover;border:2px solid rgba(180,140,20,0.3);display:block">`
         :`<div class="effectif-avatar" style="margin:0;width:56px;height:56px"><span style="font-size:22px;font-weight:700">${c.nom.charAt(0).toUpperCase()}</span></div>`
       }
       ${canModify()?`<div style="position:absolute;bottom:-4px;right:-4px;display:flex;gap:2px">
@@ -14700,7 +14745,7 @@ function doReimportCP(){
   }
   askDelete('Réimporter le Code Pénal officiel de Sunagakure ? Cela écrasera toutes les infractions actuelles.', function() {
     DB.infractions=[];
-    localStorage.removeItem('suna_cp_seeded');
+    try{ localStorage.removeItem('suna_cp_seeded'); }catch(e){}
     seedCodePenal(true);
     if(typeof showToast==='function') showToast('Code Pénal importé avec succès !','success');
   });
@@ -14748,7 +14793,7 @@ function seedCodePenal(force){
     {id:10029,nom:"[3.6] Divulgation d'informations confidentielles",cat:"rouge",amende:"50 000両",prison:"Oui",duree:"",notes:"Jugement"},
     {id:10030,nom:"[3.7] Réalisation avérée de l'un des actes ci-dessus",cat:"rouge",amende:"MORT",prison:"MORT",duree:"",notes:"MORT — Peine capitale"}
   ];
-  localStorage.setItem('suna_cp_seeded','1');
+  try{ localStorage.setItem('suna_cp_seeded','1'); }catch(e){}
   saveData();
   renderCodePenal();
   return true;
@@ -15388,7 +15433,7 @@ function renderHierarchie(){
       members.forEach(function(u){
         var initials = (u.nom||"?").charAt(0).toUpperCase();
         var photoHtml = (u.photo && typeof safeImgSrc==="function" && safeImgSrc(u.photo))
-          ? '<div style="width:38px;height:38px;border-radius:50%;overflow:hidden;flex-shrink:0;border:2px solid '+color+'33"><img src="'+safeImgSrc(u.photo)+'" style="width:100%;height:100%;object-fit:cover"></div>'
+          ? '<div style="width:38px;height:38px;border-radius:50%;overflow:hidden;flex-shrink:0;border:2px solid '+color+'33"><img alt="Photo" src="'+safeImgSrc(u.photo)+'" style="width:100%;height:100%;object-fit:cover"></div>'
           : '<div style="width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,'+color+','+color+'88);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#fff;flex-shrink:0">'+initials+'</div>';
         html += '<div style="display:flex;align-items:center;gap:9px;padding:9px 13px;background:rgba(12,10,7,0.95);border:1px solid rgba(180,140,20,0.1);border-radius:10px;min-width:160px;flex:1;max-width:280px;cursor:pointer;transition:all 0.18s" onclick="showPage(\'effectifs\')" title="Voir dans Effectifs">';
         html += photoHtml;
@@ -16553,7 +16598,7 @@ body.dark .dash-quick-chip{background:rgba(180,140,20,0.08);border-color:rgba(18
 /* ======== MODE SOMBRE ======== */
 function toggleDarkMode() {
   var dark = document.body.classList.toggle('dark');
-  localStorage.setItem('suna_darkmode', dark ? '1' : '0');
+  try{ localStorage.setItem('suna_darkmode', dark ? '1' : '0'); }catch(e){}
   var btn = document.getElementById('btn-darkmode');
   if (btn) btn.textContent = dark ? '\u2600\uFE0F' : '\uD83C\uDF19';
 }
@@ -16857,7 +16902,7 @@ function _renderQuickBar() {
 .sfc-hint{
   position:absolute;
   bottom:8px; right:9px;
-  font-size:7px; letter-spacing:1.5px;
+  font-size:9px; letter-spacing:1.5px;
   color:var(--card-accent, var(--gold2));
   font-family:'Share Tech Mono',monospace;
   opacity:0;
@@ -20129,7 +20174,7 @@ body:not(.has-action-fab) #yuno-config-banner{
       var arr = new Uint8Array(16);
       crypto.getRandomValues(arr);
       s = Array.from(arr).map(function(b){return b.toString(16).padStart(2,'0');}).join('');
-      localStorage.setItem('_yuno_salt', s);
+      try{ localStorage.setItem('_yuno_salt', s); }catch(e){}
     }
     return s;
   }
@@ -20381,7 +20426,7 @@ body:not(.has-action-fab) #yuno-config-banner{
     if(!k){showToast('Clé API vide !','error');return;}
     _encryptKey(k).then(function(encrypted) {
       if (!encrypted) { showToast('Erreur de chiffrement. Réessayez.', 'error'); return; }
-      localStorage.setItem(YUNO_KEY_STORAGE, encrypted);
+      try{ localStorage.setItem(YUNO_KEY_STORAGE, encrypted); }catch(e){}
       _yunoKeyCache = k;
       document.getElementById('yuno-config-banner').classList.remove('open');
       showToast('✅ Clé YUNO sauvegardée (chiffrée) !','success');
@@ -20669,7 +20714,7 @@ body:not(.has-action-fab) #yuno-config-banner{
         var th=document.createElement('th');
         th.className='yuno-th';
         th.style.cssText='color:#c9970a;font-size:9px;letter-spacing:2px;opacity:0.7;white-space:nowrap';
-        th.innerHTML='🔒 IA <span style="font-size:7px;background:rgba(192,65,14,0.2);color:#e05c1a;border:1px solid rgba(192,65,14,0.3);border-radius:3px;padding:1px 4px;letter-spacing:1px;vertical-align:middle">SOON</span>';
+        th.innerHTML='🔒 IA <span style="font-size:9px;background:rgba(192,65,14,0.2);color:#e05c1a;border:1px solid rgba(192,65,14,0.3);border-radius:3px;padding:1px 4px;letter-spacing:1px;vertical-align:middle">SOON</span>';
         var lastTh = thead.querySelector('th:last-child');
         if(lastTh) thead.insertBefore(th, lastTh);
         else thead.appendChild(th);
@@ -21670,7 +21715,7 @@ function bbSaveNinjas(list) {
     localStorage.setItem('bb_ninjas', JSON.stringify(list));
     // Marqueur : l'utilisateur a explicitement modifié la liste
     // (utile pour distinguer "vide par défaut" de "vidé volontairement")
-    localStorage.setItem('bb_ninjas_set', '1');
+    try{ localStorage.setItem('bb_ninjas_set', '1'); }catch(e){}
     localOk = true;
   } catch(e) {
     if(typeof showToast==='function') showToast('Stockage local plein — réduisez la taille des images', 'error');
