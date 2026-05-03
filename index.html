@@ -20668,10 +20668,19 @@ input, select, textarea { transition: border-color 0.18s, box-shadow 0.18s, back
     }, {passive:true});
   }
 
-  // 5. Empêcher le rebond iOS sur les éléments fixes (topbar, bottom-nav)
+  // 5. Rebond iOS sur les éléments fixes — bug-fix mobile :
+  // L'ancien code attachait `touchmove + preventDefault({passive:false})` sur
+  // .topbar et #bottom-nav. Quand l'utilisateur scrollait jusqu'en bas et
+  // posait son doigt sur la bottom-nav (zone fixe omniprésente), le scroll
+  // se figeait : impossible de monter ou descendre.
+  // Sur mobile, `body{overflow:hidden}` + `.page-content{overscroll-behavior-y:contain}`
+  // gèrent déjà le rebond iOS — ce preventDefault était redondant ET nocif.
+  // On laisse simplement le navigateur gérer.
   var fixedEls = document.querySelectorAll('.topbar, #bottom-nav');
   fixedEls.forEach(function(el){
-    el.addEventListener('touchmove', function(e){ e.preventDefault(); }, {passive:false});
+    // touch-action:manipulation = autorise les taps, pas le scroll-on-element,
+    // sans bloquer le scroll d'un geste qui commence ici puis sort de l'élément.
+    el.style.touchAction = 'manipulation';
   });
 })();
 </script>
@@ -21645,7 +21654,8 @@ function _renderQuickBar() {
        ──────────────────────────────────────────── */
     (function(){
       var p = pg('annonces'); if(!p) return;
-      var statCards = p.querySelectorAll('#annonces-stats-row .stat-card');
+      // bug-fix : la structure HTML utilise .ann-stats .ann-stat (pas #annonces-stats-row .stat-card)
+      var statCards = p.querySelectorAll('.ann-stats .ann-stat');
       var mapping = ['all', 'pin', 'Alerte', 'recent'];
 
       /* Étendre renderAnnonces pour supporter 'pin' et 'recent' */
@@ -25412,15 +25422,21 @@ body:not(.has-action-fab) #yuno-config-banner{
 
   window.yunoShowConfig = function(){
     var config = document.getElementById('yuno-config-banner');
+    if(!config) return;
     var configOpen = config.classList.toggle('open');
     config.setAttribute('aria-hidden', configOpen ? 'false' : 'true');
+    // L'input peut ne pas exister (banner verrouillé "bientôt") — bug-fix : on protège
     var inp = document.getElementById('yuno-api-key-input');
-    var k = getKey(); if(k) inp.value=k;
-    if(configOpen) inp.focus();
+    if(inp){
+      var k = getKey(); if(k) inp.value=k;
+      if(configOpen) inp.focus();
+    }
   };
 
   window.yunoSaveKey = function(){
-    var k = document.getElementById('yuno-api-key-input').value.trim();
+    var inp = document.getElementById('yuno-api-key-input');
+    if(!inp){ showToast('Configuration indisponible.','error'); return; }
+    var k = inp.value.trim();
     if(!k){showToast('Clé API vide !','error');return;}
     _encryptKey(k).then(function(encrypted) {
       if (!encrypted) { showToast('Erreur de chiffrement. Réessayez.', 'error'); return; }
@@ -27061,6 +27077,7 @@ document.addEventListener('DOMContentLoaded', function(){
   }, 100);
 });
 </script>
+</div><!-- /#main : fermeture ajoutée (bug-fix : div ouvert L6687 jamais fermé) -->
 <!-- BINGO BOOK — Modal dossier (hors page-content, sinon will-change:transform casse position:fixed) -->
 <div class="modal-overlay" id="bb-dossier-modal">
   <div class="modal" style="max-width:800px;padding:0;overflow:hidden;background:#1c1308;border:1px solid rgba(120,80,20,0.35);border-radius:6px;box-shadow:0 24px 80px rgba(0,0,0,0.8)">
