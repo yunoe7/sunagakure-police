@@ -7021,6 +7021,39 @@ document.addEventListener('error', function(e){
       .lg-bb-danger.eleve{background:rgba(160,20,20,0.12);color:#7a1212;border:1px solid rgba(160,20,20,0.3)}
       .lg-bb-danger.moyen{background:rgba(150,90,5,0.12);color:#6e430a;border:1px solid rgba(150,90,5,0.3)}
       .lg-bb-danger.faible{background:rgba(20,90,35,0.12);color:#174e22;border:1px solid rgba(20,90,35,0.27)}
+      /* Pastille statut alignée comme la pastille danger */
+      .lg-bb-status{
+        display:inline-flex;align-items:center;
+        font-family:'Share Tech Mono',monospace;
+        font-size:9.5px;letter-spacing:1px;font-weight:700;
+        padding:2px 7px;border-radius:2px;
+        text-transform:uppercase;line-height:1.4;
+        margin-left:6px;
+      }
+      .lg-bb-status.s-actif{background:rgba(160,20,20,0.1);color:#7a1212;border:1px solid rgba(160,20,20,0.28)}
+      .lg-bb-status.s-capture{background:rgba(20,90,35,0.12);color:#174e22;border:1px solid rgba(20,90,35,0.3)}
+      .lg-bb-status.s-tue{background:rgba(70,15,15,0.18);color:#4a0c0c;border:1px solid rgba(70,15,15,0.4)}
+      .lg-bb-status.s-evade{background:rgba(150,90,5,0.12);color:#6e430a;border:1px solid rgba(150,90,5,0.3)}
+      /* Tampon en diagonale pour les fiches non-actives */
+      .lg-bb-card{position:relative}
+      .lg-bb-stamp{
+        position:absolute;top:50%;left:50%;
+        transform:translate(-50%,-50%) rotate(-14deg);
+        font-family:'Cinzel',serif;font-weight:900;
+        font-size:28px;letter-spacing:5px;
+        padding:6px 16px;
+        border:4px double currentColor;border-radius:6px;
+        z-index:6;pointer-events:none;
+        opacity:0.78;
+        white-space:nowrap;
+        background:rgba(255,250,240,0.04);
+      }
+      .lg-bb-stamp.s-capture{color:#1f6f3d}
+      .lg-bb-stamp.s-tue{color:#8b1a1a}
+      .lg-bb-stamp.s-evade{color:#8a5a08}
+      .lg-bb-card[data-status="capture"]{filter:saturate(0.6) brightness(0.92)}
+      .lg-bb-card[data-status="tue"]{filter:saturate(0.45) brightness(0.78)}
+      .lg-bb-card[data-status="evade"]{filter:saturate(0.85)}
       .lg-bb-meta{
         margin-top:7px;
         display:flex;flex-direction:column;gap:2px;
@@ -9904,15 +9937,15 @@ document.addEventListener('error', function(e){
       .bb-card[data-status="capture"]{ filter:saturate(0.6) brightness(0.92); }
       .bb-card[data-status="tue"]{ filter:saturate(0.45) brightness(0.78); }
       .bb-card[data-status="evade"]{ filter:saturate(0.85); }
-      /* Petit badge en coin (visible aussi quand le tampon est masqué pendant hover) */
+      /* Pastille statut — alignée pixel près sur les badges danger */
       .bb-status-pill{
-        display:inline-flex;align-items:center;gap:4px;
+        display:inline-flex;align-items:center;
         font-family:'Share Tech Mono',monospace;
         font-size:8px;letter-spacing:1px;font-weight:700;
         padding:2px 8px;border-radius:2px;
         text-transform:uppercase;
-        margin-left:5px;
-        vertical-align:middle;
+        line-height:1.4;
+        margin-left:6px;
       }
       .bb-status-pill.s-actif{ background:rgba(160,20,20,0.1); color:#7a1212; border:1px solid rgba(160,20,20,0.28); }
       .bb-status-pill.s-capture{ background:rgba(20,90,35,0.12); color:#174e22; border:1px solid rgba(20,90,35,0.3); }
@@ -10030,6 +10063,7 @@ document.addEventListener('error', function(e){
         border-radius: 2px;
         font-weight: 700;
         text-transform: uppercase;
+        line-height: 1.4;
       }
       .bb-badge-moyen {
         display: inline-flex;
@@ -10045,6 +10079,7 @@ document.addEventListener('error', function(e){
         border-radius: 2px;
         font-weight: 700;
         text-transform: uppercase;
+        line-height: 1.4;
       }
       .bb-badge-faible {
         display: inline-flex;
@@ -10060,6 +10095,7 @@ document.addEventListener('error', function(e){
         border-radius: 2px;
         font-weight: 700;
         text-transform: uppercase;
+        line-height: 1.4;
       }
 
       /* Métadonnées de la carte */
@@ -15996,6 +16032,8 @@ function lgRenderBingoBook(){
       return (b.recompense||0) - (a.recompense||0);
     });
     var dangerLabel = { eleve: '⚠ DANGER ÉLEVÉ', moyen: '◆ DANGER MOYEN', faible: '▸ DANGER FAIBLE' };
+    var statusLabelLg = { actif:'Actif', capture:'Capturé', tue:'Tué', evade:'Évadé' };
+    var statusStampLg = { capture:'CAPTURÉ', tue:'TUÉ', evade:'ÉVADÉ' };
     var bbInitialsLg = function(nom, prenom){
       return (((nom||'?')[0])+((prenom&&prenom!=='—')?prenom[0]:'')).toUpperCase();
     };
@@ -16009,7 +16047,12 @@ function lgRenderBingoBook(){
         : '<div style="text-align:center;line-height:1.1">'+bbInitialsLg(n.nom,n.prenom)+'<div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:rgba(80,50,10,0.4);margin-top:3px;letter-spacing:1px">PORTRAIT</div></div>';
       var num = String(i+1).padStart(3,'0');
       var idStr = String(n.id||0).padStart(3,'0');
-      return '<div class="lg-bb-card">'
+      var status = n.status || 'actif';
+      var stampHtml = (status !== 'actif' && statusStampLg[status])
+        ? '<div class="lg-bb-stamp s-'+status+'">'+statusStampLg[status]+'</div>'
+        : '';
+      return '<div class="lg-bb-card" data-status="'+status+'">'
+        + stampHtml
         + '<div class="lg-bb-card-head">'
         +   '<span class="lg-bb-card-fiche">Fiche '+num+'</span>'
         +   '<span class="lg-bb-card-id">#'+idStr+'</span>'
@@ -16020,6 +16063,7 @@ function lgRenderBingoBook(){
         +     '<div class="lg-bb-nom">'+escLg(n.nom||'—')+'</div>'
         +     '<div class="lg-bb-prenom">'+escLg(n.prenom||'')+'</div>'
         +     '<span class="lg-bb-danger '+(n.danger||'eleve')+'">'+(dangerLabel[n.danger]||(n.danger||'').toUpperCase())+'</span>'
+        +     '<span class="lg-bb-status s-'+status+'">'+(statusLabelLg[status]||'Actif')+'</span>'
         +     '<div class="lg-bb-meta">'
         +       (n.grade ? '<div class="lg-bb-meta-row"><span class="lg-bb-meta-lbl">Grade</span><span>'+escLg(n.grade)+'</span></div>' : '')
         +       (n.village ? '<div class="lg-bb-meta-row"><span class="lg-bb-meta-lbl">Village</span><span>'+escLg(n.village)+'</span></div>' : '')
@@ -28834,7 +28878,7 @@ function bbDefaultNinjas() {
 function bbDangerClass(d){ return {eleve:'bb-badge-eleve',moyen:'bb-badge-moyen',faible:'bb-badge-faible'}[d]||'bb-badge-faible'; }
 function bbDangerLabel(d){ return {eleve:'⚠ DANGER ÉLEVÉ',moyen:'◆ DANGER MOYEN',faible:'▸ DANGER FAIBLE'}[d]||d.toUpperCase(); }
 function bbStatusLabel(s){ return {actif:'RECHERCHÉ',capture:'CAPTURÉ',tue:'TUÉ',evade:'ÉVADÉ'}[s||'actif']||'RECHERCHÉ'; }
-function bbStatusPillLabel(s){ return {actif:'● Actif',capture:'✓ Capturé',tue:'⚰ Tué',evade:'⚠ Évadé'}[s||'actif']||'● Actif'; }
+function bbStatusPillLabel(s){ return {actif:'Actif',capture:'Capturé',tue:'Tué',evade:'Évadé'}[s||'actif']||'Actif'; }
 // Change rapide du statut depuis la card (sans rouvrir le formulaire complet)
 function bbQuickSetStatus(id, newStatus){
   if(typeof canModify === 'function' && !canModify()){ if(typeof showToast==='function') showToast('⛔ Action réservée aux modérateurs.','error'); return; }
