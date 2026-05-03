@@ -7270,26 +7270,54 @@ document.addEventListener('error', function(e){
     <span>SUNAGAKURE</span>
   </div>
   <nav class="sidebar-nav" aria-label="Navigation principale">
-    <div class="nav-section">Principal</div>
-    <div class="nav-item active" role="button" tabindex="0" aria-current="page" onclick="showPage('dashboard')" data-page="dashboard"><span class="icon">📊</span> Tableau de bord</div>
-    <div class="nav-item" role="button" tabindex="0" onclick="showPage('annonces')" data-page="annonces"><span class="icon">📢</span> Annonces <span class="nav-badge" id="badge-annonces">0</span></div>
-    <div class="nav-section">Registres</div>
-    <div class="nav-item" role="button" tabindex="0" onclick="showPage('recensement')" data-page="recensement"><span class="icon">📝</span> Recensement <span class="nav-badge" id="badge-recenses" style="background:var(--purple)">0</span></div>
-    <div class="nav-item" role="button" tabindex="0" onclick="showPage('recrutement')" data-page="recrutement"><span class="icon">🎖️</span> Recrutement <span class="nav-badge" id="badge-recrutement" style="background:var(--cyan);display:none">0</span></div>
-    <div class="nav-item" role="button" tabindex="0" onclick="showPage('plaintes')" data-page="plaintes"><span class="icon">📋</span> Plaintes <span class="nav-badge" id="badge-plaintes">0</span></div>
-    <div class="nav-item" role="button" tabindex="0" onclick="showPage('dossiers')" data-page="dossiers" data-member-only="true"><span class="icon">🗂️</span> Dossiers criminels <span class="nav-badge" id="badge-dossiers" style="background:var(--purple);display:none">0</span></div>
-    <div class="nav-item" role="button" tabindex="0" onclick="showPage('bingobook')" data-page="bingobook"><span class="icon">📕</span> Bingo Book</div>
-    <div class="nav-item" role="button" tabindex="0" onclick="showPage('codepenal')" data-page="codepenal"><span class="icon">📜</span> Code Pénal</div>
-    <div class="nav-item" role="button" tabindex="0" onclick="showPage('histoire')" data-page="histoire"><span class="icon">📖</span> Histoire</div>
-    <div class="nav-item" role="button" tabindex="0" onclick="showPage('messagerie')" data-page="messagerie" data-member-only="true"><span class="icon">💬</span> Messagerie <span class="nav-badge" id="badge-messagerie" style="background:var(--cyan);display:none">0</span></div>
-    <div class="nav-section" data-member-only="true">Opérations</div>
-    <div class="nav-item" role="button" tabindex="0" onclick="showPage('operations')" data-page="operations" data-member-only="true"><span class="icon">🚨</span> Opérations <span class="nav-badge" id="badge-operations" style="background:var(--accent);display:none">0</span></div>
-    <div class="nav-item" role="button" tabindex="0" onclick="showPage('effectifs')" data-page="effectifs" data-member-only="true"><span class="icon">👮</span> Effectifs</div>
-    <div class="nav-item" role="button" tabindex="0" onclick="showPage('sanctions')" data-page="sanctions" data-member-only="true"><span class="icon">⚖️</span> Sanctions / Promo</div>
-    <div class="nav-item" role="button" tabindex="0" onclick="showPage('impots')" data-page="impots" data-member-only="true"><span class="icon">💰</span> Impôts</div>
-    <div class="nav-section" data-member-only="true">Administration</div>
-    <div class="nav-item" role="button" tabindex="0" id="nav-admin" onclick="showPage('admin')" style="display:none"><span class="icon">⚙️</span> Panel Admin</div>
-    <div class="nav-item" role="button" tabindex="0" onclick="showPage('profil')" data-page="profil"><span class="icon">👤</span> Mon profil</div>
+    <div class="nav-section" data-sec="all">Principal</div>
+    <div class="nav-item active" role="button" tabindex="0" aria-current="page" onclick="showPage('dashboard')" data-page="dashboard" data-sec="all"><span class="icon">📊</span> Tableau de bord</div>
+    <div class="nav-item" role="button" tabindex="0" onclick="showPage('annonces')" data-page="annonces" data-sec="police"><span class="icon">📢</span> Annonces <span class="nav-badge" id="badge-annonces">0</span></div>
+    <div class="nav-section" data-sec="police">Registres</div>
+    <div class="nav-item" role="button" tabindex="0" onclick="showPage('recensement')" data-page="recensement" data-sec="police"><span class="icon">📝</span> Recensement <span class="nav-badge" id="badge-recenses" style="background:var(--purple)">0</span></div>
+    <div class="nav-item" role="button" tabindex="0" onclick="showPage('recrutement')" data-page="recrutement" data-sec="police"><span class="icon">🎖️</span> Recrutement <span class="nav-badge" id="badge-recrutement" style="background:var(--cyan);display:none">0</span></div>
+    <div class="nav-item" role="button" tabindex="0" onclick="showPage('plaintes')" data-page="plaintes" data-sec="police"><span class="icon">📋</span> Plaintes <span class="nav-badge" id="badge-plaintes">0</span></div>
+    <div class="nav-item" role="button" tabindex="0" onclick="showPage('dossiers')" data-page="dossiers" data-member-only="true" data-sec="police"><span class="icon">🗂️</span> Dossiers criminels <span class="nav-badge" id="badge-dossiers" style="background:var(--purple);display:none">0</span></div>
+    <div class="nav-item" role="button" tabindex="0" onclick="showPage('bingobook')" data-page="bingobook" data-sec="all"><span class="icon">📕</span> Bingo Book</div>
+    <div class="nav-item" role="button" tabindex="0" onclick="showPage('codepenal')" data-page="codepenal" data-sec="all"><span class="icon">📜</span> Code Pénal</div>
+    <div class="nav-item" role="button" tabindex="0" onclick="showPage('histoire')" data-page="histoire" data-sec="all"><span class="icon">📖</span> Histoire</div>
+    <div class="nav-item" role="button" tabindex="0" onclick="showPage('messagerie')" data-page="messagerie" data-member-only="true" data-sec="all"><span class="icon">💬</span> Messagerie <span class="nav-badge" id="badge-messagerie" style="background:var(--cyan);display:none">0</span></div>
+    <div class="nav-section" data-member-only="true" data-sec="police">Opérations</div>
+    <div class="nav-item" role="button" tabindex="0" onclick="showPage('operations')" data-page="operations" data-member-only="true" data-sec="police"><span class="icon">🚨</span> Opérations <span class="nav-badge" id="badge-operations" style="background:var(--accent);display:none">0</span></div>
+    <div class="nav-item" role="button" tabindex="0" onclick="showPage('effectifs')" data-page="effectifs" data-member-only="true" data-sec="police"><span class="icon">👮</span> Effectifs</div>
+    <div class="nav-item" role="button" tabindex="0" onclick="showPage('sanctions')" data-page="sanctions" data-member-only="true" data-sec="police"><span class="icon">⚖️</span> Sanctions / Promo</div>
+    <div class="nav-item" role="button" tabindex="0" onclick="showPage('impots')" data-page="impots" data-member-only="true" data-sec="police"><span class="icon">💰</span> Impôts</div>
+
+    <!-- ═════ SECTIONS NON-POLICE ═════ -->
+    <!-- TRIBUNAL (Juge) -->
+    <div class="nav-section" data-sec="juge">Tribunal</div>
+    <div class="nav-item" role="button" tabindex="0" onclick="showPage('juge-audiences')" data-page="juge-audiences" data-sec="juge"><span class="icon">📅</span> Audiences</div>
+    <div class="nav-item" role="button" tabindex="0" onclick="showPage('juge-jugements')" data-page="juge-jugements" data-sec="juge"><span class="icon">⚖️</span> Jugements</div>
+    <div class="nav-item" role="button" tabindex="0" onclick="showPage('juge-archives')" data-page="juge-archives" data-sec="juge"><span class="icon">📚</span> Archives</div>
+    <!-- AVOCAT -->
+    <div class="nav-section" data-sec="avocat">Cabinet d'avocats</div>
+    <div class="nav-item" role="button" tabindex="0" onclick="showPage('avocat-clients')" data-page="avocat-clients" data-sec="avocat"><span class="icon">👥</span> Mes clients</div>
+    <div class="nav-item" role="button" tabindex="0" onclick="showPage('avocat-affaires')" data-page="avocat-affaires" data-sec="avocat"><span class="icon">📁</span> Affaires en cours</div>
+    <div class="nav-item" role="button" tabindex="0" onclick="showPage('avocat-plaidoiries')" data-page="avocat-plaidoiries" data-sec="avocat"><span class="icon">🗣️</span> Plaidoiries</div>
+    <!-- MISSION -->
+    <div class="nav-section" data-sec="mission">Missions</div>
+    <div class="nav-item" role="button" tabindex="0" onclick="showPage('mission-disponibles')" data-page="mission-disponibles" data-sec="mission"><span class="icon">📋</span> Missions disponibles</div>
+    <div class="nav-item" role="button" tabindex="0" onclick="showPage('mission-actives')" data-page="mission-actives" data-sec="mission"><span class="icon">🎯</span> Mes missions</div>
+    <div class="nav-item" role="button" tabindex="0" onclick="showPage('mission-recompenses')" data-page="mission-recompenses" data-sec="mission"><span class="icon">💰</span> Récompenses</div>
+    <!-- MÉDICAL -->
+    <div class="nav-section" data-sec="medical">Hôpital</div>
+    <div class="nav-item" role="button" tabindex="0" onclick="showPage('medical-patients')" data-page="medical-patients" data-sec="medical"><span class="icon">🛌</span> Patients</div>
+    <div class="nav-item" role="button" tabindex="0" onclick="showPage('medical-consultations')" data-page="medical-consultations" data-sec="medical"><span class="icon">🩺</span> Consultations</div>
+    <div class="nav-item" role="button" tabindex="0" onclick="showPage('medical-pharmacie')" data-page="medical-pharmacie" data-sec="medical"><span class="icon">💊</span> Pharmacie</div>
+    <!-- DIPLOMATIE -->
+    <div class="nav-section" data-sec="diplomatie">Diplomatie</div>
+    <div class="nav-item" role="button" tabindex="0" onclick="showPage('diplo-villages')" data-page="diplo-villages" data-sec="diplomatie"><span class="icon">🏯</span> Villages alliés</div>
+    <div class="nav-item" role="button" tabindex="0" onclick="showPage('diplo-traites')" data-page="diplo-traites" data-sec="diplomatie"><span class="icon">📜</span> Traités</div>
+    <div class="nav-item" role="button" tabindex="0" onclick="showPage('diplo-communications')" data-page="diplo-communications" data-sec="diplomatie"><span class="icon">✉️</span> Communications</div>
+
+    <div class="nav-section" data-member-only="true" data-sec="all">Administration</div>
+    <div class="nav-item" role="button" tabindex="0" id="nav-admin" onclick="showPage('admin')" style="display:none" data-sec="all"><span class="icon">⚙️</span> Panel Admin</div>
+    <div class="nav-item" role="button" tabindex="0" onclick="showPage('profil')" data-page="profil" data-sec="all"><span class="icon">👤</span> Mon profil</div>
   </nav>
   <div class="sidebar-footer">
     <div class="user-pill">
@@ -10617,6 +10645,237 @@ document.addEventListener('error', function(e){
       <div class="bb-grid" id="bb-grid"></div>
     </div>
   </div><!-- /page-bingobook -->
+
+  <!-- ═══════════════════════════════════════════════════════════════════════
+       SECTIONS NON-POLICE — pages génériques avec un système de notes / posts
+       Toutes utilisent le même pattern : header + zone d'ajout + liste de cards
+       Stockage Firebase : DB.sectionData[section][page] = [{id, titre, contenu, auteur, date}]
+       ═══════════════════════════════════════════════════════════════════════ -->
+
+  <!-- TRIBUNAL — Audiences -->
+  <div class="page-content" id="page-juge-audiences" data-sec-page="juge">
+    <div class="pgv2-hero" data-tone="profil">
+      <div class="pgv2-hero-inner">
+        <div class="pgv2-hero-icon">📅</div>
+        <div class="pgv2-hero-text">
+          <div class="pgv2-hero-tag">Tribunal de Sunagakure</div>
+          <div class="pgv2-hero-title">Audiences</div>
+          <div class="pgv2-hero-sub">Calendrier officiel des audiences du tribunal</div>
+        </div>
+      </div>
+    </div>
+    <div class="card" data-sec-card="juge:audiences"></div>
+  </div>
+
+  <!-- TRIBUNAL — Jugements -->
+  <div class="page-content" id="page-juge-jugements" data-sec-page="juge">
+    <div class="pgv2-hero" data-tone="profil">
+      <div class="pgv2-hero-inner">
+        <div class="pgv2-hero-icon">⚖️</div>
+        <div class="pgv2-hero-text">
+          <div class="pgv2-hero-tag">Tribunal de Sunagakure</div>
+          <div class="pgv2-hero-title">Jugements</div>
+          <div class="pgv2-hero-sub">Registre des décisions rendues par le tribunal</div>
+        </div>
+      </div>
+    </div>
+    <div class="card" data-sec-card="juge:jugements"></div>
+  </div>
+
+  <!-- TRIBUNAL — Archives -->
+  <div class="page-content" id="page-juge-archives" data-sec-page="juge">
+    <div class="pgv2-hero" data-tone="profil">
+      <div class="pgv2-hero-inner">
+        <div class="pgv2-hero-icon">📚</div>
+        <div class="pgv2-hero-text">
+          <div class="pgv2-hero-tag">Tribunal de Sunagakure</div>
+          <div class="pgv2-hero-title">Archives</div>
+          <div class="pgv2-hero-sub">Anciennes affaires, jurisprudences et documents historiques</div>
+        </div>
+      </div>
+    </div>
+    <div class="card" data-sec-card="juge:archives"></div>
+  </div>
+
+  <!-- AVOCAT — Mes clients -->
+  <div class="page-content" id="page-avocat-clients" data-sec-page="avocat">
+    <div class="pgv2-hero" data-tone="profil">
+      <div class="pgv2-hero-inner">
+        <div class="pgv2-hero-icon">👥</div>
+        <div class="pgv2-hero-text">
+          <div class="pgv2-hero-tag">Cabinet d'avocats</div>
+          <div class="pgv2-hero-title">Mes clients</div>
+          <div class="pgv2-hero-sub">Personnes que vous représentez en justice</div>
+        </div>
+      </div>
+    </div>
+    <div class="card" data-sec-card="avocat:clients"></div>
+  </div>
+
+  <!-- AVOCAT — Affaires -->
+  <div class="page-content" id="page-avocat-affaires" data-sec-page="avocat">
+    <div class="pgv2-hero" data-tone="profil">
+      <div class="pgv2-hero-inner">
+        <div class="pgv2-hero-icon">📁</div>
+        <div class="pgv2-hero-text">
+          <div class="pgv2-hero-tag">Cabinet d'avocats</div>
+          <div class="pgv2-hero-title">Affaires en cours</div>
+          <div class="pgv2-hero-sub">Dossiers que vous traitez actuellement</div>
+        </div>
+      </div>
+    </div>
+    <div class="card" data-sec-card="avocat:affaires"></div>
+  </div>
+
+  <!-- AVOCAT — Plaidoiries -->
+  <div class="page-content" id="page-avocat-plaidoiries" data-sec-page="avocat">
+    <div class="pgv2-hero" data-tone="profil">
+      <div class="pgv2-hero-inner">
+        <div class="pgv2-hero-icon">🗣️</div>
+        <div class="pgv2-hero-text">
+          <div class="pgv2-hero-tag">Cabinet d'avocats</div>
+          <div class="pgv2-hero-title">Plaidoiries</div>
+          <div class="pgv2-hero-sub">Notes et arguments préparés pour vos affaires</div>
+        </div>
+      </div>
+    </div>
+    <div class="card" data-sec-card="avocat:plaidoiries"></div>
+  </div>
+
+  <!-- MISSION — Disponibles -->
+  <div class="page-content" id="page-mission-disponibles" data-sec-page="mission">
+    <div class="pgv2-hero" data-tone="profil">
+      <div class="pgv2-hero-inner">
+        <div class="pgv2-hero-icon">📋</div>
+        <div class="pgv2-hero-text">
+          <div class="pgv2-hero-tag">Bureau des missions</div>
+          <div class="pgv2-hero-title">Missions disponibles</div>
+          <div class="pgv2-hero-sub">Contrats et missions ouvertes aux ninjas</div>
+        </div>
+      </div>
+    </div>
+    <div class="card" data-sec-card="mission:disponibles"></div>
+  </div>
+
+  <!-- MISSION — Mes missions -->
+  <div class="page-content" id="page-mission-actives" data-sec-page="mission">
+    <div class="pgv2-hero" data-tone="profil">
+      <div class="pgv2-hero-inner">
+        <div class="pgv2-hero-icon">🎯</div>
+        <div class="pgv2-hero-text">
+          <div class="pgv2-hero-tag">Bureau des missions</div>
+          <div class="pgv2-hero-title">Mes missions</div>
+          <div class="pgv2-hero-sub">Missions qui vous sont assignées</div>
+        </div>
+      </div>
+    </div>
+    <div class="card" data-sec-card="mission:actives"></div>
+  </div>
+
+  <!-- MISSION — Récompenses -->
+  <div class="page-content" id="page-mission-recompenses" data-sec-page="mission">
+    <div class="pgv2-hero" data-tone="profil">
+      <div class="pgv2-hero-inner">
+        <div class="pgv2-hero-icon">💰</div>
+        <div class="pgv2-hero-text">
+          <div class="pgv2-hero-tag">Bureau des missions</div>
+          <div class="pgv2-hero-title">Récompenses</div>
+          <div class="pgv2-hero-sub">Primes obtenues et historique de paiement</div>
+        </div>
+      </div>
+    </div>
+    <div class="card" data-sec-card="mission:recompenses"></div>
+  </div>
+
+  <!-- MÉDICAL — Patients -->
+  <div class="page-content" id="page-medical-patients" data-sec-page="medical">
+    <div class="pgv2-hero" data-tone="profil">
+      <div class="pgv2-hero-inner">
+        <div class="pgv2-hero-icon">🛌</div>
+        <div class="pgv2-hero-text">
+          <div class="pgv2-hero-tag">Hôpital de Sunagakure</div>
+          <div class="pgv2-hero-title">Patients</div>
+          <div class="pgv2-hero-sub">Registre des patients hospitalisés ou en suivi</div>
+        </div>
+      </div>
+    </div>
+    <div class="card" data-sec-card="medical:patients"></div>
+  </div>
+
+  <!-- MÉDICAL — Consultations -->
+  <div class="page-content" id="page-medical-consultations" data-sec-page="medical">
+    <div class="pgv2-hero" data-tone="profil">
+      <div class="pgv2-hero-inner">
+        <div class="pgv2-hero-icon">🩺</div>
+        <div class="pgv2-hero-text">
+          <div class="pgv2-hero-tag">Hôpital de Sunagakure</div>
+          <div class="pgv2-hero-title">Consultations</div>
+          <div class="pgv2-hero-sub">Rendez-vous et examens du jour</div>
+        </div>
+      </div>
+    </div>
+    <div class="card" data-sec-card="medical:consultations"></div>
+  </div>
+
+  <!-- MÉDICAL — Pharmacie -->
+  <div class="page-content" id="page-medical-pharmacie" data-sec-page="medical">
+    <div class="pgv2-hero" data-tone="profil">
+      <div class="pgv2-hero-inner">
+        <div class="pgv2-hero-icon">💊</div>
+        <div class="pgv2-hero-text">
+          <div class="pgv2-hero-tag">Hôpital de Sunagakure</div>
+          <div class="pgv2-hero-title">Pharmacie</div>
+          <div class="pgv2-hero-sub">Stock de remèdes et matériel médical</div>
+        </div>
+      </div>
+    </div>
+    <div class="card" data-sec-card="medical:pharmacie"></div>
+  </div>
+
+  <!-- DIPLOMATIE — Villages alliés -->
+  <div class="page-content" id="page-diplo-villages" data-sec-page="diplomatie">
+    <div class="pgv2-hero" data-tone="profil">
+      <div class="pgv2-hero-inner">
+        <div class="pgv2-hero-icon">🏯</div>
+        <div class="pgv2-hero-text">
+          <div class="pgv2-hero-tag">Service diplomatique</div>
+          <div class="pgv2-hero-title">Villages alliés</div>
+          <div class="pgv2-hero-sub">Relations avec les autres villages cachés</div>
+        </div>
+      </div>
+    </div>
+    <div class="card" data-sec-card="diplomatie:villages"></div>
+  </div>
+
+  <!-- DIPLOMATIE — Traités -->
+  <div class="page-content" id="page-diplo-traites" data-sec-page="diplomatie">
+    <div class="pgv2-hero" data-tone="profil">
+      <div class="pgv2-hero-inner">
+        <div class="pgv2-hero-icon">📜</div>
+        <div class="pgv2-hero-text">
+          <div class="pgv2-hero-tag">Service diplomatique</div>
+          <div class="pgv2-hero-title">Traités</div>
+          <div class="pgv2-hero-sub">Accords et alliances officiels</div>
+        </div>
+      </div>
+    </div>
+    <div class="card" data-sec-card="diplomatie:traites"></div>
+  </div>
+
+  <!-- DIPLOMATIE — Communications -->
+  <div class="page-content" id="page-diplo-communications" data-sec-page="diplomatie">
+    <div class="pgv2-hero" data-tone="profil">
+      <div class="pgv2-hero-inner">
+        <div class="pgv2-hero-icon">✉️</div>
+        <div class="pgv2-hero-text">
+          <div class="pgv2-hero-tag">Service diplomatique</div>
+          <div class="pgv2-hero-title">Communications</div>
+          <div class="pgv2-hero-sub">Correspondance officielle entre villages</div>
+        </div>
+      </div>
+    </div>
+    <div class="card" data-sec-card="diplomatie:communications"></div>
+  </div>
 
   <!-- OPÉRATIONS -->
   <div class="page-content" id="page-operations">
@@ -15382,6 +15641,16 @@ function initFirebaseSync(){
             if(typeof initFeatureLoginSections === 'function') initFeatureLoginSections();
           }catch(e){}
         }
+        // Pareil pour DB.sectionData (pages des sections non-Police)
+        // Note : le listener dédié sur sunagakure/sectionData (plus bas dans le fichier)
+        // gère aussi cette donnée. Ici on assure la cohérence dans le sync global.
+        if(data.sectionData && typeof data.sectionData === 'object'){
+          var _secChanged = JSON.stringify(DB.sectionData||{}) !== JSON.stringify(data.sectionData);
+          if(_secChanged){
+            DB.sectionData = data.sectionData;
+            _changedKeys.add('sectionData');
+          }
+        }
         try{localStorage.setItem(STORE,JSON.stringify(DB));}catch(e){}
 
         // ═══ BUG-FIX MAJEUR : RE-RENDER DE LA PAGE COURANTE SI SES DONNÉES ONT CHANGÉ ═══
@@ -16704,13 +16973,37 @@ async function doRegister(){
   if(!/^[a-zA-Z0-9_\-\.]{3,30}$/.test(login)){ra.textContent='Identifiant invalide (3-30 caractères, lettres, chiffres, _ - . uniquement).';ra.style.display='block';_loginInProgress=false;return;}
   // _lastFbArrays.users est maintenu en temps réel par onValue — toujours frais, pas de GET nécessaire
   const freshUsers=(_lastFbArrays.users&&_lastFbArrays.users.length>0)?_lastFbArrays.users:DB.users;
-  if(freshUsers.find(u=>u.login===login)){
-    ra.textContent='Cet identifiant est déjà utilisé.';ra.style.display='block';_loginInProgress=false;return;
-  }
+  // (Vérification d'unicité déplacée plus bas pour gérer login + section)
   const hashed=await hashPass(pass);
   // Utiliser le dernier grade disponible plutôt que 'Visiteur' (absent de la liste des grades)
   const defaultGrade=(DB.grades&&DB.grades.length?DB.grades[DB.grades.length-1]:'Stagiaire');
-  const newUser={id:Date.now(),login,pass:hashed,nom,grade:defaultGrade,role:'visiteur',statut:'Actif',photo:'',created:now()};
+  // SECTION : récupérer la card sélectionnée sur l'écran de connexion (fallback police)
+  var _selectedSection = 'police';
+  try{
+    var _activeCard = document.querySelector('.lg-sec-card.active');
+    if(_activeCard && _activeCard.dataset && _activeCard.dataset.section){
+      _selectedSection = _activeCard.dataset.section;
+    }
+  }catch(e){}
+  // Vérifier que la section est ouverte (sauf police, toujours active)
+  if(_selectedSection !== 'police'){
+    var _sectionOpen = false;
+    try{ _sectionOpen = localStorage.getItem('feat_login_'+_selectedSection+'_active') === '1'; }catch(e){}
+    if(!_sectionOpen && DB.features && typeof DB.features['login_'+_selectedSection+'_active'] !== 'undefined'){
+      _sectionOpen = !!DB.features['login_'+_selectedSection+'_active'];
+    }
+    if(!_sectionOpen){
+      ra.textContent='Cette section est verrouillée. Sélectionnez "Police" ou attendez son ouverture.';
+      ra.style.display='block';_loginInProgress=false;return;
+    }
+  }
+  // BUG-FIX MULTI-COMPTES : on accepte le même login dans des sections différentes,
+  // mais pas le même couple (login + section). On retire donc la vérification globale
+  // ci-dessus et on la remplace par une vérif par section.
+  if(freshUsers.find(u=>u.login===login && (u.section||'police')===_selectedSection)){
+    ra.textContent='Cet identifiant est déjà utilisé dans cette section.';ra.style.display='block';_loginInProgress=false;return;
+  }
+  const newUser={id:Date.now(),login,pass:hashed,nom,grade:defaultGrade,role:'visiteur',section:_selectedSection,statut:'Actif',photo:'',created:now()};
   DB.users.push(newUser);
 
   // Attendre que Firebase soit prêt avant d'écrire
@@ -16838,15 +17131,48 @@ function doLogin(){
     }
     if(needsSave) saveData();
 
-    // Chercher l'user qui matche login + password (verifyPass async)
-    let user = null;
+    // Chercher TOUS les comptes qui matchent login + password (multi-sections)
+    let matchingUsers = [];
     for(const u of DB.users){
       if(u.login !== login) continue;
       if(u.statut === "Désactivé") continue;
       if(!isHashed(u.pass)) continue; // hash invalide / __NEEDS_RESET__
       if(await verifyPass(pass, u.pass)){
-        user = u;
-        break;
+        matchingUsers.push(u);
+      }
+    }
+
+    // Section présélectionnée via la card cliquée sur l'écran de connexion
+    let _preferredSection = 'police';
+    try{
+      var _ac = document.querySelector('.lg-sec-card.active');
+      if(_ac && _ac.dataset && _ac.dataset.section) _preferredSection = _ac.dataset.section;
+    }catch(e){}
+
+    let user = null;
+    if(matchingUsers.length === 1){
+      user = matchingUsers[0];
+    } else if(matchingUsers.length > 1){
+      // Plus d'un compte trouvé → vérifier si ils sont tous dans la même section
+      var uniqueSections = {};
+      matchingUsers.forEach(function(u){ uniqueSections[u.section||'police'] = true; });
+      var distinctSections = Object.keys(uniqueSections);
+      if(distinctSections.length === 1){
+        // Tous dans la même section (cas rare : doublons) → prendre le premier
+        user = matchingUsers[0];
+      } else {
+        // Plusieurs sections différentes → afficher le sélecteur
+        // Si la card cliquée correspond à un seul compte, on peut auto-sélectionner cet usage
+        var _matchedPref = matchingUsers.filter(u => (u.section||'police') === _preferredSection);
+        if(_matchedPref.length === 1){
+          // Une seule correspondance avec la card cliquée → connexion directe sur celle-ci
+          user = _matchedPref[0];
+        } else {
+          // Aucune correspondance ou plusieurs comptes dans la section choisie → sélecteur
+          _loginInProgress = false;
+          showAccountSelector(matchingUsers, _preferredSection);
+          return;
+        }
       }
     }
 
@@ -16890,6 +17216,54 @@ function doLogin(){
   // bug-fix : on n'appelle plus hashPass(pass).then(_doLoginCheck) car PBKDF2 + sel
   // donne un hash différent à chaque fois. _doLoginCheck utilise verifyPass() en interne.
   _doLoginCheck();
+}
+
+// ─── SÉLECTEUR DE COMPTES — affiché quand un identifiant matche plusieurs sections ───
+function showAccountSelector(users, preferredSection){
+  // Construire le modal s'il n'existe pas
+  var modal = document.getElementById('lg-account-selector');
+  if(!modal){
+    modal = document.createElement('div');
+    modal.id = 'lg-account-selector';
+    modal.style.cssText = 'position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,0.78);backdrop-filter:blur(10px);display:flex;align-items:center;justify-content:center;padding:20px;animation:lgToastIn 0.25s ease both';
+    modal.innerHTML = '<div id="lg-acct-box" style="background:linear-gradient(180deg,#1a1308,#15100a);border:1px solid rgba(201,162,39,0.35);border-radius:16px;max-width:460px;width:100%;padding:28px 26px;box-shadow:0 30px 80px rgba(0,0,0,0.6),0 0 0 1px rgba(201,162,39,0.08)"><div style="text-align:center;margin-bottom:22px"><div style="font-family:Cinzel,serif;font-size:20px;font-weight:700;color:#f0e8d0;letter-spacing:0.5px;margin-bottom:5px">Plusieurs comptes détectés</div><div style="font-size:11px;color:rgba(240,232,208,0.6);font-family:Share Tech Mono,monospace;letter-spacing:1px;text-transform:uppercase">Sélectionnez le compte à utiliser</div></div><div id="lg-acct-list" style="display:flex;flex-direction:column;gap:10px;margin-bottom:18px"></div><button onclick="document.getElementById(\'lg-account-selector\').remove()" style="width:100%;padding:11px;background:transparent;border:1px solid rgba(201,162,39,0.25);border-radius:8px;color:rgba(240,232,208,0.65);font-family:Share Tech Mono,monospace;font-size:11px;letter-spacing:2px;cursor:pointer;text-transform:uppercase;transition:all 0.2s">Annuler</button></div>';
+    document.body.appendChild(modal);
+  }
+  var list = modal.querySelector('#lg-acct-list');
+  var SECTION_INFO = {
+    police:    { icon:'👮',  label:'POLICE',     color:'#c9a227' },
+    juge:      { icon:'⚖️',  label:'TRIBUNAL',   color:'#7c3aed' },
+    avocat:    { icon:'👨‍💼', label:'AVOCAT',     color:'#0ea5e9' },
+    mission:   { icon:'🎯',  label:'MISSION',    color:'#f59e0b' },
+    medical:   { icon:'⚕️',  label:'MÉDICAL',    color:'#dc2626' },
+    diplomatie:{ icon:'🤝',  label:'DIPLOMATIE', color:'#16a34a' }
+  };
+  list.innerHTML = users.map(function(u){
+    var sec = u.section || 'police';
+    var info = SECTION_INFO[sec] || SECTION_INFO.police;
+    var isPreferred = sec === preferredSection;
+    return '<div onclick="_lgPickAccount('+u.id+')" style="display:flex;align-items:center;gap:14px;padding:14px 16px;background:rgba(255,255,255,0.03);border:1px solid '+(isPreferred?info.color:'rgba(255,255,255,0.08)')+';border-radius:11px;cursor:pointer;transition:all 0.2s" onmouseover="this.style.background=\'rgba(192,65,14,0.08)\';this.style.borderColor=\''+info.color+'\'" onmouseout="this.style.background=\'rgba(255,255,255,0.03)\';this.style.borderColor=\''+(isPreferred?info.color:'rgba(255,255,255,0.08)')+'\'"><div style="width:42px;height:42px;border-radius:10px;background:linear-gradient(135deg,'+info.color+'33,'+info.color+'18);border:1px solid '+info.color+'55;display:flex;align-items:center;justify-content:center;font-size:21px;flex-shrink:0">'+info.icon+'</div><div style="flex:1;min-width:0"><div style="font-family:Cinzel,serif;font-size:15px;font-weight:700;color:#f0e8d0;line-height:1.2">'+(u.nom||u.login)+'</div><div style="font-size:9.5px;color:'+info.color+';font-family:Share Tech Mono,monospace;letter-spacing:1.5px;margin-top:3px">SECTION '+info.label+(isPreferred?' · SÉLECTIONNÉE':'')+'</div></div><div style="color:'+info.color+';font-size:18px;flex-shrink:0">→</div></div>';
+  }).join('');
+  // Stocker la liste pour le callback
+  window._lgPickList = users;
+}
+
+function _lgPickAccount(id){
+  var users = window._lgPickList || [];
+  var u = users.find(function(x){ return x.id === id; });
+  if(!u) return;
+  var modal = document.getElementById('lg-account-selector');
+  if(modal) modal.remove();
+  currentUser = u;
+  var rm = el("remember-me");
+  var remember = rm ? rm.checked : true;
+  _loginSource = remember ? 'auto-saved' : 'manual';
+  if(remember){
+    try{ localStorage.setItem("suna_session", JSON.stringify({id:u.id, passHash:u.pass})); }catch(e){}
+  } else {
+    try{ localStorage.removeItem("suna_session"); }catch(e){}
+  }
+  applyLogin();
 }
 
 // Reset d'urgence : réinitialise UNIQUEMENT le mot de passe admin (pas toutes les données)
@@ -17085,11 +17459,19 @@ function applyLogin(){
   }
   el("login-screen").style.display="none";
   el("user-name-display").textContent=currentUser.nom;
-  el("user-rank-display").textContent=roleLabel(currentUser.role)+" · "+currentUser.grade;
+  // Pour les admins : afficher "ADMIN · ACCÈS GLOBAL" pour qu'ils sachent qu'ils ont tout
+  // Pour les autres : "Rôle · Grade" comme avant
+  if(currentUser.role === 'admin'){
+    el("user-rank-display").innerHTML = roleLabel(currentUser.role)+" · "+currentUser.grade+' <span style="display:inline-block;margin-left:4px;font-size:8px;padding:1px 5px;background:rgba(220,38,38,0.15);color:#dc2626;border:1px solid rgba(220,38,38,0.4);border-radius:3px;font-family:\'Share Tech Mono\',monospace;letter-spacing:1px;vertical-align:middle">🔓 ALL</span>';
+  } else {
+    el("user-rank-display").textContent=roleLabel(currentUser.role)+" · "+currentUser.grade;
+  }
   refreshSidebarAvatar();
   // Marquer le mode visiteur sur <body> pour masquer les contrôles d'édition via CSS
   if(isVisiteur()) document.body.classList.add('is-visitor');
   else document.body.classList.remove('is-visitor');
+  // ═══ APPLIQUER LE FILTRE SECTION (Police/Juge/Avocat/Mission/Médical/Diplomatie) ═══
+  if(typeof _applySectionUI === 'function') _applySectionUI();
   // Sidebar : masquer les rubriques membres-only pour visiteurs
   document.querySelectorAll('[data-member-only="true"]').forEach(item=>{
     item.style.display=isVisiteur()?'none':'';
@@ -17119,13 +17501,66 @@ function applyLogin(){
   if(!isVisiteur()) setTimeout(function(){ _msgInitDone=false; initMessagingFirebase(); }, 2000);
   // Restaurer le dernier onglet visité, sinon afficher le tableau de bord
   let lastPage="dashboard";
-  try{const lp=sessionStorage.getItem("suna_active_page");if(lp&&PAGES[lp]){if(!isVisiteur()||VISITOR_PAGES.includes(lp))lastPage=lp;}}catch(e){}
+  try{
+    const lp=sessionStorage.getItem("suna_active_page");
+    if(lp&&PAGES[lp]){
+      // BYPASS ADMIN : les admins peuvent revenir sur n'importe quelle page
+      var isFullAccessLogin = !!(currentUser && currentUser.role === 'admin');
+      if(isFullAccessLogin){
+        if(!isVisiteur()||VISITOR_PAGES.includes(lp)) lastPage=lp;
+      } else {
+        // Vérifier que la page est accessible depuis la section du user
+        var ALL_OK = ['dashboard','bingobook','codepenal','histoire','profil','admin','messagerie'].includes(lp);
+        var SEC_OK = false;
+        var us = (currentUser && currentUser.section) || 'police';
+        if(us === 'police'){
+          SEC_OK = ['annonces','recensement','recrutement','plaintes','dossiers','operations','effectifs','sanctions','impots','hierarchie'].includes(lp);
+        } else {
+          var prefMap = { juge:'juge-', avocat:'avocat-', mission:'mission-', medical:'medical-', diplomatie:'diplo-' };
+          var pref = prefMap[us];
+          if(pref) SEC_OK = lp.indexOf(pref) === 0;
+        }
+        if((ALL_OK||SEC_OK) && (!isVisiteur()||VISITOR_PAGES.includes(lp))) lastPage=lp;
+      }
+    }
+  }catch(e){}
   showPage(lastPage);
   // Rappel de sauvegarde si très ancienne (toast subtil pour les admins/modos)
   if(typeof _checkBackupReminderAtLogin === 'function') _checkBackupReminderAtLogin();
 }
 
 function showLoginErr(msg){const e=el("login-alert");e.textContent=msg;e.style.display="block"}
+
+// ─── FILTRE SIDEBAR PAR SECTION (Police / Juge / Avocat / Mission / Médical / Diplomatie) ───
+// Chaque nav-item porte un attribut data-sec="police|juge|avocat|mission|medical|diplomatie|all".
+// 'all' = visible pour tout le monde (Bingo Book, Histoire, Code Pénal, Profil, Admin, Tableau de bord)
+// Sinon, l'item n'est visible que si la section du user actuel correspond.
+function _applySectionUI(){
+  var section = (currentUser && currentUser.section) || 'police';
+  // BYPASS ADMIN : un compte admin a accès à TOUTES les sections, peu importe sa section d'origine
+  var isFullAccess = !!(currentUser && currentUser.role === 'admin');
+  document.querySelectorAll('[data-sec]').forEach(function(el){
+    var sec = el.getAttribute('data-sec');
+    if(isFullAccess || sec === 'all' || sec === section){
+      el.removeAttribute('data-sec-hidden');
+    } else {
+      el.setAttribute('data-sec-hidden', '1');
+    }
+  });
+  // Marquer body avec la section pour styliser au besoin
+  document.body.setAttribute('data-user-section', section);
+  if(isFullAccess) document.body.setAttribute('data-admin-full-access', '1');
+  else document.body.removeAttribute('data-admin-full-access');
+}
+
+// CSS injecté pour cacher les éléments qui ne correspondent pas à la section
+(function(){
+  if(document.getElementById('section-ui-style')) return;
+  var s = document.createElement('style');
+  s.id = 'section-ui-style';
+  s.textContent = '[data-sec-hidden]{display:none !important}';
+  document.head.appendChild(s);
+})();
 
 function doLogout(){
   // ── Enregistrer la déconnexion dans l'historique ──
@@ -17221,8 +17656,26 @@ function saveCommNameAdmin(){
 }
 
 // NAV
-const PAGES={dashboard:"Tableau de bord",annonces:"Annonces",recensement:"Recensement",recrutement:"Recrutement",plaintes:"Plaintes",dossiers:"Dossiers criminels",codepenal:"Code Pénal",histoire:"Histoire",operations:"Opérations",effectifs:"Effectifs",hierarchie:"Hiérarchie",sanctions:"Sanctions & Promotions",impots:"Impôts",admin:"Panel Admin",messagerie:"Messagerie",profil:"Mon profil",bingobook:"Bingo Book"};
-const VISITOR_PAGES=["dashboard","annonces","recensement","recrutement","plaintes","codepenal","histoire","profil","bingobook"];
+const PAGES={dashboard:"Tableau de bord",annonces:"Annonces",recensement:"Recensement",recrutement:"Recrutement",plaintes:"Plaintes",dossiers:"Dossiers criminels",codepenal:"Code Pénal",histoire:"Histoire",operations:"Opérations",effectifs:"Effectifs",hierarchie:"Hiérarchie",sanctions:"Sanctions & Promotions",impots:"Impôts",admin:"Panel Admin",messagerie:"Messagerie",profil:"Mon profil",bingobook:"Bingo Book",
+  // Tribunal
+  "juge-audiences":"Audiences","juge-jugements":"Jugements","juge-archives":"Archives",
+  // Avocat
+  "avocat-clients":"Mes clients","avocat-affaires":"Affaires en cours","avocat-plaidoiries":"Plaidoiries",
+  // Mission
+  "mission-disponibles":"Missions disponibles","mission-actives":"Mes missions","mission-recompenses":"Récompenses",
+  // Médical
+  "medical-patients":"Patients","medical-consultations":"Consultations","medical-pharmacie":"Pharmacie",
+  // Diplomatie
+  "diplo-villages":"Villages alliés","diplo-traites":"Traités","diplo-communications":"Communications"
+};
+const VISITOR_PAGES=["dashboard","annonces","recensement","recrutement","plaintes","codepenal","histoire","profil","bingobook",
+  // Pages des sections : visibles par les visiteurs de leur section (les visiteurs des autres sections ne pourront pas y accéder via _applySectionUI)
+  "juge-audiences","juge-jugements","juge-archives",
+  "avocat-clients","avocat-affaires","avocat-plaidoiries",
+  "mission-disponibles","mission-actives","mission-recompenses",
+  "medical-patients","medical-consultations","medical-pharmacie",
+  "diplo-villages","diplo-traites","diplo-communications"
+];
 
 // Mapping page → bnav-item id (pour les 4 onglets directs de la barre)
 const BNAV_MAP={dashboard:"bnav-dashboard",annonces:"bnav-annonces",recensement:"bnav-recensement",plaintes:"bnav-plaintes"};
@@ -17231,6 +17684,28 @@ function showPage(name){
   if(isVisiteur()&&!VISITOR_PAGES.includes(name)){
     showToast("Accès réservé aux membres de la Police.","error");
     return;
+  }
+  // BUG-FIX SECTIONS : empêcher l'accès aux pages d'autres sections
+  // (un Juge ne peut pas accéder aux pages Police, Avocat, etc., et vice-versa)
+  // Pages "all" (visibles partout) : dashboard, bingobook, codepenal, histoire, profil, admin, messagerie
+  // BYPASS ADMIN : les admins ont accès à tout, peu importe leur section
+  var isFullAccess = !!(currentUser && currentUser.role === 'admin');
+  var ALL_PAGES = ['dashboard','bingobook','codepenal','histoire','profil','admin','messagerie'];
+  var SECTION_PREFIXES = { juge:/^juge-/, avocat:/^avocat-/, mission:/^mission-/, medical:/^medical-/, diplomatie:/^diplo-/ };
+  var POLICE_PAGES = ['annonces','recensement','recrutement','plaintes','dossiers','operations','effectifs','sanctions','impots','hierarchie'];
+  var userSection = (currentUser && currentUser.section) || 'police';
+  if(!isFullAccess && !ALL_PAGES.includes(name)){
+    var allowed = false;
+    if(userSection === 'police'){
+      allowed = POLICE_PAGES.includes(name);
+    } else {
+      var pat = SECTION_PREFIXES[userSection];
+      if(pat) allowed = pat.test(name);
+    }
+    if(!allowed){
+      showToast("Cette page n'est pas accessible depuis votre département.","error");
+      return;
+    }
   }
   // Panel Admin : réservé aux admins uniquement
   if(name==="admin"&&!(currentUser&&currentUser.role==="admin")){
@@ -17335,6 +17810,10 @@ function renderPage(name){
     }
   }
   if(name==="bingobook")bbRender();
+  // Pages des sections non-Police (juge, avocat, mission, médical, diplomatie)
+  if(typeof renderSectionPage === 'function' && /^(juge|avocat|mission|medical|diplo)-/.test(name)){
+    renderSectionPage(name);
+  }
   if(name==="messagerie"){
     initMessagingFirebase();
     renderMsgContacts();
@@ -22542,6 +23021,15 @@ window.addEventListener("load",()=>{
   if(!DB.grades)DB.grades=["Gérant","Co-Gérant","Sergent","Officier","Stagiaire"];
   if(!DB.hasOwnProperty("logo"))DB.logo="";
   if(!DB.infractions)DB.infractions=[];
+  // Migration : ajouter section="police" aux comptes existants qui n'en ont pas
+  // (compatibilité ascendante : tous les anciens comptes appartiennent à la Police)
+  if(Array.isArray(DB.users)){
+    var _migratedSection = false;
+    DB.users.forEach(function(u){
+      if(u && !u.section){ u.section = 'police'; _migratedSection = true; }
+    });
+    if(_migratedSection){ try{ saveData(); }catch(e){} }
+  }
   // Migrate admin name from "Admin" to "Développeur" for existing installs
   const devAcc=DB.users.find(u=>u.role==="admin"&&u.nom==="Admin");
   if(devAcc)devAcc.nom="Développeur";
@@ -29577,6 +30065,228 @@ function bbCancelForm() {
   _bbPortraitData = '';
   document.getElementById('bb-form-wrap').style.display='none';
 }
+
+/* ═══════════════════════════════════════════════════════════════════════
+   SYSTÈME GÉNÉRIQUE DE SECTIONS (Juge / Avocat / Mission / Médical / Diplomatie)
+   Chaque page est un registre simple : titre, contenu, auteur, date.
+   Les modérateurs (canModify) peuvent ajouter/éditer/supprimer.
+   Stockage : DB.sectionData[section][page] = [{id, titre, contenu, auteur, date}]
+   Sync Firebase : sunagakure/sectionData
+   ═══════════════════════════════════════════════════════════════════════ */
+function _ensureSectionData(){
+  if(!DB.sectionData) DB.sectionData = {};
+}
+function _secList(section, page){
+  _ensureSectionData();
+  if(!DB.sectionData[section]) DB.sectionData[section] = {};
+  if(!Array.isArray(DB.sectionData[section][page])) DB.sectionData[section][page] = [];
+  return DB.sectionData[section][page];
+}
+function _secSave(){
+  try{ localStorage.setItem('suna_section_data', JSON.stringify(DB.sectionData||{})); }catch(e){}
+  if(window._fbDB && window._fbRef && window._fbSet){
+    try{
+      var r = window._fbRef(window._fbDB, 'sunagakure/sectionData');
+      window._fbSet(r, DB.sectionData||{});
+    }catch(e){}
+  }
+}
+function _secInit(){
+  // Restaurer depuis localStorage en attendant Firebase
+  if(!DB.sectionData){
+    try{
+      var raw = localStorage.getItem('suna_section_data');
+      if(raw){ DB.sectionData = JSON.parse(raw)||{}; }
+      else { DB.sectionData = {}; }
+    }catch(e){ DB.sectionData = {}; }
+  }
+}
+_secInit();
+
+// Renvoie les métadonnées d'une page (titre humain + emoji + label de l'item)
+// Accepte les 2 formats : pageId DOM ("diplo-villages") OU section+page ("diplomatie-villages")
+function _secMeta(pageId){
+  var parts = pageId.split('-');
+  var prefix = parts.shift();
+  var page = parts.join('-');
+  // Mapping bi-directionnel : prefix DOM → section logique
+  var sectionMap = { juge:'juge', avocat:'avocat', mission:'mission', medical:'medical', diplo:'diplomatie', diplomatie:'diplomatie' };
+  var section = sectionMap[prefix];
+  if(!section) return null;
+  // Préfixe DOM (utilisé pour les IDs de pages : page-diplo-villages, pas page-diplomatie-villages)
+  var domPrefixMap = { juge:'juge', avocat:'avocat', mission:'mission', medical:'medical', diplomatie:'diplo' };
+  var domPrefix = domPrefixMap[section];
+  var labels = {
+    'juge:audiences':{ icon:'📅', label:'audience', plural:'audiences', placeholder:'Date, lieu, parties impliquées...', genre:'f' },
+    'juge:jugements':{ icon:'⚖️', label:'jugement', plural:'jugements', placeholder:'Affaire, verdict, sentence...', genre:'m' },
+    'juge:archives' :{ icon:'📚', label:'archive', plural:'archives', placeholder:'Référence, date, sujet...', genre:'f' },
+    'avocat:clients':{ icon:'👥', label:'client', plural:'clients', placeholder:'Nom du client, affaire concernée...', genre:'m' },
+    'avocat:affaires':{ icon:'📁', label:'affaire', plural:'affaires', placeholder:'Référence affaire, état d\'avancement...', genre:'f' },
+    'avocat:plaidoiries':{ icon:'🗣️', label:'plaidoirie', plural:'plaidoiries', placeholder:'Affaire, arguments principaux...', genre:'f' },
+    'mission:disponibles':{ icon:'📋', label:'mission', plural:'missions', placeholder:'Titre, rang, récompense, description...', genre:'f' },
+    'mission:actives':{ icon:'🎯', label:'mission', plural:'missions actives', placeholder:'Mission, équipe assignée, statut...', genre:'f' },
+    'mission:recompenses':{ icon:'💰', label:'récompense', plural:'récompenses', placeholder:'Mission accomplie, montant, bénéficiaire...', genre:'f' },
+    'medical:patients':{ icon:'🛌', label:'patient', plural:'patients', placeholder:'Nom, âge, raison de la visite...', genre:'m' },
+    'medical:consultations':{ icon:'🩺', label:'consultation', plural:'consultations', placeholder:'Patient, médecin, motif...', genre:'f' },
+    'medical:pharmacie':{ icon:'💊', label:'remède', plural:'remèdes en stock', placeholder:'Nom du remède, quantité, indication...', genre:'m' },
+    'diplomatie:villages':{ icon:'🏯', label:'village', plural:'villages alliés', placeholder:'Nom du village, statut diplomatique...', genre:'m' },
+    'diplomatie:traites':{ icon:'📜', label:'traité', plural:'traités', placeholder:'Titre du traité, parties signataires, date...', genre:'m' },
+    'diplomatie:communications':{ icon:'✉️', label:'communication', plural:'communications', placeholder:'Destinataire, sujet, date...', genre:'f' }
+  };
+  var key = section+':'+page;
+  return Object.assign({ section:section, page:page, key:key, domPrefix:domPrefix, domPageId:domPrefix+'-'+page }, labels[key]||{ icon:'📄', label:'entrée', plural:'entrées', placeholder:'Description...', genre:'f' });
+}
+
+function renderSectionPage(pageId){
+  var meta = _secMeta(pageId);
+  if(!meta) return;
+  var container = document.querySelector('[data-sec-card="'+meta.section+':'+meta.page+'"]');
+  if(!container) return;
+  var entries = _secList(meta.section, meta.page);
+  var canEdit = canModify();
+  // Article correct selon le genre du label (m → un, f → une)
+  var article = (meta.genre === 'f') ? 'une ' : 'un ';
+  var html = '';
+  // Header avec bouton ajouter
+  html += '<div style="padding:18px 20px 14px;border-bottom:1px solid rgba(180,140,20,0.1);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">';
+  html += '<div><h3 style="font-size:14px;color:var(--gold2);margin:0;display:flex;align-items:center;gap:8px">'+meta.icon+' Registre des '+meta.plural+'</h3><div style="font-size:10px;color:var(--muted);font-family:\'Share Tech Mono\',monospace;margin-top:3px">'+entries.length+' entrée'+(entries.length>1?'s':'')+'</div></div>';
+  if(canEdit){
+    html += '<button class="btn btn-primary btn-sm" onclick="addSectionEntry(\''+meta.section+'\',\''+meta.page+'\')"><span>+</span> Ajouter '+article+meta.label+'</button>';
+  }
+  html += '</div>';
+  // Zone d'ajout (initialement cachée)
+  html += '<div id="sec-form-'+meta.section+'-'+meta.page+'" style="display:none;padding:16px 20px;background:rgba(180,140,20,0.04);border-bottom:1px solid rgba(180,140,20,0.1)">';
+  html += '<div class="form-group" style="margin-bottom:10px"><label class="form-label">Titre</label><input type="text" id="sec-titre-'+meta.section+'-'+meta.page+'" class="form-control" placeholder="Titre court..." maxlength="100"></div>';
+  html += '<div class="form-group" style="margin-bottom:10px"><label class="form-label">Description</label><textarea id="sec-content-'+meta.section+'-'+meta.page+'" class="form-control" rows="4" placeholder="'+meta.placeholder+'"></textarea></div>';
+  html += '<div style="display:flex;gap:8px;justify-content:flex-end"><button class="btn btn-outline btn-sm" onclick="cancelSectionEntry(\''+meta.section+'\',\''+meta.page+'\')">Annuler</button><button class="btn btn-primary btn-sm" onclick="saveSectionEntry(\''+meta.section+'\',\''+meta.page+'\')">💾 Enregistrer</button></div>';
+  html += '</div>';
+  // Liste des entrées
+  html += '<div style="padding:14px 18px">';
+  if(entries.length === 0){
+    html += '<div style="text-align:center;padding:38px 20px;color:var(--muted);font-family:\'Share Tech Mono\',monospace;font-size:11px;letter-spacing:1px"><div style="font-size:38px;margin-bottom:10px;opacity:0.4">'+meta.icon+'</div>Aucune entrée pour le moment.<br>'+(canEdit?'Cliquez sur « Ajouter » pour créer la première.':'Patientez : un membre ajoutera bientôt du contenu.')+'</div>';
+  } else {
+    html += entries.slice().reverse().map(function(e){
+      var dateStr = e.date ? new Date(e.date).toLocaleDateString('fr-FR') + ' à ' + new Date(e.date).toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}) : '—';
+      var actions = canEdit
+        ? '<div style="display:flex;gap:5px"><button class="btn btn-outline btn-sm" onclick="editSectionEntry(\''+meta.section+'\',\''+meta.page+'\','+e.id+')">✏️</button><button class="btn btn-danger btn-sm" onclick="deleteSectionEntry(\''+meta.section+'\',\''+meta.page+'\','+e.id+')">🗑</button></div>'
+        : '';
+      return '<div style="background:rgba(20,16,9,0.6);border:1px solid rgba(180,140,20,0.12);border-radius:10px;padding:14px 16px;margin-bottom:10px"><div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:6px"><div style="flex:1;min-width:0"><div style="font-family:\'Cinzel\',serif;font-size:14px;font-weight:600;color:var(--text);margin-bottom:2px">'+escSec(e.titre||'(sans titre)')+'</div><div style="font-size:10px;color:var(--muted);font-family:\'Share Tech Mono\',monospace;letter-spacing:0.5px">'+escSec(e.auteur||'—')+' · '+dateStr+'</div></div>'+actions+'</div>'+(e.contenu?'<div style="font-size:13px;color:rgba(240,232,208,0.85);line-height:1.55;white-space:pre-wrap;margin-top:8px;padding-top:8px;border-top:1px solid rgba(180,140,20,0.08)">'+escSec(e.contenu)+'</div>':'')+'</div>';
+    }).join('');
+  }
+  html += '</div>';
+  container.innerHTML = html;
+}
+
+function escSec(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+function addSectionEntry(section, page){
+  if(!canModify()){ showToast('⛔ Action réservée aux membres autorisés.','error'); return; }
+  var form = document.getElementById('sec-form-'+section+'-'+page);
+  if(form){ form.style.display = 'block';
+    var ti = document.getElementById('sec-titre-'+section+'-'+page); if(ti){ ti.value=''; ti.focus(); }
+    var co = document.getElementById('sec-content-'+section+'-'+page); if(co){ co.value=''; co.removeAttribute('data-edit-id'); }
+  }
+}
+function cancelSectionEntry(section, page){
+  var form = document.getElementById('sec-form-'+section+'-'+page);
+  if(form) form.style.display = 'none';
+}
+function saveSectionEntry(section, page){
+  if(!canModify()){ showToast('⛔ Action réservée aux membres autorisés.','error'); return; }
+  var ti = document.getElementById('sec-titre-'+section+'-'+page);
+  var co = document.getElementById('sec-content-'+section+'-'+page);
+  if(!ti) return;
+  var titre = ti.value.trim();
+  var contenu = co ? co.value.trim() : '';
+  if(!titre){ showToast('Le titre est obligatoire.','error'); ti.focus(); return; }
+  var list = _secList(section, page);
+  var editId = co && co.getAttribute('data-edit-id');
+  if(editId){
+    var idx = list.findIndex(function(x){ return String(x.id)===String(editId); });
+    if(idx>-1){ list[idx].titre = titre; list[idx].contenu = contenu; list[idx].edited = Date.now(); }
+  } else {
+    list.push({ id: Date.now(), titre: titre, contenu: contenu, auteur: (currentUser && (currentUser.nom||currentUser.login)) || '?', date: Date.now() });
+  }
+  _secSave();
+  cancelSectionEntry(section, page);
+  // BUG-FIX : utiliser le domPrefix correct (pour 'diplomatie' → 'diplo' dans l'ID DOM)
+  var domPrefixMap = { juge:'juge', avocat:'avocat', mission:'mission', medical:'medical', diplomatie:'diplo' };
+  renderSectionPage((domPrefixMap[section]||section)+'-'+page);
+  showToast(editId ? '✅ Modifié' : '✅ Ajouté', 'success');
+}
+function editSectionEntry(section, page, id){
+  if(!canModify()){ return; }
+  var list = _secList(section, page);
+  var e = list.find(function(x){ return x.id === id; });
+  if(!e) return;
+  var form = document.getElementById('sec-form-'+section+'-'+page);
+  if(form) form.style.display = 'block';
+  var ti = document.getElementById('sec-titre-'+section+'-'+page);
+  var co = document.getElementById('sec-content-'+section+'-'+page);
+  if(ti) ti.value = e.titre || '';
+  if(co){ co.value = e.contenu || ''; co.setAttribute('data-edit-id', String(id)); }
+  if(ti) ti.focus();
+}
+function deleteSectionEntry(section, page, id){
+  if(!canModify()){ return; }
+  askDelete('Supprimer cette entrée ?', function(){
+    var list = _secList(section, page);
+    var idx = list.findIndex(function(x){ return x.id === id; });
+    if(idx>-1) list.splice(idx, 1);
+    _secSave();
+    // BUG-FIX : domPrefixMap pour diplomatie
+    var domPrefixMap = { juge:'juge', avocat:'avocat', mission:'mission', medical:'medical', diplomatie:'diplo' };
+    renderSectionPage((domPrefixMap[section]||section)+'-'+page);
+    showToast('Entrée supprimée.','info');
+  });
+}
+
+// Sync Firebase pour sectionData
+document.addEventListener('DOMContentLoaded', function(){
+  var w = 0;
+  var itv = setInterval(function(){
+    w++;
+    if(window._fbDB && window._fbRef && window._fbOnValue){
+      clearInterval(itv);
+      try{
+        var r = window._fbRef(window._fbDB, 'sunagakure/sectionData');
+        window._fbOnValue(r, function(snap){
+          var v = snap.val();
+          if(v && typeof v === 'object'){
+            // BUG-FIX : si l'utilisateur est en train d'éditer une entrée
+            // (formulaire d'édition visible avec data-edit-id), on ne pousse pas
+            // la mise à jour pour ne pas écraser sa saisie.
+            var isEditing = false;
+            try{
+              var openForm = document.querySelector('[id^="sec-form-"]');
+              if(openForm && openForm.style.display !== 'none'){
+                var co = openForm.querySelector('textarea[id^="sec-content-"]');
+                if(co && co.getAttribute('data-edit-id')) isEditing = true;
+              }
+            }catch(e){}
+            if(isEditing){
+              // On stocke la mise à jour mais on ne re-render pas (sera fait à la fermeture du form)
+              DB.sectionData = v;
+              try{ localStorage.setItem('suna_section_data', JSON.stringify(v)); }catch(e){}
+              return;
+            }
+            DB.sectionData = v;
+            try{ localStorage.setItem('suna_section_data', JSON.stringify(v)); }catch(e){}
+            // Re-render la page courante si c'est une page de section
+            try{
+              var active = document.querySelector('.page-content.active');
+              if(active && /^page-(juge|avocat|mission|medical|diplo)-/.test(active.id)){
+                renderSectionPage(active.id.replace('page-',''));
+              }
+            }catch(e){}
+          }
+        });
+      }catch(e){}
+    } else if(w > 60){
+      clearInterval(itv);
+    }
+  }, 100);
+});
 
 document.addEventListener('DOMContentLoaded', function(){
   // Firebase est chargé en module → window._fbDB peut ne pas être prêt à DOMContentLoaded.
