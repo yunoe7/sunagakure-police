@@ -13417,36 +13417,39 @@ document.addEventListener('error', function(e){
 }
 .cdv2-section-card.active .cdv2-section-title{color:var(--gold2)}
 
-/* Section verrouillée (Tribunal/Avocats désactivés) — chaînes en overlay */
+/* Section verrouillée (Tribunal/Avocats désactivés) — cadenas visible */
 .cdv2-section-card.locked{
   cursor:not-allowed;
   background:rgba(0,0,0,0.55);
-  border-color:rgba(80,80,80,0.35);
-  overflow:hidden; /* clip les chaînes pour ne pas déborder sur les cards voisines */
+  border-color:rgba(180,140,20,0.25);
 }
 .cdv2-section-card.locked:hover{
   transform:none;
-  border-color:rgba(80,80,80,0.4);
+  border-color:rgba(180,140,20,0.35);
   background:rgba(0,0,0,0.55);
 }
 .cdv2-section-card.locked .cdv2-section-icon{
-  filter:grayscale(0.95) brightness(0.55);
+  opacity:0;
+  transition:opacity 0.3s;
 }
 .cdv2-section-card.locked .cdv2-section-title{
-  color:rgba(180,180,180,0.5);
+  color:rgba(201,162,39,0.55);
 }
-.cdv2-chain-overlay{
+.cdv2-padlock-overlay{
   position:absolute;
-  inset:0;
-  width:100%;
-  height:100%;
+  top:50%;
+  left:50%;
+  transform:translate(-50%,-58%);
+  width:42px;
+  height:54px;
   pointer-events:none;
   opacity:0;
-  transition:opacity 0.35s ease;
+  transition:opacity 0.35s ease, transform 0.35s ease;
   z-index:5;
+  filter:drop-shadow(0 2px 6px rgba(0,0,0,0.6));
 }
-.cdv2-section-card.locked .cdv2-chain-overlay{
-  opacity:0.92;
+.cdv2-section-card.locked .cdv2-padlock-overlay{
+  opacity:1;
 }
 
 /* Footer */
@@ -13524,107 +13527,57 @@ document.addEventListener('error', function(e){
           <div class="cdv2-section-card" id="cdv2-card-tribunal" data-section="Tribunal" onclick="cdv2SelectSection(this,'Tribunal')">
             <div class="cdv2-section-icon">⚖️</div>
             <div class="cdv2-section-title">Tribunal</div>
-            <svg class="cdv2-chain-overlay" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <svg class="cdv2-padlock-overlay" viewBox="0 0 42 54" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
               <defs>
-                <linearGradient id="chainMetalT" x1="0%" y1="0%" x2="0%" y2="100%">
-                  <stop offset="0%" stop-color="#cfcfcf"/>
-                  <stop offset="40%" stop-color="#5a5a5a"/>
-                  <stop offset="60%" stop-color="#252525"/>
-                  <stop offset="100%" stop-color="#9c9c9c"/>
+                <linearGradient id="padGoldT" x1="0%" y1="0%" x2="0%" y2="100%">
+                  <stop offset="0%" stop-color="#f5d777"/>
+                  <stop offset="35%" stop-color="#c9a227"/>
+                  <stop offset="65%" stop-color="#8a6e1a"/>
+                  <stop offset="100%" stop-color="#d8b53e"/>
                 </linearGradient>
-                <filter id="chainShadowT" x="-30%" y="-30%" width="160%" height="160%">
-                  <feDropShadow dx="0.4" dy="0.8" stdDeviation="0.6" flood-opacity="0.65"/>
-                </filter>
+                <linearGradient id="padShineT" x1="0%" y1="0%" x2="0%" y2="100%">
+                  <stop offset="0%" stop-color="rgba(255,240,180,0.6)"/>
+                  <stop offset="100%" stop-color="rgba(255,240,180,0)"/>
+                </linearGradient>
               </defs>
-              <g filter="url(#chainShadowT)" stroke="url(#chainMetalT)" stroke-width="1.6" fill="none">
-                <g transform="rotate(35 50 50)">
-                  <ellipse cx="-20" cy="50" rx="3.6" ry="2.2"/><ellipse cx="-14" cy="50" rx="2.2" ry="3.6"/>
-                  <ellipse cx="-8"  cy="50" rx="3.6" ry="2.2"/><ellipse cx="-2"  cy="50" rx="2.2" ry="3.6"/>
-                  <ellipse cx="4"   cy="50" rx="3.6" ry="2.2"/><ellipse cx="10"  cy="50" rx="2.2" ry="3.6"/>
-                  <ellipse cx="16"  cy="50" rx="3.6" ry="2.2"/><ellipse cx="22"  cy="50" rx="2.2" ry="3.6"/>
-                  <ellipse cx="28"  cy="50" rx="3.6" ry="2.2"/><ellipse cx="34"  cy="50" rx="2.2" ry="3.6"/>
-                  <ellipse cx="40"  cy="50" rx="3.6" ry="2.2"/><ellipse cx="46"  cy="50" rx="2.2" ry="3.6"/>
-                  <ellipse cx="52"  cy="50" rx="3.6" ry="2.2"/><ellipse cx="58"  cy="50" rx="2.2" ry="3.6"/>
-                  <ellipse cx="64"  cy="50" rx="3.6" ry="2.2"/><ellipse cx="70"  cy="50" rx="2.2" ry="3.6"/>
-                  <ellipse cx="76"  cy="50" rx="3.6" ry="2.2"/><ellipse cx="82"  cy="50" rx="2.2" ry="3.6"/>
-                  <ellipse cx="88"  cy="50" rx="3.6" ry="2.2"/><ellipse cx="94"  cy="50" rx="2.2" ry="3.6"/>
-                  <ellipse cx="100" cy="50" rx="3.6" ry="2.2"/><ellipse cx="106" cy="50" rx="2.2" ry="3.6"/>
-                  <ellipse cx="112" cy="50" rx="3.6" ry="2.2"/><ellipse cx="118" cy="50" rx="2.2" ry="3.6"/>
-                </g>
-                <g transform="rotate(-35 50 50)">
-                  <ellipse cx="-20" cy="50" rx="3.6" ry="2.2"/><ellipse cx="-14" cy="50" rx="2.2" ry="3.6"/>
-                  <ellipse cx="-8"  cy="50" rx="3.6" ry="2.2"/><ellipse cx="-2"  cy="50" rx="2.2" ry="3.6"/>
-                  <ellipse cx="4"   cy="50" rx="3.6" ry="2.2"/><ellipse cx="10"  cy="50" rx="2.2" ry="3.6"/>
-                  <ellipse cx="16"  cy="50" rx="3.6" ry="2.2"/><ellipse cx="22"  cy="50" rx="2.2" ry="3.6"/>
-                  <ellipse cx="28"  cy="50" rx="3.6" ry="2.2"/><ellipse cx="34"  cy="50" rx="2.2" ry="3.6"/>
-                  <ellipse cx="40"  cy="50" rx="3.6" ry="2.2"/><ellipse cx="46"  cy="50" rx="2.2" ry="3.6"/>
-                  <ellipse cx="52"  cy="50" rx="3.6" ry="2.2"/><ellipse cx="58"  cy="50" rx="2.2" ry="3.6"/>
-                  <ellipse cx="64"  cy="50" rx="3.6" ry="2.2"/><ellipse cx="70"  cy="50" rx="2.2" ry="3.6"/>
-                  <ellipse cx="76"  cy="50" rx="3.6" ry="2.2"/><ellipse cx="82"  cy="50" rx="2.2" ry="3.6"/>
-                  <ellipse cx="88"  cy="50" rx="3.6" ry="2.2"/><ellipse cx="94"  cy="50" rx="2.2" ry="3.6"/>
-                  <ellipse cx="100" cy="50" rx="3.6" ry="2.2"/><ellipse cx="106" cy="50" rx="2.2" ry="3.6"/>
-                  <ellipse cx="112" cy="50" rx="3.6" ry="2.2"/><ellipse cx="118" cy="50" rx="2.2" ry="3.6"/>
-                </g>
-              </g>
-              <g transform="translate(50 50)" filter="url(#chainShadowT)">
-                <path d="M-4 -1.5 L-4 -7 Q-4 -11 0 -11 Q4 -11 4 -7 L4 -1.5" fill="none" stroke="url(#chainMetalT)" stroke-width="1.4"/>
-                <rect x="-6.5" y="-1.5" width="13" height="10" rx="1.6" fill="#0a0806" stroke="url(#chainMetalT)" stroke-width="1.1"/>
-                <circle cx="0" cy="3" r="1.1" fill="url(#chainMetalT)"/>
-                <rect x="-0.55" y="3" width="1.1" height="3.2" fill="url(#chainMetalT)"/>
-              </g>
+              <!-- Anse (shackle) -->
+              <path d="M 11 24 L 11 14 Q 11 5 21 5 Q 31 5 31 14 L 31 24" fill="none" stroke="url(#padGoldT)" stroke-width="4.2" stroke-linecap="round"/>
+              <path d="M 11 24 L 11 14 Q 11 5 21 5 Q 31 5 31 14 L 31 24" fill="none" stroke="rgba(255,240,180,0.35)" stroke-width="1.4" stroke-linecap="round"/>
+              <!-- Corps -->
+              <rect x="5" y="22" width="32" height="28" rx="4" fill="url(#padGoldT)" stroke="#5a4410" stroke-width="0.8"/>
+              <!-- Reflet brillance -->
+              <rect x="7" y="24" width="28" height="9" rx="2.5" fill="url(#padShineT)"/>
+              <!-- Trou de serrure -->
+              <circle cx="21" cy="34" r="3.2" fill="#1a1208"/>
+              <path d="M 19.5 34 L 22.5 34 L 23.2 42 L 18.8 42 Z" fill="#1a1208"/>
             </svg>
           </div>
           <div class="cdv2-section-card" id="cdv2-card-avocats" data-section="Avocats" onclick="cdv2SelectSection(this,'Avocats')">
             <div class="cdv2-section-icon">👨‍💼</div>
             <div class="cdv2-section-title">Avocats</div>
-            <svg class="cdv2-chain-overlay" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <svg class="cdv2-padlock-overlay" viewBox="0 0 42 54" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
               <defs>
-                <linearGradient id="chainMetalA" x1="0%" y1="0%" x2="0%" y2="100%">
-                  <stop offset="0%" stop-color="#cfcfcf"/>
-                  <stop offset="40%" stop-color="#5a5a5a"/>
-                  <stop offset="60%" stop-color="#252525"/>
-                  <stop offset="100%" stop-color="#9c9c9c"/>
+                <linearGradient id="padGoldA" x1="0%" y1="0%" x2="0%" y2="100%">
+                  <stop offset="0%" stop-color="#f5d777"/>
+                  <stop offset="35%" stop-color="#c9a227"/>
+                  <stop offset="65%" stop-color="#8a6e1a"/>
+                  <stop offset="100%" stop-color="#d8b53e"/>
                 </linearGradient>
-                <filter id="chainShadowA" x="-30%" y="-30%" width="160%" height="160%">
-                  <feDropShadow dx="0.4" dy="0.8" stdDeviation="0.6" flood-opacity="0.65"/>
-                </filter>
+                <linearGradient id="padShineA" x1="0%" y1="0%" x2="0%" y2="100%">
+                  <stop offset="0%" stop-color="rgba(255,240,180,0.6)"/>
+                  <stop offset="100%" stop-color="rgba(255,240,180,0)"/>
+                </linearGradient>
               </defs>
-              <g filter="url(#chainShadowA)" stroke="url(#chainMetalA)" stroke-width="1.6" fill="none">
-                <g transform="rotate(35 50 50)">
-                  <ellipse cx="-20" cy="50" rx="3.6" ry="2.2"/><ellipse cx="-14" cy="50" rx="2.2" ry="3.6"/>
-                  <ellipse cx="-8"  cy="50" rx="3.6" ry="2.2"/><ellipse cx="-2"  cy="50" rx="2.2" ry="3.6"/>
-                  <ellipse cx="4"   cy="50" rx="3.6" ry="2.2"/><ellipse cx="10"  cy="50" rx="2.2" ry="3.6"/>
-                  <ellipse cx="16"  cy="50" rx="3.6" ry="2.2"/><ellipse cx="22"  cy="50" rx="2.2" ry="3.6"/>
-                  <ellipse cx="28"  cy="50" rx="3.6" ry="2.2"/><ellipse cx="34"  cy="50" rx="2.2" ry="3.6"/>
-                  <ellipse cx="40"  cy="50" rx="3.6" ry="2.2"/><ellipse cx="46"  cy="50" rx="2.2" ry="3.6"/>
-                  <ellipse cx="52"  cy="50" rx="3.6" ry="2.2"/><ellipse cx="58"  cy="50" rx="2.2" ry="3.6"/>
-                  <ellipse cx="64"  cy="50" rx="3.6" ry="2.2"/><ellipse cx="70"  cy="50" rx="2.2" ry="3.6"/>
-                  <ellipse cx="76"  cy="50" rx="3.6" ry="2.2"/><ellipse cx="82"  cy="50" rx="2.2" ry="3.6"/>
-                  <ellipse cx="88"  cy="50" rx="3.6" ry="2.2"/><ellipse cx="94"  cy="50" rx="2.2" ry="3.6"/>
-                  <ellipse cx="100" cy="50" rx="3.6" ry="2.2"/><ellipse cx="106" cy="50" rx="2.2" ry="3.6"/>
-                  <ellipse cx="112" cy="50" rx="3.6" ry="2.2"/><ellipse cx="118" cy="50" rx="2.2" ry="3.6"/>
-                </g>
-                <g transform="rotate(-35 50 50)">
-                  <ellipse cx="-20" cy="50" rx="3.6" ry="2.2"/><ellipse cx="-14" cy="50" rx="2.2" ry="3.6"/>
-                  <ellipse cx="-8"  cy="50" rx="3.6" ry="2.2"/><ellipse cx="-2"  cy="50" rx="2.2" ry="3.6"/>
-                  <ellipse cx="4"   cy="50" rx="3.6" ry="2.2"/><ellipse cx="10"  cy="50" rx="2.2" ry="3.6"/>
-                  <ellipse cx="16"  cy="50" rx="3.6" ry="2.2"/><ellipse cx="22"  cy="50" rx="2.2" ry="3.6"/>
-                  <ellipse cx="28"  cy="50" rx="3.6" ry="2.2"/><ellipse cx="34"  cy="50" rx="2.2" ry="3.6"/>
-                  <ellipse cx="40"  cy="50" rx="3.6" ry="2.2"/><ellipse cx="46"  cy="50" rx="2.2" ry="3.6"/>
-                  <ellipse cx="52"  cy="50" rx="3.6" ry="2.2"/><ellipse cx="58"  cy="50" rx="2.2" ry="3.6"/>
-                  <ellipse cx="64"  cy="50" rx="3.6" ry="2.2"/><ellipse cx="70"  cy="50" rx="2.2" ry="3.6"/>
-                  <ellipse cx="76"  cy="50" rx="3.6" ry="2.2"/><ellipse cx="82"  cy="50" rx="2.2" ry="3.6"/>
-                  <ellipse cx="88"  cy="50" rx="3.6" ry="2.2"/><ellipse cx="94"  cy="50" rx="2.2" ry="3.6"/>
-                  <ellipse cx="100" cy="50" rx="3.6" ry="2.2"/><ellipse cx="106" cy="50" rx="2.2" ry="3.6"/>
-                  <ellipse cx="112" cy="50" rx="3.6" ry="2.2"/><ellipse cx="118" cy="50" rx="2.2" ry="3.6"/>
-                </g>
-              </g>
-              <g transform="translate(50 50)" filter="url(#chainShadowA)">
-                <path d="M-4 -1.5 L-4 -7 Q-4 -11 0 -11 Q4 -11 4 -7 L4 -1.5" fill="none" stroke="url(#chainMetalA)" stroke-width="1.4"/>
-                <rect x="-6.5" y="-1.5" width="13" height="10" rx="1.6" fill="#0a0806" stroke="url(#chainMetalA)" stroke-width="1.1"/>
-                <circle cx="0" cy="3" r="1.1" fill="url(#chainMetalA)"/>
-                <rect x="-0.55" y="3" width="1.1" height="3.2" fill="url(#chainMetalA)"/>
-              </g>
+              <!-- Anse (shackle) -->
+              <path d="M 11 24 L 11 14 Q 11 5 21 5 Q 31 5 31 14 L 31 24" fill="none" stroke="url(#padGoldA)" stroke-width="4.2" stroke-linecap="round"/>
+              <path d="M 11 24 L 11 14 Q 11 5 21 5 Q 31 5 31 14 L 31 24" fill="none" stroke="rgba(255,240,180,0.35)" stroke-width="1.4" stroke-linecap="round"/>
+              <!-- Corps -->
+              <rect x="5" y="22" width="32" height="28" rx="4" fill="url(#padGoldA)" stroke="#5a4410" stroke-width="0.8"/>
+              <!-- Reflet brillance -->
+              <rect x="7" y="24" width="28" height="9" rx="2.5" fill="url(#padShineA)"/>
+              <!-- Trou de serrure -->
+              <circle cx="21" cy="34" r="3.2" fill="#1a1208"/>
+              <path d="M 19.5 34 L 22.5 34 L 23.2 42 L 18.8 42 Z" fill="#1a1208"/>
             </svg>
           </div>
         </div>
