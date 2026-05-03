@@ -12014,21 +12014,380 @@ document.addEventListener('error', function(e){
 </div>
 
 <!-- Candidature -->
+<!-- ═══════════════════════════════════════════════════════════════
+     CANDIDATURE V2 — Refonte premium "Recrutement Officiel"
+     ═══════════════════════════════════════════════════════════════ -->
+<style>
+#modal-candidature .modal{
+  max-width:680px !important;
+  background:linear-gradient(180deg,#1a1510 0%,#0c0a07 100%) !important;
+  border:1px solid rgba(201,162,39,0.32) !important;
+  border-radius:18px !important;
+  overflow:hidden !important;
+  padding:0 !important;
+  box-shadow:0 24px 80px rgba(0,0,0,0.7),0 0 0 1px rgba(201,162,39,0.06) !important;
+}
+#modal-candidature .modal-header{
+  position:relative;
+  padding:0 !important;
+  border:none !important;
+  background:transparent !important;
+}
+#modal-candidature .modal-header h3{display:none !important}
+#modal-candidature .modal-header .modal-close{
+  position:absolute !important;
+  top:16px !important;right:16px !important;
+  z-index:10;
+  font-size:18px !important;
+  color:rgba(201,162,39,0.6) !important;
+  width:34px;height:34px;
+  display:flex !important;align-items:center;justify-content:center;
+  background:rgba(0,0,0,0.4) !important;
+  border:1px solid rgba(201,162,39,0.2) !important;
+  border-radius:8px !important;
+  transition:all 0.2s !important;
+  cursor:pointer;
+}
+#modal-candidature .modal-header .modal-close:hover{
+  color:var(--gold2) !important;
+  background:rgba(201,162,39,0.12) !important;
+  border-color:rgba(201,162,39,0.45) !important;
+}
+
+/* Hero modal */
+.cdv2-hero{
+  position:relative;
+  padding:36px 38px 28px;
+  background:
+    radial-gradient(ellipse at top right,rgba(201,162,39,0.12),transparent 60%),
+    radial-gradient(ellipse at bottom left,rgba(34,197,94,0.06),transparent 60%),
+    linear-gradient(180deg,rgba(26,21,16,1),rgba(20,16,11,1));
+  border-bottom:1px solid rgba(201,162,39,0.18);
+  overflow:hidden;
+}
+.cdv2-hero::before{
+  content:'';position:absolute;inset:0;pointer-events:none;
+  background-image:url("data:image/svg+xml,%3Csvg width='80' height='80' viewBox='0 0 80 80' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' stroke='%23ffffff' stroke-opacity='0.03' stroke-width='1'%3E%3Cpath d='M40 0 L40 80 M0 40 L80 40' /%3E%3Ccircle cx='40' cy='40' r='30'/%3E%3C/g%3E%3C/svg%3E");
+}
+.cdv2-hero-tag{
+  position:relative;z-index:2;
+  font-family:'Share Tech Mono',monospace;
+  font-size:10px;letter-spacing:4px;
+  color:var(--gold);text-transform:uppercase;
+  font-weight:700;margin-bottom:10px;
+}
+.cdv2-hero-title{
+  position:relative;z-index:2;
+  font-family:'Cinzel',serif;
+  font-size:32px;font-weight:700;letter-spacing:2.5px;
+  color:var(--text);text-transform:uppercase;
+  line-height:1.05;
+  text-shadow:0 2px 12px rgba(201,162,39,0.15);
+}
+.cdv2-hero-title .accent{
+  background:linear-gradient(135deg,#fbbf24,#c9a227);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  background-clip:text;
+}
+
+/* Body */
+#modal-candidature .modal-body{
+  padding:28px 38px !important;
+  max-height:65vh !important;
+  overflow-y:auto !important;
+  background:transparent !important;
+}
+#modal-candidature .modal-body::-webkit-scrollbar{width:6px}
+#modal-candidature .modal-body::-webkit-scrollbar-thumb{background:rgba(201,162,39,0.3);border-radius:3px}
+
+/* Champs */
+.cdv2-fld{margin-bottom:20px}
+.cdv2-fld-label{
+  display:block;
+  font-family:'Share Tech Mono',monospace;
+  font-size:10px;letter-spacing:2px;
+  color:var(--muted);text-transform:uppercase;
+  font-weight:600;margin-bottom:8px;
+}
+.cdv2-fld-label .req{color:var(--accent2);font-size:12px;margin-left:2px}
+.cdv2-grid-2{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:20px}
+
+#modal-candidature input.form-control,
+#modal-candidature select.form-control,
+#modal-candidature textarea.form-control{
+  width:100%;
+  padding:13px 16px !important;
+  background:rgba(0,0,0,0.45) !important;
+  border:1px solid rgba(201,162,39,0.2) !important;
+  border-radius:10px !important;
+  color:var(--text) !important;
+  font-size:13px !important;
+  font-family:'Barlow',sans-serif !important;
+  transition:all 0.2s !important;
+}
+#modal-candidature select.form-control{
+  appearance:none;-webkit-appearance:none;
+  background:rgba(0,0,0,0.45) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath fill='%23c9a227' d='M5 6L0 0h10z'/%3E%3C/svg%3E") right 14px center no-repeat !important;
+  padding-right:36px !important;
+  cursor:pointer;
+}
+#modal-candidature input.form-control:focus,
+#modal-candidature select.form-control:focus,
+#modal-candidature textarea.form-control:focus{
+  outline:none !important;
+  border-color:rgba(201,162,39,0.55) !important;
+  background-color:rgba(0,0,0,0.6) !important;
+  box-shadow:0 0 0 3px rgba(201,162,39,0.1) !important;
+}
+#modal-candidature input.form-control::placeholder,
+#modal-candidature textarea.form-control::placeholder{
+  color:rgba(240,232,208,0.28) !important;
+  font-style:italic;
+}
+#modal-candidature textarea.form-control{
+  min-height:110px !important;
+  line-height:1.6;
+  resize:vertical;
+}
+
+/* Cartes section visée (3 colonnes : Police / Tribunal / Avocats) */
+.cdv2-section-grid{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:12px;
+  margin-bottom:4px;
+}
+.cdv2-section-card{
+  position:relative;
+  padding:20px 12px;
+  background:rgba(0,0,0,0.4);
+  border:1px solid rgba(201,162,39,0.2);
+  border-radius:12px;
+  text-align:center;
+  cursor:pointer;
+  transition:all 0.2s;
+  user-select:none;
+}
+.cdv2-section-card:hover{
+  border-color:rgba(201,162,39,0.4);
+  background:rgba(0,0,0,0.55);
+  transform:translateY(-2px);
+}
+.cdv2-section-card.active{
+  background:linear-gradient(135deg,rgba(201,162,39,0.14),rgba(192,65,14,0.08));
+  border-color:rgba(201,162,39,0.6);
+  box-shadow:0 4px 16px rgba(201,162,39,0.18),inset 0 1px 0 rgba(255,255,255,0.05);
+}
+.cdv2-section-card.active::before{
+  content:'';position:absolute;top:8px;right:8px;
+  width:18px;height:18px;border-radius:50%;
+  background:linear-gradient(135deg,var(--gold),var(--accent2));
+  display:flex;align-items:center;justify-content:center;
+  box-shadow:0 0 8px rgba(201,162,39,0.5);
+}
+.cdv2-section-card.active::after{
+  content:'✓';position:absolute;top:9px;right:11px;
+  font-size:11px;color:#0c0a07;font-weight:900;
+  z-index:1;
+}
+.cdv2-section-icon{
+  font-size:26px;
+  margin-bottom:8px;
+  filter:drop-shadow(0 2px 6px rgba(0,0,0,0.4));
+}
+.cdv2-section-title{
+  font-family:'Share Tech Mono',monospace;
+  font-size:11px;letter-spacing:2px;
+  color:var(--text);
+  text-transform:uppercase;
+  font-weight:700;
+}
+.cdv2-section-card.active .cdv2-section-title{color:var(--gold2)}
+
+/* Footer */
+#modal-candidature .modal-footer{
+  padding:18px 38px 26px !important;
+  background:linear-gradient(180deg,rgba(0,0,0,0.4),rgba(0,0,0,0.6)) !important;
+  border-top:1px solid rgba(201,162,39,0.15) !important;
+  display:flex !important;
+  gap:12px !important;
+  justify-content:flex-end !important;
+}
+#modal-candidature .modal-footer .btn{
+  padding:12px 22px !important;
+  font-family:'Share Tech Mono',monospace !important;
+  font-size:11px !important;letter-spacing:2px !important;
+  text-transform:uppercase !important;
+  font-weight:700 !important;
+  border-radius:10px !important;
+}
+#modal-candidature .modal-footer .btn-outline{
+  background:rgba(201,162,39,0.05) !important;
+  border:1px solid rgba(201,162,39,0.25) !important;
+  color:var(--text2) !important;
+}
+#modal-candidature .modal-footer .btn-outline:hover{
+  background:rgba(201,162,39,0.12) !important;
+  border-color:rgba(201,162,39,0.45) !important;
+  color:var(--text) !important;
+}
+#modal-candidature .modal-footer .btn-primary{
+  background:linear-gradient(135deg,#c9a227,#a16207) !important;
+  border:1px solid rgba(212,180,74,0.6) !important;
+  color:#0c0a07 !important;
+  font-weight:800 !important;
+  box-shadow:0 4px 14px rgba(201,162,39,0.35),inset 0 1px 0 rgba(255,255,255,0.2) !important;
+}
+#modal-candidature .modal-footer .btn-primary:hover{
+  background:linear-gradient(135deg,#d4b44a,#b8800c) !important;
+  box-shadow:0 6px 20px rgba(201,162,39,0.5),inset 0 1px 0 rgba(255,255,255,0.25) !important;
+  transform:translateY(-1px);
+}
+
+/* Mobile */
+@media(max-width:640px){
+  #modal-candidature .modal{max-width:96vw !important;margin:8px !important}
+  .cdv2-hero{padding:24px 22px 18px}
+  .cdv2-hero-title{font-size:24px}
+  #modal-candidature .modal-body{padding:20px 22px !important}
+  #modal-candidature .modal-footer{padding:14px 22px 20px !important}
+  .cdv2-section-grid{grid-template-columns:1fr;gap:8px}
+  .cdv2-grid-2{grid-template-columns:1fr;gap:14px}
+}
+</style>
+
 <div class="modal-overlay" role="dialog" aria-modal="true" id="modal-candidature">
   <div class="modal">
-    <div class="modal-header"><h3>🎖️ Déposer une candidature</h3><span class="modal-close" aria-label="Fermer" onclick="closeModal('modal-candidature')">✕</span></div>
-    <div class="modal-body">
-      <div class="grid grid-2">
-        <div class="form-group"><label class="form-label">Nom RP</label><input type="text" id="c-nom" class="form-control" placeholder="Prénom Nom"></div>
-        <div class="form-group"><label class="form-label">Âge RP</label><input type="number" id="c-age" class="form-control" placeholder="Ex: 24"></div>
-      </div>
-      <div class="form-group"><label class="form-label">Pseudo Discord (OOC)</label><input type="text" id="c-discord" class="form-control" placeholder="pseudo#0000"></div>
-      <div class="form-group"><label class="form-label">Motivation</label><textarea id="c-motif" class="form-control" placeholder="Pourquoi rejoindre la Police ?"></textarea></div>
-      <div class="form-group"><label class="form-label">Expérience RP</label><textarea id="c-exp" class="form-control" placeholder="Expériences précédentes..."></textarea></div>
+    <div class="modal-header">
+      <h3>🎖️ Déposer une candidature</h3>
+      <span class="modal-close" aria-label="Fermer" onclick="closeModal('modal-candidature')">✕</span>
     </div>
-    <div class="modal-footer"><button class="btn btn-outline" onclick="closeModal('modal-candidature')">Annuler</button><button class="btn btn-primary" onclick="saveCandidature()">Envoyer</button></div>
+    <!-- Hero premium -->
+    <div class="cdv2-hero">
+      <div class="cdv2-hero-tag">Recrutement Officiel</div>
+      <div class="cdv2-hero-title">Candidature <span class="accent">officielle</span></div>
+    </div>
+    <div class="modal-body">
+      <!-- Section visée -->
+      <div class="cdv2-fld">
+        <label class="cdv2-fld-label">Section visée <span class="req">*</span></label>
+        <div class="cdv2-section-grid" id="cdv2-section-grid">
+          <div class="cdv2-section-card active" data-section="Police" onclick="cdv2SelectSection(this,'Police')">
+            <div class="cdv2-section-icon">👮</div>
+            <div class="cdv2-section-title">Police</div>
+          </div>
+          <div class="cdv2-section-card" data-section="Tribunal" onclick="cdv2SelectSection(this,'Tribunal')">
+            <div class="cdv2-section-icon">⚖️</div>
+            <div class="cdv2-section-title">Tribunal</div>
+          </div>
+          <div class="cdv2-section-card" data-section="Avocats" onclick="cdv2SelectSection(this,'Avocats')">
+            <div class="cdv2-section-icon">👨‍💼</div>
+            <div class="cdv2-section-title">Avocats</div>
+          </div>
+        </div>
+        <input type="hidden" id="c-section" value="Police">
+      </div>
+
+      <!-- Nom + Âge -->
+      <div class="cdv2-grid-2">
+        <div class="cdv2-fld" style="margin-bottom:0">
+          <label class="cdv2-fld-label">Nom RP <span class="req">*</span></label>
+          <input type="text" id="c-nom" class="form-control" placeholder="Prénom Nom">
+        </div>
+        <div class="cdv2-fld" style="margin-bottom:0">
+          <label class="cdv2-fld-label">Âge RP <span class="req">*</span></label>
+          <input type="number" id="c-age" class="form-control" placeholder="Ex: 24">
+        </div>
+      </div>
+
+      <!-- Genre -->
+      <div class="cdv2-fld">
+        <label class="cdv2-fld-label">Genre <span class="req">*</span></label>
+        <select id="c-genre" class="form-control">
+          <option value="">-- Sélectionner --</option>
+          <option>Masculin</option>
+          <option>Féminin</option>
+          <option>Autre</option>
+        </select>
+      </div>
+
+      <!-- Pseudo Discord -->
+      <div class="cdv2-fld">
+        <label class="cdv2-fld-label">Pseudo Discord (OOC)</label>
+        <input type="text" id="c-discord" class="form-control" placeholder="pseudo#0000">
+      </div>
+
+      <!-- Grade ninja actuel -->
+      <div class="cdv2-fld">
+        <label class="cdv2-fld-label">Grade ninja actuel <span class="req">*</span></label>
+        <select id="c-grade-shinobi" class="form-control">
+          <option value="">-- Votre rang shinobi --</option>
+          <option>Genin</option>
+          <option>Genin Confirmé</option>
+          <option>Chunin</option>
+          <option>Tokubetsu Chunin</option>
+          <option>Kakunin</option>
+          <option>Tokubetsu Jonin</option>
+          <option>Jonin</option>
+          <option>Commandant Jonin</option>
+          <option>ANBU</option>
+          <option>Civil</option>
+          <option>Autre</option>
+        </select>
+      </div>
+
+      <!-- Section actuelle -->
+      <div class="cdv2-fld">
+        <label class="cdv2-fld-label">Section actuelle <span class="req">*</span></label>
+        <select id="c-section-actuelle" class="form-control">
+          <option value="">-- Choisir --</option>
+          <option>Aucune – indépendant</option>
+          <option>Diplomate</option>
+          <option>Stratégie</option>
+          <option>Médecin</option>
+        </select>
+      </div>
+
+      <!-- Casier judiciaire -->
+      <div class="cdv2-fld">
+        <label class="cdv2-fld-label">Casier judiciaire ? <span class="req">*</span></label>
+        <select id="c-casier" class="form-control">
+          <option value="">-- Choisir --</option>
+          <option>Aucun</option>
+          <option>Mineur (avertissement)</option>
+          <option>Léger (amendes)</option>
+          <option>Important</option>
+        </select>
+      </div>
+
+      <!-- Motivation -->
+      <div class="cdv2-fld">
+        <label class="cdv2-fld-label">Pourquoi rejoindre la Police de Sunagakure ? <span class="req">*</span></label>
+        <textarea id="c-motif" class="form-control" placeholder="Expliquez votre motivation…"></textarea>
+      </div>
+
+      <!-- Expérience RP -->
+      <div class="cdv2-fld">
+        <label class="cdv2-fld-label">Expérience RP</label>
+        <textarea id="c-exp" class="form-control" placeholder="Expériences précédentes…"></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('modal-candidature')">Annuler</button>
+      <button class="btn btn-primary" onclick="saveCandidature()">📨 Envoyer ma candidature</button>
+    </div>
   </div>
 </div>
+
+<script>
+// Sélection des cards Section visée
+function cdv2SelectSection(el,val){
+  document.querySelectorAll('#cdv2-section-grid .cdv2-section-card').forEach(function(c){c.classList.remove('active');});
+  if(el && el.classList) el.classList.add('active');
+  var hidden = document.getElementById('c-section');
+  if(hidden) hidden.value = val;
+}
+</script>
 
 <!-- Modifier Candidature (visiteur) -->
 <div class="modal-overlay" role="dialog" aria-modal="true" id="modal-edit-candidature">
@@ -12064,84 +12423,605 @@ document.addEventListener('error', function(e){
 </div>
 
 <!-- Plainte -->
+<!-- ═══════════════════════════════════════════════════════════════
+     PLAINTE V2 — Refonte premium (style "Démarche citoyenne")
+     ═══════════════════════════════════════════════════════════════ -->
+<style>
+#modal-plainte .modal{
+  max-width:660px !important;
+  background:linear-gradient(180deg,#1a1510 0%,#0c0a07 100%) !important;
+  border:1px solid rgba(201,162,39,0.32) !important;
+  border-radius:18px !important;
+  overflow:hidden !important;
+  padding:0 !important;
+  box-shadow:0 24px 80px rgba(0,0,0,0.7),0 0 0 1px rgba(201,162,39,0.06) !important;
+}
+
+#modal-plainte .modal-header{
+  position:relative;
+  padding:0 !important;
+  border:none !important;
+  background:transparent !important;
+}
+#modal-plainte .modal-header h3{display:none !important}
+#modal-plainte .modal-header .modal-close{
+  position:absolute !important;
+  top:16px !important;right:16px !important;
+  z-index:10;
+  font-size:18px !important;
+  color:rgba(201,162,39,0.6) !important;
+  width:34px;height:34px;
+  display:flex !important;align-items:center;justify-content:center;
+  background:rgba(0,0,0,0.4) !important;
+  border:1px solid rgba(201,162,39,0.2) !important;
+  border-radius:8px !important;
+  transition:all 0.2s !important;
+  cursor:pointer;
+}
+#modal-plainte .modal-header .modal-close:hover{
+  color:var(--gold2) !important;
+  background:rgba(201,162,39,0.12) !important;
+  border-color:rgba(201,162,39,0.45) !important;
+}
+
+/* Hero du modal */
+.plv2-hero{
+  position:relative;
+  padding:36px 38px 28px;
+  background:
+    radial-gradient(ellipse at top right,rgba(201,162,39,0.12),transparent 60%),
+    radial-gradient(ellipse at bottom left,rgba(192,65,14,0.08),transparent 60%),
+    linear-gradient(180deg,rgba(26,21,16,1),rgba(20,16,11,1));
+  border-bottom:1px solid rgba(201,162,39,0.18);
+  overflow:hidden;
+}
+.plv2-hero::before{
+  content:'';position:absolute;inset:0;pointer-events:none;
+  background-image:url("data:image/svg+xml,%3Csvg width='80' height='80' viewBox='0 0 80 80' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' stroke='%23ffffff' stroke-opacity='0.03' stroke-width='1'%3E%3Cpath d='M40 0 L40 80 M0 40 L80 40' /%3E%3Ccircle cx='40' cy='40' r='30'/%3E%3C/g%3E%3C/svg%3E");
+}
+.plv2-hero-tag{
+  position:relative;z-index:2;
+  font-family:'Share Tech Mono',monospace;
+  font-size:10px;letter-spacing:4px;
+  color:var(--gold);text-transform:uppercase;
+  font-weight:700;margin-bottom:10px;
+}
+.plv2-hero-title{
+  position:relative;z-index:2;
+  font-family:'Cinzel',serif;
+  font-size:32px;font-weight:700;letter-spacing:2.5px;
+  color:var(--text);text-transform:uppercase;
+  line-height:1.05;
+  text-shadow:0 2px 12px rgba(201,162,39,0.15);
+}
+.plv2-hero-title .accent{
+  background:linear-gradient(135deg,#fbbf24,#c9a227);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  background-clip:text;
+}
+.plv2-hero-info{
+  position:relative;z-index:2;
+  margin-top:18px;
+  font-size:13px;color:var(--text2);
+  line-height:1.65;
+  max-width:520px;
+}
+
+/* Body du modal */
+#modal-plainte .modal-body{
+  padding:28px 38px !important;
+  max-height:65vh !important;
+  overflow-y:auto !important;
+  background:transparent !important;
+}
+#modal-plainte .modal-body::-webkit-scrollbar{width:6px}
+#modal-plainte .modal-body::-webkit-scrollbar-thumb{background:rgba(201,162,39,0.3);border-radius:3px}
+
+#modal-plainte .alert{display:none !important}
+
+/* Champs */
+.plv2-fld{margin-bottom:20px}
+.plv2-fld-label{
+  display:block;
+  font-family:'Share Tech Mono',monospace;
+  font-size:10px;letter-spacing:2px;
+  color:var(--muted);text-transform:uppercase;
+  font-weight:600;margin-bottom:8px;
+}
+.plv2-fld-label .req{color:var(--accent2);font-size:12px;margin-left:2px}
+.plv2-fld-label .opt{
+  margin-left:8px;
+  color:rgba(201,162,39,0.5);
+  font-size:9px;letter-spacing:1.5px;
+}
+
+#modal-plainte input.form-control,
+#modal-plainte select.form-control,
+#modal-plainte textarea.form-control{
+  width:100%;
+  padding:13px 16px !important;
+  background:rgba(0,0,0,0.45) !important;
+  border:1px solid rgba(201,162,39,0.2) !important;
+  border-radius:10px !important;
+  color:var(--text) !important;
+  font-size:13px !important;
+  font-family:'Barlow',sans-serif !important;
+  transition:all 0.2s !important;
+}
+#modal-plainte select.form-control{
+  appearance:none;-webkit-appearance:none;
+  background:rgba(0,0,0,0.45) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath fill='%23c9a227' d='M5 6L0 0h10z'/%3E%3C/svg%3E") right 14px center no-repeat !important;
+  padding-right:36px !important;
+  cursor:pointer;
+}
+#modal-plainte input.form-control:focus,
+#modal-plainte select.form-control:focus,
+#modal-plainte textarea.form-control:focus{
+  outline:none !important;
+  border-color:rgba(201,162,39,0.55) !important;
+  background-color:rgba(0,0,0,0.6) !important;
+  box-shadow:0 0 0 3px rgba(201,162,39,0.1) !important;
+}
+#modal-plainte input.form-control::placeholder,
+#modal-plainte textarea.form-control::placeholder{
+  color:rgba(240,232,208,0.28) !important;
+  font-style:italic;
+}
+#modal-plainte textarea.form-control{
+  min-height:120px !important;
+  line-height:1.6;
+  resize:vertical;
+}
+
+/* Cartes de choix Citoyen / Agent */
+.plv2-choice-grid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:14px;
+  margin-bottom:4px;
+}
+.plv2-choice-card{
+  position:relative;
+  padding:24px 16px;
+  background:rgba(0,0,0,0.4);
+  border:1px solid rgba(201,162,39,0.2);
+  border-radius:12px;
+  text-align:center;
+  cursor:pointer;
+  transition:all 0.2s;
+  user-select:none;
+}
+.plv2-choice-card:hover{
+  border-color:rgba(201,162,39,0.4);
+  background:rgba(0,0,0,0.55);
+  transform:translateY(-2px);
+}
+.plv2-choice-card.active{
+  background:linear-gradient(135deg,rgba(201,162,39,0.12),rgba(192,65,14,0.08));
+  border-color:rgba(201,162,39,0.6);
+  box-shadow:0 4px 16px rgba(201,162,39,0.15),inset 0 1px 0 rgba(255,255,255,0.05);
+}
+.plv2-choice-card.active::before{
+  content:'';position:absolute;top:8px;right:8px;
+  width:18px;height:18px;border-radius:50%;
+  background:linear-gradient(135deg,var(--gold),var(--accent2));
+  display:flex;align-items:center;justify-content:center;
+  box-shadow:0 0 8px rgba(201,162,39,0.5);
+}
+.plv2-choice-card.active::after{
+  content:'✓';position:absolute;top:9px;right:11px;
+  font-size:11px;color:#0c0a07;font-weight:900;
+  z-index:1;
+}
+.plv2-choice-icon{
+  font-size:28px;
+  margin-bottom:10px;
+  filter:drop-shadow(0 2px 6px rgba(0,0,0,0.4));
+}
+.plv2-choice-title{
+  font-family:'Share Tech Mono',monospace;
+  font-size:11px;letter-spacing:2px;
+  color:var(--text);
+  text-transform:uppercase;
+  font-weight:700;
+}
+.plv2-choice-card.active .plv2-choice-title{color:var(--gold2)}
+.plv2-choice-sub{
+  font-size:10px;
+  color:var(--muted);
+  margin-top:4px;
+  font-style:italic;
+}
+
+/* Footer du modal */
+#modal-plainte .modal-footer{
+  padding:18px 38px 26px !important;
+  background:linear-gradient(180deg,rgba(0,0,0,0.4),rgba(0,0,0,0.6)) !important;
+  border-top:1px solid rgba(201,162,39,0.15) !important;
+  display:flex !important;
+  gap:12px !important;
+  justify-content:flex-end !important;
+}
+#modal-plainte .modal-footer .btn{
+  padding:12px 22px !important;
+  font-family:'Share Tech Mono',monospace !important;
+  font-size:11px !important;letter-spacing:2px !important;
+  text-transform:uppercase !important;
+  font-weight:700 !important;
+  border-radius:10px !important;
+}
+#modal-plainte .modal-footer .btn-outline{
+  background:rgba(201,162,39,0.05) !important;
+  border:1px solid rgba(201,162,39,0.25) !important;
+  color:var(--text2) !important;
+}
+#modal-plainte .modal-footer .btn-outline:hover{
+  background:rgba(201,162,39,0.12) !important;
+  border-color:rgba(201,162,39,0.45) !important;
+  color:var(--text) !important;
+}
+#modal-plainte .modal-footer .btn-primary{
+  background:linear-gradient(135deg,#c9a227,#a16207) !important;
+  border:1px solid rgba(212,180,74,0.6) !important;
+  color:#0c0a07 !important;
+  font-weight:800 !important;
+  box-shadow:0 4px 14px rgba(201,162,39,0.35),inset 0 1px 0 rgba(255,255,255,0.2) !important;
+}
+#modal-plainte .modal-footer .btn-primary:hover{
+  background:linear-gradient(135deg,#d4b44a,#b8800c) !important;
+  box-shadow:0 6px 20px rgba(201,162,39,0.5),inset 0 1px 0 rgba(255,255,255,0.25) !important;
+  transform:translateY(-1px);
+}
+
+/* Photo zone premium */
+#modal-plainte #p-photo-zone{
+  background:rgba(0,0,0,0.4) !important;
+  border:2px dashed rgba(201,162,39,0.25) !important;
+  border-radius:12px !important;
+  transition:all 0.2s !important;
+}
+#modal-plainte #p-photo-zone:hover{
+  border-color:rgba(201,162,39,0.5) !important;
+  background:rgba(201,162,39,0.04) !important;
+}
+
+/* Mobile */
+@media(max-width:640px){
+  #modal-plainte .modal{max-width:96vw !important;margin:8px !important}
+  .plv2-hero{padding:24px 22px 18px}
+  .plv2-hero-title{font-size:24px}
+  #modal-plainte .modal-body{padding:20px 22px !important}
+  #modal-plainte .modal-footer{padding:14px 22px 20px !important}
+  .plv2-choice-grid{grid-template-columns:1fr}
+}
+</style>
+
 <div class="modal-overlay" role="dialog" aria-modal="true" id="modal-plainte">
-  <div class="modal" style="max-width:540px">
+  <div class="modal">
     <div class="modal-header">
       <h3>📋 Déposer une plainte</h3>
       <span class="modal-close" aria-label="Fermer" onclick="closeModal('modal-plainte')">✕</span>
     </div>
-    <div class="modal-body" style="padding:22px 24px">
-      <div class="alert alert-info" style="margin-bottom:16px;font-size:11.5px">⚠️ Toute plainte abusive ou mensongère pourra entraîner des sanctions.</div>
-      <!-- Ligne 1: Plaignant / Accusé côte à côte -->
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">
-        <div class="form-group" style="margin:0">
-          <label class="form-label">Votre nom (plaignant)</label>
-          <input type="text" id="p-plaignant" class="form-control" placeholder="Prénom Nom RP">
-        </div>
-        <div class="form-group" style="margin:0">
-          <label class="form-label">Accusé</label>
-          <input type="text" id="p-accuse" class="form-control" placeholder="Nom de la personne">
-        </div>
-      </div>
-      <!-- Ligne 2: Type d'infraction + Date côte à côte -->
-      <div style="display:grid;grid-template-columns:2fr 1fr;gap:14px;margin-bottom:14px">
-        <div class="form-group" style="margin:0">
-          <label class="form-label">Type d'infraction</label>
-          <select id="p-type" class="form-control">
-            <option>Abus de pouvoir</option>
-            <option>Violence illégitime</option>
-            <option>Corruption</option>
-            <option>Refus d'assistance</option>
-            <option>Interpellation abusive</option>
-            <option>Autre</option>
-          </select>
-        </div>
-        <div class="form-group" style="margin:0">
-          <label class="form-label">Date des faits</label>
-          <input type="date" id="p-date" class="form-control">
-        </div>
-      </div>
-      <!-- Description pleine largeur -->
-      <div class="form-group" style="margin:0 0 14px 0">
-        <label class="form-label">Description des faits</label>
-        <textarea id="p-desc" class="form-control" style="min-height:110px;resize:vertical" placeholder="Décrivez les événements avec précision : lieu, heure, circonstances..."></textarea>
-      </div>
-      <!-- Photo de l'accusé (optionnelle) -->
-      <div class="form-group" style="margin:0">
-        <label class="form-label" style="display:flex;align-items:center;gap:6px">
-          📸 Photo de l'accusé <span style="font-size:9px;color:var(--muted);font-family:'Share Tech Mono',monospace;letter-spacing:1px;font-weight:400">OPTIONNEL</span>
-        </label>
-        <div id="p-photo-zone" onclick="document.getElementById('p-photo-input').click()"
-          style="border:2px dashed rgba(180,140,20,0.3);border-radius:10px;padding:12px 16px;cursor:pointer;transition:border-color 0.2s,background 0.2s;background:rgba(180,140,20,0.03);display:flex;align-items:center;gap:12px;min-height:64px"
-          onmouseenter="this.style.borderColor='rgba(180,140,20,0.6)';this.style.background='rgba(180,140,20,0.06)'"
-          onmouseleave="this.style.borderColor='rgba(180,140,20,0.3)';this.style.background='rgba(180,140,20,0.03)'"
-          ondragover="event.preventDefault();this.style.borderColor='var(--gold)'"
-          ondragleave="this.style.borderColor='rgba(180,140,20,0.3)'"
-          ondrop="handlePlainteDrop(event)">
-          <!-- Préview avatar -->
-          <div id="p-photo-avatar" style="width:44px;height:44px;border-radius:50%;border:2px solid rgba(180,140,20,0.25);overflow:hidden;flex-shrink:0;background:rgba(180,140,20,0.08);display:flex;align-items:center;justify-content:center;font-size:20px;transition:border-color 0.2s">👤</div>
-          <!-- Texte placeholder / état -->
-          <div id="p-photo-placeholder" style="flex:1;min-width:0">
-            <div style="font-size:11.5px;color:var(--muted);font-weight:600">Cliquez pour importer une photo</div>
-            <div style="font-size:10px;color:var(--muted);margin-top:2px;opacity:0.7">ou glissez-déposez une image · Ctrl+V pour coller</div>
+    <!-- Hero premium -->
+    <div class="plv2-hero">
+      <div class="plv2-hero-tag">Démarche citoyenne</div>
+      <div class="plv2-hero-title">Déposer une <span class="accent">plainte</span></div>
+      <div class="plv2-hero-info" id="plv2-hero-info">Toute plainte est étudiée par la Police de Sunagakure. Les officiers et gradés supérieurs sont chargés de leur traitement. Toute plainte abusive ou mensongère pourra entraîner des sanctions.</div>
+    </div>
+    <div class="modal-body">
+      <!-- Choix Citoyen / Agent -->
+      <div class="plv2-fld">
+        <label class="plv2-fld-label">Contre qui portez-vous plainte ? <span class="req">*</span></label>
+        <div class="plv2-choice-grid" id="plv2-cible-grid">
+          <div class="plv2-choice-card active" data-cible="Citoyen" onclick="plv2SelectCible(this,'Citoyen')">
+            <div class="plv2-choice-icon">⚖️</div>
+            <div class="plv2-choice-title">Un citoyen</div>
+            <div class="plv2-choice-sub">Traitée par la Police</div>
           </div>
-          <!-- Bouton retirer (masqué par défaut) -->
-          <button id="p-photo-remove" onclick="removePlaintePhoto(event)" style="display:none;flex-shrink:0;background:rgba(220,38,38,0.85);color:#fff;border:none;border-radius:7px;padding:4px 10px;font-size:11px;cursor:pointer;font-weight:600">✕ Retirer</button>
+          <div class="plv2-choice-card" data-cible="Agent" onclick="plv2SelectCible(this,'Agent')">
+            <div class="plv2-choice-icon">🛡️</div>
+            <div class="plv2-choice-title">Un agent de police</div>
+            <div class="plv2-choice-sub">Traitée par le Tribunal</div>
+          </div>
+        </div>
+        <input type="hidden" id="p-cible" value="Citoyen">
+      </div>
+
+      <!-- Plaignant -->
+      <div class="plv2-fld">
+        <label class="plv2-fld-label">Votre nom (plaignant) <span class="req">*</span></label>
+        <input type="text" id="p-plaignant" class="form-control" placeholder="Prénom Nom RP">
+      </div>
+
+      <!-- Accusé -->
+      <div class="plv2-fld">
+        <label class="plv2-fld-label">Nom et prénom du mis en cause <span class="req">*</span></label>
+        <input type="text" id="p-accuse" class="form-control" placeholder="Ex: Orochimaru Senju">
+      </div>
+
+      <!-- Type d'infraction -->
+      <div class="plv2-fld">
+        <label class="plv2-fld-label">Type d'infraction <span class="req">*</span></label>
+        <select id="p-type" class="form-control">
+          <option value="">-- Sélectionner --</option>
+          <option>Agression physique</option>
+          <option>Vol</option>
+          <option>Abus de pouvoir d'un agent</option>
+          <option>Corruption</option>
+          <option>Homicide</option>
+          <option>Harcèlement</option>
+          <option>Menace</option>
+          <option>Dégradation de bien</option>
+          <option>Autre</option>
+        </select>
+      </div>
+
+      <!-- Description -->
+      <div class="plv2-fld">
+        <label class="plv2-fld-label">Description détaillée des faits <span class="req">*</span></label>
+        <textarea id="p-desc" class="form-control" placeholder="Décrivez précisément et chronologiquement les faits…"></textarea>
+      </div>
+
+      <!-- Date -->
+      <div class="plv2-fld">
+        <label class="plv2-fld-label">Date des faits</label>
+        <input type="date" id="p-date" class="form-control">
+      </div>
+
+      <!-- Photo de l'accusé (optionnelle) -->
+      <div class="plv2-fld">
+        <label class="plv2-fld-label">📸 Photo de l'accusé <span class="opt">OPTIONNEL</span></label>
+        <div id="p-photo-zone" onclick="document.getElementById('p-photo-input').click()"
+          style="padding:14px 18px;cursor:pointer;display:flex;align-items:center;gap:14px;min-height:64px"
+          ondragover="event.preventDefault();this.style.borderColor='var(--gold)'"
+          ondragleave="this.style.borderColor='rgba(201,162,39,0.25)'"
+          ondrop="handlePlainteDrop(event)">
+          <div id="p-photo-avatar" style="width:48px;height:48px;border-radius:50%;border:2px solid rgba(201,162,39,0.3);overflow:hidden;flex-shrink:0;background:rgba(201,162,39,0.08);display:flex;align-items:center;justify-content:center;font-size:22px">👤</div>
+          <div id="p-photo-placeholder" style="flex:1;min-width:0">
+            <div style="font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:600;color:var(--text);letter-spacing:1px;text-transform:uppercase">Cliquez pour importer</div>
+            <div style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--muted);letter-spacing:1.2px;margin-top:3px">Glissez-déposez · Ctrl+V pour coller</div>
+          </div>
+          <button id="p-photo-remove" onclick="removePlaintePhoto(event)" style="display:none;flex-shrink:0;background:rgba(239,68,68,0.18);color:#fca5a5;border:1px solid rgba(239,68,68,0.4);border-radius:8px;padding:6px 12px;font-family:'Share Tech Mono',monospace;font-size:10px;letter-spacing:1.5px;cursor:pointer;text-transform:uppercase">✕ Retirer</button>
         </div>
         <input type="file" id="p-photo-input" accept="image/*" style="display:none" onchange="loadPlaintePhoto(this)">
       </div>
     </div>
     <div class="modal-footer">
       <button class="btn btn-outline" onclick="_resetPlainteModal();closeModal('modal-plainte')">Annuler</button>
-      <button class="btn btn-primary" onclick="savePlainte()">📋 Déposer la plainte</button>
+      <button class="btn btn-primary" onclick="savePlainte()">📋 Soumettre la plainte</button>
     </div>
   </div>
 </div>
 
+<script>
+// Sélection des cards Citoyen/Agent dans la modal plainte
+function plv2SelectCible(el,val){
+  document.querySelectorAll('#plv2-cible-grid .plv2-choice-card').forEach(function(c){c.classList.remove('active');});
+  if(el && el.classList) el.classList.add('active');
+  var hidden = document.getElementById('p-cible');
+  if(hidden) hidden.value = val;
+  // Mettre à jour le texte d'info contextuel
+  var info = document.getElementById('plv2-hero-info');
+  if(info){
+    if(val === 'Agent'){
+      info.innerHTML = "Cette plainte vise un <strong style=\"color:var(--gold2)\">agent de la Police</strong>. Elle sera transmise au Tribunal pour examen indépendant. Toute plainte abusive ou mensongère pourra entraîner des sanctions.";
+    } else {
+      info.innerHTML = "Toute plainte est étudiée par la <strong style=\"color:var(--gold2)\">Police de Sunagakure</strong>. Les officiers et gradés supérieurs sont chargés de leur traitement. Toute plainte abusive ou mensongère pourra entraîner des sanctions.";
+    }
+  }
+}
+</script>
+
 <!-- Dossier -->
+<!-- ═══════════════════════════════════════════════════════════════
+     DOSSIER V2 — Refonte premium "Dossier Criminel"
+     ═══════════════════════════════════════════════════════════════ -->
+<style>
+#modal-dossier .modal{
+  max-width:680px !important;
+  background:linear-gradient(180deg,#1a1510 0%,#0c0a07 100%) !important;
+  border:1px solid rgba(201,162,39,0.32) !important;
+  border-radius:18px !important;
+  overflow:hidden !important;
+  padding:0 !important;
+  box-shadow:0 24px 80px rgba(0,0,0,0.7),0 0 0 1px rgba(201,162,39,0.06) !important;
+}
+#modal-dossier .modal-header{
+  position:relative;
+  padding:0 !important;
+  border:none !important;
+  background:transparent !important;
+}
+#modal-dossier .modal-header h3{display:none !important}
+#modal-dossier .modal-header .modal-close{
+  position:absolute !important;
+  top:16px !important;right:16px !important;
+  z-index:10;
+  font-size:18px !important;
+  color:rgba(201,162,39,0.6) !important;
+  width:34px;height:34px;
+  display:flex !important;align-items:center;justify-content:center;
+  background:rgba(0,0,0,0.4) !important;
+  border:1px solid rgba(201,162,39,0.2) !important;
+  border-radius:8px !important;
+  transition:all 0.2s !important;
+  cursor:pointer;
+}
+#modal-dossier .modal-header .modal-close:hover{
+  color:var(--gold2) !important;
+  background:rgba(201,162,39,0.12) !important;
+  border-color:rgba(201,162,39,0.45) !important;
+}
+
+/* Hero modal */
+.dsv2-hero{
+  position:relative;
+  padding:24px 38px 22px;
+  background:
+    radial-gradient(ellipse at top right,rgba(192,65,14,0.14),transparent 60%),
+    radial-gradient(ellipse at bottom left,rgba(239,68,68,0.06),transparent 60%),
+    linear-gradient(180deg,rgba(26,21,16,1),rgba(20,16,11,1));
+  border-bottom:1px solid rgba(201,162,39,0.18);
+  overflow:hidden;
+  display:flex;align-items:center;gap:14px;
+}
+.dsv2-hero::before{
+  content:'';position:absolute;inset:0;pointer-events:none;
+  background-image:url("data:image/svg+xml,%3Csvg width='80' height='80' viewBox='0 0 80 80' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' stroke='%23ffffff' stroke-opacity='0.03' stroke-width='1'%3E%3Cpath d='M40 0 L40 80 M0 40 L80 40' /%3E%3Ccircle cx='40' cy='40' r='30'/%3E%3C/g%3E%3C/svg%3E");
+}
+.dsv2-hero-icon{
+  position:relative;z-index:2;
+  width:42px;height:42px;border-radius:10px;flex-shrink:0;
+  background:linear-gradient(135deg,rgba(192,65,14,0.25),rgba(120,30,30,0.2));
+  border:1px solid rgba(201,162,39,0.4);
+  display:flex;align-items:center;justify-content:center;
+  font-size:20px;
+  box-shadow:0 4px 12px rgba(192,65,14,0.25),inset 0 1px 0 rgba(255,255,255,0.08);
+}
+.dsv2-hero-text{position:relative;z-index:2;flex:1;min-width:0}
+.dsv2-hero-tag{
+  font-family:'Share Tech Mono',monospace;
+  font-size:9px;letter-spacing:3px;
+  color:var(--gold);text-transform:uppercase;
+  font-weight:700;margin-bottom:4px;
+}
+.dsv2-hero-title{
+  font-family:'Cinzel',serif;
+  font-size:22px;font-weight:700;letter-spacing:2px;
+  color:var(--text);text-transform:uppercase;
+  line-height:1.05;
+  text-shadow:0 2px 12px rgba(201,162,39,0.15);
+}
+.dsv2-hero-title .accent{
+  background:linear-gradient(135deg,#fbbf24,#c9a227);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  background-clip:text;
+}
+
+/* Body */
+#modal-dossier .modal-body{
+  padding:24px 32px !important;
+  max-height:64vh !important;
+  overflow-y:auto !important;
+  background:transparent !important;
+}
+#modal-dossier .modal-body::-webkit-scrollbar{width:6px}
+#modal-dossier .modal-body::-webkit-scrollbar-thumb{background:rgba(201,162,39,0.3);border-radius:3px}
+
+/* Labels en mono majuscules dorées */
+#modal-dossier .form-label{
+  font-family:'Share Tech Mono',monospace !important;
+  font-size:10px !important;letter-spacing:2px !important;
+  color:var(--muted) !important;text-transform:uppercase !important;
+  font-weight:600 !important;
+  margin-bottom:8px !important;
+  display:block;
+}
+
+/* Champs */
+#modal-dossier input.form-control,
+#modal-dossier select.form-control,
+#modal-dossier textarea.form-control{
+  width:100%;
+  padding:13px 16px !important;
+  background:rgba(0,0,0,0.45) !important;
+  border:1px solid rgba(201,162,39,0.2) !important;
+  border-radius:10px !important;
+  color:var(--text) !important;
+  font-size:13px !important;
+  font-family:'Barlow',sans-serif !important;
+  transition:all 0.2s !important;
+}
+#modal-dossier select.form-control{
+  appearance:none;-webkit-appearance:none;
+  background:rgba(0,0,0,0.45) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath fill='%23c9a227' d='M5 6L0 0h10z'/%3E%3C/svg%3E") right 14px center no-repeat !important;
+  padding-right:36px !important;
+  cursor:pointer;
+}
+#modal-dossier input.form-control:focus,
+#modal-dossier select.form-control:focus,
+#modal-dossier textarea.form-control:focus{
+  outline:none !important;
+  border-color:rgba(201,162,39,0.55) !important;
+  background-color:rgba(0,0,0,0.6) !important;
+  box-shadow:0 0 0 3px rgba(201,162,39,0.1) !important;
+}
+#modal-dossier input.form-control::placeholder,
+#modal-dossier textarea.form-control::placeholder{
+  color:rgba(240,232,208,0.28) !important;
+  font-style:italic;
+}
+#modal-dossier textarea.form-control{
+  min-height:100px !important;
+  line-height:1.6;
+  resize:vertical;
+}
+
+/* Footer doré */
+#modal-dossier .modal-footer{
+  padding:18px 32px 24px !important;
+  background:linear-gradient(180deg,rgba(0,0,0,0.4),rgba(0,0,0,0.6)) !important;
+  border-top:1px solid rgba(201,162,39,0.15) !important;
+  display:flex !important;
+  gap:10px !important;
+  justify-content:flex-end !important;
+  flex-wrap:wrap;
+}
+#modal-dossier .modal-footer .btn{
+  padding:11px 20px !important;
+  font-family:'Share Tech Mono',monospace !important;
+  font-size:11px !important;letter-spacing:2px !important;
+  text-transform:uppercase !important;
+  font-weight:700 !important;
+  border-radius:10px !important;
+}
+#modal-dossier .modal-footer .btn-outline{
+  background:rgba(201,162,39,0.05) !important;
+  border:1px solid rgba(201,162,39,0.25) !important;
+  color:var(--text2) !important;
+}
+#modal-dossier .modal-footer .btn-outline:hover{
+  background:rgba(201,162,39,0.12) !important;
+  border-color:rgba(201,162,39,0.45) !important;
+  color:var(--text) !important;
+}
+#modal-dossier .modal-footer .btn-primary{
+  background:linear-gradient(135deg,#c9a227,#a16207) !important;
+  border:1px solid rgba(212,180,74,0.6) !important;
+  color:#0c0a07 !important;
+  font-weight:800 !important;
+  box-shadow:0 4px 14px rgba(201,162,39,0.35),inset 0 1px 0 rgba(255,255,255,0.2) !important;
+}
+#modal-dossier .modal-footer .btn-primary:hover{
+  background:linear-gradient(135deg,#d4b44a,#b8800c) !important;
+  box-shadow:0 6px 20px rgba(201,162,39,0.5),inset 0 1px 0 rgba(255,255,255,0.25) !important;
+  transform:translateY(-1px);
+}
+
+/* Mobile */
+@media(max-width:640px){
+  #modal-dossier .modal{max-width:96vw !important;margin:8px !important}
+  .dsv2-hero{padding:18px 22px}
+  .dsv2-hero-title{font-size:18px}
+  #modal-dossier .modal-body{padding:18px 20px !important}
+  #modal-dossier .modal-footer{padding:14px 20px 18px !important}
+}
+</style>
+
 <div class="modal-overlay" role="dialog" aria-modal="true" id="modal-dossier">
   <div class="modal">
-    <div class="modal-header"><h3>🗂️ Nouveau dossier criminel</h3><span class="modal-close" aria-label="Fermer" onclick="closeModal('modal-dossier')">✕</span></div>
+    <div class="modal-header">
+      <h3>🗂️ Nouveau dossier criminel</h3>
+      <span class="modal-close" aria-label="Fermer" onclick="closeModal('modal-dossier')">✕</span>
+    </div>
+    <!-- Hero premium -->
+    <div class="dsv2-hero">
+      <div class="dsv2-hero-icon">📁</div>
+      <div class="dsv2-hero-text">
+        <div class="dsv2-hero-tag">Bureau d'enquête</div>
+        <div class="dsv2-hero-title">Nouveau dossier <span class="accent">criminel</span></div>
+      </div>
+    </div>
     <div class="modal-body">
       <!-- Alerte suspect existant -->
       <div id="d-doublon-alert" style="display:none;background:rgba(180,140,20,0.08);border:1px solid rgba(180,140,20,0.35);border-radius:10px;padding:12px 14px;margin-bottom:13px">
@@ -12216,7 +13096,7 @@ document.addEventListener('error', function(e){
     <div class="modal-footer">
       <button class="btn btn-outline" onclick="closeModal('modal-dossier')">Annuler</button>
       <button class="btn btn-gold btn-sm" id="d-btn-forcer" onclick="saveDossier(true)" style="display:none" title="Créer quand même un nouveau dossier séparé">➕ Nouveau dossier quand même</button>
-      <button class="btn btn-primary" onclick="saveDossier()">Créer</button>
+      <button class="btn btn-primary" onclick="saveDossier()">📁 Créer le dossier</button>
     </div>
   </div>
 </div>
@@ -15155,9 +16035,22 @@ function recrueAction(type){
 }
 function saveCandidature(){
   const nom=v("c-nom"),age=v("c-age"),motif=v("c-motif");if(!nom||!age||!motif)return;
-  DB.candidatures.push({id:Date.now(),nom,age,discord:v("c-discord"),motif,exp:v("c-exp"),statut:"en_attente",grade:"Stagiaire",actif:true,date:now(),authorId:currentUser?currentUser.id:null});
+  // V2 : nouveaux champs
+  var section=(document.getElementById("c-section")||{}).value||"Police";
+  var genre=v("c-genre");
+  var gradeShinobi=v("c-grade-shinobi");
+  var sectionActuelle=v("c-section-actuelle");
+  var casier=v("c-casier");
+  DB.candidatures.push({id:Date.now(),nom,age,discord:v("c-discord"),motif,exp:v("c-exp"),section:section,genre:genre,gradeShinobi:gradeShinobi,sectionActuelle:sectionActuelle,casier:casier,statut:"en_attente",grade:"Stagiaire",actif:true,date:now(),authorId:currentUser?currentUser.id:null});
   addTimeline(`Candidature reçue de ${nom}`);
   saveData();closeModal("modal-candidature");renderCandidatures();syncDashboard();clearForm(["c-nom","c-age","c-discord","c-motif","c-exp"]);
+  // Reset les nouveaux selects
+  ["c-genre","c-grade-shinobi","c-section-actuelle","c-casier"].forEach(function(id){var e=el(id);if(e)e.value="";});
+  // Reset section visée à Police
+  var hidden=document.getElementById("c-section");if(hidden)hidden.value="Police";
+  document.querySelectorAll("#cdv2-section-grid .cdv2-section-card").forEach(function(c){
+    c.classList.toggle("active",c.dataset.section==="Police");
+  });
   showToast(`✅ Candidature de ${nom} envoyée avec succès !`,"success");
 }
 function setCandidature(id,statut){
@@ -15261,6 +16154,16 @@ function openEditPlainte(id){
   const typeSel = el("p-type"); if(typeSel) typeSel.value = p.type||"Abus de pouvoir";
   el("p-date").value = p.date ? p.date.split("T")[0] : "";
   el("p-desc").value = p.desc||"";
+  // V2 : restaurer la cible Citoyen/Agent
+  var cible = p.cible || "Citoyen";
+  var hidden = document.getElementById("p-cible"); if(hidden) hidden.value = cible;
+  document.querySelectorAll("#plv2-cible-grid .plv2-choice-card").forEach(function(c){
+    c.classList.toggle("active", c.dataset.cible === cible);
+  });
+  if(typeof plv2SelectCible === "function"){
+    var card = document.querySelector('#plv2-cible-grid .plv2-choice-card[data-cible="'+cible+'"]');
+    if(card) plv2SelectCible(card, cible);
+  }
   // Photo
   _plaintePhoto = p.photo||"";
   const av = document.getElementById("p-photo-avatar");
@@ -15280,17 +16183,29 @@ function openEditPlainte(id){
 function _resetPlainteModal(){
   _plainteEditId=null;
   const h=document.querySelector("#modal-plainte .modal-header h3"); if(h) h.textContent="📋 Déposer une plainte";
-  const b=document.querySelector("#modal-plainte .modal-footer .btn-primary"); if(b) b.textContent="📋 Déposer la plainte";
+  const b=document.querySelector("#modal-plainte .modal-footer .btn-primary"); if(b) b.textContent="📋 Soumettre la plainte";
+  // V2 : reset cible à Citoyen
+  var hidden=document.getElementById("p-cible"); if(hidden) hidden.value="Citoyen";
+  document.querySelectorAll("#plv2-cible-grid .plv2-choice-card").forEach(function(c){
+    c.classList.toggle("active", c.dataset.cible === "Citoyen");
+  });
+  if(typeof plv2SelectCible === "function"){
+    var card = document.querySelector('#plv2-cible-grid .plv2-choice-card[data-cible="Citoyen"]');
+    if(card) plv2SelectCible(card, "Citoyen");
+  }
 }
 
 function savePlainte(){
   const pl=v("p-plaignant"),ac=v("p-accuse"),desc=v("p-desc");if(!pl||!ac||!desc)return;
+  // V2 : récupérer la cible (Citoyen ou Agent)
+  var cibleEl=document.getElementById("p-cible");
+  var cible=cibleEl?cibleEl.value:"Citoyen";
 
   if(_plainteEditId){
     // ── Mode édition admin ──
     const idx=DB.plaintes.findIndex(x=>String(x.id)===String(_plainteEditId));
     if(idx!==-1){
-      DB.plaintes[idx]=Object.assign({},DB.plaintes[idx],{plaignant:pl,accuse:ac,type:v("p-type"),desc,dateFaits:v("p-date"),photoAccuse:_plaintePhoto||DB.plaintes[idx].photoAccuse||""});
+      DB.plaintes[idx]=Object.assign({},DB.plaintes[idx],{plaignant:pl,accuse:ac,type:v("p-type"),desc,dateFaits:v("p-date"),cible:cible,photoAccuse:_plaintePhoto||DB.plaintes[idx].photoAccuse||""});
       addTimeline(`Plainte #${_plainteEditId} modifiée par ${currentUser.nom}`);
       saveData();closeModal("modal-plainte");renderPlaintes();syncDashboard();
       showToast("Plainte mise à jour.","success");
@@ -15299,7 +16214,7 @@ function savePlainte(){
     _resetPlainteModal();
     return;
   }
-  DB.plaintes.push({id:Date.now(),plaignant:pl,accuse:ac,type:v("p-type"),desc,dateFaits:v("p-date"),statut:"ouverte",auteur:currentUser?currentUser.nom:"Anonyme",agent:null,date:now(),photoAccuse:_plaintePhoto||""});
+  DB.plaintes.push({id:Date.now(),plaignant:pl,accuse:ac,type:v("p-type"),desc,dateFaits:v("p-date"),cible:cible,statut:"ouverte",auteur:currentUser?currentUser.nom:"Anonyme",agent:null,date:now(),photoAccuse:_plaintePhoto||""});
   addTimeline(`Plainte déposée par ${pl} contre ${ac}`);
   _plaintePhoto="";
   flashSubmitSuccess(document.querySelector('#modal-plainte .modal-footer .btn-primary'), 'Plainte enregistrée');
@@ -23054,6 +23969,413 @@ body:not(.has-action-fab) #yuno-config-banner{
   border:2px solid #0d0e1a;font-family:'Share Tech Mono',monospace;
 }
 #yuno-fab-badge.show{display:flex}
+
+/* ═══════════════════════════════════════════════════════════════
+   ▓▓▓  YUNO V2 — REFONTE PREMIUM IA
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ─── FAB redesigné — halo lumineux + ring orbital ─── */
+#yuno-fab{
+  width:62px !important;height:62px !important;
+  background:radial-gradient(circle at 30% 30%,#1a1410 0%,#0a0806 100%) !important;
+  border:1px solid rgba(201,162,39,0.5) !important;
+  box-shadow:
+    0 4px 24px rgba(192,65,14,0.45),
+    0 0 0 1px rgba(201,162,39,0.15),
+    inset 0 1px 0 rgba(255,255,255,0.08) !important;
+  animation:yunov2Pulse 2.8s ease-in-out infinite !important;
+  position:fixed !important;
+}
+#yuno-fab::before{
+  content:'';
+  position:absolute;inset:-4px;
+  border-radius:50%;
+  background:conic-gradient(from 0deg,transparent 0%,rgba(201,162,39,0.6) 25%,transparent 50%,rgba(192,65,14,0.5) 75%,transparent 100%);
+  animation:yunov2Orbit 4s linear infinite;
+  z-index:-1;
+  opacity:0.7;
+  -webkit-mask:radial-gradient(circle,transparent 56%,#000 57%);
+  mask:radial-gradient(circle,transparent 56%,#000 57%);
+}
+#yuno-fab::after{
+  content:'';
+  position:absolute;inset:3px;
+  border-radius:50%;
+  background:radial-gradient(circle at 30% 25%,rgba(255,255,255,0.05),transparent 60%);
+  pointer-events:none;
+}
+@keyframes yunov2Pulse{
+  0%,100%{box-shadow:0 4px 24px rgba(192,65,14,0.45),0 0 0 1px rgba(201,162,39,0.15),inset 0 1px 0 rgba(255,255,255,0.08),0 0 0 0 rgba(201,162,39,0.3)}
+  50%{box-shadow:0 6px 32px rgba(192,65,14,0.6),0 0 0 1px rgba(201,162,39,0.25),inset 0 1px 0 rgba(255,255,255,0.08),0 0 0 12px rgba(201,162,39,0)}
+}
+@keyframes yunov2Orbit{
+  from{transform:rotate(0deg)}
+  to{transform:rotate(360deg)}
+}
+#yuno-fab:hover{transform:scale(1.1) !important}
+#yuno-fab svg{position:relative;z-index:1;width:54px !important;height:54px !important}
+
+/* ─── Badge de notification premium ─── */
+#yuno-fab-badge{
+  background:linear-gradient(135deg,#ef4444,#b91c1c) !important;
+  border:2px solid #1a1410 !important;
+  box-shadow:0 0 8px rgba(239,68,68,0.6),0 2px 6px rgba(0,0,0,0.4) !important;
+  font-size:9px !important;
+  width:18px !important;height:18px !important;
+  top:-3px !important;right:-3px !important;
+  z-index:2;
+}
+
+/* ─── Panneau chat premium ─── */
+#yuno-chat-panel{
+  width:380px !important;
+  height:560px !important;
+  background:
+    radial-gradient(ellipse at top,rgba(201,162,39,0.08),transparent 60%),
+    linear-gradient(180deg,#1a1510 0%,#0c0a07 100%) !important;
+  border:1px solid rgba(201,162,39,0.32) !important;
+  border-radius:18px !important;
+  box-shadow:
+    0 24px 60px rgba(0,0,0,0.7),
+    0 0 0 1px rgba(201,162,39,0.06),
+    inset 0 1px 0 rgba(255,255,255,0.04) !important;
+  overflow:hidden !important;
+}
+#yuno-chat-panel::before{
+  content:'';
+  position:absolute;top:0;left:0;right:0;height:1px;
+  background:linear-gradient(90deg,transparent,rgba(201,162,39,0.5),rgba(192,65,14,0.4),rgba(201,162,39,0.5),transparent);
+  z-index:10;
+  pointer-events:none;
+}
+#yuno-chat-panel::after{
+  content:'';
+  position:absolute;inset:0;pointer-events:none;
+  background-image:url("data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23c9a227' fill-opacity='0.018'%3E%3Ccircle cx='20' cy='20' r='1'/%3E%3C/g%3E%3C/svg%3E");
+  z-index:0;
+}
+#yuno-chat-panel > *{position:relative;z-index:1}
+
+/* ─── Header premium ─── */
+.yuno-header{
+  padding:16px 18px !important;
+  background:
+    linear-gradient(135deg,rgba(201,162,39,0.12),rgba(192,65,14,0.08) 50%,transparent),
+    linear-gradient(180deg,rgba(26,21,16,1),rgba(20,16,11,1)) !important;
+  border-bottom:1px solid rgba(201,162,39,0.22) !important;
+  position:relative;
+  overflow:hidden;
+}
+.yuno-header::after{
+  content:'';position:absolute;top:0;right:-30px;bottom:0;width:140px;
+  background-image:url("data:image/svg+xml,%3Csvg width='80' height='80' viewBox='0 0 80 80' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' stroke='%23c9a227' stroke-opacity='0.1' stroke-width='1'%3E%3Ccircle cx='40' cy='40' r='32'/%3E%3Ccircle cx='40' cy='40' r='22'/%3E%3Cpath d='M40 8 L40 72 M8 40 L72 40' /%3E%3C/g%3E%3C/svg%3E");
+  background-position:right center;background-repeat:no-repeat;
+  opacity:0.5;pointer-events:none;
+}
+
+.yuno-avatar{
+  width:42px !important;height:42px !important;
+  background:radial-gradient(circle at 30% 30%,#1a1410,#0a0806) !important;
+  border:1px solid rgba(201,162,39,0.5) !important;
+  box-shadow:
+    0 4px 14px rgba(192,65,14,0.35),
+    inset 0 1px 0 rgba(255,255,255,0.08) !important;
+  font-size:0 !important;
+  position:relative;
+  overflow:visible !important;
+}
+.yuno-avatar::before{
+  content:'';
+  position:absolute;inset:-3px;
+  border-radius:50%;
+  background:conic-gradient(from 0deg,transparent 0%,rgba(201,162,39,0.5) 30%,transparent 60%,rgba(192,65,14,0.4) 90%,transparent 100%);
+  animation:yunov2Orbit 3s linear infinite;
+  z-index:-1;
+  opacity:0.8;
+  -webkit-mask:radial-gradient(circle,transparent 58%,#000 59%);
+  mask:radial-gradient(circle,transparent 58%,#000 59%);
+}
+.yuno-avatar::after{
+  content:'ワ';
+  position:absolute;inset:0;
+  display:flex;align-items:center;justify-content:center;
+  font-family:serif;
+  font-size:18px;
+  color:var(--gold2);
+  text-shadow:0 0 12px rgba(201,162,39,0.5);
+  font-weight:400;
+}
+
+.yuno-name{
+  font-family:'Cinzel',serif !important;
+  font-size:16px !important;
+  font-weight:700 !important;
+  letter-spacing:3px !important;
+  color:var(--gold2) !important;
+  text-shadow:0 1px 8px rgba(201,162,39,0.3);
+}
+.yuno-status{
+  font-size:9.5px !important;
+  letter-spacing:2px !important;
+  color:rgba(240,232,208,0.5) !important;
+  text-transform:uppercase;
+  font-weight:600;
+  margin-top:2px;
+}
+.yuno-status-dot{
+  width:6px !important;height:6px !important;
+  background:#22c55e !important;
+  box-shadow:0 0 8px rgba(34,197,94,0.7) !important;
+}
+
+.yuno-hbtn{
+  width:30px;height:30px;
+  display:flex !important;align-items:center;justify-content:center;
+  background:rgba(0,0,0,0.35) !important;
+  border:1px solid rgba(201,162,39,0.18) !important;
+  border-radius:8px !important;
+  color:rgba(201,162,39,0.6) !important;
+  font-size:13px !important;
+  transition:all 0.2s !important;
+}
+.yuno-hbtn:hover{
+  background:rgba(201,162,39,0.12) !important;
+  border-color:rgba(201,162,39,0.4) !important;
+  color:var(--gold2) !important;
+  transform:translateY(-1px);
+}
+
+/* ─── Quick chips premium ─── */
+.yuno-quick-bar{
+  padding:12px 14px 10px !important;
+  background:linear-gradient(180deg,rgba(0,0,0,0.25),transparent) !important;
+  border-bottom:1px solid rgba(201,162,39,0.1) !important;
+  gap:6px !important;
+}
+.yuno-chip{
+  padding:5px 11px !important;
+  background:rgba(0,0,0,0.4) !important;
+  border:1px solid rgba(201,162,39,0.2) !important;
+  border-radius:6px !important;
+  font-size:10px !important;
+  letter-spacing:1px !important;
+  color:rgba(240,232,208,0.6) !important;
+  font-family:'Share Tech Mono',monospace !important;
+  font-weight:600 !important;
+  text-transform:uppercase;
+  transition:all 0.2s !important;
+  position:relative;
+  overflow:hidden;
+}
+.yuno-chip::before{
+  content:'';
+  position:absolute;top:0;left:0;width:2px;height:100%;
+  background:rgba(201,162,39,0.5);
+  opacity:0;transition:opacity 0.2s;
+}
+.yuno-chip:hover{
+  background:linear-gradient(135deg,rgba(201,162,39,0.15),rgba(192,65,14,0.08)) !important;
+  border-color:rgba(201,162,39,0.5) !important;
+  color:var(--gold2) !important;
+  transform:translateY(-1px);
+  box-shadow:0 3px 10px rgba(201,162,39,0.15);
+}
+.yuno-chip:hover::before{opacity:1}
+
+/* ─── Messages premium ─── */
+#yuno-messages{
+  padding:14px !important;
+  gap:14px !important;
+  background:
+    radial-gradient(ellipse at center,rgba(201,162,39,0.02),transparent 70%);
+}
+#yuno-messages::-webkit-scrollbar-thumb{
+  background:rgba(201,162,39,0.3) !important;
+}
+
+.yuno-msg-icon{
+  width:30px !important;height:30px !important;
+  font-size:0 !important;
+  position:relative;
+  border:1px solid rgba(201,162,39,0.3);
+}
+.yuno-msg.yuno .yuno-msg-icon{
+  background:radial-gradient(circle at 30% 30%,#1a1410,#0a0806) !important;
+  box-shadow:0 2px 8px rgba(192,65,14,0.3),inset 0 1px 0 rgba(255,255,255,0.06) !important;
+}
+.yuno-msg.yuno .yuno-msg-icon::after{
+  content:'ワ';
+  position:absolute;inset:0;
+  display:flex;align-items:center;justify-content:center;
+  color:var(--gold2);font-family:serif;font-size:14px;
+  text-shadow:0 0 8px rgba(201,162,39,0.4);
+}
+.yuno-msg.user .yuno-msg-icon{
+  background:linear-gradient(135deg,rgba(192,65,14,0.4),rgba(120,40,8,0.3)) !important;
+  border-color:rgba(192,65,14,0.4);
+}
+.yuno-msg.user .yuno-msg-icon::after{
+  content:'👤';
+  position:absolute;inset:0;
+  display:flex;align-items:center;justify-content:center;
+  font-size:13px;
+}
+
+.yuno-msg-bubble{
+  padding:11px 14px !important;
+  font-size:13px !important;
+  line-height:1.65 !important;
+  border-radius:10px !important;
+  position:relative;
+}
+.yuno-msg.yuno .yuno-msg-bubble{
+  background:linear-gradient(135deg,rgba(20,16,9,0.85),rgba(14,11,7,0.85)) !important;
+  border:1px solid rgba(201,162,39,0.18) !important;
+  border-radius:4px 12px 12px 12px !important;
+  color:var(--text) !important;
+  box-shadow:0 2px 12px rgba(0,0,0,0.3),inset 0 1px 0 rgba(255,255,255,0.03);
+}
+.yuno-msg.yuno .yuno-msg-bubble::before{
+  content:'';
+  position:absolute;left:0;top:0;bottom:0;width:2px;
+  background:linear-gradient(180deg,var(--gold),var(--accent));
+  border-radius:0 0 0 0;
+  opacity:0.7;
+}
+.yuno-msg.user .yuno-msg-bubble{
+  background:linear-gradient(135deg,rgba(192,65,14,0.45),rgba(160,52,8,0.35)) !important;
+  border:1px solid rgba(192,65,14,0.45) !important;
+  border-radius:12px 4px 12px 12px !important;
+  color:#fff !important;
+  box-shadow:0 2px 12px rgba(192,65,14,0.2),inset 0 1px 0 rgba(255,255,255,0.08);
+}
+
+/* Action button dans message */
+.yuno-action-btn{
+  background:linear-gradient(135deg,rgba(201,162,39,0.18),rgba(192,65,14,0.1)) !important;
+  border:1px solid rgba(201,162,39,0.4) !important;
+  border-radius:6px !important;
+  font-size:10.5px !important;
+  letter-spacing:1.2px !important;
+  font-weight:700 !important;
+  text-transform:uppercase;
+  color:var(--gold2) !important;
+  padding:6px 13px !important;
+  transition:all 0.18s !important;
+}
+.yuno-action-btn:hover{
+  background:linear-gradient(135deg,rgba(201,162,39,0.3),rgba(192,65,14,0.18)) !important;
+  border-color:var(--gold) !important;
+  color:#fff !important;
+  transform:translateY(-1px);
+  box-shadow:0 3px 10px rgba(201,162,39,0.25);
+}
+
+/* ─── Typing indicator néon ─── */
+.yuno-typing{
+  background:linear-gradient(135deg,rgba(20,16,9,0.85),rgba(14,11,7,0.85)) !important;
+  border:1px solid rgba(201,162,39,0.18) !important;
+  border-radius:4px 12px 12px 12px !important;
+  padding:14px 18px !important;
+  position:relative;
+}
+.yuno-typing::before{
+  content:'';
+  position:absolute;left:0;top:0;bottom:0;width:2px;
+  background:linear-gradient(180deg,var(--gold),var(--accent));
+  opacity:0.7;
+}
+.yuno-dot{
+  width:7px !important;height:7px !important;
+  background:var(--gold) !important;
+  box-shadow:0 0 8px rgba(201,162,39,0.6);
+}
+
+/* ─── Input bar premium ─── */
+.yuno-input-bar{
+  padding:12px 14px !important;
+  background:linear-gradient(180deg,rgba(0,0,0,0.4),rgba(0,0,0,0.55)) !important;
+  border-top:1px solid rgba(201,162,39,0.18) !important;
+  gap:10px !important;
+}
+#yuno-input{
+  background:rgba(0,0,0,0.5) !important;
+  border:1px solid rgba(201,162,39,0.25) !important;
+  border-radius:10px !important;
+  color:var(--text) !important;
+  font-size:13px !important;
+  padding:10px 14px !important;
+  font-family:'Barlow',sans-serif !important;
+  transition:all 0.2s !important;
+}
+#yuno-input:focus{
+  border-color:rgba(201,162,39,0.55) !important;
+  background:rgba(0,0,0,0.65) !important;
+  box-shadow:0 0 0 3px rgba(201,162,39,0.08) !important;
+}
+#yuno-input::placeholder{
+  color:rgba(240,232,208,0.3) !important;
+  font-style:italic;
+}
+
+#yuno-send-btn{
+  width:40px !important;height:40px !important;
+  background:linear-gradient(135deg,#c0410e,#8a2c08) !important;
+  border:1px solid rgba(201,162,39,0.3) !important;
+  border-radius:10px !important;
+  font-size:16px !important;
+  box-shadow:
+    0 4px 12px rgba(192,65,14,0.4),
+    inset 0 1px 0 rgba(255,255,255,0.15) !important;
+  position:relative;
+  overflow:hidden;
+}
+#yuno-send-btn::before{
+  content:'';
+  position:absolute;top:0;left:-100%;width:100%;height:100%;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,0.2),transparent);
+  transition:left 0.4s;
+}
+#yuno-send-btn:hover{
+  background:linear-gradient(135deg,#d84a12,#b03c0a) !important;
+  border-color:var(--gold) !important;
+  transform:scale(1.06) !important;
+  box-shadow:0 6px 18px rgba(192,65,14,0.55),inset 0 1px 0 rgba(255,255,255,0.2) !important;
+}
+#yuno-send-btn:hover::before{left:100%}
+
+/* ─── Config banner premium ─── */
+#yuno-config-banner{
+  width:340px !important;
+  background:linear-gradient(180deg,#1a1510,#0c0a07) !important;
+  border:1px solid rgba(201,162,39,0.32) !important;
+  border-radius:16px !important;
+  padding:18px 20px !important;
+  box-shadow:
+    0 24px 60px rgba(0,0,0,0.6),
+    0 0 0 1px rgba(201,162,39,0.06) !important;
+}
+.yuno-config-title{
+  font-family:'Cinzel',serif !important;
+  font-size:14px !important;
+  letter-spacing:2px !important;
+  color:var(--gold2) !important;
+  margin-bottom:14px !important;
+  padding-bottom:10px;
+  border-bottom:1px solid rgba(201,162,39,0.15);
+}
+
+/* Mobile YUNO */
+@media(max-width:480px){
+  #yuno-chat-panel{
+    width:calc(100vw - 16px) !important;
+    height:calc(100vh - 120px) !important;
+    right:8px !important;
+    border-radius:14px !important;
+  }
+  .yuno-name{font-size:14px !important;letter-spacing:2px !important}
+}
+
 </style>
 
 <!-- YUNO FAB -->
