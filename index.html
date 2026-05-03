@@ -15482,9 +15482,9 @@ let DB=loadData();
   setTimeout(function(){
     // Login
     if(typeof window.applyLogin === 'function' && !window.applyLogin._wrapped){
-      var orig = window.applyLogin;
+      var origApplyLogin = window.applyLogin;
       window.applyLogin = function(){
-        var r = orig.apply(this, arguments);
+        var r = origApplyLogin.apply(this, arguments);
         if(typeof currentUser !== 'undefined' && currentUser){
           // Utilise _internal pour logger même pour les non-admins (en historique)
           _internalLog.security('Connexion : ' + currentUser.nom + ' (' + (currentUser.role||'?') + ')');
@@ -15502,12 +15502,12 @@ let DB=loadData();
     }
     // Logout
     if(typeof window.doLogout === 'function' && !window.doLogout._wrapped){
-      var orig = window.doLogout;
+      var origDoLogout = window.doLogout;
       window.doLogout = function(){
         if(typeof currentUser !== 'undefined' && currentUser){
           _internalLog.security('Déconnexion : ' + currentUser.nom);
         }
-        return orig.apply(this, arguments);
+        return origDoLogout.apply(this, arguments);
       };
       window.doLogout._wrapped = true;
     }
