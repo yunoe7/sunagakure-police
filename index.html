@@ -2970,8 +2970,6 @@ html{-webkit-tap-highlight-color:transparent}
 .rcv2-card[data-rang="Criminel recherché"]:hover{border-color:rgba(239,68,68,0.6);box-shadow:0 14px 40px rgba(0,0,0,0.5),0 0 24px rgba(239,68,68,0.18)}
 .rcv2-card[data-rang="Kazekage"], .rcv2-card[data-rang="Kage"]{border-color:rgba(201,162,39,0.45)}
 .rcv2-card[data-rang="Kazekage"]:hover, .rcv2-card[data-rang="Kage"]:hover{box-shadow:0 14px 40px rgba(0,0,0,0.5),0 0 24px rgba(201,162,39,0.25)}
-.rcv2-card[data-rang="ANBU"]{border-color:rgba(139,92,246,0.32)}
-.rcv2-card[data-rang="ANBU"]:hover{border-color:rgba(139,92,246,0.55);box-shadow:0 14px 40px rgba(0,0,0,0.5),0 0 24px rgba(139,92,246,0.18)}
 
 /* Bandeau supérieur de la card */
 .rcv2-card-banner{
@@ -2991,10 +2989,6 @@ html{-webkit-tap-highlight-color:transparent}
   background:linear-gradient(135deg,rgba(201,162,39,0.3) 0%,rgba(212,180,74,0.18) 100%);
   border-bottom-color:rgba(201,162,39,0.4);
 }
-.rcv2-card[data-rang="ANBU"] .rcv2-card-banner{
-  background:linear-gradient(135deg,rgba(139,92,246,0.22) 0%,rgba(76,29,149,0.18) 100%);
-  border-bottom-color:rgba(139,92,246,0.3);
-}
 .rcv2-card-banner::after{
   content:'';position:absolute;inset:0;
   background-image:url("data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' stroke='%23ffffff' stroke-opacity='0.04' stroke-width='1'%3E%3Cpath d='M20 0 L40 20 L20 40 L0 20 Z'/%3E%3C/g%3E%3C/svg%3E");
@@ -3012,7 +3006,6 @@ html{-webkit-tap-highlight-color:transparent}
 .rcv2-card[data-rang="Criminel recherché"] .rcv2-card-rang{color:#fca5a5;border-color:rgba(239,68,68,0.4)}
 .rcv2-card[data-rang="Kazekage"] .rcv2-card-rang,
 .rcv2-card[data-rang="Kage"] .rcv2-card-rang{color:var(--gold2);border-color:rgba(201,162,39,0.5)}
-.rcv2-card[data-rang="ANBU"] .rcv2-card-rang{color:#c4b5fd;border-color:rgba(139,92,246,0.5)}
 
 .rcv2-card-id{
   position:absolute;top:10px;left:10px;
@@ -3040,9 +3033,6 @@ html{-webkit-tap-highlight-color:transparent}
 .rcv2-card[data-rang="Kage"] .rcv2-card-avatar-wrap{
   background:linear-gradient(135deg,#d4b44a,#c9a227);
   box-shadow:0 6px 22px rgba(201,162,39,0.4);
-}
-.rcv2-card[data-rang="ANBU"] .rcv2-card-avatar-wrap{
-  background:linear-gradient(135deg,rgba(139,92,246,0.7),rgba(76,29,149,0.5));
 }
 .rcv2-card-avatar{
   width:100%;height:100%;border-radius:50%;
@@ -3810,12 +3800,6 @@ html{-webkit-tap-highlight-color:transparent}
     radial-gradient(ellipse at bottom left,rgba(212,180,74,0.15),transparent 60%),
     linear-gradient(180deg,rgba(26,21,16,1),rgba(18,14,9,1));
 }
-.rcv2-fiche-hero[data-rang="ANBU"]{
-  background:
-    radial-gradient(ellipse at top right,rgba(139,92,246,0.2),transparent 60%),
-    radial-gradient(ellipse at bottom left,rgba(76,29,149,0.12),transparent 60%),
-    linear-gradient(180deg,rgba(26,21,16,1),rgba(18,14,9,1));
-}
 .rcv2-fiche-hero::before{
   content:'';position:absolute;inset:0;pointer-events:none;
   background-image:url("data:image/svg+xml,%3Csvg width='80' height='80' viewBox='0 0 80 80' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' stroke='%23ffffff' stroke-opacity='0.03' stroke-width='1'%3E%3Cpath d='M40 0 L40 80 M0 40 L80 40' /%3E%3Ccircle cx='40' cy='40' r='30'/%3E%3Ccircle cx='40' cy='40' r='15'/%3E%3C/g%3E%3C/svg%3E");
@@ -3834,9 +3818,6 @@ html{-webkit-tap-highlight-color:transparent}
 .rcv2-fiche-hero[data-rang="Kazekage"] .rcv2-fiche-photo,
 .rcv2-fiche-hero[data-rang="Kage"] .rcv2-fiche-photo{
   background:linear-gradient(135deg,#d4b44a,#c9a227);
-}
-.rcv2-fiche-hero[data-rang="ANBU"] .rcv2-fiche-photo{
-  background:linear-gradient(135deg,rgba(139,92,246,0.7),rgba(76,29,149,0.5));
 }
 .rcv2-fiche-photo-inner{
   width:100%;height:100%;border-radius:50%;
@@ -3895,10 +3876,6 @@ html{-webkit-tap-highlight-color:transparent}
   border-color:var(--gold);color:#0c0a07;
   background:linear-gradient(135deg,#d4b44a,#c9a227);
   box-shadow:0 2px 12px rgba(201,162,39,0.4);
-}
-.rcv2-fiche-hero[data-rang="ANBU"] .rcv2-fiche-rang-badge{
-  border-color:rgba(139,92,246,0.5);color:#c4b5fd;
-  background:rgba(139,92,246,0.12);
 }
 .rcv2-fiche-rang-badge::before{
   content:'';width:6px;height:6px;border-radius:50%;background:currentColor;
@@ -13147,7 +13124,6 @@ document.addEventListener('error', function(e){
             <option>Jonin</option>
             <option>Commandant Jonin</option>
             <option>Kazekage</option>
-            <option>ANBU</option>
             <option>Criminel recherché</option>
             <option>Civil</option>
             <option>Inconnu</option>
@@ -13530,7 +13506,6 @@ document.addEventListener('error', function(e){
           <option>Tokubetsu Jonin</option>
           <option>Jonin</option>
           <option>Commandant Jonin</option>
-          <option>ANBU</option>
           <option>Civil</option>
           <option>Autre</option>
         </select>
@@ -15093,6 +15068,30 @@ function defaultData(){
     recenses:[],candidatures:[],plaintes:[],dossiers:[],operations:[],sanctions:[],infractions:[],timeline:[],adminNotes:{},messages:{},loginHistory:[],features:{map_active:false}}
 }
 let DB=loadData();
+// ─── MIGRATION : "Hokage" → "Kazekage" + retrait du rang "ANBU" ───
+// S'exécute une fois au chargement, met à jour les anciens enregistrements.
+(function _migrateHokageToKazekage(){
+  try{
+    var _changed = false;
+    if(Array.isArray(DB.recenses)){
+      DB.recenses.forEach(function(r){
+        if(r && r.rang === 'Hokage'){ r.rang = 'Kazekage'; _changed = true; }
+        // ANBU n'existe plus → on remet "Inconnu" pour que la fiche reste utilisable
+        if(r && r.rang === 'ANBU'){ r.rang = 'Inconnu'; _changed = true; }
+      });
+    }
+    if(Array.isArray(DB.users)){
+      DB.users.forEach(function(u){
+        if(u && u.grade === 'Hokage'){ u.grade = 'Kazekage'; _changed = true; }
+        if(u && u.grade === 'ANBU'){ u.grade = 'Jonin'; _changed = true; }
+      });
+    }
+    if(_changed){
+      try{ localStorage.setItem(STORE, JSON.stringify(DB)); }catch(e){}
+      // saveData() n'est peut-être pas encore défini à ce stade, on tentera plus tard
+    }
+  }catch(e){ console.warn('[migration] Hokage→Kazekage:', e); }
+})();
 let currentUser=null;
 let candFilter="all",plaintesFilter="all";
 
@@ -17050,7 +17049,6 @@ function buildNatureCheckboxes(){
    - Commandant Jonin (7000₽) → 70
    - Kazekage (8400₽)  → 85
    Plus :
-   - ANBU (élite spéciale) → 65
    - Criminel recherché baseline → 55
    - Statut "Criminel recherché" → +20 supplémentaire
    - Polyvalence (natures multiples) → +5 par nature au-delà de la 1ère
@@ -17076,7 +17074,6 @@ const _RANG_SCORES = {
   'Commandant Jonin':   70,
   'Kazekage':             85,
   // Hors hiérarchie standard
-  'ANBU':               65,
   'Criminel recherché': 55,
   // Civils / inconnus
   'Civil':              2,
@@ -19711,6 +19708,19 @@ function impInitDB(){
   if(!Array.isArray(DB.impots.ninjas))    DB.impots.ninjas    = [];
   if(!Array.isArray(DB.impots.recups))    DB.impots.recups    = [];
   if(typeof DB.impots.totalHistorical !== 'number') DB.impots.totalHistorical = 0;
+  // ─── MIGRATION : Hokage → Kazekage (le village de Sunagakure a un Kazekage) ───
+  // Renomme l'entrée du barème + tous les ninjas qui ont l'ancien grade.
+  // S'exécute une seule fois (idempotent : s'arrête après le premier passage).
+  var _migrated = false;
+  DB.impots.grades.forEach(function(g){
+    if(g && g.name === 'Hokage'){ g.name = 'Kazekage'; _migrated = true; }
+  });
+  DB.impots.ninjas.forEach(function(n){
+    if(n && n.grade === 'Hokage'){ n.grade = 'Kazekage'; _migrated = true; }
+  });
+  if(_migrated){
+    try{ saveData(); }catch(e){}
+  }
 }
 
 let _impFilter = 'all';
@@ -19739,7 +19749,7 @@ function impInitials(name){
 // ─── Synchronisation recensement → impôts ───
 // Quand un ninja est recensé avec un grade taxable, on l'ajoute automatiquement
 // au registre des impôts. Si son grade change, le montant est mis à jour.
-// Si son grade devient non-taxable (ex: Civil, ANBU), il est retiré du registre.
+// Si son grade devient non-taxable (ex: Civil, Inconnu), il est retiré du registre.
 function impSyncFromRecense(rec){
   if(!rec) return;
   impInitDB();
@@ -19747,7 +19757,7 @@ function impSyncFromRecense(rec){
   const fullName = ((rec.prenom||'')+' '+(rec.nom||'')).trim();
   if(!fullName) return;
   // Le grade du recensé doit correspondre à un grade existant dans la liste
-  // des grades d'impôts. Sinon (Civil, ANBU, Inconnu, etc.), on n'ajoute pas.
+  // des grades d'impôts. Sinon (Civil, Inconnu, etc.), on n'ajoute pas.
   const gradeExists = (DB.impots.grades||[]).some(g => g.name === rec.rang);
   // Chercher si un ninja existe déjà au registre avec ce recenseId
   const existingIdx = DB.impots.ninjas.findIndex(n => n.recenseId === rec.id);
