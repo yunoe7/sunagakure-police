@@ -8596,7 +8596,7 @@ document.addEventListener('error', function(e){
             <th>Infractions</th>
             <th class="sortable-th" onclick="sortTable('dossiers','danger',this)" aria-sort="none">Dangerosité <span class="sort-icon">⇅</span></th>
             <th class="sortable-th" onclick="sortTable('dossiers','statut',this)" aria-sort="none">Statut <span class="sort-icon">⇅</span></th>
-            <th>💰 Amendes</th>
+            <th class="sortable-th" onclick="sortTable('dossiers','amendes',this)" aria-sort="none" title="Cliquer pour trier : ↑ impayés en premier · ↓ payés en premier">💰 Amendes <span class="sort-icon">⇅</span></th>
             <th class="sortable-th" onclick="sortTable('dossiers','agent',this)" aria-sort="none">Agent <span class="sort-icon">⇅</span></th>
             <th style="color:rgba(109,40,217,0.75);font-size:8.5px;letter-spacing:1px;white-space:nowrap">🏷 Tags</th>
             <th>Actions</th>
@@ -25502,6 +25502,31 @@ function applySortToArray(arr, table) {
       va = dmap[va] !== undefined ? dmap[va] : 99;
       vb = dmap[vb] !== undefined ? dmap[vb] : 99;
       return dir === 'asc' ? va - vb : vb - va;
+    }
+    // Tri amendes : asc = impayés en premier, desc = payés en premier
+    if (field === 'amendes') {
+      var aPaye = parseFloat(a.amendePayee) || 0;
+      var aImp  = parseFloat(a.amendeImpayee) || 0;
+      var bPaye = parseFloat(b.amendePayee) || 0;
+      var bImp  = parseFloat(b.amendeImpayee) || 0;
+      // Catégorie : 0 = aucune, 1 = entièrement payée, 2 = mixte (partiellement payée), 3 = impayée
+      function catAmende(p,i){
+        if(p===0 && i===0) return 0;
+        if(i===0 && p>0)   return 1; // payée
+        if(p===0 && i>0)   return 3; // impayée
+        return 2; // partiel
+      }
+      var ca = catAmende(aPaye,aImp), cb = catAmende(bPaye,bImp);
+      // asc → impayés en premier (cat 3 → 2 → 1 → 0)
+      // desc → payés en premier (cat 1 → 2 → 3 → 0)
+      var orderAsc  = [3,2,1,0]; // impayés d'abord
+      var orderDesc = [1,2,3,0]; // payés d'abord
+      var order = dir === 'asc' ? orderAsc : orderDesc;
+      var ra = order.indexOf(ca), rb = order.indexOf(cb);
+      if (ra !== rb) return ra - rb;
+      // Même catégorie : tri secondaire par montant (impayé desc en mode asc, payé desc en mode desc)
+      if (dir === 'asc') return bImp - aImp; // dans les impayés, plus gros montant d'abord
+      return bPaye - aPaye; // dans les payés, plus gros montant d'abord
     }
     va = String(va).toLowerCase(); vb = String(vb).toLowerCase();
     if (va < vb) return dir === 'asc' ? -1 : 1;
