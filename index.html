@@ -3955,6 +3955,683 @@ html{-webkit-tap-highlight-color:transparent}
 #profil-sanctions-list *,
 #profil-login-history *{color:inherit}
 
+/* ═══════════════════════════════════════════════════════════════════════════════
+   ▓▓▓  REFONTE MOBILE GLOBALE V2 — iPhone optimisé (390-393px)
+   ═══════════════════════════════════════════════════════════════════════════════
+   Cette section est placée volontairement EN DERNIER pour overrider proprement
+   tous les styles précédents. Cible : iPhone Safari (390-393px standard).
+   Variables :
+   - --mb-pad-x : padding latéral des pages (14px sur mobile)
+   - --mb-bnav-h : hauteur de la bottom-nav (64px)
+   - --mb-safe : safe-area iOS bottom
+   ═══════════════════════════════════════════════════════════════════════════════ */
+
+@media(max-width:768px){
+
+  :root{
+    --mb-pad-x:14px;
+    --mb-bnav-h:64px;
+    --mb-safe:env(safe-area-inset-bottom,0px);
+    --mb-bnav-total:calc(64px + env(safe-area-inset-bottom,0px));
+    --mb-touch:44px;
+  }
+
+  /* ─── 1. ANTI-DÉBORDEMENT STRICT ──────────────────────────────────── */
+  /* Empêche tout débordement latéral (cause des "textes coupés") */
+  html,body{
+    overflow-x:hidden !important;
+    max-width:100vw;
+  }
+  *,*::before,*::after{
+    max-width:100%;
+    box-sizing:border-box;
+  }
+  /* Conteneurs qui DOIVENT pouvoir déborder horizontalement (tables, etc.) */
+  .table-scroll-wrapper,
+  .lg-tax-grid,
+  .msg-thread-wrap,
+  .pgv2-tabs,
+  .tab-row,
+  #yuno-messages,
+  .rcv2-steps{
+    max-width:none !important;
+  }
+  /* Forcer wrap des textes longs */
+  body, .topbar-title, .section-title, h1, h2, h3, p, span, div, label, a{
+    word-wrap:break-word;
+    overflow-wrap:break-word;
+  }
+  /* Empêcher les images de déborder */
+  img{max-width:100% !important;height:auto}
+
+  /* ─── 2. PAGE CONTENT — padding cohérent + espace bottom-nav ──────── */
+  .page-content{
+    padding:14px var(--mb-pad-x) calc(var(--mb-bnav-total) + 16px) !important;
+    width:100%;
+    max-width:100vw;
+  }
+  /* Sous-conteneurs qui ne doivent jamais dépasser */
+  .page-content > *{
+    max-width:100%;
+  }
+
+  /* ─── 3. HERO V2 (pgv2-hero, rcv2-hero) — adaptation mobile ──────── */
+  .pgv2-hero,.rcv2-hero{
+    padding:18px 16px !important;
+    margin-bottom:14px !important;
+    border-radius:14px !important;
+  }
+  .pgv2-hero::after,.rcv2-hero::after{
+    width:120px !important;opacity:0.3 !important;
+  }
+  .pgv2-hero-inner,.rcv2-hero-inner{
+    flex-direction:column !important;
+    align-items:flex-start !important;
+    gap:14px !important;
+  }
+  .pgv2-hero-icon,.rcv2-hero-icon{
+    width:50px !important;height:50px !important;
+    font-size:22px !important;
+    border-radius:12px !important;
+  }
+  .pgv2-hero-title,.rcv2-hero-title{
+    font-size:22px !important;
+    letter-spacing:1.5px !important;
+    line-height:1.1;
+  }
+  .pgv2-hero-tag,.rcv2-hero-tag{
+    font-size:8.5px !important;
+    letter-spacing:2.5px !important;
+  }
+  .pgv2-hero-sub,.rcv2-hero-sub{
+    font-size:11px !important;
+    line-height:1.45;
+  }
+  /* Stats hero : grille 3 colonnes serrée au lieu d'auto */
+  .pgv2-hero-stats,.rcv2-hero-stats{
+    margin-left:0 !important;
+    width:100%;
+    display:grid !important;
+    grid-template-columns:repeat(3,1fr) !important;
+    gap:8px !important;
+  }
+  .pgv2-hero-stat,.rcv2-hero-stat{
+    min-width:0 !important;
+    padding:8px 6px !important;
+  }
+  .pgv2-hero-stat .num,.rcv2-hero-stat .num{font-size:20px !important}
+  .pgv2-hero-stat .lbl,.rcv2-hero-stat .lbl{
+    font-size:7.5px !important;
+    letter-spacing:1.5px !important;
+  }
+  /* Actions du hero : pleine largeur, mieux espacées */
+  .pgv2-hero-actions,.rcv2-hero-actions{
+    width:100%;
+    flex-direction:column !important;
+    gap:8px !important;
+  }
+  .pgv2-hero-actions .btn,
+  .rcv2-hero-actions .btn,
+  .pgv2-hero-actions input{
+    width:100% !important;
+    justify-content:center !important;
+    min-height:44px !important;
+    max-width:100% !important;
+  }
+
+  /* ─── 4. FILTRES (recherche + selects) — empilés ──────────────────── */
+  .pgv2-filters,.rcv2-filters{
+    flex-direction:column !important;
+    align-items:stretch !important;
+    padding:10px !important;
+    gap:8px !important;
+    border-radius:12px !important;
+  }
+  .pgv2-filter-search,.rcv2-filter-search{
+    min-width:0 !important;
+    width:100%;
+  }
+  .pgv2-filter-search input,.rcv2-filter-search input{
+    font-size:16px !important; /* anti-zoom iOS */
+    min-height:44px;
+    padding:11px 14px 11px 38px !important;
+  }
+  .pgv2-filter-select,.rcv2-filter-select{
+    min-width:0 !important;
+    width:100% !important;
+    font-size:15px !important;
+    min-height:44px;
+  }
+  .pgv2-filter-count,.rcv2-filter-count{
+    margin-left:0 !important;
+    text-align:center;
+    align-self:flex-start;
+  }
+
+  /* ─── 5. CARDS V2 (recensement) — empilées avec bonne aération ───── */
+  .rcv2-grid,.pgv2-grid,.pgv2-grid.cols-2{
+    grid-template-columns:1fr !important;
+    gap:12px !important;
+  }
+  .rcv2-card{
+    border-radius:12px !important;
+  }
+  .rcv2-card-banner{height:64px !important}
+  .rcv2-card-avatar-wrap{
+    width:70px !important;height:70px !important;
+    margin:-34px auto 0 !important;
+  }
+  .rcv2-card-avatar{font-size:22px !important}
+  .rcv2-card-rang{font-size:8px !important;padding:3px 7px !important}
+  .rcv2-card-id{font-size:8px !important}
+  .rcv2-card-name{font-size:15px !important}
+
+  /* ─── 6. TOPBAR — préserver l'existant mais légers ajustements ───── */
+  .topbar{
+    padding:0 12px 0 8px !important;
+    gap:8px !important;
+  }
+  .topbar-title{
+    font-size:13px !important;
+    letter-spacing:1.2px !important;
+    flex:1;
+    min-width:0;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+  }
+  /* Boutons dans la topbar : taille touch confortable */
+  .topbar > button,
+  .topbar > .btn,
+  .topbar #btn-global-search,
+  .topbar #btn-darkmode{
+    min-width:40px !important;
+    min-height:40px !important;
+    flex-shrink:0 !important;
+  }
+
+  /* ─── 7. BOTTOM-NAV V2 PREMIUM ───────────────────────────────────── */
+  #bottom-nav{
+    background:linear-gradient(180deg,rgba(15,12,8,0.94) 0%,rgba(8,6,4,0.98) 100%) !important;
+    border-top:1px solid rgba(201,162,39,0.32) !important;
+    box-shadow:
+      0 -8px 32px rgba(0,0,0,0.55),
+      0 -1px 0 rgba(201,162,39,0.18),
+      inset 0 1px 0 rgba(255,255,255,0.04) !important;
+  }
+  #bottom-nav::before{
+    content:'';
+    position:absolute;top:-1px;left:20%;right:20%;height:1px;
+    background:linear-gradient(90deg,transparent,rgba(201,162,39,0.5),transparent);
+  }
+  #bottom-nav-inner{
+    height:64px !important;
+    padding:0 4px;
+  }
+  .bnav-item{
+    padding:10px 4px 8px !important;
+    transition:color 0.22s,transform 0.1s !important;
+  }
+  .bnav-item::before{
+    inset:6px 6px !important;
+    border-radius:14px !important;
+    transition:background 0.25s,box-shadow 0.25s !important;
+  }
+  .bnav-item.active::before{
+    background:linear-gradient(180deg,rgba(192,65,14,0.22),rgba(192,65,14,0.08)) !important;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,0.06);
+  }
+  .bnav-pip{
+    width:32px !important;
+    height:3px !important;
+    background:linear-gradient(90deg,#e05c1a,#d4b44a,#e05c1a) !important;
+    border-radius:0 0 4px 4px !important;
+    box-shadow:0 0 8px rgba(212,180,74,0.6) !important;
+  }
+  .bnav-icon{
+    font-size:23px !important;
+  }
+  .bnav-item.active .bnav-icon{
+    transform:translateY(-3px) scale(1.18) !important;
+    filter:drop-shadow(0 3px 8px rgba(224,92,26,0.85)) !important;
+  }
+  .bnav-label{
+    font-size:9px !important;
+    font-weight:700 !important;
+    letter-spacing:1px !important;
+  }
+  .bnav-item.active .bnav-label{
+    color:#d4b44a !important;
+    text-shadow:0 0 6px rgba(212,180,74,0.4);
+  }
+  .bnav-badge{
+    box-shadow:0 2px 10px rgba(220,38,38,0.6),0 0 0 2px rgba(8,6,4,0.95) !important;
+    border:none !important;
+    font-weight:800 !important;
+    letter-spacing:0.3px;
+  }
+
+  /* ─── 8. SIDEBAR / DRAWER mobile premium ──────────────────────────── */
+  #sidebar{
+    background:linear-gradient(180deg,#1a1510 0%,#0c0a07 100%) !important;
+    border-right:1px solid rgba(201,162,39,0.28) !important;
+    box-shadow:none !important;
+  }
+  #sidebar.open{
+    box-shadow:12px 0 60px rgba(0,0,0,0.65),0 0 0 1px rgba(201,162,39,0.08) !important;
+  }
+  /* Items du menu : mieux respirer sur mobile */
+  #sidebar .nav-item{
+    padding:11px 16px !important;
+    margin:2px 6px !important;
+    font-size:13.5px !important;
+    border-radius:10px !important;
+    min-height:42px;
+  }
+  #sidebar .nav-item.active{
+    background:linear-gradient(90deg,rgba(192,65,14,0.32),rgba(192,65,14,0.12)) !important;
+    box-shadow:inset 3px 0 0 var(--accent2),inset 0 1px 0 rgba(255,255,255,0.04) !important;
+  }
+  #sidebar .nav-item .icon{
+    font-size:15px !important;
+    width:18px !important;
+  }
+  #sidebar .nav-section{
+    padding:14px 18px 6px !important;
+    font-size:8.5px !important;
+    letter-spacing:3px !important;
+    color:rgba(212,180,74,0.5) !important;
+  }
+  #sidebar .nav-badge{
+    font-size:9px !important;
+    padding:1px 7px !important;
+    box-shadow:0 2px 6px rgba(0,0,0,0.4);
+  }
+  /* Sidebar header (logo) */
+  #sidebar .sidebar-logo{
+    padding:18px 14px 14px !important;
+    border-bottom:1px solid rgba(201,162,39,0.2) !important;
+  }
+  #sidebar .sidebar-logo h1{
+    font-size:14px !important;
+    color:#d4b44a !important;
+  }
+  /* Sidebar footer */
+  #sidebar .sidebar-footer{
+    padding:14px 16px calc(env(safe-area-inset-bottom,0px) + 14px) !important;
+    border-top:1px solid rgba(201,162,39,0.2) !important;
+  }
+
+  /* Overlay cliquable derrière la sidebar ouverte (existe déjà via #sidebar-overlay) */
+  #sidebar-overlay{
+    backdrop-filter:blur(2px);
+    -webkit-backdrop-filter:blur(2px);
+  }
+
+  /* ─── 9. MODALS — Bottom-sheet premium iOS ────────────────────────── */
+  .modal-overlay{
+    align-items:flex-end !important;
+    padding:0 !important;
+    z-index:500;
+    background:rgba(0,0,0,0.72) !important;
+    backdrop-filter:blur(8px);
+    -webkit-backdrop-filter:blur(8px);
+  }
+  .modal{
+    width:100% !important;
+    max-width:100% !important;
+    border-radius:22px 22px 0 0 !important;
+    max-height:92dvh !important;
+    margin:0 !important;
+    /* Flex layout pour footer toujours visible */
+    display:flex !important;
+    flex-direction:column !important;
+    padding:0 !important;
+  }
+  /* Drag handle décoratif en haut */
+  .modal::before{
+    content:'';display:block;
+    width:42px;height:4px;
+    background:rgba(201,162,39,0.25);
+    border-radius:3px;
+    margin:10px auto 0;
+    flex-shrink:0;
+  }
+  .modal-header{
+    border-radius:0 !important;
+    padding:14px 18px !important;
+    flex-shrink:0;
+  }
+  .modal-body{
+    flex:1 !important;
+    min-height:0 !important;
+    overflow-y:auto !important;
+    -webkit-overflow-scrolling:touch !important;
+    overscroll-behavior:contain !important;
+    padding:18px !important;
+  }
+  .modal-body::-webkit-scrollbar{width:3px}
+  .modal-body::-webkit-scrollbar-thumb{background:rgba(201,162,39,0.25);border-radius:2px}
+  .modal-footer{
+    flex-shrink:0 !important;
+    flex-wrap:wrap;
+    gap:8px !important;
+    padding:14px 16px calc(env(safe-area-inset-bottom,0px) + 14px) !important;
+    background:rgba(0,0,0,0.4);
+    border-top:1px solid rgba(201,162,39,0.14);
+  }
+  .modal-footer .btn{
+    flex:1 1 auto;
+    min-width:120px !important;
+    min-height:44px !important;
+    justify-content:center !important;
+  }
+  /* Forcer 1 colonne pour les grilles dans les modals */
+  .modal .grid-2,.modal .grid-3,.modal .grid-4{
+    grid-template-columns:1fr !important;
+    gap:12px !important;
+  }
+
+  /* Modals V2 (plainte, candidature, dossier, recense) sur mobile */
+  #modal-plainte .modal,
+  #modal-candidature .modal,
+  #modal-dossier .modal,
+  #modal-recense .modal{
+    max-height:92dvh !important;
+    border-radius:22px 22px 0 0 !important;
+  }
+  /* Hero des modals V2 — padding adapté */
+  .plv2-hero,.cdv2-hero{
+    padding:24px 22px 18px !important;
+  }
+  .dsv2-hero{padding:18px 22px !important}
+  .plv2-hero-title,.cdv2-hero-title{
+    font-size:22px !important;
+    letter-spacing:1.5px !important;
+  }
+  .dsv2-hero-title{font-size:17px !important}
+  .plv2-hero-info{font-size:12px !important}
+  /* Body des modals V2 */
+  #modal-plainte .modal-body,
+  #modal-candidature .modal-body{
+    padding:20px 22px !important;
+  }
+  #modal-dossier .modal-body{padding:18px 20px !important}
+  /* Footer des modals V2 */
+  #modal-plainte .modal-footer,
+  #modal-candidature .modal-footer{
+    padding:14px 22px calc(env(safe-area-inset-bottom,0px) + 14px) !important;
+  }
+  #modal-dossier .modal-footer{
+    padding:14px 20px calc(env(safe-area-inset-bottom,0px) + 14px) !important;
+  }
+  /* Cards de choix Citoyen/Agent et Section visée — pleine largeur empilés */
+  .plv2-choice-grid{
+    grid-template-columns:1fr !important;
+    gap:8px !important;
+  }
+  .plv2-choice-card{padding:18px 14px !important}
+  .cdv2-section-grid{
+    grid-template-columns:repeat(3,1fr) !important;
+    gap:8px !important;
+  }
+  .cdv2-section-card{padding:14px 8px !important}
+  .cdv2-section-icon{font-size:22px !important;margin-bottom:6px !important}
+  .cdv2-section-title{font-size:9px !important;letter-spacing:1.5px !important}
+  /* Grilles 2 colonnes des modals candidature */
+  .cdv2-grid-2{grid-template-columns:1fr !important;gap:14px !important}
+
+  /* ─── 10. INPUTS / FORMS — Touch friendly + anti-zoom iOS ─────────── */
+  .form-control,
+  input[type="text"],
+  input[type="number"],
+  input[type="email"],
+  input[type="password"],
+  input[type="date"],
+  input[type="search"],
+  input[type="tel"],
+  input[type="url"],
+  select,
+  textarea{
+    font-size:16px !important; /* anti-zoom iOS */
+    min-height:44px !important;
+    padding:12px 14px !important;
+    border-radius:10px !important;
+  }
+  textarea,textarea.form-control{
+    min-height:90px !important;
+    line-height:1.5;
+  }
+  /* Boutons partout : taille tactile minimum */
+  .btn{
+    min-height:42px !important;
+    padding:10px 18px !important;
+    font-size:12px !important;
+  }
+  .btn.btn-sm{
+    min-height:36px !important;
+    padding:7px 12px !important;
+    font-size:10.5px !important;
+  }
+
+  /* ─── 11. SECTION HEADER (titres de pages classiques) ────────────── */
+  .section-header{
+    flex-direction:column !important;
+    align-items:flex-start !important;
+    gap:12px !important;
+    margin-bottom:14px !important;
+  }
+  .section-header > div:last-child{
+    width:100%;
+    flex-wrap:wrap;
+  }
+  .section-header .btn{
+    flex:1 1 auto;
+    min-width:0 !important;
+  }
+  .section-title{
+    font-size:18px !important;
+    letter-spacing:1.5px !important;
+  }
+  .section-sub{
+    font-size:9.5px !important;
+    letter-spacing:2px !important;
+  }
+
+  /* ─── 12. CARDS GÉNÉRALES — espacement aéré ──────────────────────── */
+  .card{
+    border-radius:12px !important;
+  }
+  .card-header{
+    padding:12px 14px !important;
+    gap:8px !important;
+  }
+  .card-header h3{
+    font-size:12.5px !important;
+    letter-spacing:1.2px !important;
+  }
+  .card-body{
+    padding:14px !important;
+  }
+
+  /* ─── 13. STAT CARDS — adapté aux petits écrans ──────────────────── */
+  .stat-card{
+    padding:13px 14px !important;
+  }
+  .stat-value{font-size:28px !important}
+  .stat-label{font-size:10px !important}
+
+  /* ─── 14. PROFILE HERO — adaptation ───────────────────────────────── */
+  .profile-hero{
+    flex-direction:column !important;
+    text-align:center !important;
+    padding:18px 16px !important;
+    gap:12px !important;
+  }
+  .profile-hero-avatar{
+    margin:0 auto !important;
+  }
+  .profile-stat-grid{
+    grid-template-columns:repeat(2,1fr) !important;
+    gap:8px !important;
+  }
+  .profile-stat-item{
+    padding:14px 10px !important;
+  }
+  .profile-stat-val{font-size:22px !important}
+  .profile-stat-label{font-size:10px !important}
+
+  /* ─── 15. TAB-ROW (onglets) — scroll horizontal smooth ───────────── */
+  .tab-row{
+    padding:4px !important;
+    gap:4px !important;
+    overflow-x:auto !important;
+    -webkit-overflow-scrolling:touch !important;
+    scrollbar-width:none !important;
+    flex-wrap:nowrap !important;
+  }
+  .tab-row::-webkit-scrollbar{display:none !important}
+  .tab-btn{
+    flex:0 0 auto !important;
+    min-height:38px !important;
+    padding:9px 14px !important;
+    font-size:9.5px !important;
+    border-radius:8px !important;
+    white-space:nowrap !important;
+  }
+
+  /* ─── 16. TABLEAUX — scroll horizontal préservé ──────────────────── */
+  .table-scroll-wrapper{
+    overflow-x:auto !important;
+    -webkit-overflow-scrolling:touch !important;
+    border-radius:10px !important;
+    margin:0 -2px;
+  }
+  .data-table{font-size:11.5px}
+  .data-table th{
+    padding:9px 10px !important;
+    font-size:9px !important;
+  }
+  .data-table td{
+    padding:9px 10px !important;
+  }
+  /* Boutons dans les tables : compacts */
+  .data-table .btn-sm{
+    padding:5px 8px !important;
+    font-size:10px !important;
+    min-height:30px !important;
+  }
+
+  /* ─── 17. YUNO — adaptations mobile ─────────────────────────────── */
+  #yuno-fab{
+    width:54px !important;
+    height:54px !important;
+    bottom:calc(var(--mb-bnav-h) + var(--mb-safe) + 16px) !important;
+    right:14px !important;
+  }
+  #yuno-fab svg{width:46px !important;height:46px !important}
+  #yuno-chat-panel{
+    width:calc(100vw - 16px) !important;
+    height:calc(100dvh - var(--mb-bnav-h) - var(--mb-safe) - 90px) !important;
+    max-height:calc(100dvh - 100px) !important;
+    right:8px !important;
+    left:8px !important;
+    bottom:calc(var(--mb-bnav-h) + var(--mb-safe) + 14px) !important;
+    border-radius:16px !important;
+  }
+  #yuno-config-banner{
+    width:calc(100vw - 24px) !important;
+    max-width:340px !important;
+    right:12px !important;
+    bottom:calc(var(--mb-bnav-h) + var(--mb-safe) + 80px) !important;
+  }
+
+  /* ─── 18. FILTER CHIPS BAR ──────────────────────────────────────── */
+  .filter-chip-bar{
+    overflow-x:auto;
+    -webkit-overflow-scrolling:touch;
+    scrollbar-width:none;
+    flex-wrap:nowrap !important;
+    padding:0 2px 2px;
+  }
+  .filter-chip-bar::-webkit-scrollbar{display:none}
+  .filter-chip{
+    flex-shrink:0;
+    white-space:nowrap;
+  }
+
+  /* ─── 19. RECENSEMENT V2 — Steps mobile ──────────────────────────── */
+  .rcv2-steps{
+    overflow-x:auto;
+    scrollbar-width:none;
+  }
+  .rcv2-step{
+    min-width:100px !important;
+    padding:10px 8px !important;
+    font-size:9px !important;
+    letter-spacing:1px !important;
+    flex:0 0 auto !important;
+  }
+  .rcv2-step-num{
+    width:16px !important;height:16px !important;
+    font-size:8px !important;
+  }
+
+  /* ─── 20. EMPTY STATES ──────────────────────────────────────────── */
+  .pgv2-empty,.rcv2-empty{
+    padding:50px 18px !important;
+  }
+  .pgv2-empty-icon,.rcv2-empty-icon{
+    font-size:42px !important;
+  }
+  .pgv2-empty-title,.rcv2-empty-title{
+    font-size:15px !important;
+  }
+  .pgv2-empty-sub,.rcv2-empty-sub{
+    font-size:10.5px !important;
+  }
+
+  /* ─── 21. ANIMATIONS — réduire pour économiser batterie ─────────── */
+  @media(prefers-reduced-motion:reduce){
+    *,*::before,*::after{
+      animation-duration:0.01ms !important;
+      transition-duration:0.01ms !important;
+    }
+  }
+
+}
+
+/* ─── 22. iPhone très petit (≤ 380px : SE, Mini) ───────────────────── */
+@media(max-width:380px){
+  :root{--mb-pad-x:11px}
+  .pgv2-hero-title,.rcv2-hero-title{font-size:19px !important}
+  .plv2-hero-title,.cdv2-hero-title{font-size:19px !important}
+  .pgv2-hero-stat .num,.rcv2-hero-stat .num{font-size:18px !important}
+  .pgv2-hero-stat .lbl,.rcv2-hero-stat .lbl{font-size:7px !important}
+  .pgv2-hero-icon,.rcv2-hero-icon{width:46px !important;height:46px !important;font-size:20px !important}
+  .stat-value{font-size:24px !important}
+  .section-title{font-size:16px !important}
+  .bnav-icon{font-size:21px !important}
+  .bnav-label{font-size:8.5px !important}
+}
+
+/* ─── 23. Notch / Dynamic Island — safe-area top ──────────────────── */
+@supports(padding:max(0px)){
+  @media(max-width:768px){
+    .topbar{
+      padding-top:max(0px, env(safe-area-inset-top, 0px)) !important;
+      padding-left:max(8px, env(safe-area-inset-left, 8px)) !important;
+      padding-right:max(12px, env(safe-area-inset-right, 12px)) !important;
+      height:auto !important;
+      min-height:calc(56px + env(safe-area-inset-top, 0px));
+    }
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   Fin de la refonte mobile globale V2
+   ═══════════════════════════════════════════════════════════════════════════════ */
+
 </style>
 </head>
 <body>
