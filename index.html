@@ -18327,7 +18327,40 @@ function _opsLoadInlineSvg(){
         svg.removeAttribute('height');
         svg.setAttribute('preserveAspectRatio','xMidYMid meet');
         svg.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;display:block;shape-rendering:geometricPrecision;pointer-events:none';
-        // Capturer le viewBox original pour le zoom vectoriel
+
+        // ─── AUTO-CROP : recadrer le viewBox sur la vraie zone utile ───
+        // Le SVG source contient souvent des marges vides (espace en bas/à droite)
+        // qui créent un grand vide noir sous la carte. On utilise getBBox() pour
+        // mesurer la VRAIE zone occupée par les éléments graphiques, puis on
+        // adapte le viewBox à cette zone. Comme les pins (positionnés en
+        // pourcentage du viewBox via _svgOrigVB*) utilisent ces nouvelles valeurs,
+        // ils restent parfaitement alignés sur la carte recadrée.
+        try{
+          var bbox = svg.getBBox();
+          if(bbox && bbox.width > 0 && bbox.height > 0){
+            // Lire le viewBox d'origine
+            var origParts = svg.getAttribute('viewBox').split(/[\s,]+/).map(Number);
+            var origX = origParts[0]||0, origY = origParts[1]||0;
+            var origW = origParts[2]||1000, origH = origParts[3]||1000;
+            // Calculer le ratio "rempli" : si la zone utile remplit moins de 95%
+            // du viewBox, on recadre. Sinon on garde l'original (rien à gagner).
+            var fillW = bbox.width / origW;
+            var fillH = bbox.height / origH;
+            if(fillW < 0.98 || fillH < 0.98){
+              // Petite marge de sécurité de 1% pour ne pas couper d'élément
+              var padX = Math.max(0, bbox.width  * 0.005);
+              var padY = Math.max(0, bbox.height * 0.005);
+              var newX = Math.max(origX, bbox.x - padX);
+              var newY = Math.max(origY, bbox.y - padY);
+              var newW = Math.min(origW - (newX - origX), bbox.width  + padX*2);
+              var newH = Math.min(origH - (newY - origY), bbox.height + padY*2);
+              svg.setAttribute('viewBox', newX+' '+newY+' '+newW+' '+newH);
+            }
+          }
+        }catch(e){ /* getBBox peut échouer si le SVG n'est pas encore rendu, on continue avec le viewBox original */ }
+
+        // Capturer le viewBox (potentiellement recadré) pour le zoom vectoriel.
+        // Les pins se basent sur ces valeurs → ils restent alignés sur la nouvelle zone.
         var parts = svg.getAttribute('viewBox').split(/[\s,]+/).map(Number);
         _svgOrigVBx = parts[0]||0; _svgOrigVBy = parts[1]||0;
         _svgOrigVBw = parts[2]||1000; _svgOrigVBh = parts[3]||1000;
@@ -18335,9 +18368,9 @@ function _opsLoadInlineSvg(){
         _svgVBw = _svgOrigVBw; _svgVBh = _svgOrigVBh;
         _svgReady = true;
         _opsZoom = 1; _opsPanX = 0; _opsPanY = 0;
-        // Ajuster le conteneur au ratio exact du SVG
-        // (CRITIQUE : les pins sont positionnés en % du wrap, donc le wrap doit
-        //  avoir le MÊME ratio que le SVG, sinon les pins sont décalés.)
+        // Ajuster le conteneur au ratio exact du (nouveau) viewBox
+        // → plus de vide noir si auto-crop a été appliqué
+        // → pins restent alignés car ils utilisent le même viewBox
         var ratio = (_svgOrigVBh / _svgOrigVBw) * 100;
         var imgWrap = document.getElementById('ops-map-img-wrap');
         if(imgWrap) imgWrap.style.paddingBottom = Math.round(ratio * 10) / 10 + '%';
