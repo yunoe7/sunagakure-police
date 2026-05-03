@@ -187,6 +187,37 @@ body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:9997;
 select.form-control option{background:#1a1510;color:var(--text)}
 textarea.form-control{resize:vertical;min-height:80px}
 
+/* Champ verrouillé (ex: grade pour non-admin/gérant) */
+.form-group.is-locked{position:relative}
+.form-group.is-locked .form-control{
+  cursor:not-allowed;
+  opacity:0.55;
+  background:rgba(120,80,20,0.08);
+  border-color:rgba(180,140,20,0.18);
+  padding-right:34px;
+}
+.form-group.is-locked .form-control:focus{
+  box-shadow:none;
+  border-color:rgba(180,140,20,0.18);
+}
+.form-group.is-locked::after{
+  content:'🔒';
+  position:absolute;
+  right:11px;bottom:11px;
+  font-size:14px;
+  pointer-events:none;
+  opacity:0.7;
+}
+.form-group.is-locked .form-label::after{
+  content:' (verrouillé)';
+  color:var(--muted);
+  font-size:9px;
+  letter-spacing:1px;
+  margin-left:4px;
+  font-family:'Share Tech Mono',monospace;
+  opacity:0.7;
+}
+
 .section-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:20px;gap:10px;flex-wrap:wrap}
 .section-title{font-family:'Cinzel',serif;font-size:22px;font-weight:700;letter-spacing:1px;color:var(--text)}
 .section-sub{font-size:10px;color:var(--muted);font-family:'Share Tech Mono',monospace;margin-top:2px;letter-spacing:1px}
@@ -20298,6 +20329,22 @@ function openEditUser(id){
   // Hide admin option for non-admins
   const adminOpt=el("eu-role-admin-opt");
   if(adminOpt)adminOpt.style.display=isAdmin()?"":"none";
+  // PERMISSION GRADE/RÔLE : seuls Admin et Gérant peuvent les modifier
+  const canEdit = canEditGrade();
+  const gradeSelect = el("eu-grade");
+  const roleSelect  = el("eu-role");
+  const gradeGroup  = gradeSelect && gradeSelect.closest('.form-group');
+  const roleGroup   = roleSelect  && roleSelect.closest('.form-group');
+  if(gradeGroup){
+    gradeGroup.classList.toggle('is-locked', !canEdit);
+    gradeSelect.disabled = !canEdit;
+    gradeSelect.title = canEdit ? '' : 'Seuls les Administrateurs et Gérants peuvent modifier le grade';
+  }
+  if(roleGroup){
+    roleGroup.classList.toggle('is-locked', !canEdit);
+    roleSelect.disabled = !canEdit;
+    roleSelect.title = canEdit ? '' : 'Seuls les Administrateurs et Gérants peuvent modifier le rôle';
+  }
   // Bloquer uniquement la suppression de son propre compte
   const delBtn=document.querySelector("#modal-edituser .btn-danger");
   if(delBtn){const isSelf=u.id===currentUser.id;delBtn.disabled=isSelf;delBtn.style.opacity=isSelf?"0.4":"1";delBtn.title=isSelf?"Vous ne pouvez pas supprimer votre propre compte":""}
@@ -20354,6 +20401,13 @@ function saveEditUser(){
   const u=DB.users.find(x=>String(x.id)===String(id));if(!u)return;
   if(u.role==="admin"&&!isAdmin()){showToast("Permission refusée.","error");return;}
   const newRole=v("eu-role");
+  const newGrade=v("eu-grade");
+  // SÉCURITÉ : si l'utilisateur n'est pas Admin/Gérant, on FORCE grade et rôle inchangés
+  // (même si quelqu'un déverrouille les champs via la console pour bypass le cadenas visuel)
+  const canEdit = canEditGrade();
+  if(!canEdit && (newGrade !== u.grade || newRole !== u.role)){
+    showToast("⛔ Seuls les Administrateurs et Gérants peuvent modifier le grade et le rôle.","error");return;
+  }
   if(newRole==="admin"&&!isAdmin()){showToast("Seul un Administrateur peut attribuer le rôle Admin.","error");return;}
   // Empêcher de retirer le rôle admin au dernier compte admin
   const adminCount=DB.users.filter(x=>x.role==="admin").length;
@@ -20365,7 +20419,8 @@ function saveEditUser(){
   const newPass=el("eu-pass").value;
   const finalize=()=>{
     _loginInProgress=false;
-    u.grade=v("eu-grade");u.role=newRole;
+    // Appliquer grade/rôle UNIQUEMENT si l'utilisateur a la permission
+    if(canEdit){ u.grade=newGrade; u.role=newRole; }
     const c=DB.candidatures.find(x=>x.authorId===id||x.nom===oldNom);if(c)c.grade=u.grade;
     if(currentUser.id===id){currentUser=u;el("user-name-display").textContent=u.nom;el("user-rank-display").textContent=roleLabel(u.role)+" · "+u.grade;refreshSidebarAvatar();}
     addTimeline(`Compte de ${u.nom} modifié par ${currentUser.nom}`);
@@ -21882,6 +21937,8 @@ function renderHierarchie(){
 
 function canModify(){return currentUser&&(currentUser.role==="admin"||currentUser.role==="gerant"||currentUser.role==="cogerant"||currentUser.role==="sergent"||currentUser.role==="officier")}
 function isAdmin(){return currentUser&&currentUser.role==="admin"}
+// Permission renforcée : seuls Admin et Gérant peuvent modifier le grade/rôle d'un compte
+function canEditGrade(){return currentUser&&(currentUser.role==="admin"||currentUser.role==="gerant")}
 // Garde une référence à l'élément qui avait le focus avant l'ouverture de la modale
 let _lastFocusedEl = null;
 
