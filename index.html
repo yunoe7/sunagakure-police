@@ -4540,8 +4540,9 @@ html{-webkit-tap-highlight-color:transparent}
     border-radius:16px !important;
   }
   #yuno-config-banner{
-    width:calc(100vw - 24px) !important;
-    max-width:340px !important;
+    /* bug-fix : taille IDENTIQUE partout (mobile + desktop).
+       On garde juste le repositionnement bas/droite spécifique mobile,
+       mais la largeur reste 340px (gérée par la règle "premium" plus bas). */
     right:12px !important;
     bottom:calc(var(--mb-bnav-h) + var(--mb-safe) + 80px) !important;
   }
@@ -24677,7 +24678,12 @@ document.addEventListener('keydown', function(e) {
   position:fixed;bottom:80px;right:16px;z-index:8000;
   background:linear-gradient(135deg,#1a1c2e,#111220);
   border:1px solid rgba(180,140,20,0.4);border-radius:14px;
-  padding:14px 16px;width:300px;max-width:calc(100vw - 32px);
+  /* bug-fix : taille fixe cohérente — width:340px partout, max-width pour
+     les très petits écrans (<364px) avec une marge de sécurité. */
+  padding:18px 20px;
+  width:340px;
+  max-width:calc(100vw - 24px);
+  box-sizing:border-box;
   box-shadow:0 8px 32px rgba(0,0,0,0.4);
   animation:yunoSlideIn 0.3s cubic-bezier(0.32,0.72,0,1) both;
   display:none;
@@ -25362,6 +25368,12 @@ body:not(.has-action-fab) #yuno-config-banner{
 /* ─── Config banner premium ─── */
 #yuno-config-banner{
   width:340px !important;
+  max-width:calc(100vw - 24px) !important;
+  /* bug-fix : forcer height auto pour que le panel ne s'étire pas si top + bottom
+     sont définis simultanément (cas qui arrivait avec _yunoRepositionPanel) */
+  height:auto !important;
+  min-height:0 !important;
+  box-sizing:border-box !important;
   background:linear-gradient(180deg,#1a1510,#0c0a07) !important;
   border:1px solid rgba(201,162,39,0.32) !important;
   border-radius:16px !important;
@@ -25567,22 +25579,40 @@ body:not(.has-action-fab) #yuno-config-banner{
     var config = document.getElementById('yuno-config-banner');
     if(!fab) return;
     var r = fab.getBoundingClientRect();
-    var panelW = 360;
-    var panelH = 520;
     var gap = 8;
-    // Positionner au-dessus du FAB par défaut
-    var left = r.left + r.width/2 - panelW/2;
-    var top  = r.top - panelH - gap;
-    // Si ça sort en haut → mettre en dessous
-    if(top < 8) top = r.bottom + gap;
-    // Clamp horizontal
-    left = Math.max(8, Math.min(window.innerWidth - panelW - 8, left));
+    // bug-fix : positionner CHAQUE panel selon SA propre hauteur réelle, pas une
+    // valeur hardcodée. Avant, on utilisait panelH=520 (chat) pour les deux,
+    // ce qui faisait flotter le config banner (~300px) trop haut au-dessus du FAB.
     [panel, config].forEach(function(el){
       if(!el) return;
-      el.style.left   = left + 'px';
-      el.style.top    = top  + 'px';
-      el.style.right  = 'auto';
-      el.style.bottom = 'auto';
+      // Mesurer la VRAIE taille de l'élément. S'il n'est pas encore visible,
+      // on le rend mesurable temporairement (visibility:hidden + display:block).
+      var wasHidden = !el.classList.contains('open');
+      var prevVisibility, prevDisplay;
+      if(wasHidden){
+        prevVisibility = el.style.visibility;
+        prevDisplay = el.style.display;
+        el.style.visibility = 'hidden';
+        el.style.display = (el.id === 'yuno-chat-panel') ? 'flex' : 'block';
+      }
+      var rect = el.getBoundingClientRect();
+      var elW = rect.width  || 340;
+      var elH = rect.height || 300;
+      if(wasHidden){
+        el.style.visibility = prevVisibility || '';
+        el.style.display = prevDisplay || '';
+      }
+      // Position au-dessus du FAB, ou en dessous si pas la place en haut
+      var left = r.left + r.width/2 - elW/2;
+      var top  = r.top - elH - gap;
+      if(top < 8) top = r.bottom + gap;
+      // Clamp horizontal pour rester dans la viewport
+      left = Math.max(8, Math.min(window.innerWidth - elW - 8, left));
+      // setProperty avec 'important' pour battre les règles CSS !important
+      el.style.setProperty('left',   left + 'px', 'important');
+      el.style.setProperty('top',    top  + 'px', 'important');
+      el.style.setProperty('right',  'auto', 'important');
+      el.style.setProperty('bottom', 'auto', 'important');
     });
   }
 
