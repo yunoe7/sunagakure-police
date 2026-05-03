@@ -10897,7 +10897,7 @@ document.addEventListener('error', function(e){
         <div>
           <div class="imp-progress-overline">Taux de paiement des impôts</div>
           <div class="imp-progress-left">
-            <div class="imp-progress-pct" id="imp-pct">0<span style="font-size:22px;color:rgba(255,255,255,0.4)">%</span></div>
+            <div class="imp-progress-pct" id="imp-pct">0<span style="font-size:22px;color:rgba(255,255,255,0.4);margin-left:4px">%</span></div>
             <div class="imp-progress-badge good" id="imp-pct-badge">EXCELLENT</div>
           </div>
         </div>
@@ -15866,6 +15866,13 @@ function _opsApplyTransform(){
         var wrap = document.getElementById('ops-map-img-wrap');
         var wrapW = wrap ? wrap.clientWidth : 1;
         var wrapH = wrap ? wrap.clientHeight : 1;
+        // GUARD : si le wrap n'est pas encore mesuré (page cachée), éviter division par 0
+        if(!wrapW || wrapW < 1) wrapW = 1;
+        if(!wrapH || wrapH < 1) wrapH = 1;
+        // GUARD : si les dimensions originales du SVG ne sont pas chargées, abandonner
+        if(!_svgOrigVBw || !_svgOrigVBh || !_opsZoom){
+          // Pas encore prêt — on ne touche pas au viewBox
+        } else {
         // pan négatif = déplacé vers la droite = viewBox origin vers la gauche
         var vbX = _svgOrigVBx + (-_opsPanX / wrapW) * _svgOrigVBw / _opsZoom * _opsZoom
                   - (_svgOrigVBw - vbW) * 0; // centrage géré par panX
@@ -15876,9 +15883,13 @@ function _opsApplyTransform(){
         // Clamp pour ne pas sortir de la carte
         vbX = Math.max(_svgOrigVBx, Math.min(_svgOrigVBx + _svgOrigVBw - vbW, vbX));
         vbY = Math.max(_svgOrigVBy, Math.min(_svgOrigVBy + _svgOrigVBh - vbH, vbY));
-        svg.setAttribute('viewBox', vbX+' '+vbY+' '+vbW+' '+vbH);
-        // Mettre à jour les pins en fonction du viewBox courant
-        _svgVBx = vbX; _svgVBy = vbY; _svgVBw = vbW; _svgVBh = vbH;
+        // GUARD final : ne pas écrire un viewBox avec NaN
+        if(isFinite(vbX) && isFinite(vbY) && isFinite(vbW) && isFinite(vbH)){
+          svg.setAttribute('viewBox', vbX+' '+vbY+' '+vbW+' '+vbH);
+          // Mettre à jour les pins en fonction du viewBox courant
+          _svgVBx = vbX; _svgVBy = vbY; _svgVBw = vbW; _svgVBh = vbH;
+        }
+        }
       }
     }
 
@@ -17249,7 +17260,7 @@ function renderImpotsStats(){
   const collected = taxables.reduce((s,n) => s + (n.paid ? impMontantFor(n.grade) : 0), 0);
   const pct = taxables.length ? Math.round(paid / taxables.length * 100) : 0;
 
-  document.getElementById('imp-pct').innerHTML = pct + '<span style="font-size:22px;color:rgba(255,255,255,0.4)">%</span>';
+  document.getElementById('imp-pct').innerHTML = pct + '<span style="font-size:22px;color:rgba(255,255,255,0.4);margin-left:4px">%</span>';
   document.getElementById('imp-bar').style.width = pct + '%';
   document.getElementById('imp-paid-count').textContent = paid + ' / ' + taxables.length;
   document.getElementById('imp-s-total').textContent    = ninjas.length;
