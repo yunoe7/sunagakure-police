@@ -14053,6 +14053,7 @@ function plv2SelectCible(el,val){
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
   import { getDatabase, ref, set, update, onValue, push, serverTimestamp, get } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+  import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
   const firebaseConfig = {
     apiKey: "AIzaSyAOKtMRVbu1lBc5tZ2zpXkOtmC_TzqGWfs",
@@ -14065,15 +14066,40 @@ function plv2SelectCible(el,val){
   };
   const fbApp = initializeApp(firebaseConfig);
 
-  const fbDB = getDatabase(fbApp);
-  window._fbDB = fbDB;
-  window._fbRef = ref;
-  window._fbSet = set;
-  window._fbUpdate = update;
-  window._fbOnValue = onValue;
-  window._fbPush = push;
-  window._fbServerTimestamp = serverTimestamp;
-  window._fbGet = get;
+  // Authentification anonyme — sécurise les règles Firebase
+  // (les règles exigent désormais auth != null, donc on s'authentifie en arrière-plan
+  //  avant d'exposer la base de données aux scripts)
+  const fbAuth = getAuth(fbApp);
+  window._fbAuth = fbAuth;
+  window._fbAuthReady = false;
+
+  // Lance l'auth anonyme dès le chargement
+  signInAnonymously(fbAuth).catch(function(err){
+    console.error('[FB-AUTH] ❌ Échec auth anonyme :', err.code, err.message);
+    // Affiche un message à l'utilisateur si l'auth anonyme n'est pas activée dans la console
+    if(err.code === 'auth/admin-restricted-operation' || err.code === 'auth/operation-not-allowed'){
+      setTimeout(function(){
+        alert('⚠️ Configuration Firebase incomplète : activez la connexion "Anonyme" dans la Console Firebase → Authentication → Sign-in method.');
+      }, 1500);
+    }
+  });
+
+  // N'expose les fonctions Firebase qu'APRÈS que l'auth soit confirmée
+  // (sinon les premières lectures/écritures échouent avec PERMISSION_DENIED)
+  onAuthStateChanged(fbAuth, function(user){
+    if(user){
+      window._fbAuthReady = true;
+      const fbDB = getDatabase(fbApp);
+      window._fbDB = fbDB;
+      window._fbRef = ref;
+      window._fbSet = set;
+      window._fbUpdate = update;
+      window._fbOnValue = onValue;
+      window._fbPush = push;
+      window._fbServerTimestamp = serverTimestamp;
+      window._fbGet = get;
+    }
+  });
 </script>
 
 <script>
