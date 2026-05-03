@@ -13417,37 +13417,36 @@ document.addEventListener('error', function(e){
 }
 .cdv2-section-card.active .cdv2-section-title{color:var(--gold2)}
 
-/* Section verrouillée (Tribunal/Avocats désactivés) */
+/* Section verrouillée (Tribunal/Avocats désactivés) — chaînes en overlay */
 .cdv2-section-card.locked{
   cursor:not-allowed;
-  opacity:0.45;
-  filter:grayscale(0.6);
-  background:rgba(0,0,0,0.5);
-  border-color:rgba(120,120,120,0.2);
+  background:rgba(0,0,0,0.55);
+  border-color:rgba(80,80,80,0.35);
 }
 .cdv2-section-card.locked:hover{
   transform:none;
-  border-color:rgba(120,120,120,0.25);
-  background:rgba(0,0,0,0.5);
-}
-.cdv2-section-card.locked::before{
-  content:'🔒';
-  position:absolute;top:6px;right:8px;
-  font-size:13px;
-  background:none;
-  width:auto;height:auto;
-  box-shadow:none;
-  z-index:2;
-}
-.cdv2-section-card.locked::after{
-  content:'';
-  display:none;
+  border-color:rgba(80,80,80,0.4);
+  background:rgba(0,0,0,0.55);
 }
 .cdv2-section-card.locked .cdv2-section-icon{
-  filter:grayscale(0.9);
+  filter:grayscale(0.95) brightness(0.6);
 }
 .cdv2-section-card.locked .cdv2-section-title{
-  color:var(--muted);
+  color:rgba(180,180,180,0.55);
+}
+.cdv2-chain-overlay{
+  position:absolute;
+  inset:-3px;
+  width:calc(100% + 6px);
+  height:calc(100% + 6px);
+  pointer-events:none;
+  opacity:0;
+  transition:opacity 0.35s ease;
+  z-index:5;
+  overflow:visible;
+}
+.cdv2-section-card.locked .cdv2-chain-overlay{
+  opacity:0.95;
 }
 
 /* Footer */
@@ -13525,10 +13524,92 @@ document.addEventListener('error', function(e){
           <div class="cdv2-section-card" id="cdv2-card-tribunal" data-section="Tribunal" onclick="cdv2SelectSection(this,'Tribunal')">
             <div class="cdv2-section-icon">⚖️</div>
             <div class="cdv2-section-title">Tribunal</div>
+            <svg class="cdv2-chain-overlay" viewBox="0 0 200 140" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+              <defs>
+                <linearGradient id="chainMetalT" x1="0%" y1="0%" x2="0%" y2="100%">
+                  <stop offset="0%" stop-color="#c8c8c8"/>
+                  <stop offset="35%" stop-color="#5e5e5e"/>
+                  <stop offset="65%" stop-color="#2a2a2a"/>
+                  <stop offset="100%" stop-color="#a0a0a0"/>
+                </linearGradient>
+                <filter id="chainShadowT" x="-10%" y="-10%" width="120%" height="120%">
+                  <feDropShadow dx="1" dy="2" stdDeviation="1.2" flood-opacity="0.6"/>
+                </filter>
+              </defs>
+              <g filter="url(#chainShadowT)" stroke="url(#chainMetalT)" stroke-width="3.6" fill="none" stroke-linecap="round">
+                <g transform="rotate(32 100 70)">
+                  <ellipse cx="-22" cy="70" rx="11" ry="6.5"/><ellipse cx="-5"  cy="70" rx="6.5" ry="11"/>
+                  <ellipse cx="12"  cy="70" rx="11" ry="6.5"/><ellipse cx="29"  cy="70" rx="6.5" ry="11"/>
+                  <ellipse cx="46"  cy="70" rx="11" ry="6.5"/><ellipse cx="63"  cy="70" rx="6.5" ry="11"/>
+                  <ellipse cx="80"  cy="70" rx="11" ry="6.5"/><ellipse cx="97"  cy="70" rx="6.5" ry="11"/>
+                  <ellipse cx="114" cy="70" rx="11" ry="6.5"/><ellipse cx="131" cy="70" rx="6.5" ry="11"/>
+                  <ellipse cx="148" cy="70" rx="11" ry="6.5"/><ellipse cx="165" cy="70" rx="6.5" ry="11"/>
+                  <ellipse cx="182" cy="70" rx="11" ry="6.5"/><ellipse cx="199" cy="70" rx="6.5" ry="11"/>
+                  <ellipse cx="216" cy="70" rx="11" ry="6.5"/><ellipse cx="233" cy="70" rx="6.5" ry="11"/>
+                </g>
+                <g transform="rotate(-32 100 70)">
+                  <ellipse cx="-22" cy="70" rx="11" ry="6.5"/><ellipse cx="-5"  cy="70" rx="6.5" ry="11"/>
+                  <ellipse cx="12"  cy="70" rx="11" ry="6.5"/><ellipse cx="29"  cy="70" rx="6.5" ry="11"/>
+                  <ellipse cx="46"  cy="70" rx="11" ry="6.5"/><ellipse cx="63"  cy="70" rx="6.5" ry="11"/>
+                  <ellipse cx="80"  cy="70" rx="11" ry="6.5"/><ellipse cx="97"  cy="70" rx="6.5" ry="11"/>
+                  <ellipse cx="114" cy="70" rx="11" ry="6.5"/><ellipse cx="131" cy="70" rx="6.5" ry="11"/>
+                  <ellipse cx="148" cy="70" rx="11" ry="6.5"/><ellipse cx="165" cy="70" rx="6.5" ry="11"/>
+                  <ellipse cx="182" cy="70" rx="11" ry="6.5"/><ellipse cx="199" cy="70" rx="6.5" ry="11"/>
+                  <ellipse cx="216" cy="70" rx="11" ry="6.5"/><ellipse cx="233" cy="70" rx="6.5" ry="11"/>
+                </g>
+              </g>
+              <g transform="translate(100 70)" filter="url(#chainShadowT)">
+                <rect x="-11" y="-1" width="22" height="18" rx="3" fill="#1a1a1a" stroke="url(#chainMetalT)" stroke-width="1.6"/>
+                <path d="M -6.5 -1 L -6.5 -8 Q -6.5 -14 0 -14 Q 6.5 -14 6.5 -8 L 6.5 -1" fill="none" stroke="url(#chainMetalT)" stroke-width="2.4"/>
+                <circle cx="0" cy="6" r="2" fill="url(#chainMetalT)"/>
+                <rect x="-1" y="6" width="2" height="5.5" fill="url(#chainMetalT)"/>
+              </g>
+            </svg>
           </div>
           <div class="cdv2-section-card" id="cdv2-card-avocats" data-section="Avocats" onclick="cdv2SelectSection(this,'Avocats')">
             <div class="cdv2-section-icon">👨‍💼</div>
             <div class="cdv2-section-title">Avocats</div>
+            <svg class="cdv2-chain-overlay" viewBox="0 0 200 140" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+              <defs>
+                <linearGradient id="chainMetalA" x1="0%" y1="0%" x2="0%" y2="100%">
+                  <stop offset="0%" stop-color="#c8c8c8"/>
+                  <stop offset="35%" stop-color="#5e5e5e"/>
+                  <stop offset="65%" stop-color="#2a2a2a"/>
+                  <stop offset="100%" stop-color="#a0a0a0"/>
+                </linearGradient>
+                <filter id="chainShadowA" x="-10%" y="-10%" width="120%" height="120%">
+                  <feDropShadow dx="1" dy="2" stdDeviation="1.2" flood-opacity="0.6"/>
+                </filter>
+              </defs>
+              <g filter="url(#chainShadowA)" stroke="url(#chainMetalA)" stroke-width="3.6" fill="none" stroke-linecap="round">
+                <g transform="rotate(32 100 70)">
+                  <ellipse cx="-22" cy="70" rx="11" ry="6.5"/><ellipse cx="-5"  cy="70" rx="6.5" ry="11"/>
+                  <ellipse cx="12"  cy="70" rx="11" ry="6.5"/><ellipse cx="29"  cy="70" rx="6.5" ry="11"/>
+                  <ellipse cx="46"  cy="70" rx="11" ry="6.5"/><ellipse cx="63"  cy="70" rx="6.5" ry="11"/>
+                  <ellipse cx="80"  cy="70" rx="11" ry="6.5"/><ellipse cx="97"  cy="70" rx="6.5" ry="11"/>
+                  <ellipse cx="114" cy="70" rx="11" ry="6.5"/><ellipse cx="131" cy="70" rx="6.5" ry="11"/>
+                  <ellipse cx="148" cy="70" rx="11" ry="6.5"/><ellipse cx="165" cy="70" rx="6.5" ry="11"/>
+                  <ellipse cx="182" cy="70" rx="11" ry="6.5"/><ellipse cx="199" cy="70" rx="6.5" ry="11"/>
+                  <ellipse cx="216" cy="70" rx="11" ry="6.5"/><ellipse cx="233" cy="70" rx="6.5" ry="11"/>
+                </g>
+                <g transform="rotate(-32 100 70)">
+                  <ellipse cx="-22" cy="70" rx="11" ry="6.5"/><ellipse cx="-5"  cy="70" rx="6.5" ry="11"/>
+                  <ellipse cx="12"  cy="70" rx="11" ry="6.5"/><ellipse cx="29"  cy="70" rx="6.5" ry="11"/>
+                  <ellipse cx="46"  cy="70" rx="11" ry="6.5"/><ellipse cx="63"  cy="70" rx="6.5" ry="11"/>
+                  <ellipse cx="80"  cy="70" rx="11" ry="6.5"/><ellipse cx="97"  cy="70" rx="6.5" ry="11"/>
+                  <ellipse cx="114" cy="70" rx="11" ry="6.5"/><ellipse cx="131" cy="70" rx="6.5" ry="11"/>
+                  <ellipse cx="148" cy="70" rx="11" ry="6.5"/><ellipse cx="165" cy="70" rx="6.5" ry="11"/>
+                  <ellipse cx="182" cy="70" rx="11" ry="6.5"/><ellipse cx="199" cy="70" rx="6.5" ry="11"/>
+                  <ellipse cx="216" cy="70" rx="11" ry="6.5"/><ellipse cx="233" cy="70" rx="6.5" ry="11"/>
+                </g>
+              </g>
+              <g transform="translate(100 70)" filter="url(#chainShadowA)">
+                <rect x="-11" y="-1" width="22" height="18" rx="3" fill="#1a1a1a" stroke="url(#chainMetalA)" stroke-width="1.6"/>
+                <path d="M -6.5 -1 L -6.5 -8 Q -6.5 -14 0 -14 Q 6.5 -14 6.5 -8 L 6.5 -1" fill="none" stroke="url(#chainMetalA)" stroke-width="2.4"/>
+                <circle cx="0" cy="6" r="2" fill="url(#chainMetalA)"/>
+                <rect x="-1" y="6" width="2" height="5.5" fill="url(#chainMetalA)"/>
+              </g>
+            </svg>
           </div>
         </div>
         <input type="hidden" id="c-section" value="Police">
