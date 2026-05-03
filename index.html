@@ -14816,6 +14816,28 @@ function initFirebaseSync(){
         if(data.grades) DB.grades=data.grades;
         if(data.adminNotes) DB.adminNotes=data.adminNotes;
         if(data.loginHistory) DB.loginHistory=data.loginHistory;
+        // bug-fix : SYNCHRONISER DB.impots (paiements, barème, ninjas du registre).
+        // Sans ça, quand un utilisateur marquait "Payé" de son côté, les autres
+        // ne voyaient jamais la mise à jour. Comme impots est un objet (pas un
+        // array), on le remplace entièrement quand Firebase en a une version.
+        if(data.impots && typeof data.impots === 'object'){
+          // Normaliser les sous-arrays au cas où Firebase les ait stockés en objet
+          ['grades','ninjas','recups'].forEach(function(sub){
+            if(data.impots[sub] && !Array.isArray(data.impots[sub]) && typeof data.impots[sub] === 'object'){
+              data.impots[sub] = Object.values(data.impots[sub]).filter(Boolean);
+            }
+          });
+          DB.impots = data.impots;
+          // Re-render la page Impôts si elle est actuellement affichée
+          var p = document.getElementById('page-impots');
+          if(p && p.classList.contains('active') && typeof renderImpots === 'function'){
+            try{ renderImpots(); }catch(e){}
+          }
+        }
+        // Pareil pour DB.features (toggles partagés entre utilisateurs)
+        if(data.features && typeof data.features === 'object'){
+          DB.features = data.features;
+        }
         try{localStorage.setItem(STORE,JSON.stringify(DB));}catch(e){}
       } else {
       // Premier chargement : prendre toutes les donnees Firebase
