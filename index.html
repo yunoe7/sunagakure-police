@@ -1787,7 +1787,12 @@ body.dark .msg-input-row{background:rgba(18,20,36,0.9)!important;border-top-colo
 
 /* ── CARTE TACTIQUE OPÉRATIONS ── */
 #ops-map-wrap{margin-top:16px;border:1px solid rgba(180,140,20,0.3);border-radius:14px;overflow:hidden;position:relative;background:#0d0e1a;box-shadow:0 4px 24px rgba(0,0,0,0.18)}
-#ops-map-img-wrap{position:relative;width:100%;padding-bottom:72.6%;overflow:hidden;cursor:grab;min-height:300px}
+/* bug-fix : ratio par défaut adapté à une carte (2:1) au lieu de 72.6% (qui
+   créait un grand espace noir en dessous). Le JS d'ajustement dynamique (voir
+   _opsLoadInlineSvg) recalcule la valeur exacte après chargement du SVG, mais
+   on force aussi un max-height pour éviter qu'un viewBox SVG mal cadré
+   (avec beaucoup d'espace vide) ne crée un wrap absurdement grand. */
+#ops-map-img-wrap{position:relative;width:100%;padding-bottom:50%;overflow:hidden;cursor:grab;min-height:300px;max-height:min(75vh,720px)}
 #ops-map-img-wrap.dragging{cursor:grabbing}
 #ops-map-zoom-inner{position:absolute;left:0;top:0;width:100%;height:100%;transition:none;transform-origin:0 0}
 #ops-map-zoom-controls{position:absolute;bottom:10px;right:10px;z-index:40;display:flex;flex-direction:column;gap:4px}
@@ -17992,7 +17997,11 @@ function _opsLoadInlineSvg(){
         _svgReady = true;
         _opsZoom = 1; _opsPanX = 0; _opsPanY = 0;
         // Ajuster le conteneur au ratio réel du SVG — supprime le vide noir
+        // bug-fix : on borne la valeur entre 40% (ratio 2.5:1, très large) et 65%
+        // (ratio ~1.5:1) pour éviter qu'un viewBox SVG avec beaucoup d'espace vide
+        // ne crée un wrap absurdement grand (cas qui se produisait avant).
         var ratio = (_svgOrigVBh / _svgOrigVBw) * 100;
+        ratio = Math.max(40, Math.min(65, ratio));
         var imgWrap = document.getElementById('ops-map-img-wrap');
         if(imgWrap) imgWrap.style.paddingBottom = Math.round(ratio * 10) / 10 + '%';
       }
