@@ -22298,77 +22298,12 @@ if(isMobile){
 }
 
 /* ════════════════════════════════════════════════════════════════
-   5. PULL-TO-REFRESH
+   5. PULL-TO-REFRESH — DÉSACTIVÉ (causait des blocages de scroll mobile)
    ════════════════════════════════════════════════════════════════ */
-if(isMobile){
-  var ptrWrap=document.createElement('div'); ptrWrap.id='ptr-wrap';
-  ptrWrap.innerHTML='<div id="ptr-circle"><span id="ptr-icon">↓</span></div>';
-  document.body.appendChild(ptrWrap);
-
-  var ptr_sy=0,ptr_active=false,ptr_triggered=false,PTR_THRESH=80;
-  var ptr_lastFire=0; // anti-spam
-  var ptrIcon=document.getElementById('ptr-icon');
-
-  // Détermine si le PTR doit être actif dans le contexte courant
-  function _ptrAllowed(){
-    // 1. Pas sur l'écran de connexion (le scroll y est très long, ça spammait)
-    var login=document.getElementById('login-screen');
-    if(login && getComputedStyle(login).display!=='none') return false;
-    // 2. Pas si une modale est ouverte
-    if(document.querySelector('.modal-overlay.open')) return false;
-    // 3. Pas si la sidebar est ouverte
-    if($sidebar&&$sidebar.classList.contains('open')) return false;
-    // 4. Pas si le drawer "Plus" est ouvert
-    var drawer=document.getElementById('more-drawer');
-    if(drawer && drawer.classList.contains('open')) return false;
-    // 5. Pas en cooldown (évite le spam)
-    if(Date.now() - ptr_lastFire < 2000) return false;
-    return true;
-  }
-
-  document.addEventListener('touchstart',function(e){
-    if(!_ptrAllowed()){ptr_active=false;return;}
-    var page=document.querySelector('#main > .page-content.active');
-    if(!page||page.scrollTop>6) return;
-    ptr_sy=e.touches[0].clientY; ptr_active=true; ptr_triggered=false;
-  },{passive:true});
-
-  document.addEventListener('touchmove',function(e){
-    if(!ptr_active) return;
-    if(!_ptrAllowed()){ptr_active=false;ptrWrap.style.cssText='';return;}
-    var page=document.querySelector('#main > .page-content.active');
-    if(!page||page.scrollTop>6){ptr_active=false;ptrWrap.style.cssText='';return;}
-    var dy=e.touches[0].clientY-ptr_sy;
-    if(dy<5){ptrWrap.style.transform='translateX(-50%) translateY(-70px)';ptrWrap.style.opacity='0';return;}
-    var prog=Math.min(dy/PTR_THRESH,1);
-    var ty=-70+prog*86;
-    ptrWrap.style.cssText='position:fixed;top:56px;left:50%;transform:translateX(-50%) translateY('+ty+'px);opacity:'+prog.toFixed(2)+';z-index:9998;pointer-events:none';
-    if(ptrIcon){
-      ptrIcon.style.transform='rotate('+(prog*180)+'deg)';
-      ptrIcon.textContent=prog>=1?'⟳':'↓';
-    }
-    ptr_triggered=prog>=1;
-  },{passive:true});
-
-  document.addEventListener('touchend',function(){
-    if(!ptr_active) return;
-    ptr_active=false;
-    if(ptr_triggered){
-      ptr_lastFire=Date.now();
-      // Spinner de chargement
-      if(ptrIcon){ptrIcon.style.transform='';ptrIcon.style.animation='ptrSpin .7s linear infinite';ptrIcon.textContent='⟳';}
-      ptrWrap.style.opacity='1';
-      if(navigator.vibrate) navigator.vibrate([8,40,8]);
-      setTimeout(function(){
-        if(typeof showToast==='function') showToast('✅ Synchronisé','success');
-        ptrWrap.style.cssText='position:fixed;top:56px;left:50%;transform:translateX(-50%) translateY(-70px);opacity:0;z-index:9998;pointer-events:none;transition:transform .3s,opacity .3s';
-        if(ptrIcon){ptrIcon.style.animation='';ptrIcon.textContent='↓';ptrIcon.style.transform='';}
-      },850);
-    } else {
-      ptrWrap.style.cssText='position:fixed;top:56px;left:50%;transform:translateX(-50%) translateY(-70px);opacity:0;z-index:9998;pointer-events:none;transition:transform .25s,opacity .2s';
-    }
-    ptr_triggered=false;
-  },{passive:true});
+if(false && isMobile){
+  // Bloc PTR retiré : il interférait avec le scroll natif mobile et
+  // ne déclenchait aucun vrai refresh de données (juste un toast cosmétique).
+  // Le vrai sync Firebase se fait automatiquement via onValue listeners.
 }
 
 /* ════════════════════════════════════════════════════════════════
