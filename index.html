@@ -2968,8 +2968,8 @@ html{-webkit-tap-highlight-color:transparent}
 /* Couleurs accent par rang */
 .rcv2-card[data-rang="Criminel recherché"]{border-color:rgba(239,68,68,0.32)}
 .rcv2-card[data-rang="Criminel recherché"]:hover{border-color:rgba(239,68,68,0.6);box-shadow:0 14px 40px rgba(0,0,0,0.5),0 0 24px rgba(239,68,68,0.18)}
-.rcv2-card[data-rang="Hokage"], .rcv2-card[data-rang="Kage"]{border-color:rgba(201,162,39,0.45)}
-.rcv2-card[data-rang="Hokage"]:hover, .rcv2-card[data-rang="Kage"]:hover{box-shadow:0 14px 40px rgba(0,0,0,0.5),0 0 24px rgba(201,162,39,0.25)}
+.rcv2-card[data-rang="Kazekage"], .rcv2-card[data-rang="Kage"]{border-color:rgba(201,162,39,0.45)}
+.rcv2-card[data-rang="Kazekage"]:hover, .rcv2-card[data-rang="Kage"]:hover{box-shadow:0 14px 40px rgba(0,0,0,0.5),0 0 24px rgba(201,162,39,0.25)}
 .rcv2-card[data-rang="ANBU"]{border-color:rgba(139,92,246,0.32)}
 .rcv2-card[data-rang="ANBU"]:hover{border-color:rgba(139,92,246,0.55);box-shadow:0 14px 40px rgba(0,0,0,0.5),0 0 24px rgba(139,92,246,0.18)}
 
@@ -2986,7 +2986,7 @@ html{-webkit-tap-highlight-color:transparent}
   background:linear-gradient(135deg,rgba(239,68,68,0.22) 0%,rgba(180,30,30,0.15) 100%);
   border-bottom-color:rgba(239,68,68,0.3);
 }
-.rcv2-card[data-rang="Hokage"] .rcv2-card-banner,
+.rcv2-card[data-rang="Kazekage"] .rcv2-card-banner,
 .rcv2-card[data-rang="Kage"] .rcv2-card-banner{
   background:linear-gradient(135deg,rgba(201,162,39,0.3) 0%,rgba(212,180,74,0.18) 100%);
   border-bottom-color:rgba(201,162,39,0.4);
@@ -3010,7 +3010,7 @@ html{-webkit-tap-highlight-color:transparent}
   z-index:3;
 }
 .rcv2-card[data-rang="Criminel recherché"] .rcv2-card-rang{color:#fca5a5;border-color:rgba(239,68,68,0.4)}
-.rcv2-card[data-rang="Hokage"] .rcv2-card-rang,
+.rcv2-card[data-rang="Kazekage"] .rcv2-card-rang,
 .rcv2-card[data-rang="Kage"] .rcv2-card-rang{color:var(--gold2);border-color:rgba(201,162,39,0.5)}
 .rcv2-card[data-rang="ANBU"] .rcv2-card-rang{color:#c4b5fd;border-color:rgba(139,92,246,0.5)}
 
@@ -3036,7 +3036,7 @@ html{-webkit-tap-highlight-color:transparent}
 .rcv2-card[data-rang="Criminel recherché"] .rcv2-card-avatar-wrap{
   background:linear-gradient(135deg,rgba(239,68,68,0.7),rgba(180,30,30,0.5));
 }
-.rcv2-card[data-rang="Hokage"] .rcv2-card-avatar-wrap,
+.rcv2-card[data-rang="Kazekage"] .rcv2-card-avatar-wrap,
 .rcv2-card[data-rang="Kage"] .rcv2-card-avatar-wrap{
   background:linear-gradient(135deg,#d4b44a,#c9a227);
   box-shadow:0 6px 22px rgba(201,162,39,0.4);
@@ -3114,6 +3114,113 @@ html{-webkit-tap-highlight-color:transparent}
   background:rgba(0,0,0,0.25);
   border-top:1px solid rgba(201,162,39,0.08);
 }
+
+/* ─── BADGE NIVEAU DE MENACE (Recensements) ─── */
+.menace-badge{
+  margin:8px 14px 0;
+  padding:10px 12px;
+  background:linear-gradient(135deg,rgba(20,16,11,0.7),rgba(15,12,8,0.85));
+  border:1px solid rgba(120,80,40,0.18);
+  border-radius:9px;
+  display:grid;
+  grid-template-columns:auto 1fr;
+  grid-template-rows:auto auto;
+  column-gap:10px;
+  row-gap:6px;
+  align-items:center;
+  position:relative;
+  overflow:hidden;
+  transition:all 0.2s;
+}
+.menace-icon{
+  grid-row:1 / span 2;
+  font-size:22px;
+  filter:drop-shadow(0 0 4px currentColor);
+}
+.menace-info{display:flex;flex-direction:column;gap:1px}
+.menace-label{
+  font-family:'Share Tech Mono',monospace;
+  font-size:8.5px;letter-spacing:2px;
+  color:rgba(255,255,255,0.4);
+  text-transform:uppercase;font-weight:600;
+}
+.menace-value{
+  font-family:'Cinzel',serif;
+  font-size:13px;font-weight:700;
+  letter-spacing:1.5px;
+  line-height:1;
+}
+.menace-bar{
+  grid-column:1 / -1;
+  height:4px;
+  background:rgba(0,0,0,0.4);
+  border-radius:2px;
+  overflow:hidden;
+  position:relative;
+}
+.menace-bar-fill{
+  height:100%;
+  border-radius:2px;
+  transition:width 0.5s cubic-bezier(.4,0,.2,1);
+  position:relative;
+}
+.menace-bar-fill::after{
+  content:'';position:absolute;top:0;left:0;right:0;bottom:0;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,0.25),transparent);
+  animation:menaceShimmer 2.5s linear infinite;
+}
+@keyframes menaceShimmer{
+  0%{transform:translateX(-100%)}
+  100%{transform:translateX(100%)}
+}
+
+/* Niveau FAIBLE — vert */
+.menace-badge.menace-low{border-color:rgba(34,197,94,0.25)}
+.menace-badge.menace-low .menace-icon{color:#22c55e}
+.menace-badge.menace-low .menace-value{color:#86efac}
+.menace-badge.menace-low .menace-bar-fill{background:linear-gradient(90deg,#16a34a,#22c55e)}
+
+/* Niveau MODÉRÉE — jaune */
+.menace-badge.menace-moderate{border-color:rgba(217,119,6,0.3)}
+.menace-badge.menace-moderate .menace-icon{color:#d97706}
+.menace-badge.menace-moderate .menace-value{color:#fbbf24}
+.menace-badge.menace-moderate .menace-bar-fill{background:linear-gradient(90deg,#d97706,#fbbf24)}
+
+/* Niveau ÉLEVÉE — orange */
+.menace-badge.menace-high{
+  border-color:rgba(234,88,12,0.4);
+  background:linear-gradient(135deg,rgba(40,15,5,0.7),rgba(20,8,3,0.85));
+}
+.menace-badge.menace-high .menace-icon{color:#ea580c;filter:drop-shadow(0 0 6px rgba(234,88,12,0.6))}
+.menace-badge.menace-high .menace-value{color:#fb923c}
+.menace-badge.menace-high .menace-bar-fill{background:linear-gradient(90deg,#ea580c,#fb923c)}
+
+/* Niveau CRITIQUE — rouge clignotant */
+.menace-badge.menace-critical{
+  border-color:rgba(220,38,38,0.55);
+  background:linear-gradient(135deg,rgba(60,10,10,0.8),rgba(30,5,5,0.9));
+  animation:menaceCriticalPulse 2.2s ease-in-out infinite;
+}
+.menace-badge.menace-critical .menace-icon{
+  color:#dc2626;
+  filter:drop-shadow(0 0 8px rgba(220,38,38,0.7));
+  animation:menaceIconBlink 1s ease-in-out infinite;
+}
+.menace-badge.menace-critical .menace-value{color:#fca5a5;text-shadow:0 0 8px rgba(220,38,38,0.5)}
+.menace-badge.menace-critical .menace-bar-fill{background:linear-gradient(90deg,#dc2626,#ef4444,#f87171)}
+@keyframes menaceCriticalPulse{
+  0%,100%{box-shadow:0 0 0 0 rgba(220,38,38,0.3),inset 0 0 0 0 rgba(220,38,38,0.05)}
+  50%{box-shadow:0 0 18px 0 rgba(220,38,38,0.45),inset 0 0 12px 0 rgba(220,38,38,0.08)}
+}
+@keyframes menaceIconBlink{
+  0%,100%{opacity:1}
+  50%{opacity:0.55}
+}
+
+.menace-badge.menace-unknown{opacity:0.5}
+.menace-badge.menace-unknown .menace-icon{color:#6b7280}
+.menace-badge.menace-unknown .menace-value{color:#9ca3af}
+.menace-badge.menace-unknown .menace-bar-fill{background:#6b7280}
 .rcv2-card-btn{
   flex:1;
   padding:8px 10px;
@@ -3630,7 +3737,7 @@ html{-webkit-tap-highlight-color:transparent}
     radial-gradient(ellipse at bottom left,rgba(180,30,30,0.12),transparent 60%),
     linear-gradient(180deg,rgba(26,21,16,1),rgba(18,14,9,1));
 }
-.rcv2-fiche-hero[data-rang="Hokage"],
+.rcv2-fiche-hero[data-rang="Kazekage"],
 .rcv2-fiche-hero[data-rang="Kage"]{
   background:
     radial-gradient(ellipse at top right,rgba(201,162,39,0.28),transparent 60%),
@@ -3658,7 +3765,7 @@ html{-webkit-tap-highlight-color:transparent}
 .rcv2-fiche-hero[data-rang="Criminel recherché"] .rcv2-fiche-photo{
   background:linear-gradient(135deg,rgba(239,68,68,0.7),rgba(180,30,30,0.5));
 }
-.rcv2-fiche-hero[data-rang="Hokage"] .rcv2-fiche-photo,
+.rcv2-fiche-hero[data-rang="Kazekage"] .rcv2-fiche-photo,
 .rcv2-fiche-hero[data-rang="Kage"] .rcv2-fiche-photo{
   background:linear-gradient(135deg,#d4b44a,#c9a227);
 }
@@ -3717,7 +3824,7 @@ html{-webkit-tap-highlight-color:transparent}
   border-color:rgba(239,68,68,0.5);color:#fca5a5;
   background:rgba(239,68,68,0.12);
 }
-.rcv2-fiche-hero[data-rang="Hokage"] .rcv2-fiche-rang-badge,
+.rcv2-fiche-hero[data-rang="Kazekage"] .rcv2-fiche-rang-badge,
 .rcv2-fiche-hero[data-rang="Kage"] .rcv2-fiche-rang-badge{
   border-color:var(--gold);color:#0c0a07;
   background:linear-gradient(135deg,#d4b44a,#c9a227);
@@ -12689,14 +12796,14 @@ document.addEventListener('error', function(e){
               </label>
             </div>
           </div>
-          <!-- Niveau de menace -->
-          <div style="display:flex;align-items:center;gap:14px;padding:14px 0;border-bottom:1px solid var(--border);opacity:0.55" title="Pas encore disponible">
-            <div style="width:44px;height:44px;border-radius:10px;background:rgba(192,65,14,0.06);border:1px solid rgba(192,65,14,0.15);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;filter:grayscale(0.5)">⚡</div>
+          <!-- Niveau de menace - ACTIVÉ -->
+          <div style="display:flex;align-items:center;gap:14px;padding:14px 0;border-bottom:1px solid var(--border)">
+            <div style="width:44px;height:44px;border-radius:10px;background:rgba(192,65,14,0.12);border:1px solid rgba(192,65,14,0.3);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0">⚡</div>
             <div style="flex:1;min-width:0">
               <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:2px">Niveau de menace (Recensements)</div>
-              <div style="font-size:10px;color:var(--muted);font-family:'Share Tech Mono',monospace">Score de dangerosité calculé automatiquement</div>
+              <div style="font-size:10px;color:var(--muted);font-family:'Share Tech Mono',monospace">Score de dangerosité calculé automatiquement (rang + statut + natures)</div>
             </div>
-            <span style="font-size:9px;font-family:'Share Tech Mono',monospace;padding:2px 8px;border-radius:4px;background:rgba(192,65,14,0.1);color:#c05010;border:1px solid rgba(192,65,14,0.2);letter-spacing:1px;flex-shrink:0">BIENTÔT</span>
+            <span style="font-size:9px;font-family:'Share Tech Mono',monospace;padding:3px 9px;border-radius:4px;background:rgba(34,197,94,0.12);color:#22c55e;border:1px solid rgba(34,197,94,0.3);letter-spacing:1px;flex-shrink:0;font-weight:700">ACTIF</span>
           </div>
           <!-- Tags IA -->
           <div style="display:flex;align-items:center;gap:14px;padding:14px 0;opacity:0.55" title="Pas encore disponible">
@@ -12965,7 +13072,7 @@ document.addEventListener('error', function(e){
             <option>Tokubetsu Jonin</option>
             <option>Jonin</option>
             <option>Commandant Jonin</option>
-            <option>Hokage</option>
+            <option>Kazekage</option>
             <option>ANBU</option>
             <option>Criminel recherché</option>
             <option>Civil</option>
@@ -14966,7 +15073,7 @@ function lgRenderTaxBareme(){
     // Fallback : grades par défaut
     if(!grades || !grades.length){
       grades = [
-        { name:'Hokage',           amount:8400, exempt:false },
+        { name:'Kazekage',           amount:8400, exempt:false },
         { name:'Commandant Jonin', amount:7000, exempt:false },
         { name:'Jonin',            amount:7200, exempt:false },
         { name:'Tokubetsu Jonin',  amount:6000, exempt:false },
@@ -14978,7 +15085,7 @@ function lgRenderTaxBareme(){
       ];
     }
     // Tri du plus haut grade au plus bas (ordre logique du barème)
-    var rankOrder = { 'Hokage':9, 'Commandant Jonin':8, 'Jonin':7, 'Tokubetsu Jonin':6,
+    var rankOrder = { 'Kazekage':9, 'Commandant Jonin':8, 'Jonin':7, 'Tokubetsu Jonin':6,
                       'Kakunin':5, 'Chunin':4, 'Tokubetsu Chunin':3, 'Genin Confirmé':2, 'Genin':1 };
     var sorted = grades.slice().sort(function(a,b){
       var ra = rankOrder[a.name] || 0, rb = rankOrder[b.name] || 0;
@@ -14987,7 +15094,7 @@ function lgRenderTaxBareme(){
     });
     // Couleurs / icônes par grade
     var styleFor = {
-      'Hokage':           { icon:'👑', accent:'#fbbf24', bg:'rgba(217,119,6,0.12)',  border:'rgba(217,119,6,0.35)' },
+      'Kazekage':           { icon:'👑', accent:'#fbbf24', bg:'rgba(217,119,6,0.12)',  border:'rgba(217,119,6,0.35)' },
       'Commandant Jonin': { icon:'⚔',  accent:'#ef4444', bg:'rgba(220,38,38,0.12)',  border:'rgba(220,38,38,0.32)' },
       'Jonin':            { icon:'◆',  accent:'#a855f7', bg:'rgba(168,85,247,0.12)', border:'rgba(168,85,247,0.32)' },
       'Tokubetsu Jonin':  { icon:'◆',  accent:'#3b82f6', bg:'rgba(59,130,246,0.12)', border:'rgba(59,130,246,0.32)' },
@@ -16852,6 +16959,96 @@ function buildNatureCheckboxes(){
   const c=el("nature-checkboxes");if(!c)return;
   c.innerHTML=NATURES.map(n=>`<label class="nature-checkbox-label rcv2-nat"><input type="checkbox" value="${n}" name="nature"> <span>${n}</span></label>`).join("");
 }
+
+/* ════════════════════════════════════════════════════════════════
+   NIVEAU DE MENACE — Calcul automatique pour les recensements
+   ════════════════════════════════════════════════════════════════
+   Score de 0 à 100 basé sur les VRAIS grades du barème de Sunagakure :
+   - Genin (0)       → 5
+   - Genin Confirmé  → 12
+   - Tokubetsu Chunin → 22
+   - Chunin (3600₽)  → 28
+   - Kakunin (4800₽) → 38
+   - Tokubetsu Jonin (6000₽) → 48
+   - Jonin (7200₽)   → 58
+   - Commandant Jonin (7000₽) → 70
+   - Kazekage (8400₽)  → 85
+   Plus :
+   - ANBU (élite spéciale) → 65
+   - Criminel recherché baseline → 55
+   - Statut "Criminel recherché" → +20 supplémentaire
+   - Polyvalence (natures multiples) → +5 par nature au-delà de la 1ère
+   - Faction hostile → +15
+
+   Catégories :
+   - 0-24    : FAIBLE     (vert)
+   - 25-49   : MODÉRÉE    (jaune)
+   - 50-74   : ÉLEVÉE     (orange)
+   - 75-100  : CRITIQUE   (rouge clignotant) */
+
+const _RANG_SCORES = {
+  // Hiérarchie officielle Sunagakure (alignée sur le barème des impôts)
+  'Genin':              5,
+  'Genin Confirmé':     12,
+  'Tokubetsu Chunin':   22,
+  'Chunin':             28,
+  'Chûnin':             28,
+  'Kakunin':            38,
+  'Tokubetsu Jonin':    48,
+  'Jonin':              58,
+  'Jônin':              58,
+  'Commandant Jonin':   70,
+  'Kazekage':             85,
+  // Hors hiérarchie standard
+  'ANBU':               65,
+  'Criminel recherché': 55,
+  // Civils / inconnus
+  'Civil':              2,
+  'Inconnu':            8
+};
+
+// Factions considérées comme hostiles ou à risque (bonus de menace)
+const _FACTIONS_HOSTILES = ['akatsuki', 'son', 'iwa', 'kumo', 'kiri', 'oto', 'orochimaru', 'taka', 'criminels'];
+
+function computeMenace(r){
+  if(!r || typeof r !== 'object') return { score:0, label:'INCONNUE', color:'#6b7280', cls:'unknown' };
+  let score = 0;
+  // 1. Rang (base)
+  const rang = (r.rang||'').trim();
+  if(_RANG_SCORES.hasOwnProperty(rang)) score += _RANG_SCORES[rang];
+  else if(rang) score += 10; // rang non standard = baseline
+  // 2. Statut criminel (cumule avec le rang)
+  if(rang === 'Criminel recherché') score += 20;
+  // 3. Polyvalence (natures multiples)
+  const nats = Array.isArray(r.natures) ? r.natures.length : 0;
+  if(nats >= 2) score += (nats - 1) * 5;
+  if(nats >= 5) score += 5; // bonus polyvalence extrême
+  // 4. Faction hostile
+  const fac = (r.faction||'').toLowerCase();
+  if(fac && _FACTIONS_HOSTILES.some(h => fac.includes(h))) score += 15;
+  // Clamp 0-100
+  score = Math.max(0, Math.min(100, score));
+  // Catégorisation
+  let label, color, cls;
+  if(score >= 75)      { label='CRITIQUE'; color='#dc2626'; cls='critical'; }
+  else if(score >= 50) { label='ÉLEVÉE';   color='#ea580c'; cls='high'; }
+  else if(score >= 25) { label='MODÉRÉE';  color='#d97706'; cls='moderate'; }
+  else                 { label='FAIBLE';   color='#16a34a'; cls='low'; }
+  return { score, label, color, cls };
+}
+
+function renderMenaceBadge(r){
+  const m = computeMenace(r);
+  return '<div class="menace-badge menace-'+m.cls+'" title="Score : '+m.score+'/100">'
+       +   '<span class="menace-icon">⚡</span>'
+       +   '<div class="menace-info">'
+       +     '<div class="menace-label">Menace</div>'
+       +     '<div class="menace-value">'+m.label+'</div>'
+       +   '</div>'
+       +   '<div class="menace-bar"><div class="menace-bar-fill" style="width:'+m.score+'%"></div></div>'
+       + '</div>';
+}
+
 function renderRecensement(){
   // Chips filtres actifs
   var chips = [];
@@ -16905,11 +17102,20 @@ function renderRecensement(){
     return;
   }
 
+  // Numérotation stable séquentielle (#001, #002, …) basée sur l'ordre de
+  // création dans DB.recenses. Map{id → numéro} pour que chaque recensé garde
+  // toujours le même numéro, indépendamment des filtres affichés.
+  const recIdToNum = {};
+  (DB.recenses||[]).forEach(function(rec, i){
+    if(rec && rec.id != null) recIdToNum[rec.id] = i + 1;
+  });
+
   grid.innerHTML=list.map(r=>{
     const initials=((r.prenom||"?").charAt(0)+((r.nom||"").charAt(0)||"")).toUpperCase();
     const photoHTML=r.photo&&safeImgSrc(r.photo)?`<img alt="Photo" src="${safeImgSrc(r.photo)}">`:`${initials}`;
     const rangSafe=esc(r.rang||"Inconnu");
-    const idStr='#'+String(r.id).slice(-5);
+    const numSeq = recIdToNum[r.id] || 0;
+    const idStr = '#' + String(numSeq).padStart(3, '0');
     const naturesHTML=(r.natures&&r.natures.length)
       ?`<div class="rcv2-card-section"><div class="rcv2-card-section-label">Natures & Maîtrises</div><div class="rcv2-card-natures">${r.natures.slice(0,5).map(n=>`<span class="badge ${NATURE_BADGE[n]||"badge-gray"}">${esc(n)}</span>`).join("")}${r.natures.length>5?`<span class="badge badge-gray">+${r.natures.length-5}</span>`:""}</div></div>`
       :"";
@@ -16934,6 +17140,7 @@ function renderRecensement(){
       ${metaHTML}
       ${compHTML}
       ${naturesHTML}
+      ${renderMenaceBadge(r)}
       <div class="rcv2-card-footer">
         <button class="rcv2-card-btn primary" onclick="viewRecense(${r.id})">👁 Consulter</button>
         ${canModify()?`<button class="rcv2-card-btn gold" onclick="openEditRecense(${r.id})" title="Modifier">✏️</button><button class="rcv2-card-btn danger" onclick="deleteRecense(${r.id})" title="Supprimer">🗑</button>`:""}
@@ -17073,7 +17280,10 @@ function viewRecense(id){
   const initials=((r.prenom||"?").charAt(0)+((r.nom||"").charAt(0)||"")).toUpperCase();
   const photoInner=r.photo&&safeImgSrc(r.photo)?`<img alt="Photo" src="${safeImgSrc(r.photo)}">`:initials;
   const rangSafe=esc(r.rang||"Inconnu");
-  const idStr='#'+String(r.id).slice(-6);
+  // Numéro séquentiel stable basé sur l'ordre de création dans DB.recenses
+  // (cohérent avec celui affiché sur la grille de recensement).
+  const _idx=(DB.recenses||[]).findIndex(x=>x&&x.id===r.id);
+  const idStr='#'+String(_idx>=0?_idx+1:0).padStart(3,'0');
 
   // Stats
   const ageDisplay=r.age?esc(r.age)+' ans':'—';
@@ -19331,7 +19541,7 @@ function impDefaultGrades(){
     { name: 'Tokubetsu Jonin',       amount: 6000, exempt: false },
     { name: 'Jonin',                 amount: 7200, exempt: false },
     { name: 'Commandant Jonin',      amount: 7000, exempt: false },
-    { name: 'Hokage',                amount: 8400, exempt: false },
+    { name: 'Kazekage',                amount: 8400, exempt: false },
   ];
 }
 
@@ -19758,7 +19968,7 @@ function impGradeColorFor(grade){
     'Tokubetsu Jonin':      { bg:'rgba(59,130,246,0.15)', fg:'#3b82f6', border:'rgba(59,130,246,0.35)' },
     'Jonin':                { bg:'rgba(244,114,182,0.16)',fg:'#f472b6', border:'rgba(244,114,182,0.35)' },
     'Commandant Jonin':     { bg:'rgba(220,38,38,0.16)',  fg:'#ef4444', border:'rgba(220,38,38,0.36)' },
-    'Hokage':               { bg:'rgba(217,119,6,0.20)',  fg:'#fbbf24', border:'rgba(217,119,6,0.45)' },
+    'Kazekage':               { bg:'rgba(217,119,6,0.20)',  fg:'#fbbf24', border:'rgba(217,119,6,0.45)' },
   };
   return map[grade] || { bg:'rgba(180,140,20,0.12)', fg:'#d4b44a', border:'rgba(180,140,20,0.3)' };
 }
