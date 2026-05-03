@@ -10997,7 +10997,7 @@ document.addEventListener('error', function(e){
 
     /* Picker emoji */
     #page-messagerie .msg-react-picker{
-      position:absolute;z-index:50;
+      position:fixed;z-index:9000;
       background:rgba(20,16,9,0.98);
       border:1px solid rgba(180,140,20,0.4);
       border-radius:24px;
@@ -24439,21 +24439,45 @@ function msgShowReactPicker(event, msgId){
   picker.innerHTML = emojis.map(function(e){
     return '<span class="emoji" onclick="msgToggleReact('+msgId+','+JSON.stringify(e).replace(/"/g,'&quot;')+');document.querySelectorAll(\'.msg-react-picker\').forEach(function(x){x.remove()});">'+e+'</span>';
   }).join('');
-  // Position
+  // bug-fix : position FIXED au-dessus de la bulle cliquée (coords viewport, pas thread)
+  // Avantages :
+  //  - La barre n'est plus coupée par la topbar (z-index 9000 > topbar 50)
+  //  - Si l'utilisateur scrolle, on ferme le picker au lieu de le laisser flotter
   var rect = event.target.getBoundingClientRect();
-  var threadWrap = document.getElementById('msg-thread');
-  var wRect = threadWrap.getBoundingClientRect();
-  picker.style.top = (rect.top - wRect.top - 50) + 'px';
-  picker.style.left = (rect.left - wRect.left) + 'px';
-  threadWrap.appendChild(picker);
-  // Fermer au clic ailleurs
+  // Append au body pour échapper aux containers avec overflow:hidden / will-change
+  document.body.appendChild(picker);
+  // Mesurer la taille du picker pour le centrer
+  var pickerRect = picker.getBoundingClientRect();
+  var top = rect.top - pickerRect.height - 8;
+  var left = rect.left;
+  // Si pas la place en haut, mettre en dessous
+  if(top < 8) top = rect.bottom + 8;
+  // Clamp horizontal pour rester dans la viewport
+  left = Math.max(8, Math.min(window.innerWidth - pickerRect.width - 8, left));
+  picker.style.top = top + 'px';
+  picker.style.left = left + 'px';
+  // Fermer au clic ailleurs OU au scroll
   setTimeout(function(){
-    document.addEventListener('click', function close(ev){
-      if(!picker.contains(ev.target)){
-        picker.remove();
-        document.removeEventListener('click', close);
-      }
-    });
+    var closePicker = function(){
+      picker.remove();
+      document.removeEventListener('click', onClickOutside, true);
+      window.removeEventListener('scroll', closePicker, true);
+      // Aussi écouter le scroll dans le thread
+      var threadWrap = document.getElementById('msg-thread');
+      if(threadWrap) threadWrap.removeEventListener('scroll', closePicker);
+      var pageContent = document.querySelector('.page-content.active');
+      if(pageContent) pageContent.removeEventListener('scroll', closePicker);
+    };
+    var onClickOutside = function(ev){
+      if(!picker.contains(ev.target)) closePicker();
+    };
+    document.addEventListener('click', onClickOutside, true);
+    // Fermer aussi au scroll (page, thread, ou container)
+    window.addEventListener('scroll', closePicker, true);
+    var threadWrap = document.getElementById('msg-thread');
+    if(threadWrap) threadWrap.addEventListener('scroll', closePicker);
+    var pageContent = document.querySelector('.page-content.active');
+    if(pageContent) pageContent.addEventListener('scroll', closePicker);
   }, 50);
 }
 function msgToggleReact(msgId, emoji){
