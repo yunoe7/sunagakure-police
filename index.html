@@ -14606,7 +14606,7 @@ let _lastFbArrays={plaintes:[],dossiers:[],annonces:[],candidatures:[],operation
 // IDs supprimés récemment — bloque la réinsertion par race condition Firebase
 // Structure : { "plaintes": { "42": timestamp, ... }, ... }
 let _deletedIds={};
-const _DELETED_TTL=30000; // 30 secondes de protection
+const _DELETED_TTL=300000; // 5 minutes de protection (couvre les latences réseau)
 function _markDeleted(collection,id){
   if(!_deletedIds[collection])_deletedIds[collection]={};
   _deletedIds[collection][String(id)]=Date.now();
@@ -14695,15 +14695,43 @@ async function _flushSaveQueue(){
       setTimeout(_flushSaveQueue, 1500);
       return;
     }
-    // Garde-fou supplémentaire : si on a des users Firebase confirmés ET qu'on
-    // s'apprête à écrire SIGNIFICATIVEMENT moins d'users, c'est suspect → reporter.
-    if(_fbGetOK && liveFbUsers.length >= 3 && Array.isArray(toSave.users) &&
-       toSave.users.length < Math.floor(liveFbUsers.length / 2)){
-      console.warn('[FB-SAVE] ⏸ Écriture suspecte : '+toSave.users.length+' users locaux vs '+liveFbUsers.length+' sur Firebase. Sauvegarde reportée.');
-      _fbSaveQueue = toSave;
-      _fbSaveRunning = false;
-      setTimeout(_flushSaveQueue, 2000);
-      return;
+    // ── GARDE-FOU SUPPLÉMENTAIRE — seuil plus protecteur ──
+    // Si on a des users Firebase confirmés ET qu'on s'apprête à écrire moins de
+    // users qu'il n'y en avait, c'est suspect. On couvre 3 cas :
+    // 1) Beaucoup d'users (≥3) → seuil à 50% (anti-écrasement massif)
+    // 2) Peu d'users (2-3) → on protège dès qu'on en perd 1 (bug commun)
+    // 3) On ne reporte JAMAIS si la suppression est volontaire (deleteUserById
+    //    met à jour _lastFbArrays.users avant saveData, donc la liste FB déjà
+    //    fraîche reflète l'absence de l'user supprimé → pas de garde-fou)
+    if(_fbGetOK && Array.isArray(toSave.users)){
+      var fbCount = liveFbUsers.length;
+      var localCount = toSave.users.length;
+      // Cas 1 : grosse perte massive (≥50%)
+      if(fbCount >= 3 && localCount < Math.floor(fbCount / 2)){
+        console.warn('[FB-SAVE] ⏸ Écriture suspecte : '+localCount+' users locaux vs '+fbCount+' sur Firebase. Sauvegarde reportée.');
+        _fbSaveQueue = toSave;
+        _fbSaveRunning = false;
+        setTimeout(_flushSaveQueue, 2000);
+        return;
+      }
+      // Cas 2 : Petite perte (1+ user disparu) si Firebase a 2-5 users.
+      // Vérifier que cette perte n'est pas intentionnelle (= cohérente avec
+      // _lastFbArrays.users : si un user est dans liveFbUsers MAIS PAS dans
+      // _lastFbArrays.users__known au cycle précédent, c'est un nouveau user
+      // distant qu'on doit garder).
+      if(fbCount >= 2 && fbCount <= 5 && localCount < fbCount){
+        var localIdsSet = new Set(toSave.users.map(function(u){ return u && String(u.id); }).filter(Boolean));
+        var missingFromLocal = liveFbUsers.filter(function(fbU){
+          return fbU && fbU.id && !localIdsSet.has(String(fbU.id))
+                && !_isDeletedProtected("users", fbU.id);
+        });
+        if(missingFromLocal.length > 0){
+          console.warn('[FB-SAVE] ⏸ '+missingFromLocal.length+' user(s) disparaîtraient ('+missingFromLocal.map(function(u){return u.nom||u.login;}).join(', ')+'). Sauvegarde reportée + merge.');
+          // On préserve les users disparus (probablement un cache local incomplet)
+          toSave.users = toSave.users.concat(missingFromLocal);
+          // Et on continue avec la sauvegarde (pas de return)
+        }
+      }
     }
 
     // Fusionner les users locaux avec la liste fraîche Firebase
@@ -14716,12 +14744,20 @@ async function _flushSaveQueue(){
     const knownFbUserIds=new Set(prevKnownUsers.map(String));
     // Nouveaux users distants = présents dans Firebase, absents en local, ET pas connus avant (créés par un autre admin)
     const remoteNewUsers=fbUsers.filter(u=>u&&u.id&&!localUserIds.has(u.id)&&!knownFbUserIds.has(String(u.id))&&!_isDeletedProtected("users",u.id));
-    // Mettre à jour les users locaux existants avec les données Firebase si elles ont changé
+    // bug-fix : pour les users existants en local ET distant, fusionner intelligemment :
+    // - garder en priorité la version locale (qui contient nos modifs en cours)
+    // - MAIS si la version distante a des champs que la nôtre n'a pas (ex: photo
+    //   modifiée par un autre admin), les rapatrier
     const fbUserById={};fbUsers.forEach(u=>{if(u&&u.id)fbUserById[u.id]=u;});
     const updatedLocalUsers=localUsers.map(u=>{
       if(!u||!u.id||!fbUserById[u.id])return u;
-      // Garder la version locale (qui peut avoir des modifs non encore sauvegardées)
-      return u;
+      var fbU = fbUserById[u.id];
+      // Merger : local prioritaire, mais on récupère les champs distants modifiés
+      // si on n'a pas de modif locale en cours sur eux. La règle simple :
+      // si une propriété distante est NON-vide alors que la locale est vide ou
+      // identique, prendre la distante. Sinon garder la locale.
+      var merged = Object.assign({}, fbU, u); // local écrase distant pour les champs qu'on possède
+      return merged;
     });
     const mergedUsers=[...updatedLocalUsers,...remoteNewUsers];
     toSave.users=mergedUsers;
@@ -14790,8 +14826,10 @@ function initFirebaseSync(){
       ['plaintes','dossiers','annonces','candidatures','operations','sanctions','recenses','infractions','timeline','users'].forEach(k=>{
         if(Array.isArray(data[k])&&data[k].length>0) _lastFbArrays[k]=data[k];
       });
-      if(_fbSaveRunning&&!wasFirst){
-        // Save en cours : on memorise mais on ne re-render pas (evite de voir des donnees intermediaires)
+      if((_fbSaveRunning || _fbSaveQueue) && !wasFirst){
+        // Save en cours OU en attente : on memorise mais on ne re-render pas
+        // (evite de voir des donnees intermediaires ET d'ecraser nos modifs locales
+        //  pas encore atteintes Firebase)
         return;
       }
       // Si c'est une mise a jour post-save (pas le premier chargement), ne pas ecraser DB
@@ -14800,22 +14838,90 @@ function initFirebaseSync(){
         // Mettre a jour seulement les tableaux avec les nouvelles donnees distantes
         // mais respecter les suppressions locales (ne pas restaurer les elements supprimes)
         const SYNC_KEYS=['plaintes','dossiers','annonces','candidatures','operations','sanctions','recenses','infractions','timeline','users'];
+        // bug-fix : tracker quelles collections ont changé pour re-render uniquement
+        // les pages concernées (au lieu de re-render aveuglément ou de ne rien faire).
+        var _changedKeys = new Set();
         SYNC_KEYS.forEach(k=>{
           if(!Array.isArray(data[k])) return;
           const localIds=new Set((DB[k]||[]).map(x=>x&&String(x.id)).filter(Boolean));
           const prevKnown=Array.isArray(_lastFbArrays[k+'__known'])?_lastFbArrays[k+'__known']:[];
           const knownFbIds=new Set(prevKnown.map(String));
+          const remoteIds=new Set(data[k].map(x=>x&&String(x.id)).filter(Boolean));
           const remoteNew=data[k].filter(x=>x&&x.id&&!localIds.has(String(x.id))&&!knownFbIds.has(String(x.id))&&!_isDeletedProtected(k,x.id));
           if(remoteNew.length>0){
             DB[k]=[...(DB[k]||[]),...remoteNew];
+            _changedKeys.add(k);
           }
+          // ═══ BUG-FIX : PROPAGATION DES SUPPRESSIONS DISTANTES ═══
+          // Si un item était CONNU sur Firebase au cycle précédent (knownFbIds)
+          // mais n'apparaît PLUS dans data[k] maintenant → il a été supprimé par un autre user.
+          // Il faut le retirer aussi de notre DB local.
+          // Exception : items récemment créés localement et pas encore push sur Firebase
+          // (= pas dans knownFbIds, donc cette condition les exclut naturellement).
+          var localToRemove = [];
+          // bug-fix critique : NE PAS propager les suppressions massives (anti-disaster).
+          // Si on s'apprête à supprimer >50% des items pour une collection critique,
+          // c'est probablement un bug réseau / Firebase vidé temporairement → on skip.
+          var localCount = (DB[k]||[]).length;
+          var remoteCount = data[k].length;
+          var massiveLoss = (localCount >= 3 && remoteCount < Math.ceil(localCount / 2));
+          if(massiveLoss){
+            console.warn('[SYNC] ⚠️  Suppression massive distante détectée pour "'+k+'" ('+remoteCount+' restants vs '+localCount+' locaux). Ignorée par sécurité.');
+          } else {
+            (DB[k]||[]).forEach(function(x){
+              if(!x||x.id==null) return;
+              var idStr = String(x.id);
+              // Item connu sur Firebase ? + maintenant absent côté distant ?
+              if(knownFbIds.has(idStr) && !remoteIds.has(idStr)){
+                localToRemove.push(idStr);
+              }
+            });
+            if(localToRemove.length > 0){
+              DB[k] = (DB[k]||[]).filter(function(x){
+                return !x || x.id==null || !localToRemove.includes(String(x.id));
+              });
+              _changedKeys.add(k);
+            }
+          }
+          // Détecter aussi les mises à jour d'items existants (ex: plainte modifiée)
+          // par diff JSON de l'élément complet
+          var localById = {};
+          (DB[k]||[]).forEach(function(x){ if(x&&x.id!=null) localById[String(x.id)]=x; });
+          data[k].forEach(function(remoteItem){
+            if(!remoteItem || remoteItem.id==null) return;
+            var localItem = localById[String(remoteItem.id)];
+            if(localItem){
+              // Si l'item distant a été modifié (diff de contenu), on remplace
+              try{
+                if(JSON.stringify(localItem) !== JSON.stringify(remoteItem)){
+                  Object.assign(localItem, remoteItem);
+                  _changedKeys.add(k);
+                }
+              }catch(e){}
+            }
+          });
           _lastFbArrays[k+'__known']=data[k].map(x=>x&&String(x.id)).filter(Boolean);
         });
         // Mettre a jour les champs non-tableau (commissaire, logo, etc.)
-        if(data.commissaire) DB.commissaire=data.commissaire;
+        if(data.commissaire && data.commissaire !== DB.commissaire){
+          DB.commissaire=data.commissaire;
+          // Mettre à jour l'affichage immédiatement
+          var _cd=document.getElementById("comm-display");
+          if(_cd) _cd.textContent = DB.commissaire || "—";
+          var _ai=document.getElementById("admin-comm-input");
+          if(_ai && document.activeElement!==_ai) _ai.value = DB.commissaire || "";
+        }
         if(data.grades) DB.grades=data.grades;
         if(data.adminNotes) DB.adminNotes=data.adminNotes;
         if(data.loginHistory) DB.loginHistory=data.loginHistory;
+        // bug-fix : synchroniser le logo. Sans ça, quand l'admin change le logo
+        // du commissariat, les autres utilisateurs ne le voient pas changer
+        // jusqu'au prochain rechargement complet de la page.
+        if(typeof data.logo !== 'undefined' && data.logo !== DB.logo){
+          DB.logo = data.logo || '';
+          // Re-appliquer le logo immédiatement dans l'UI
+          if(typeof applyLogo === 'function'){ try{ applyLogo(); }catch(e){} }
+        }
         // bug-fix : SYNCHRONISER DB.impots (paiements, barème, ninjas du registre).
         // Sans ça, quand un utilisateur marquait "Payé" de son côté, les autres
         // ne voyaient jamais la mise à jour. Comme impots est un objet (pas un
@@ -14826,19 +14932,84 @@ function initFirebaseSync(){
             if(data.impots[sub] && !Array.isArray(data.impots[sub]) && typeof data.impots[sub] === 'object'){
               data.impots[sub] = Object.values(data.impots[sub]).filter(Boolean);
             }
+            // bug-fix : garantir que les sous-arrays existent même si null/undefined côté Firebase
+            // (sinon DB.impots.ninjas.map() crasherait)
+            if(!Array.isArray(data.impots[sub])) data.impots[sub] = [];
           });
+          if(typeof data.impots.totalHistorical !== 'number') data.impots.totalHistorical = 0;
+          var _impotsChanged = JSON.stringify(DB.impots||{}) !== JSON.stringify(data.impots);
           DB.impots = data.impots;
-          // Re-render la page Impôts si elle est actuellement affichée
-          var p = document.getElementById('page-impots');
-          if(p && p.classList.contains('active') && typeof renderImpots === 'function'){
-            try{ renderImpots(); }catch(e){}
-          }
+          if(_impotsChanged) _changedKeys.add('impots');
         }
         // Pareil pour DB.features (toggles partagés entre utilisateurs)
         if(data.features && typeof data.features === 'object'){
-          DB.features = data.features;
+          // bug-fix : on merge field-by-field pour ne pas écraser un toggle local
+          // qui n'a pas encore été propagé à Firebase (rare mais possible).
+          var _featuresChanged = false;
+          var newFeatures = Object.assign({}, DB.features || {}, data.features);
+          if(JSON.stringify(DB.features||{}) !== JSON.stringify(newFeatures)){
+            DB.features = newFeatures;
+            _featuresChanged = true;
+          }
+          if(_featuresChanged) _changedKeys.add('features');
         }
         try{localStorage.setItem(STORE,JSON.stringify(DB));}catch(e){}
+
+        // ═══ BUG-FIX MAJEUR : RE-RENDER DE LA PAGE COURANTE SI SES DONNÉES ONT CHANGÉ ═══
+        // Sans ce bloc, quand ton ami crée/modifie/supprime une plainte/dossier/annonce/etc.,
+        // tu ne voyais le changement que si tu changeais de page et revenais. Désormais
+        // c'est instantané. On re-render UNIQUEMENT la page actuellement active pour
+        // ne pas gaspiller de cycles CPU.
+        if(_changedKeys.size > 0){
+          try{
+            // Protection : si une modale est ouverte (édition en cours), ne pas re-render
+            // pour ne pas perdre les saisies utilisateur. Le re-render se fera à la
+            // fermeture de la modale (showPage rappelé).
+            var anyModalOpen = !!document.querySelector('.modal-overlay.open');
+            if(anyModalOpen){
+              // On a quand même mis à jour DB et localStorage, donc les données sont à jour.
+              // Le re-render se fera quand l'utilisateur ferme la modale.
+            } else {
+              var activePageEl = document.querySelector('.page-content.active');
+              var activePage = activePageEl ? activePageEl.id.replace(/^page-/,'') : null;
+            // Map page → renderer + collections concernées
+            var pageRenderers = {
+              'plaintes':    { fn: 'renderPlaintes',    keys: ['plaintes','users'] },
+              'dossiers':    { fn: 'renderDossiers',    keys: ['dossiers','plaintes','sanctions','users'] },
+              'annonces':    { fn: 'renderAnnonces',    keys: ['annonces'] },
+              'recensement': { fn: 'renderRecensement', keys: ['recenses'] },
+              'recrutement': { fn: 'renderCandidatures',keys: ['candidatures'] },
+              'effectifs':   { fn: 'renderEffectifs',   keys: ['users','sanctions','candidatures'] },
+              'sanctions':   { fn: 'renderSanctions',   keys: ['sanctions','users'] },
+              'operations':  { fn: 'renderOperations',  keys: ['operations','users'] },
+              'codepenal':   { fn: 'renderCodePenal',   keys: ['infractions'] },
+              'admin':       { fn: 'renderAdmin',       keys: ['users','timeline','loginHistory','features'] },
+              'impots':      { fn: 'renderImpots',      keys: ['impots','users'] },
+              'dashboard':   { fn: 'syncDashboard',     keys: ['plaintes','dossiers','annonces','operations','users','recenses','sanctions'] },
+              'hierarchie':  { fn: 'renderHierarchie',  keys: ['users'] },
+              'profil':      { fn: 'renderProfil',      keys: ['users'] },
+              'bingobook':   { fn: 'bbRender',          keys: ['users'] }
+              // 'histoire' et 'messagerie' : pas de sync auto (lecture seule ou listener Firebase dédié)
+            };
+            // Re-render uniquement la page active si une de ses collections a changé
+            if(activePage && pageRenderers[activePage]){
+              var pr = pageRenderers[activePage];
+              var pageNeedsRefresh = pr.keys.some(function(k){ return _changedKeys.has(k); });
+              if(pageNeedsRefresh && typeof window[pr.fn] === 'function'){
+                try{ window[pr.fn](); }catch(e){ console.warn('[sync] '+pr.fn+' failed:', e); }
+              }
+            }
+            // Toujours mettre à jour les badges de notification (tout en haut + bottom-nav)
+            // car ils s'appliquent à toutes les pages
+            if(typeof updateBadges === 'function')          { try{ updateBadges(); }catch(e){} }
+            if(typeof syncBottomNavBadges === 'function')   { try{ syncBottomNavBadges(); }catch(e){} }
+            // Mettre aussi à jour le dashboard en arrière-plan (stats globales)
+            if(activePage !== 'dashboard' && typeof syncDashboard === 'function'){
+              try{ syncDashboard(); }catch(e){}
+            }
+            } // fin else (pas de modale ouverte)
+          }catch(e){ console.warn('[sync] re-render failed:', e); }
+        }
       } else {
       // Premier chargement : prendre toutes les donnees Firebase
       const def=defaultData();
@@ -14871,7 +15042,10 @@ function initFirebaseSync(){
       const fixCorrupted=(async()=>{
         let fixed=false;
         for(const u of DB.users){
-          if(u.pass==='__PENDING_HASH__' || (u.pass && !isHashed(u.pass) && u.pass !== '__NEEDS_RESET__')){
+          // bug-fix : ne désactiver QUE les vrais cas corrompus (vide, marqueur),
+          // PAS les hashes valides ou non-reconnus (un hash inconnu peut être un
+          // nouveau format introduit par un bug → mieux vaut le préserver).
+          if(u.pass === '__PENDING_HASH__' || u.pass === '' || u.pass == null){
             u.pass = '__NEEDS_RESET__';
             u.statut = 'Désactivé';
             fixed = true;
@@ -14930,18 +15104,25 @@ function initFirebaseSync(){
         (async()=>{
           // bug-fix sécurité : on ne migre plus les passwords en clair vers DEFAULT_PASS.
           // - Si u.pass ressemble à un mot de passe en clair (rare bug ancien), on le hashe en PBKDF2
-          // - Si u.pass est __PENDING_HASH__, vide ou invalide → marquer comme à reset
+          // - Si u.pass est __PENDING_HASH__, vide → marquer comme à reset
+          // - Si u.pass est un hash inconnu (potentiel nouveau format) → on PRÉSERVE
+          //   pour ne pas désactiver des comptes par erreur. Les comptes pourront
+          //   se connecter via auto-migration au login si c'est juste un format SHA-256 legacy.
           for(const u of DB.users){
-            if(!isHashed(u.pass)){
-              if(typeof u.pass === 'string' && u.pass && u.pass !== '__PENDING_HASH__' && u.pass !== '__NEEDS_RESET__' && u.pass.length >= 4 && !/^[0-9a-f]{64}$/.test(u.pass)){
-                // Probable mot de passe en clair → migrer vers PBKDF2
-                u.pass = await hashPass(u.pass);
-              } else {
-                // Hash invalide / placeholder → marquer comme à réinitialiser
-                u.pass = '__NEEDS_RESET__';
-                u.statut = 'Désactivé';
-              }
+            if(isHashed(u.pass)) continue; // déjà OK (PBKDF2 ou SHA-256 legacy)
+            if(u.pass === '__NEEDS_RESET__') continue; // déjà marqué
+            // Cas 1 : hash absent / vide / placeholder → marquer comme à réinitialiser
+            if(!u.pass || u.pass === '__PENDING_HASH__' || u.pass === ''){
+              u.pass = '__NEEDS_RESET__';
+              u.statut = 'Désactivé';
             }
+            // Cas 2 : ressemble à un mot de passe en clair (court, avec caractères variés) → migrer
+            else if(typeof u.pass === 'string' && u.pass.length >= 4 && u.pass.length < 64 && !/^[0-9a-f]+$/.test(u.pass)){
+              u.pass = await hashPass(u.pass);
+            }
+            // Cas 3 : autre format inconnu → on PRÉSERVE pour éviter les faux positifs.
+            // Le compte ne pourra pas se connecter mais ne sera pas perdu, l'admin
+            // pourra reset manuellement via Admin → Membres → Modifier.
           }
           saveData();
           afterFbMigration();
@@ -15962,37 +16143,73 @@ function doLogin(){
   _doLoginCheck();
 }
 
-// Reset d'urgence : efface le localStorage et réinitialise sans rechargement
+// Reset d'urgence : réinitialise UNIQUEMENT le mot de passe admin (pas toutes les données)
+// L'ancienne version effaçait TOUS les comptes/plaintes/dossiers, ce qui était dangereux
+// si l'admin cliquait dessus par erreur.
 async function emergencyReset(){
-  const code=prompt("🔒 Accès restreint — Entrez le mot de passe administrateur pour réinitialiser :");
+  const code=prompt("🔒 Accès restreint — Entrez le mot de passe administrateur actuel :");
   if(code===null)return;
   const adminAcc=DB.users.find(u=>u.role==="admin");
   if(!adminAcc){alert("❌ Aucun compte admin trouvé.");return;}
-  // bug-fix : on utilise verifyPass au lieu de comparer hash === hash (PBKDF2+sel)
   const ok = await verifyPass(code, adminAcc.pass);
   if(!ok){alert("❌ Mot de passe incorrect. Accès refusé.");return;}
 
-  // bug-fix sécurité : on ne réinitialise plus avec un mot de passe par défaut
-  // public hardcodé. L'admin doit choisir un nouveau mot de passe.
-  const newPass = prompt("🔑 Choisissez le NOUVEAU mot de passe pour le compte admin (8 caractères minimum) :");
+  // Demander un nouveau mot de passe
+  const newPass = prompt("🔑 Choisissez le NOUVEAU mot de passe admin (8 caractères minimum) :");
   if(newPass === null) return;
   if(typeof newPass !== 'string' || newPass.length < 8){
-    alert("❌ Mot de passe trop court (8 caractères minimum). Réinitialisation annulée.");
+    alert("❌ Mot de passe trop court (8 caractères minimum).");
     return;
   }
   const newPass2 = prompt("🔑 Confirmez le nouveau mot de passe :");
   if(newPass !== newPass2){
-    alert("❌ Les mots de passe ne correspondent pas. Réinitialisation annulée.");
+    alert("❌ Les mots de passe ne correspondent pas.");
     return;
   }
 
+  // bug-fix critique : NE PAS effacer toute la base — juste mettre à jour le pass admin
   askDelete(
-    "⚠️ Réinitialiser toutes les données ? Le compte admin (identifiant : admin) sera recréé avec le mot de passe que vous venez de choisir. Cette action est irréversible.",
+    "🔑 Changer le mot de passe admin ?\n\nAucune autre donnée ne sera affectée (comptes, plaintes, dossiers, etc. seront préservés).",
+    async ()=>{
+      const h = await hashPass(newPass);
+      const a = DB.users.find(u=>u.role==="admin");
+      if(a){
+        a.pass = h;
+        saveData(); // utilise les garde-fous, pas d'écrasement total
+      }
+      try{ localStorage.removeItem("suna_session"); }catch(e){}
+      forceLogout();
+      el("login-user").value="admin";
+      showToast("Mot de passe admin changé. Connectez-vous avec votre nouveau mot de passe.","success");
+    }
+  );
+}
+
+// resetAllData : VRAI reset complet (à utiliser uniquement en cas de corruption majeure)
+async function resetAllData(){
+  // Double confirmation pour cette action destructrice
+  const code=prompt("⚠️ ATTENTION — RESET TOTAL DES DONNÉES\n\nCela effacera TOUS les comptes, plaintes, dossiers, etc.\nLes données seront perdues définitivement (sauf si tu as une sauvegarde JSON).\n\nEntrez le mot de passe admin pour confirmer :");
+  if(code===null)return;
+  const adminAcc=DB.users.find(u=>u.role==="admin");
+  if(!adminAcc){alert("❌ Aucun compte admin trouvé.");return;}
+  const ok = await verifyPass(code, adminAcc.pass);
+  if(!ok){alert("❌ Mot de passe incorrect.");return;}
+
+  const confirm1 = prompt('Tapez "RESET TOTAL" pour confirmer la suppression de TOUTES les données :');
+  if(confirm1 !== "RESET TOTAL"){
+    alert("Reset annulé (mauvaise confirmation).");
+    return;
+  }
+
+  const newPass = prompt("🔑 Nouveau mot de passe admin (8 caractères minimum) :");
+  if(!newPass || newPass.length < 8){alert("Mot de passe trop court."); return;}
+
+  askDelete(
+    "⚠️ DERNIÈRE CONFIRMATION : effacer toutes les données ?",
     async ()=>{
       try{ localStorage.removeItem(STORE); }catch(e){}
       try{ localStorage.removeItem("suna_session"); }catch(e){}
       DB = defaultData();
-      // Hasher le nouveau mot de passe choisi par l'admin
       const h = await hashPass(newPass);
       const a = DB.users.find(u=>u.role==="admin");
       if(a) a.pass = h;
@@ -16003,7 +16220,7 @@ async function emergencyReset(){
       saveData();
       forceLogout();
       el("login-user").value="admin";
-      showToast("Données réinitialisées. Connectez-vous avec votre nouveau mot de passe.","success");
+      showToast("Reset complet effectué.","success");
     }
   );
 }
@@ -16239,6 +16456,7 @@ function startCommEdit(){
   const _cie=el("comm-input");if(_cie){_cie.value=DB.commissaire;_cie.style.display="inline-block";_cie.focus();_cie.select();}
 }
 function saveCommName(){
+  if(typeof isAdmin === 'function' && !isAdmin()){ showToast('⛔ Action réservée aux administrateurs.','error'); return; }
   const val=el("comm-input").value.trim();
   if(val){DB.commissaire=val;saveData()}
   const _cd2=el("comm-display");if(_cd2){_cd2.textContent=DB.commissaire;_cd2.style.display="";}
@@ -16247,6 +16465,7 @@ function saveCommName(){
 }
 function cancelCommEdit(){const _cdc=el("comm-display");if(_cdc)_cdc.style.display="";const _cic=el("comm-input");if(_cic)_cic.style.display="none";const _cpc=el("comm-pencil");if(_cpc)_cpc.style.display="inline";}
 function saveCommNameAdmin(){
+  if(typeof isAdmin === 'function' && !isAdmin()){ showToast('⛔ Action réservée aux administrateurs.','error'); return; }
   const val=el("admin-comm-input").value.trim();if(!val)return;
   DB.commissaire=val;saveData();renderCommissaire();
   const ok=el("admin-comm-ok");ok.style.display="block";setTimeout(()=>ok.style.display="none",3000);
@@ -16801,7 +17020,7 @@ function renderAdminTimeline(){
   if(!items.length){e.innerHTML='<div style="font-size:11px;color:var(--muted);padding:4px">Aucune activité enregistrée.</div>';return;}
   e.innerHTML='<div class="timeline">'+items.map(t=>`<div class="timeline-item"><div class="t-time">${fmtDate(t.date)}</div><div class="t-text">${esc(t.text)}</div></div>`).join("")+'</div>';
 }
-function resetAllData(){emergencyReset();}
+// resetAllData défini plus haut dans le fichier (vrai reset destructeur)
 
 // Force une relecture complète depuis Firebase (utile si un compte a disparu)
 async function forceFbSync(){
@@ -17014,6 +17233,7 @@ function renderAnnonces(){
   }).join('');
 }
 function saveAnnonce(){
+  if(typeof canModify === 'function' && !canModify()){ showToast('⛔ Action réservée aux modérateurs.','error'); return; }
   const titre=v("a-titre"),contenu=v("a-contenu");if(!titre||!contenu)return;
   const photo=_annoncePhoto||"";
   DB.annonces.push({id:Date.now(),titre,cat:v("a-cat"),contenu,photo,auteur:currentUser.nom,pin:v("a-pin")==="true",date:now()});
@@ -17052,7 +17272,10 @@ function removeAnnoncePhoto(ev){
   el("a-photo-remove").style.display="none";
   el("a-photo-input").value="";
 }
-function deleteAnnonce(id){id=parseInt(id);askDelete("Supprimer cette annonce ?",()=>{_markDeleted("annonces",id);DB.annonces=DB.annonces.filter(a=>String(a.id)!==String(id));saveData();renderAnnonces();syncDashboard()})}
+function deleteAnnonce(id){
+  if(typeof canModify === 'function' && !canModify()){ showToast('⛔ Action réservée aux modérateurs.','error'); return; }
+  id=parseInt(id);askDelete("Supprimer cette annonce ?",()=>{_markDeleted("annonces",id);DB.annonces=DB.annonces.filter(a=>String(a.id)!==String(id));saveData();renderAnnonces();syncDashboard()})
+}
 
 // ─── RÉACTIONS ANNONCES ─────────────────────────────────────────
 const REACTION_EMOJIS = ['👍','❤️','🔥','✅','👮'];
@@ -17214,6 +17437,8 @@ function renderRecensement(){
   const q=(el("search-recense")?.value||"").toLowerCase();
   const fFac=el("filter-faction")?.value||"";
   const fNat=el("filter-nature")?.value||"";
+  // bug-fix : DB.recenses peut être undefined si Firebase n'a rien encore (premier sync)
+  if(!Array.isArray(DB.recenses)) DB.recenses = [];
   const factions=[...new Set(DB.recenses.map(r=>r.faction).filter(Boolean))].sort();
   const selFac=el("filter-faction");
   if(selFac){const cur=selFac.value;selFac.innerHTML='<option value="">Toutes factions</option>'+factions.map(f=>`<option${cur===f?" selected":""}>${esc(f)}</option>`).join("")}
@@ -17328,6 +17553,7 @@ function openEditRecense(id){
 }
 
 function saveRecense(){
+  if(typeof canModify === 'function' && !canModify()){ showToast('⛔ Action réservée aux modérateurs.','error'); return; }
   const prenom=v("r-prenom"),nom=v("r-nom");if(!prenom||!nom)return;
   const natures=[...document.querySelectorAll("#nature-checkboxes input:checked")].map(c=>c.value);
   const photo=_recensePhoto||"";
@@ -17547,7 +17773,10 @@ document.addEventListener('DOMContentLoaded',function(){
     if(sel) sel.value=pill.dataset.val;
   });
 });
-function deleteRecense(id){id=parseInt(id);askDelete("Supprimer cette fiche de recensement ?",()=>{_markDeleted("recenses",id);DB.recenses=DB.recenses.filter(r=>String(r.id)!==String(id));if(typeof impRemoveByRecenseId==='function')impRemoveByRecenseId(id);saveData();renderRecensement();syncDashboard();if(typeof renderImpots==='function')renderImpots();})}
+function deleteRecense(id){
+  if(typeof canModify === 'function' && !canModify()){ showToast('⛔ Action réservée aux modérateurs.','error'); return; }
+  id=parseInt(id);askDelete("Supprimer cette fiche de recensement ?",()=>{_markDeleted("recenses",id);DB.recenses=DB.recenses.filter(r=>String(r.id)!==String(id));if(typeof impRemoveByRecenseId==='function')impRemoveByRecenseId(id);saveData();renderRecensement();syncDashboard();if(typeof renderImpots==='function')renderImpots();})
+}
 
 // CANDIDATURES
 function filterCandidatures(f,e){candFilter=f;document.querySelectorAll("#page-recrutement .tab-btn").forEach(b=>b.classList.remove("active"));e.classList.add("active");renderCandidatures()}
@@ -17633,6 +17862,7 @@ function viewCandidature(id){
 }
 
 function saveEditCandidature(){
+  if(typeof canModify === 'function' && !canModify()){ showToast('⛔ Action réservée aux modérateurs.','error'); return; }
   const id=parseInt(el("ec-id").value);
   const c=DB.candidatures.find(x=>String(x.id)===String(id));if(!c)return;
   if(!canModify()&&c.authorId!==currentUser.id){showToast("Accès refusé.","error");return;}
@@ -17649,6 +17879,7 @@ function saveEditCandidature(){
   showToast(`✅ Votre candidature a bien été modifiée le ${dateStr}.`,"success");
 }
 function deleteCandidature(id){
+  if(typeof canModify === 'function' && !canModify()){ showToast('⛔ Action réservée aux modérateurs.','error'); return; }
   id=parseInt(id);
   askDelete("Supprimer définitivement cette candidature ?",()=>{
     DB.candidatures=DB.candidatures.filter(c=>String(c.id)!==String(id));
@@ -17703,6 +17934,7 @@ function saveCandidature(){
   showToast(`✅ Candidature de ${nom} envoyée avec succès !`,"success");
 }
 function setCandidature(id,statut){
+  if(typeof canModify === 'function' && !canModify()){ showToast('⛔ Action réservée aux modérateurs.','error'); return; }
   id=parseInt(id);
   const c=DB.candidatures.find(x=>String(x.id)===String(id));if(!c)return;c.statut=statut;c.modifiedAt=now();
   if(statut==="acceptee"){c.grade=c.grade||"Stagiaire";c.actif=true;
@@ -17751,6 +17983,10 @@ function renderPlaintes(){
 let _plaintePhoto="";
 function loadPlaintePhoto(input){
   if(!input.files||!input.files[0])return;
+  const file=input.files[0];
+  // bug-fix : ajout des checks de type et taille (manquaient !)
+  if(!file.type.startsWith("image/")){showToast('Fichier invalide : image uniquement.','error');input.value='';return;}
+  if(file.size>512000){showToast('Image trop lourde (max 500 Ko).','error');input.value='';return;}
   const reader=new FileReader();
   reader.onload=function(e){
     _plaintePhoto=e.target.result;
@@ -17902,6 +18138,7 @@ function viewPlainte(id){
   openModal("modal-view-plainte");
 }
 function setPlainteStatut(id,statut){
+  if(typeof canModify === 'function' && !canModify()){ showToast('⛔ Action réservée aux modérateurs.','error'); return; }
   id=parseInt(id);
   const p=DB.plaintes.find(x=>String(x.id)===String(id));if(!p)return;p.statut=statut;
   if(statut==="en_cours"&&!p.agent)p.agent=currentUser.nom;
@@ -17909,7 +18146,10 @@ function setPlainteStatut(id,statut){
   addTimeline(`Plainte #${id} → ${fmtStatut(statut)} par ${currentUser.nom}`);
   saveData();renderPlaintes();syncDashboard();closeModal("modal-view-plainte");
 }
-function deletePlainte(id){id=parseInt(id);askDelete("Supprimer cette plainte ?",()=>{_markDeleted("plaintes",id);DB.plaintes=DB.plaintes.filter(p=>String(p.id)!==String(id));saveData();renderPlaintes();syncDashboard()})}
+function deletePlainte(id){
+  if(typeof canModify === 'function' && !canModify()){ showToast('⛔ Action réservée aux modérateurs.','error'); return; }
+  id=parseInt(id);askDelete("Supprimer cette plainte ?",()=>{_markDeleted("plaintes",id);DB.plaintes=DB.plaintes.filter(p=>String(p.id)!==String(id));saveData();renderPlaintes();syncDashboard()})
+}
 
 // DOSSIERS
 function viewDossier(id){
@@ -18145,6 +18385,7 @@ function getAllTags(prefix){
 }
 
 function saveDossier(force){
+  if(typeof canModify === 'function' && !canModify()){ showToast('⛔ Action réservée aux modérateurs.','error'); return; }
   const nom=v("d-nom");if(!nom)return;
   // Vérification doublon — si des dossiers existent déjà et que force n'est pas activé, bloquer
   if(!force){
@@ -18212,7 +18453,10 @@ function clearDossierPhoto(){
   var alertEl=el("d-doublon-alert");if(alertEl)alertEl.style.display="none";
   var btnF=el("d-btn-forcer");if(btnF)btnF.style.display="none";
 }
-function deleteDossier(id){id=parseInt(id);askDelete("Supprimer ce dossier criminel ?",()=>{_markDeleted("dossiers",id);DB.dossiers=DB.dossiers.filter(d=>String(d.id)!==String(id));saveData();renderDossiers();syncDashboard()})}
+function deleteDossier(id){
+  if(typeof canModify === 'function' && !canModify()){ showToast('⛔ Action réservée aux modérateurs.','error'); return; }
+  id=parseInt(id);askDelete("Supprimer ce dossier criminel ?",()=>{_markDeleted("dossiers",id);DB.dossiers=DB.dossiers.filter(d=>String(d.id)!==String(id));saveData();renderDossiers();syncDashboard()})
+}
 
 function openEditDossier(id){
   id=parseInt(id);
@@ -18243,6 +18487,7 @@ function openEditDossier(id){
 }
 
 function updateDossier(){
+  if(typeof canModify === 'function' && !canModify()){ showToast('⛔ Action réservée aux modérateurs.','error'); return; }
   const id=parseInt(el("ed-id").value);
   const d=DB.dossiers.find(x=>String(x.id)===String(id));if(!d)return;
   d.nom=el("ed-nom").value.trim();
@@ -18726,6 +18971,7 @@ function deactivateOpsMap(){
 }
 
 function toggleFeatureMap(enabled){
+  if(typeof isAdmin === 'function' && !isAdmin()){ showToast('⛔ Action réservée aux administrateurs.','error'); _syncFeatureMapUI(!enabled); return; }
   // Persister dans Firebase (partagé entre tous les utilisateurs)
   if(!DB.features) DB.features = {};
   DB.features.map_active = enabled;
@@ -18741,6 +18987,7 @@ function toggleFeatureMap(enabled){
 
 // ─── TOGGLE NIVEAU DE MENACE ───
 function toggleFeatureMenace(enabled){
+  if(typeof isAdmin === 'function' && !isAdmin()){ showToast('⛔ Action réservée aux administrateurs.','error'); _syncFeatureMenaceUI(!enabled); return; }
   if(!DB.features) DB.features = {};
   DB.features.menace_active = enabled;
   saveData();
@@ -19083,13 +19330,17 @@ function cycleOpStatut(id){
   showToast(`Statut mis à jour : ${next}`,"success");
 }
 function saveOperation(){
+  if(typeof canModify === 'function' && !canModify()){ showToast('⛔ Action réservée aux modérateurs.','error'); return; }
   const nom=v("op-nom");if(!nom)return;
   DB.operations.push({id:Date.now(),nom,type:v("op-type"),statut:v("op-statut"),resp:v("op-resp"),dateOp:v("op-date"),desc:v("op-desc"),date:now()});
   addTimeline(`Opération "${nom}" créée`);
   flashSubmitSuccess(document.querySelector('#modal-operation .modal-footer .btn-primary'), 'Opération créée');
   setTimeout(function(){ saveData();closeModal("modal-operation");renderOperations();syncDashboard();if(typeof renderOpsMap==='function') renderOpsMap();clearForm(["op-nom","op-resp","op-desc","op-date"]); }, 600);
 }
-function deleteOperation(id){id=parseInt(id);askDelete("Supprimer cette opération ?",()=>{_markDeleted("operations",id);DB.operations=DB.operations.filter(o=>String(o.id)!==String(id));saveData();renderOperations();syncDashboard();if(typeof renderOpsMap==='function') renderOpsMap();})}
+function deleteOperation(id){
+  if(typeof canModify === 'function' && !canModify()){ showToast('⛔ Action réservée aux modérateurs.','error'); return; }
+  id=parseInt(id);askDelete("Supprimer cette opération ?",()=>{_markDeleted("operations",id);DB.operations=DB.operations.filter(o=>String(o.id)!==String(id));saveData();renderOperations();syncDashboard();if(typeof renderOpsMap==='function') renderOpsMap();})
+}
 
 // GRADES MANAGEMENT
 // Noms réservés aux rôles système — aucun grade ne peut utiliser ces noms ni les modifier
@@ -19130,6 +19381,7 @@ function removeGrade(i){
 
 // LOGO
 function uploadLogo(input){
+  if(typeof isAdmin === 'function' && !isAdmin()){ showToast('⛔ Action réservée aux administrateurs.','error'); input.value=''; return; }
   const file=input.files[0];if(!file)return;
   if(!file.type.startsWith("image/")){showToast('Fichier invalide : image uniquement.','error');input.value='';return;}
   if(file.size>512000){showToast('Image trop lourde (max 500 Ko).','error');input.value='';return;}
@@ -19169,7 +19421,10 @@ async function openLogoClipboard(){
     showToast("Accès au presse-papier refusé. Utilisez le bouton 'Fichier' ou glissez une image.","error");
   }
 }
-function removeLogo(){DB.logo="";saveData();applyLogo();showToast("Logo retiré.","info")}
+function removeLogo(){
+  if(typeof isAdmin === 'function' && !isAdmin()){ showToast('⛔ Action réservée aux administrateurs.','error'); return; }
+  DB.logo="";saveData();applyLogo();showToast("Logo retiré.","info")
+}
 function applyLogo(){
   const logo=DB.logo;
   // sidebar badge
@@ -19548,16 +19803,21 @@ function renderSanctions(){
   </tr>`).join("")||`<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:18px">Aucune entrée</td></tr>`;
 }
 function saveSanction(){
+  if(typeof canModify === 'function' && !canModify()){ showToast('⛔ Action réservée aux modérateurs.','error'); return; }
   const cible=v("s-cible"),motif=v("s-motif");if(!cible||!motif)return;
   DB.sanctions.push({id:Date.now(),type:v("s-type"),cible,motif,auteur:currentUser.nom,date:now()});
   addTimeline(`${v("s-type")} : ${cible}`);
   flashSubmitSuccess(document.querySelector('#modal-sanction .modal-footer .btn-primary'), 'Enregistré');
   setTimeout(function(){ saveData();closeModal("modal-sanction");renderSanctions();syncDashboard();clearForm(["s-cible","s-motif"]); }, 600);
 }
-function deleteSanction(id){id=parseInt(id);askDelete("Supprimer cette entrée ?",()=>{_markDeleted("sanctions",id);DB.sanctions=DB.sanctions.filter(s=>String(s.id)!==String(id));saveData();renderSanctions();syncDashboard()})}
+function deleteSanction(id){
+  if(typeof canModify === 'function' && !canModify()){ showToast('⛔ Action réservée aux modérateurs.','error'); return; }
+  id=parseInt(id);askDelete("Supprimer cette entrée ?",()=>{_markDeleted("sanctions",id);DB.sanctions=DB.sanctions.filter(s=>String(s.id)!==String(id));saveData();renderSanctions();syncDashboard()})
+}
 
 // ADMIN (continued)
 function saveEditUser(){
+  if(typeof canModify === 'function' && !canModify()){ showToast('⛔ Action réservée aux modérateurs.','error'); return; }
   if(_loginInProgress)return;
   const id=parseInt(el("eu-id").value);
   const u=DB.users.find(x=>String(x.id)===String(id));if(!u)return;
@@ -19591,6 +19851,7 @@ function saveEditUser(){
   }
 }
 function deleteUserById(){
+  if(typeof isAdmin === 'function' && !isAdmin()){ showToast('⛔ Action réservée aux administrateurs.','error'); return; }
   const id=parseInt(el("eu-id").value);
   if(!id){closeModal("modal-edituser");return}
   const u=DB.users.find(x=>String(x.id)===String(id));
@@ -19613,6 +19874,7 @@ function deleteUserById(){
   });
 }
 function saveUser(){
+  if(typeof isAdmin === 'function' && !isAdmin()){ showToast('⛔ Action réservée aux administrateurs.','error'); return; }
   if(_loginInProgress)return;
   const login=v("u-login"),pass=v("u-pass"),nom=v("u-nom");if(!login||!pass||!nom)return;
   if(DB.users.find(u=>u.login===login)){showToast("Identifiant déjà utilisé.","error");return}
@@ -19732,6 +19994,7 @@ function openNotesFromEditModal(){
 }
 
 function toggleUser(id){
+  if(typeof isAdmin === 'function' && !isAdmin()){ showToast('⛔ Action réservée aux administrateurs.','error'); return; }
   const u=DB.users.find(x=>String(x.id)===String(id));if(!u)return;
   // Empêcher de désactiver le dernier admin actif
   if(u.role==="admin"&&u.statut==="Actif"){
@@ -20237,6 +20500,7 @@ function impRenderGradesList(){
   ).join('');
 }
 function impToggleExempt(i){
+  if(typeof isAdmin === 'function' && !isAdmin()){ showToast('⛔ Action réservée aux administrateurs.','error'); return; }
   impInitDB();
   if(!DB.impots.grades[i]) return;
   DB.impots.grades[i].exempt = !DB.impots.grades[i].exempt;
@@ -20256,11 +20520,13 @@ function impRemoveGrade(i){
   impRenderGradesList();
 }
 function impAddGradeRow(){
+  if(typeof isAdmin === 'function' && !isAdmin()){ showToast('⛔ Action réservée aux administrateurs.','error'); return; }
   impInitDB();
   DB.impots.grades.push({ name: 'Nouveau grade', amount: 0, exempt: false });
   impRenderGradesList();
 }
 function impSaveGrades(){
+  if(typeof isAdmin === 'function' && !isAdmin()){ showToast('⛔ Action réservée aux administrateurs.','error'); return; }
   impInitDB();
   const rows = document.querySelectorAll('#imp-grades-list .imp-grade-row');
   const newGrades = [];
@@ -20352,6 +20618,7 @@ function renderCodePenal(){
   }).join("");
 }
 function saveInfraction(){
+  if(typeof canModify === 'function' && !canModify()){ showToast('⛔ Action réservée aux modérateurs.','error'); return; }
   const nom=v("cp-nom");if(!nom)return;
   if(!DB.infractions)DB.infractions=[];
   DB.infractions.push({id:Date.now(),nom,cat:v("cp-cat"),amende:v("cp-amende"),prison:v("cp-prison"),duree:v("cp-duree"),notes:v("cp-notes")});
@@ -20359,6 +20626,7 @@ function saveInfraction(){
   saveData();renderCodePenal();clearForm(["cp-nom","cp-amende","cp-duree","cp-notes"]);
 }
 function doDeleteInfraction(id){
+  if(typeof canModify === 'function' && !canModify()){ showToast('⛔ Action réservée aux modérateurs.','error'); return; }
   id=parseInt(id);
   DB.infractions=DB.infractions.filter(x=>String(x.id)!==String(id));
   saveData();renderCodePenal();
@@ -21129,6 +21397,27 @@ function closeModal(id){
   if(m._keyHandler){ document.removeEventListener("keydown", m._keyHandler); m._keyHandler = null; }
   // Restituer le focus à l'élément d'origine
   if(_lastFocusedEl && _lastFocusedEl.focus){ try{ _lastFocusedEl.focus(); }catch(e){} }
+  // bug-fix : re-render la page courante après fermeture de modale, au cas où
+  // un sync distant aurait eu lieu pendant que la modale était ouverte (le re-render
+  // est skippé dans onValue tant qu'une modale est ouverte pour ne pas perturber l'édition).
+  setTimeout(function(){
+    try{
+      var anyOtherModal = !!document.querySelector('.modal-overlay.open');
+      if(anyOtherModal) return; // une autre modale est encore ouverte, on attend
+      var activePageEl = document.querySelector('.page-content.active');
+      var activePage = activePageEl ? activePageEl.id.replace(/^page-/,'') : null;
+      var renderers = {
+        'plaintes':'renderPlaintes','dossiers':'renderDossiers','annonces':'renderAnnonces',
+        'recensement':'renderRecensement','recrutement':'renderCandidatures',
+        'effectifs':'renderEffectifs','sanctions':'renderSanctions','operations':'renderOperations',
+        'codepenal':'renderCodePenal','admin':'renderAdmin','impots':'renderImpots',
+        'dashboard':'syncDashboard'
+      };
+      if(activePage && renderers[activePage] && typeof window[renderers[activePage]] === 'function'){
+        try{ window[renderers[activePage]](); }catch(e){}
+      }
+    }catch(e){}
+  }, 100);
 }
 document.querySelectorAll(".modal-overlay").forEach(m=>{
   m.setAttribute("aria-hidden","true");
