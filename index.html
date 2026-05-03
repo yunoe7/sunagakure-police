@@ -1311,6 +1311,47 @@ textarea.form-control{resize:vertical;min-height:80px}
   color: rgba(60,35,5,0.7);
 }
 
+/* ===== MODE SOMBRE : RESTAURER LES COULEURS CLAIRES =====
+   Les règles ci-dessus forcent des couleurs sombres pour le thème CLAIR
+   (fond beige). En mode sombre (body.dark), le fond devient noir et ces
+   couleurs sombres deviennent illisibles. On rétablit ici des couleurs
+   claires pour tous les textes qui apparaissent directement sur le fond. */
+
+body.dark #main .section-header .section-title { color: var(--text) !important; }
+body.dark #main .section-header .section-sub   { color: var(--gold2) !important; opacity:0.75; }
+body.dark .topbar .topbar-path                  { color: rgba(240,232,208,0.45) !important; }
+body.dark #main .page-content > .text-muted,
+body.dark #main .page-content > div > .text-muted {
+  color: rgba(240,232,208,0.45) !important;
+}
+body.dark #main .page-content > .tab-row {
+  background: rgba(255,255,255,0.04) !important;
+  border: 1px solid rgba(180,140,20,0.18) !important;
+}
+body.dark #main .page-content > .tab-row .tab-btn:not(.active) {
+  color: rgba(240,232,208,0.55) !important;
+}
+body.dark #main .page-content > .tab-row .tab-btn:not(.active):hover {
+  color: var(--text) !important;
+  background: rgba(255,255,255,0.06) !important;
+}
+body.dark #main .page-content > .bb-empty,
+body.dark #main .page-content > div > [style*="color:var(--muted)"][style*="text-align:center"] {
+  color: rgba(240,232,208,0.4) !important;
+}
+body.dark #main .page-content > .filter-chip-bar {
+  color: rgba(240,232,208,0.6) !important;
+}
+
+/* Bouton dark mode lui-même : adapter son fond/bordure en mode sombre */
+body.dark #btn-darkmode {
+  background: rgba(255,255,255,0.06) !important;
+  border-color: rgba(180,140,20,0.25) !important;
+}
+body.dark #btn-darkmode:hover {
+  background: rgba(255,255,255,0.12) !important;
+}
+
 /* ===== NOUVEAUTÉS FONCTIONNELLES V3 ===== */
 
 /* Indicateur de chargement Firebase */
@@ -1492,22 +1533,31 @@ textarea.form-control{resize:vertical;min-height:80px}
 }
 .cal-today-btn{
   padding:6px 14px;border-radius:8px;
-  background:linear-gradient(135deg, rgba(192,65,14,0.12), rgba(192,65,14,0.04));
-  border:1px solid rgba(192,65,14,0.35);
-  color:#e05c1a;
+  background:linear-gradient(135deg, #c0410e, #8a2c08);
+  border:1px solid rgba(192,65,14,0.7);
+  color:#fff;
   font-family:'Share Tech Mono',monospace;
   font-size:10px;letter-spacing:1.5px;
   cursor:pointer;transition:all .18s;
-  text-transform:uppercase;font-weight:600;
+  text-transform:uppercase;font-weight:700;
   flex-shrink:0;
+  text-shadow:0 1px 2px rgba(0,0,0,0.35);
+  box-shadow:0 2px 8px rgba(192,65,14,0.25);
 }
 .cal-today-btn:hover{
-  background:linear-gradient(135deg, rgba(192,65,14,0.22), rgba(192,65,14,0.08));
-  border-color:rgba(224,92,26,0.6);
-  color:#f4a467;
-  box-shadow:0 4px 12px rgba(192,65,14,0.2);
+  background:linear-gradient(135deg, #d54914, #9c3209);
+  border-color:rgba(224,92,26,0.9);
+  box-shadow:0 4px 14px rgba(192,65,14,0.4);
+  transform:translateY(-1px);
 }
-.cal-today-btn:disabled{opacity:0.35;cursor:not-allowed}
+.cal-today-btn:active{transform:translateY(0)}
+.cal-today-btn:disabled{
+  opacity:0.4;cursor:not-allowed;
+  background:linear-gradient(135deg, rgba(120,80,60,0.4), rgba(80,50,30,0.3));
+  border-color:rgba(120,80,60,0.4);
+  box-shadow:none;
+  transform:none;
+}
 
 /* Stats du mois (compteur d'opérations) */
 .cal-stats{
