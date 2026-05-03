@@ -9908,14 +9908,16 @@ document.addEventListener('error', function(e){
       .bb-status-pill{
         display:inline-flex;align-items:center;gap:4px;
         font-family:'Share Tech Mono',monospace;
-        font-size:9px;letter-spacing:1.5px;font-weight:700;
-        padding:3px 8px;border-radius:3px;
-        margin-top:4px;
+        font-size:8px;letter-spacing:1px;font-weight:700;
+        padding:2px 8px;border-radius:2px;
+        text-transform:uppercase;
+        margin-left:5px;
+        vertical-align:middle;
       }
-      .bb-status-pill.s-actif{ background:rgba(192,65,14,0.15); color:#9c3409; border:1px solid rgba(192,65,14,0.3); }
-      .bb-status-pill.s-capture{ background:rgba(31,111,61,0.15); color:#1f6f3d; border:1px solid rgba(31,111,61,0.35); }
-      .bb-status-pill.s-tue{ background:rgba(139,26,26,0.15); color:#8b1a1a; border:1px solid rgba(139,26,26,0.35); }
-      .bb-status-pill.s-evade{ background:rgba(138,90,8,0.15); color:#8a5a08; border:1px solid rgba(138,90,8,0.35); }
+      .bb-status-pill.s-actif{ background:rgba(160,20,20,0.1); color:#7a1212; border:1px solid rgba(160,20,20,0.28); }
+      .bb-status-pill.s-capture{ background:rgba(20,90,35,0.12); color:#174e22; border:1px solid rgba(20,90,35,0.3); }
+      .bb-status-pill.s-tue{ background:rgba(70,15,15,0.18); color:#4a0c0c; border:1px solid rgba(70,15,15,0.4); }
+      .bb-status-pill.s-evade{ background:rgba(150,90,5,0.12); color:#6e430a; border:1px solid rgba(150,90,5,0.3); }
       /* Stamp dans le dossier modal — plus grand */
       .bb-dossier-stamp{
         display:inline-block;
@@ -28807,7 +28809,7 @@ function bbDefaultNinjas() {
 function bbDangerClass(d){ return {eleve:'bb-badge-eleve',moyen:'bb-badge-moyen',faible:'bb-badge-faible'}[d]||'bb-badge-faible'; }
 function bbDangerLabel(d){ return {eleve:'⚠ DANGER ÉLEVÉ',moyen:'◆ DANGER MOYEN',faible:'▸ DANGER FAIBLE'}[d]||d.toUpperCase(); }
 function bbStatusLabel(s){ return {actif:'RECHERCHÉ',capture:'CAPTURÉ',tue:'TUÉ',evade:'ÉVADÉ'}[s||'actif']||'RECHERCHÉ'; }
-function bbStatusPillLabel(s){ return {actif:'🔴 Actif',capture:'✅ Capturé',tue:'⚰️ Neutralisé',evade:'⚠️ Évadé'}[s||'actif']||'🔴 Actif'; }
+function bbStatusPillLabel(s){ return {actif:'● Actif',capture:'✓ Capturé',tue:'⚰ Tué',evade:'⚠ Évadé'}[s||'actif']||'● Actif'; }
 // Change rapide du statut depuis la card (sans rouvrir le formulaire complet)
 function bbQuickSetStatus(id, newStatus){
   if(typeof canModify === 'function' && !canModify()){ if(typeof showToast==='function') showToast('⛔ Action réservée aux modérateurs.','error'); return; }
@@ -28873,7 +28875,7 @@ function bbRender() {
           '<div class="bb-card-nom">'+n.nom+'</div>'+
           '<div class="bb-card-prenom">'+n.prenom+'</div>'+
           '<span class="'+bbDangerClass(n.danger)+'">'+bbDangerLabel(n.danger)+'</span>'+
-          ((n.status && n.status!=='actif') ? '<span class="bb-status-pill s-'+n.status+'">'+bbStatusPillLabel(n.status)+'</span>' : '')+
+          '<span class="bb-status-pill s-'+(n.status||'actif')+'">'+bbStatusPillLabel(n.status||'actif')+'</span>'+
           '<div class="bb-card-meta">'+
             '<div class="bb-card-row"><span class="bb-card-lbl">Grade</span><span class="bb-card-val">'+n.grade+'</span></div>'+
             '<div class="bb-card-row"><span class="bb-card-lbl">Village</span><span class="bb-card-val">'+n.village+'</span></div>'+
@@ -28912,6 +28914,7 @@ function bbOpenDossier(id) {
       '<div class="bb-dossier-nom">'+n.nom+'</div>'+
       '<div class="bb-dossier-prenom">'+n.prenom+'</div>'+
       '<span class="'+bbDangerClass(n.danger)+'">'+bbDangerLabel(n.danger)+'</span>'+
+      '<span class="bb-status-pill s-'+(n.status||'actif')+'">'+bbStatusPillLabel(n.status||'actif')+'</span>'+
       ((n.status && n.status!=='actif')
         ? '<div class="bb-dossier-stamp s-'+n.status+'">'+bbStatusLabel(n.status)+'</div>'
         : '')+
