@@ -14692,7 +14692,7 @@ async function _flushSaveQueue(){
     // (ex: amis qui se sont inscrits sur leur appareil) seraient effacés
     // car absents du localStorage de l'utilisateur courant.
     if(!_fbGetOK && _fbFirstLoad && Array.isArray(toSave.users) && toSave.users.length > 0){
-      console.warn('[FB-SAVE] ⏸ Sauvegarde reportée : état Firebase pas encore confirmé (protection anti-perte de comptes)');
+      if(window._yunoLogInternal) _yunoLogInternal.warn('[Firebase] Sauvegarde reportée — état Firebase non confirmé (protection anti-perte)'); else console.warn('[FB-SAVE] ⏸ Sauvegarde reportée');
       _fbSaveQueue = toSave;
       _fbSaveRunning = false;
       setTimeout(_flushSaveQueue, 1500);
@@ -14711,7 +14711,7 @@ async function _flushSaveQueue(){
       var localCount = toSave.users.length;
       // Cas 1 : grosse perte massive (≥50%)
       if(fbCount >= 3 && localCount < Math.floor(fbCount / 2)){
-        console.warn('[FB-SAVE] ⏸ Écriture suspecte : '+localCount+' users locaux vs '+fbCount+' sur Firebase. Sauvegarde reportée.');
+        if(window._yunoLogInternal) _yunoLogInternal.warn('[Firebase] Écriture suspecte : ' + localCount + ' users locaux vs ' + fbCount + ' distants — reportée'); else console.warn('[FB-SAVE] Écriture suspecte');
         _fbSaveQueue = toSave;
         _fbSaveRunning = false;
         setTimeout(_flushSaveQueue, 2000);
@@ -14729,7 +14729,7 @@ async function _flushSaveQueue(){
                 && !_isDeletedProtected("users", fbU.id);
         });
         if(missingFromLocal.length > 0){
-          console.warn('[FB-SAVE] ⏸ '+missingFromLocal.length+' user(s) disparaîtraient ('+missingFromLocal.map(function(u){return u.nom||u.login;}).join(', ')+'). Sauvegarde reportée + merge.');
+          if(window._yunoLogInternal) _yunoLogInternal.warn('[Firebase] ' + missingFromLocal.length + ' user(s) disparaîtraient — récupérés automatiquement', missingFromLocal.map(function(u){return u.nom||u.login;})); else console.warn('[FB-SAVE]');
           // On préserve les users disparus (probablement un cache local incomplet)
           toSave.users = toSave.users.concat(missingFromLocal);
           // Et on continue avec la sauvegarde (pas de return)
@@ -15274,6 +15274,250 @@ function defaultData(){
     recenses:[],candidatures:[],plaintes:[],dossiers:[],operations:[],sanctions:[],infractions:[],timeline:[],adminNotes:{},messages:{},loginHistory:[],features:{map_active:false}}
 }
 let DB=loadData();
+
+// ═══════════════════════════════════════════════════════════════════
+//                    🛡️  YUNO — CONSOLE LOG SYSTEM
+// ═══════════════════════════════════════════════════════════════════
+
+(function _initYunoLog(){
+  // Banner ASCII art au chargement (style terminal)
+  var GOLD = 'color: #d4b44a; font-weight: bold;';
+  var RED = 'color: #c0410e; font-weight: bold;';
+  var GREEN = 'color: #16a34a; font-weight: bold;';
+  var BLUE = 'color: #3b82f6; font-weight: bold;';
+  var GRAY = 'color: #888;';
+  var WHITE = 'color: #f0e8d0; font-weight: bold;';
+
+  // Banner ASCII — YUNO
+  var banner = [
+    '',
+    '   ██╗   ██╗██╗   ██╗███╗   ██╗ ██████╗ ',
+    '   ╚██╗ ██╔╝██║   ██║████╗  ██║██╔═══██╗',
+    '    ╚████╔╝ ██║   ██║██╔██╗ ██║██║   ██║',
+    '     ╚██╔╝  ██║   ██║██║╚██╗██║██║   ██║',
+    '      ██║   ╚██████╔╝██║ ╚████║╚██████╔╝',
+    '      ╚═╝    ╚═════╝ ╚═╝  ╚═══╝ ╚═════╝ ',
+    '       ┌────────────────────────────┐',
+    '       │   Réalisé par YUNO GOAT    │',
+    '       └────────────────────────────┘',
+    ''
+  ].join('\n');
+  console.log('%c' + banner, GOLD + ' font-family: monospace; font-size: 11px; line-height: 1.2;');
+
+  console.log('%c╔════════════════════════════════════════════════════════════════╗', GOLD);
+  console.log('%c║  🛡️  Bienvenue, Agent de la Police de Sunagakure              ║', WHITE);
+  console.log('%c║                                                                ║', GOLD);
+  console.log('%c║  ⚠️  Cette console est destinée aux développeurs.             ║', RED);
+  console.log('%c║      Si quelqu\'un vous demande de coller du code ici,         ║', RED);
+  console.log('%c║      c\'est une tentative de piratage. NE PAS COPIER.          ║', RED);
+  console.log('%c║                                                                ║', GOLD);
+  console.log('%c║  📡  Système opérationnel — Communications sécurisées          ║', GREEN);
+  console.log('%c║  🔒  Chiffrement actif (PBKDF2 + Firebase Auth)               ║', BLUE);
+  console.log('%c╚════════════════════════════════════════════════════════════════╝', GOLD);
+  console.log('');
+
+  // ─── Système de logs structuré ───
+  // Stocke les logs en mémoire (utilisable via YunoLog.history() — admins seulement)
+  var _logHistory = [];
+  var MAX_HISTORY = 500;
+
+  function _now(){
+    var d = new Date();
+    return d.toLocaleTimeString('fr-FR', {hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  }
+
+  function _store(level, message, details){
+    _logHistory.push({
+      time: Date.now(),
+      level: level,
+      message: message,
+      details: details || null
+    });
+    if(_logHistory.length > MAX_HISTORY) _logHistory.shift();
+  }
+
+  // ─── PROTECTION ADMIN — vérifie le rôle de l'utilisateur connecté ───
+  function _isAdminUser(){
+    return typeof currentUser !== 'undefined' && currentUser && currentUser.role === 'admin';
+  }
+
+  // Wrapper qui bloque l'accès aux non-admins avec un message stylé
+  function _adminOnly(fn, name){
+    return function(){
+      if(!_isAdminUser()){
+        console.log('%c⛔  Accès refusé — YunoLog est réservé aux administrateurs.', RED);
+        console.log('%c    Connectez-vous en tant qu\'admin pour utiliser ces commandes.', GRAY);
+        return undefined;
+      }
+      return fn.apply(this, arguments);
+    };
+  }
+
+  // Fonctions internes (non exposées) — utilisées par le code interne du site
+  // pour logger sans dépendre du rôle utilisateur
+  var _internalLog = {
+    info: function(msg, details){
+      _store('info', msg, details);
+      if(_isAdminUser()){
+        console.log('%c[' + _now() + ']%c [INFO]%c ' + msg, GRAY, BLUE, '');
+        if(details !== undefined) console.log('  ', details);
+      }
+    },
+    success: function(msg, details){
+      _store('success', msg, details);
+      if(_isAdminUser()){
+        console.log('%c[' + _now() + ']%c [✓ OK]%c ' + msg, GRAY, GREEN, '');
+        if(details !== undefined) console.log('  ', details);
+      }
+    },
+    warn: function(msg, details){
+      _store('warn', msg, details);
+      if(_isAdminUser()){
+        console.warn('%c[' + _now() + ']%c [⚠ WARN]%c ' + msg, GRAY, 'color:#fbbf24;font-weight:bold;', '');
+        if(details !== undefined) console.warn('  ', details);
+      }
+    },
+    error: function(msg, details){
+      _store('error', msg, details);
+      if(_isAdminUser()){
+        console.error('%c[' + _now() + ']%c [✗ ERROR]%c ' + msg, GRAY, RED, '');
+        if(details !== undefined) console.error('  ', details);
+      }
+    },
+    action: function(action, who, what){
+      var w = who || (typeof currentUser!=='undefined' && currentUser ? currentUser.nom : '?');
+      _store('action', action, {by: w, target: what});
+      if(_isAdminUser()){
+        console.log('%c[' + _now() + ']%c [⚡ ACTION]%c ' + w + ' → ' + action + (what ? ' : ' + what : ''),
+          GRAY, 'color:#a855f7;font-weight:bold;', '');
+      }
+    },
+    sync: function(msg, details){
+      _store('sync', msg, details);
+      if(_isAdminUser()){
+        console.log('%c[' + _now() + ']%c [🔄 SYNC]%c ' + msg, GRAY, 'color:#06b6d4;font-weight:bold;', '');
+        if(details !== undefined) console.log('  ', details);
+      }
+    },
+    security: function(msg, details){
+      _store('security', msg, details);
+      if(_isAdminUser()){
+        console.log('%c[' + _now() + ']%c [🔒 SECURITY]%c ' + msg, GRAY, GOLD, '');
+        if(details !== undefined) console.log('  ', details);
+      }
+    }
+  };
+
+  // ─── API publique YunoLog (admin only) ───
+  // Les non-admins reçoivent un message d'accès refusé
+  window.YunoLog = {
+    info: _adminOnly(_internalLog.info, 'info'),
+    success: _adminOnly(_internalLog.success, 'success'),
+    warn: _adminOnly(_internalLog.warn, 'warn'),
+    error: _adminOnly(_internalLog.error, 'error'),
+    action: _adminOnly(_internalLog.action, 'action'),
+    sync: _adminOnly(_internalLog.sync, 'sync'),
+    security: _adminOnly(_internalLog.security, 'security'),
+    history: _adminOnly(function(filter){
+      console.group('%c📜 Historique des logs (' + _logHistory.length + ')', GOLD);
+      var list = filter ? _logHistory.filter(function(l){return l.level===filter;}) : _logHistory;
+      list.slice(-50).forEach(function(l){
+        var t = new Date(l.time).toLocaleTimeString('fr-FR');
+        console.log('[' + t + '] [' + l.level.toUpperCase() + '] ' + l.message, l.details || '');
+      });
+      console.groupEnd();
+      return list;
+    }),
+    clear: _adminOnly(function(){
+      _logHistory = [];
+      console.clear();
+      console.log('%c🧹 Historique des logs effacé', GOLD);
+    }),
+    stats: _adminOnly(function(){
+      var stats = {};
+      _logHistory.forEach(function(l){ stats[l.level] = (stats[l.level]||0) + 1; });
+      console.group('%c📊 Statistiques des logs', GOLD);
+      console.table(stats);
+      console.log('Total : ' + _logHistory.length + ' / ' + MAX_HISTORY);
+      console.groupEnd();
+      return stats;
+    }),
+    help: function(){
+      // help() est PUBLIC mais affiche le menu différent selon le rôle
+      if(!_isAdminUser()){
+        console.log('%c⛔  Accès refusé — Cette console est réservée aux administrateurs.', RED);
+        console.log('%c    Si vous voyez ce message, fermez la console (F12) et continuez.', GRAY);
+        return;
+      }
+      console.group('%c📖 YunoLog — Commandes disponibles (admin)', GOLD);
+      console.log('%cYunoLog.info(msg)%c        — Log d\'information',          BLUE, '');
+      console.log('%cYunoLog.success(msg)%c     — Log de succès',                GREEN, '');
+      console.log('%cYunoLog.warn(msg)%c        — Log d\'avertissement',         'color:#fbbf24', '');
+      console.log('%cYunoLog.error(msg)%c       — Log d\'erreur',                RED, '');
+      console.log('%cYunoLog.action(act, who)%c  — Action utilisateur',          'color:#a855f7', '');
+      console.log('%cYunoLog.sync(msg)%c        — Événement de synchro',         'color:#06b6d4', '');
+      console.log('%cYunoLog.security(msg)%c    — Événement sécurité',           GOLD, '');
+      console.log('%cYunoLog.history()%c        — Voir l\'historique (50 derniers)',  GRAY, '');
+      console.log('%cYunoLog.history("error")%c  — Filtrer par niveau',          GRAY, '');
+      console.log('%cYunoLog.stats()%c          — Statistiques par niveau',      GRAY, '');
+      console.log('%cYunoLog.clear()%c          — Effacer l\'historique',        GRAY, '');
+      console.log('');
+      console.log('%c💼 Commandes admin utiles :', WHITE);
+      console.log('%cDB.users.length%c          — Nombre de comptes',             GRAY, '');
+      console.log('%ccurrentUser%c              — Utilisateur connecté',          GRAY, '');
+      console.log('%cforceFbSync()%c            — Synchronisation forcée Firebase', GRAY, '');
+      console.log('%cbackupJSON()%c             — Télécharger backup JSON',       GRAY, '');
+      console.groupEnd();
+    }
+  };
+  // Alias rétro-compatible (au cas où)
+  window.SunaLog = window.YunoLog;
+
+  // _internal accessible aux scripts internes du site sans check admin
+  // (pour que les logs de connexion/save/etc. soient toujours stockés)
+  window._yunoLogInternal = _internalLog;
+
+  // Hooks automatiques pour logger les événements importants
+  // (On wrappe les fonctions clés pour logger leurs appels)
+  setTimeout(function(){
+    // Login
+    if(typeof window.applyLogin === 'function' && !window.applyLogin._wrapped){
+      var orig = window.applyLogin;
+      window.applyLogin = function(){
+        var r = orig.apply(this, arguments);
+        if(typeof currentUser !== 'undefined' && currentUser){
+          // Utilise _internal pour logger même pour les non-admins (en historique)
+          _internalLog.security('Connexion : ' + currentUser.nom + ' (' + (currentUser.role||'?') + ')');
+          // Si l'utilisateur connecté est admin, lui afficher le menu d'aide
+          if(currentUser.role === 'admin'){
+            setTimeout(function(){
+              console.log('%c💡  Vous êtes connecté en tant qu\'administrateur.', GOLD);
+              console.log('%c    Tapez YunoLog.help() pour voir les commandes disponibles.', GRAY);
+            }, 100);
+          }
+        }
+        return r;
+      };
+      window.applyLogin._wrapped = true;
+    }
+    // Logout
+    if(typeof window.doLogout === 'function' && !window.doLogout._wrapped){
+      var orig = window.doLogout;
+      window.doLogout = function(){
+        if(typeof currentUser !== 'undefined' && currentUser){
+          _internalLog.security('Déconnexion : ' + currentUser.nom);
+        }
+        return orig.apply(this, arguments);
+      };
+      window.doLogout._wrapped = true;
+    }
+  }, 1000);
+
+  // Welcome message après login
+  window._yunoLogReady = true;
+  // Pas de message d'accueil si pas admin (silencieux pour les visiteurs)
+})();
+
 // ─── MIGRATION : "Hokage" → "Kazekage" + retrait du rang "ANBU" ───
 // S'exécute une fois au chargement, met à jour les anciens enregistrements.
 (function _migrateHokageToKazekage(){
@@ -15989,6 +16233,7 @@ async function doRegister(){
 
   _registerCount++;
   rs.textContent='✅ Compte créé ! Connexion en cours...';rs.style.display='block';
+  if(typeof _yunoLogInternal !== 'undefined') _yunoLogInternal.security('Nouveau compte créé : ' + nom + ' (' + login + ')');
   _loginInProgress=false;
   // Attendre que la queue soit vraiment vide avant de connecter (évite toute race
   // condition + garantit que le compte est bien sur Firebase).
