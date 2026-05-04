@@ -8044,9 +8044,15 @@ document.addEventListener('error', function(e){
       margin-bottom:14px;
     }
     #page-annonces .ann-featured-img{
-      width:100%;max-height:300px;
-      border-radius:8px;margin-bottom:14px;
-      object-fit:cover;
+      display:block;
+      margin:0 auto 14px;
+      max-width:720px;
+      width:100%;
+      max-height:420px;
+      height:auto;
+      object-fit:contain;
+      background:rgba(0,0,0,0.25);
+      border-radius:8px;
       border:1px solid rgba(180,140,20,0.2);
     }
     #page-annonces .ann-featured-content{
@@ -8145,11 +8151,16 @@ document.addEventListener('error', function(e){
       margin-bottom:10px;
     }
     #page-annonces .ann-photo{
-      width:100%;max-height:280px;
-      border-radius:8px;margin-bottom:12px;
-      object-fit:cover;
-      border:1px solid rgba(180,140,20,0.18);
       display:block;
+      margin:0 auto 12px;
+      max-width:680px;
+      width:100%;
+      max-height:380px;
+      height:auto;
+      object-fit:contain;
+      background:rgba(0,0,0,0.25);
+      border-radius:8px;
+      border:1px solid rgba(180,140,20,0.18);
     }
     #page-annonces .ann-content{
       font-family:'Barlow',sans-serif;
@@ -15874,9 +15885,31 @@ async function _flushSaveQueue(){
     const payload=JSON.parse(JSON.stringify(toSave));
     delete payload.messages; // messages gérés séparément
     await window._fbSet(window._fbRef(window._fbDB,"sunagakure"),payload);
+    // Reset du flag d'erreur Firebase si un save réussit
+    if(window._fbWriteFailed){
+      window._fbWriteFailed = false;
+      if(typeof showToast === 'function'){
+        try{ showToast('✅ Connexion Firebase rétablie.','success'); }catch(e){}
+      }
+    }
   }catch(err){
-    console.error('[FB-SAVE] ❌ Erreur:', err.message||err);
+    var msg = String(err && (err.message || err));
+    var code = String(err && err.code || '');
+    console.error('[FB-SAVE] ❌ Erreur:', msg);
     try{localStorage.setItem(STORE,JSON.stringify(toSave));}catch(e){}
+    // BUG-FIX SUPPRESSION : détecter les erreurs de permission (401, PERMISSION_DENIED).
+    // Quand les règles Firebase RTDB sont trop strictes, l'écriture est rejetée silencieusement.
+    // Côté UI, l'utilisateur clique "Supprimer" → ça marche localement → mais Firebase rejette
+    // → au reload, les données reviennent. On alerte l'utilisateur clairement.
+    var isPermErr = /401|PERMISSION_DENIED|Unauthorized|permission/i.test(msg + ' ' + code);
+    if(isPermErr && !window._fbWriteFailed){
+      window._fbWriteFailed = true;
+      if(typeof showToast === 'function'){
+        try{
+          showToast('⚠️ Sauvegarde Firebase refusée (règles de sécurité). Tes modifications restent locales mais ne se synchroniseront pas. Vérifie les règles RTDB dans la console Firebase.','error');
+        }catch(e){}
+      }
+    }
     if(!_fbSaveQueue){_fbSaveQueue=toSave;setTimeout(_flushSaveQueue,3000);}
   }finally{
     _fbSaveRunning=false;
@@ -16187,8 +16220,31 @@ function initFirebaseSync(){
       // Premier chargement : prendre toutes les donnees Firebase
       const def=defaultData();
       const merged={};
+      // BUG-FIX RESTAURATION ANNONCES : Firebase RTDB ne stocke PAS les arrays vides.
+      // Si tu supprimes la dernière annonce, Firebase enlève la clé `annonces` au lieu
+      // de stocker `[]`. Au reload, `data.annonces === undefined` → l'ancien code prenait
+      // la valeur par défaut (annonce de Bienvenue) → l'annonce supprimée revenait à chaque reload.
+      // Solution : si Firebase contient au moins UNE donnée non-vide (= instance live),
+      // alors une clé absente sur un array signifie "supprimé totalement" et non "valeur par défaut".
+      var ARRAY_KEYS_ALL = ['plaintes','dossiers','annonces','candidatures','operations','sanctions','recenses','infractions','timeline','users','loginHistory'];
+      var fbIsLiveInstance = false;
+      // Détection : Firebase est "live" si au moins une de ces clés array contient des données
+      // OU si la clé `commissaire` est présente avec une valeur custom (= déjà configuré)
+      for(var _k=0;_k<ARRAY_KEYS_ALL.length;_k++){
+        var _v = data[ARRAY_KEYS_ALL[_k]];
+        if(Array.isArray(_v) && _v.length>0){ fbIsLiveInstance = true; break; }
+        if(_v && typeof _v === 'object' && Object.keys(_v).length>0){ fbIsLiveInstance = true; break; }
+      }
+      // Bonus : si tribunal/hospital existe, c'est aussi une instance live
+      if(!fbIsLiveInstance && (data.tribunal || data.hospital)) fbIsLiveInstance = true;
       for(const key of Object.keys(def)){
-        merged[key]=data.hasOwnProperty(key)?data[key]:def[key];
+        if(ARRAY_KEYS_ALL.indexOf(key) !== -1 && fbIsLiveInstance){
+          // Pour les arrays : si Firebase est live mais la clé est absente/null,
+          // c'est que tout a été supprimé volontairement → respecter le tableau vide.
+          merged[key] = (data.hasOwnProperty(key) && data[key] != null) ? data[key] : [];
+        } else {
+          merged[key] = data.hasOwnProperty(key) ? data[key] : def[key];
+        }
       }
       for(const key of Object.keys(data)){
         if(!merged.hasOwnProperty(key))merged[key]=data[key];
@@ -18919,7 +18975,7 @@ function openAnnonceFull(id){
   if(titleEl) titleEl.textContent = a.titre || '';
   if(bodyEl){
     var photo = a.photo && safeImgSrc(a.photo)
-      ? '<img alt="Photo annonce" src="'+esc(safeImgSrc(a.photo))+'" style="display:block;width:100%;max-height:340px;object-fit:cover;border-radius:8px;margin-bottom:14px;border:1px solid rgba(180,140,20,0.18)">'
+      ? '<img alt="Photo annonce" src="'+esc(safeImgSrc(a.photo))+'" style="display:block;margin:0 auto 14px;max-width:100%;width:auto;max-height:400px;height:auto;object-fit:contain;background:rgba(0,0,0,0.2);border-radius:8px;border:1px solid rgba(180,140,20,0.18)">'
       : '';
     bodyEl.innerHTML = ''
       + '<div style="font-family:\'Share Tech Mono\',monospace;font-size:10px;letter-spacing:1.5px;color:rgba(255,255,255,0.45);text-transform:uppercase;margin-bottom:12px">'
