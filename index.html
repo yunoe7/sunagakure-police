@@ -17253,6 +17253,13 @@ function doLogin(){
 
 // ─── SÉLECTEUR DE COMPTES — affiché quand un identifiant matche plusieurs sections ───
 function showAccountSelector(users, preferredSection){
+  // Injecter l'animation dédiée si pas encore présente (sans translateX qui décalerait)
+  if(!document.getElementById('lg-acct-anim-style')){
+    var animStyle = document.createElement('style');
+    animStyle.id = 'lg-acct-anim-style';
+    animStyle.textContent = '@keyframes lgAcctSelectorFadeIn{from{opacity:0}to{opacity:1}}';
+    document.head.appendChild(animStyle);
+  }
   // Construire le modal s'il n'existe pas
   var modal = document.getElementById('lg-account-selector');
   if(modal) modal.remove(); // BUG-FIX : toujours recréer pour éviter un état figé
@@ -17271,7 +17278,7 @@ function showAccountSelector(users, preferredSection){
     'padding:14px',
     'box-sizing:border-box',
     'overflow-y:auto',
-    'animation:lgToastIn 0.25s ease both',
+    'animation:lgAcctSelectorFadeIn 0.25s ease both',
     'margin:0'
   ].join(';');
   modal.innerHTML = '<div id="lg-acct-box" style="background:linear-gradient(180deg,#1a1308,#15100a);border:1px solid rgba(201,162,39,0.35);border-radius:14px;max-width:420px;width:100%;padding:22px 20px;box-shadow:0 30px 80px rgba(0,0,0,0.6),0 0 0 1px rgba(201,162,39,0.08);box-sizing:border-box;max-height:calc(100vh - 28px);overflow-y:auto"><div style="text-align:center;margin-bottom:18px"><div style="font-family:Cinzel,serif;font-size:18px;font-weight:700;color:#f0e8d0;letter-spacing:0.5px;margin-bottom:5px;line-height:1.3">Plusieurs comptes détectés</div><div style="font-size:10px;color:rgba(240,232,208,0.6);font-family:Share Tech Mono,monospace;letter-spacing:1px;text-transform:uppercase">Sélectionnez le compte à utiliser</div></div><div id="lg-acct-list" style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px"></div><button onclick="document.getElementById(\'lg-account-selector\').remove()" style="width:100%;padding:10px;background:transparent;border:1px solid rgba(201,162,39,0.25);border-radius:8px;color:rgba(240,232,208,0.65);font-family:Share Tech Mono,monospace;font-size:11px;letter-spacing:2px;cursor:pointer;text-transform:uppercase;transition:all 0.2s">Annuler</button></div>';
