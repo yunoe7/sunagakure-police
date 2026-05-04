@@ -7,6 +7,7 @@
 <title>Police — Sunagakure Intranet</title>
 <meta name="theme-color" content="#1a1c2e">
 <link rel="icon" href="data:,">
+<meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Police Suna">
@@ -7306,11 +7307,20 @@ document.addEventListener('error', function(e){
     <div class="nav-item" role="button" tabindex="0" onclick="showPage('mission-disponibles')" data-page="mission-disponibles" data-sec="mission"><span class="icon">📋</span> Missions disponibles</div>
     <div class="nav-item" role="button" tabindex="0" onclick="showPage('mission-actives')" data-page="mission-actives" data-sec="mission"><span class="icon">🎯</span> Mes missions</div>
     <div class="nav-item" role="button" tabindex="0" onclick="showPage('mission-recompenses')" data-page="mission-recompenses" data-sec="mission"><span class="icon">💰</span> Récompenses</div>
-    <!-- MÉDICAL -->
+    <!-- HÔPITAL -->
     <div class="nav-section" data-sec="medical">Hôpital</div>
     <div class="nav-item" role="button" tabindex="0" onclick="showPage('medical-patients')" data-page="medical-patients" data-sec="medical"><span class="icon">🛌</span> Patients</div>
     <div class="nav-item" role="button" tabindex="0" onclick="showPage('medical-consultations')" data-page="medical-consultations" data-sec="medical"><span class="icon">🩺</span> Consultations</div>
     <div class="nav-item" role="button" tabindex="0" onclick="showPage('medical-pharmacie')" data-page="medical-pharmacie" data-sec="medical"><span class="icon">💊</span> Pharmacie</div>
+    <div class="nav-item" role="button" tabindex="0" onclick="showPage('medical-psy')" data-page="medical-psy" data-sec="medical"><span class="icon">🧠</span> Salon psy</div>
+    <div class="nav-item" role="button" tabindex="0" onclick="showPage('medical-dons')" data-page="medical-dons" data-sec="medical"><span class="icon">🩸</span> Dons du sang</div>
+    <!-- SCIENTIFIQUE -->
+    <div class="nav-section" data-sec="medical">Scientifique</div>
+    <div class="nav-item" role="button" tabindex="0" onclick="showPage('sci-rapports')" data-page="sci-rapports" data-sec="medical"><span class="icon">🧪</span> Salon scientifique</div>
+    <div class="nav-item" role="button" tabindex="0" onclick="showPage('sci-morgue')" data-page="sci-morgue" data-sec="medical"><span class="icon">⚰️</span> Morgue</div>
+    <!-- COMPTABILITÉ -->
+    <div class="nav-section" data-sec="medical">Comptabilité</div>
+    <div class="nav-item" role="button" tabindex="0" onclick="showPage('compta-paiements')" data-page="compta-paiements" data-sec="medical"><span class="icon">💴</span> Paiements (Ryōs)</div>
     <!-- DIPLOMATIE -->
     <div class="nav-section" data-sec="diplomatie">Diplomatie</div>
     <div class="nav-item" role="button" tabindex="0" onclick="showPage('diplo-villages')" data-page="diplo-villages" data-sec="diplomatie"><span class="icon">🏯</span> Villages alliés</div>
@@ -10934,7 +10944,16 @@ document.addEventListener('error', function(e){
     <div class="card" data-sec-card="mission:recompenses"></div>
   </div>
 
-  <!-- MÉDICAL — Patients -->
+  <!-- ═══════════════════════════════════════════════════════════════════════
+       HÔPITAL & SCIENTIFIQUE & COMPTABILITÉ — système refondu
+       Stockage : DB.hospital = { patients, consultations, pharmacie, psy,
+                                  scientifique, morgue, paiements, dons }
+       Permissions : Apprenti/Confirmé = ses propres entrées
+                     Expert/Maître = tout dans sa section
+                     Admin/Gérant = tout partout
+       ═══════════════════════════════════════════════════════════════════════ -->
+
+  <!-- HÔPITAL — Patients -->
   <div class="page-content" id="page-medical-patients" data-sec-page="medical">
     <div class="pgv2-hero" data-tone="profil">
       <div class="pgv2-hero-inner">
@@ -10944,12 +10963,32 @@ document.addEventListener('error', function(e){
           <div class="pgv2-hero-title">Patients</div>
           <div class="pgv2-hero-sub">Registre des patients hospitalisés ou en suivi</div>
         </div>
+        <div class="pgv2-hero-stats">
+          <div class="pgv2-hero-stat" data-tone="orange"><div class="num" id="hosp-stat-pat-actifs">0</div><div class="lbl">Hospitalisés</div></div>
+          <div class="pgv2-hero-stat" data-tone="green"><div class="num" id="hosp-stat-pat-sortis">0</div><div class="lbl">Sortis</div></div>
+          <div class="pgv2-hero-stat" data-tone="blue"><div class="num" id="hosp-stat-pat-total">0</div><div class="lbl">Total</div></div>
+        </div>
+        <div class="pgv2-hero-actions">
+          <button class="btn btn-primary" id="btn-hosp-new-patient" onclick="hospOpenPatient()">+ Ajouter un patient</button>
+        </div>
       </div>
     </div>
-    <div class="card" data-sec-card="medical:patients"></div>
+    <div class="card" style="margin-bottom:14px;padding:14px 16px">
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        <input type="text" id="hosp-pat-search" class="form-control" placeholder="🔍 Rechercher (nom, pathologie, médecin...)" style="flex:1;min-width:200px;margin:0" oninput="renderHospPatients()">
+        <select id="hosp-pat-filter" class="form-control" style="max-width:170px;margin:0" onchange="renderHospPatients()">
+          <option value="all">Tous les statuts</option>
+          <option value="hospitalise">🛌 Hospitalisé</option>
+          <option value="suivi">📋 En suivi</option>
+          <option value="sorti">✅ Sorti</option>
+          <option value="critique">⚠️ Critique</option>
+        </select>
+      </div>
+    </div>
+    <div class="card" style="overflow-x:auto"><div id="hosp-pat-list"></div></div>
   </div>
 
-  <!-- MÉDICAL — Consultations -->
+  <!-- HÔPITAL — Consultations -->
   <div class="page-content" id="page-medical-consultations" data-sec-page="medical">
     <div class="pgv2-hero" data-tone="profil">
       <div class="pgv2-hero-inner">
@@ -10957,14 +10996,34 @@ document.addEventListener('error', function(e){
         <div class="pgv2-hero-text">
           <div class="pgv2-hero-tag">Hôpital de Sunagakure</div>
           <div class="pgv2-hero-title">Consultations</div>
-          <div class="pgv2-hero-sub">Rendez-vous et examens du jour</div>
+          <div class="pgv2-hero-sub">Rendez-vous, examens et comptes-rendus</div>
+        </div>
+        <div class="pgv2-hero-stats">
+          <div class="pgv2-hero-stat" data-tone="blue"><div class="num" id="hosp-stat-cons-jour">0</div><div class="lbl">Aujourd'hui</div></div>
+          <div class="pgv2-hero-stat"><div class="num" id="hosp-stat-cons-prevues">0</div><div class="lbl">Prévues</div></div>
+          <div class="pgv2-hero-stat" data-tone="green"><div class="num" id="hosp-stat-cons-total">0</div><div class="lbl">Total</div></div>
+        </div>
+        <div class="pgv2-hero-actions">
+          <button class="btn btn-primary" onclick="hospOpenConsultation()">+ Nouvelle consultation</button>
         </div>
       </div>
     </div>
-    <div class="card" data-sec-card="medical:consultations"></div>
+    <div class="card" style="margin-bottom:14px;padding:14px 16px">
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        <input type="text" id="hosp-cons-search" class="form-control" placeholder="🔍 Rechercher (patient, médecin, motif...)" style="flex:1;min-width:200px;margin:0" oninput="renderHospConsultations()">
+        <select id="hosp-cons-filter" class="form-control" style="max-width:170px;margin:0" onchange="renderHospConsultations()">
+          <option value="all">Tous</option>
+          <option value="prevue">📅 Prévue</option>
+          <option value="encours">⏳ En cours</option>
+          <option value="terminee">✅ Terminée</option>
+          <option value="annulee">❌ Annulée</option>
+        </select>
+      </div>
+    </div>
+    <div class="card" style="overflow-x:auto"><div id="hosp-cons-list"></div></div>
   </div>
 
-  <!-- MÉDICAL — Pharmacie -->
+  <!-- HÔPITAL — Pharmacie -->
   <div class="page-content" id="page-medical-pharmacie" data-sec-page="medical">
     <div class="pgv2-hero" data-tone="profil">
       <div class="pgv2-hero-inner">
@@ -10972,11 +11031,196 @@ document.addEventListener('error', function(e){
         <div class="pgv2-hero-text">
           <div class="pgv2-hero-tag">Hôpital de Sunagakure</div>
           <div class="pgv2-hero-title">Pharmacie</div>
-          <div class="pgv2-hero-sub">Stock de remèdes et matériel médical</div>
+          <div class="pgv2-hero-sub">Stock de remèdes, antidotes et matériel médical</div>
+        </div>
+        <div class="pgv2-hero-stats">
+          <div class="pgv2-hero-stat" data-tone="green"><div class="num" id="hosp-stat-pharm-total">0</div><div class="lbl">Références</div></div>
+          <div class="pgv2-hero-stat" data-tone="orange"><div class="num" id="hosp-stat-pharm-low">0</div><div class="lbl">Stock bas</div></div>
+          <div class="pgv2-hero-stat" data-tone="red"><div class="num" id="hosp-stat-pharm-out">0</div><div class="lbl">Rupture</div></div>
+        </div>
+        <div class="pgv2-hero-actions">
+          <button class="btn btn-primary" onclick="hospOpenPharmacie()">+ Ajouter un produit</button>
         </div>
       </div>
     </div>
-    <div class="card" data-sec-card="medical:pharmacie"></div>
+    <div class="card" style="margin-bottom:14px;padding:14px 16px">
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        <input type="text" id="hosp-pharm-search" class="form-control" placeholder="🔍 Rechercher (nom, catégorie...)" style="flex:1;min-width:200px;margin:0" oninput="renderHospPharmacie()">
+        <select id="hosp-pharm-filter" class="form-control" style="max-width:170px;margin:0" onchange="renderHospPharmacie()">
+          <option value="all">Toutes catégories</option>
+          <option value="ok">✅ Stock OK</option>
+          <option value="low">⚠️ Stock bas</option>
+          <option value="out">❌ Rupture</option>
+        </select>
+      </div>
+    </div>
+    <div class="card" style="overflow-x:auto"><div id="hosp-pharm-list"></div></div>
+  </div>
+
+  <!-- HÔPITAL — Salon Psy -->
+  <div class="page-content" id="page-medical-psy" data-sec-page="medical">
+    <div class="pgv2-hero" data-tone="profil">
+      <div class="pgv2-hero-inner">
+        <div class="pgv2-hero-icon">🧠</div>
+        <div class="pgv2-hero-text">
+          <div class="pgv2-hero-tag">Hôpital de Sunagakure</div>
+          <div class="pgv2-hero-title">Salon psychologique</div>
+          <div class="pgv2-hero-sub">Consultations et suivis psychologiques</div>
+        </div>
+        <div class="pgv2-hero-stats">
+          <div class="pgv2-hero-stat" data-tone="purple"><div class="num" id="hosp-stat-psy-actifs">0</div><div class="lbl">Suivis actifs</div></div>
+          <div class="pgv2-hero-stat"><div class="num" id="hosp-stat-psy-mois">0</div><div class="lbl">Ce mois</div></div>
+          <div class="pgv2-hero-stat" data-tone="blue"><div class="num" id="hosp-stat-psy-total">0</div><div class="lbl">Total</div></div>
+        </div>
+        <div class="pgv2-hero-actions">
+          <button class="btn btn-primary" onclick="hospOpenPsy()">+ Nouvelle consultation psy</button>
+        </div>
+      </div>
+    </div>
+    <div class="card" style="margin-bottom:14px;padding:14px 16px">
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        <input type="text" id="hosp-psy-search" class="form-control" placeholder="🔍 Rechercher (patient, psychologue, motif...)" style="flex:1;min-width:200px;margin:0" oninput="renderHospPsy()">
+      </div>
+    </div>
+    <div class="card" style="overflow-x:auto"><div id="hosp-psy-list"></div></div>
+  </div>
+
+  <!-- HÔPITAL — Dons du sang -->
+  <div class="page-content" id="page-medical-dons" data-sec-page="medical">
+    <div class="pgv2-hero" data-tone="profil">
+      <div class="pgv2-hero-inner">
+        <div class="pgv2-hero-icon">🩸</div>
+        <div class="pgv2-hero-text">
+          <div class="pgv2-hero-tag">Hôpital de Sunagakure</div>
+          <div class="pgv2-hero-title">Banque du sang</div>
+          <div class="pgv2-hero-sub">Dons enregistrés et stock de poches disponibles</div>
+        </div>
+        <div class="pgv2-hero-stats">
+          <div class="pgv2-hero-stat" data-tone="red"><div class="num" id="hosp-stat-dons-stock">0</div><div class="lbl">Poches en stock</div></div>
+          <div class="pgv2-hero-stat" data-tone="orange"><div class="num" id="hosp-stat-dons-mois">0</div><div class="lbl">Récoltées ce mois</div></div>
+          <div class="pgv2-hero-stat" data-tone="blue"><div class="num" id="hosp-stat-dons-donneurs">0</div><div class="lbl">Donneurs uniques</div></div>
+        </div>
+        <div class="pgv2-hero-actions">
+          <button class="btn btn-primary" onclick="hospOpenDon()">+ Enregistrer un don</button>
+        </div>
+      </div>
+    </div>
+    <div class="card" style="margin-bottom:14px;padding:14px 16px">
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        <input type="text" id="hosp-dons-search" class="form-control" placeholder="🔍 Rechercher (donneur, médecin, groupe...)" style="flex:1;min-width:200px;margin:0" oninput="renderHospDons()">
+        <select id="hosp-dons-filter" class="form-control" style="max-width:140px;margin:0" onchange="renderHospDons()">
+          <option value="all">Tous groupes</option>
+          <option value="O+">O+</option><option value="O-">O-</option>
+          <option value="A+">A+</option><option value="A-">A-</option>
+          <option value="B+">B+</option><option value="B-">B-</option>
+          <option value="AB+">AB+</option><option value="AB-">AB-</option>
+        </select>
+      </div>
+    </div>
+    <div class="card" style="overflow-x:auto"><div id="hosp-dons-list"></div></div>
+  </div>
+
+  <!-- SCIENTIFIQUE — Salon -->
+  <div class="page-content" id="page-sci-rapports" data-sec-page="medical">
+    <div class="pgv2-hero" data-tone="profil">
+      <div class="pgv2-hero-inner">
+        <div class="pgv2-hero-icon">🧪</div>
+        <div class="pgv2-hero-text">
+          <div class="pgv2-hero-tag">Service scientifique</div>
+          <div class="pgv2-hero-title">Salon scientifique</div>
+          <div class="pgv2-hero-sub">Rapports d'études, analyses et recherches en cours</div>
+        </div>
+        <div class="pgv2-hero-stats">
+          <div class="pgv2-hero-stat" data-tone="cyan"><div class="num" id="hosp-stat-sci-encours">0</div><div class="lbl">En cours</div></div>
+          <div class="pgv2-hero-stat" data-tone="green"><div class="num" id="hosp-stat-sci-publies">0</div><div class="lbl">Publiés</div></div>
+          <div class="pgv2-hero-stat"><div class="num" id="hosp-stat-sci-total">0</div><div class="lbl">Total</div></div>
+        </div>
+        <div class="pgv2-hero-actions">
+          <button class="btn btn-primary" onclick="hospOpenSci()">+ Nouveau rapport</button>
+        </div>
+      </div>
+    </div>
+    <div class="card" style="margin-bottom:14px;padding:14px 16px">
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        <input type="text" id="hosp-sci-search" class="form-control" placeholder="🔍 Rechercher (titre, scientifique, type...)" style="flex:1;min-width:200px;margin:0" oninput="renderHospSci()">
+        <select id="hosp-sci-filter" class="form-control" style="max-width:160px;margin:0" onchange="renderHospSci()">
+          <option value="all">Tous</option>
+          <option value="encours">⏳ En cours</option>
+          <option value="publie">✅ Publié</option>
+          <option value="archive">📦 Archivé</option>
+        </select>
+      </div>
+    </div>
+    <div class="card" style="overflow-x:auto"><div id="hosp-sci-list"></div></div>
+  </div>
+
+  <!-- SCIENTIFIQUE — Morgue -->
+  <div class="page-content" id="page-sci-morgue" data-sec-page="medical">
+    <div class="pgv2-hero" data-tone="profil">
+      <div class="pgv2-hero-inner">
+        <div class="pgv2-hero-icon">⚰️</div>
+        <div class="pgv2-hero-text">
+          <div class="pgv2-hero-tag">Service scientifique</div>
+          <div class="pgv2-hero-title">Morgue</div>
+          <div class="pgv2-hero-sub">Registre des défunts et autopsies</div>
+        </div>
+        <div class="pgv2-hero-stats">
+          <div class="pgv2-hero-stat" data-tone="orange"><div class="num" id="hosp-stat-morg-autopsie">0</div><div class="lbl">En autopsie</div></div>
+          <div class="pgv2-hero-stat" data-tone="gray"><div class="num" id="hosp-stat-morg-clos">0</div><div class="lbl">Clos</div></div>
+          <div class="pgv2-hero-stat"><div class="num" id="hosp-stat-morg-total">0</div><div class="lbl">Total</div></div>
+        </div>
+        <div class="pgv2-hero-actions">
+          <button class="btn btn-primary" onclick="hospOpenMorgue()">+ Nouveau défunt</button>
+        </div>
+      </div>
+    </div>
+    <div class="card" style="margin-bottom:14px;padding:14px 16px">
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        <input type="text" id="hosp-morg-search" class="form-control" placeholder="🔍 Rechercher (nom, cause, légiste...)" style="flex:1;min-width:200px;margin:0" oninput="renderHospMorgue()">
+        <select id="hosp-morg-filter" class="form-control" style="max-width:170px;margin:0" onchange="renderHospMorgue()">
+          <option value="all">Tous statuts</option>
+          <option value="autopsie">🔬 En autopsie</option>
+          <option value="clos">📁 Clos</option>
+          <option value="restitue">⚱️ Restitué famille</option>
+        </select>
+      </div>
+    </div>
+    <div class="card" style="overflow-x:auto"><div id="hosp-morg-list"></div></div>
+  </div>
+
+  <!-- COMPTABILITÉ — Paiements en Ryōs -->
+  <div class="page-content" id="page-compta-paiements" data-sec-page="medical">
+    <div class="pgv2-hero" data-tone="profil">
+      <div class="pgv2-hero-inner">
+        <div class="pgv2-hero-icon">💴</div>
+        <div class="pgv2-hero-text">
+          <div class="pgv2-hero-tag">Comptabilité Hôpital</div>
+          <div class="pgv2-hero-title">Paiements (Ryōs)</div>
+          <div class="pgv2-hero-sub">Facturation des soins et règlements joueurs</div>
+        </div>
+        <div class="pgv2-hero-stats">
+          <div class="pgv2-hero-stat" data-tone="green"><div class="num" id="hosp-stat-pay-encaisse">0</div><div class="lbl">Encaissé (ryōs)</div></div>
+          <div class="pgv2-hero-stat" data-tone="orange"><div class="num" id="hosp-stat-pay-attente">0</div><div class="lbl">En attente</div></div>
+          <div class="pgv2-hero-stat" data-tone="red"><div class="num" id="hosp-stat-pay-impaye">0</div><div class="lbl">Impayés</div></div>
+        </div>
+        <div class="pgv2-hero-actions">
+          <button class="btn btn-primary" onclick="hospOpenPaiement()">+ Nouveau paiement</button>
+        </div>
+      </div>
+    </div>
+    <div class="card" style="margin-bottom:14px;padding:14px 16px">
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        <input type="text" id="hosp-pay-search" class="form-control" placeholder="🔍 Rechercher (patient, médecin, acte...)" style="flex:1;min-width:200px;margin:0" oninput="renderHospPaiements()">
+        <select id="hosp-pay-filter" class="form-control" style="max-width:170px;margin:0" onchange="renderHospPaiements()">
+          <option value="all">Tous statuts</option>
+          <option value="paye">✅ Payé</option>
+          <option value="attente">⏳ En attente</option>
+          <option value="impaye">❌ Impayé</option>
+          <option value="rembourse">↩️ Remboursé</option>
+        </select>
+      </div>
+    </div>
+    <div class="card" style="overflow-x:auto"><div id="hosp-pay-list"></div></div>
   </div>
 
   <!-- DIPLOMATIE — Villages alliés -->
@@ -15850,6 +16094,25 @@ function initFirebaseSync(){
             _changedKeys.add('tribunal');
           }
         }
+        // Pareil pour DB.hospital (Hôpital + Scientifique + Comptabilité)
+        if(data.hospital && typeof data.hospital === 'object'){
+          var _hospChanged = JSON.stringify(DB.hospital||{}) !== JSON.stringify(data.hospital);
+          if(_hospChanged){
+            DB.hospital = data.hospital;
+            // Garantir que les arrays existent toujours (sinon les .filter()/.map() crashent)
+            ['patients','consultations','pharmacie','psy','scientifique','morgue','paiements','dons'].forEach(function(k){
+              if(!Array.isArray(DB.hospital[k])){
+                // Firebase RTDB peut renvoyer un objet {0:..,1:..} au lieu d'un array
+                if(DB.hospital[k] && typeof DB.hospital[k] === 'object'){
+                  DB.hospital[k] = Object.values(DB.hospital[k]).filter(Boolean);
+                } else {
+                  DB.hospital[k] = [];
+                }
+              }
+            });
+            _changedKeys.add('hospital');
+          }
+        }
         try{localStorage.setItem(STORE,JSON.stringify(DB));}catch(e){}
 
         // ═══ BUG-FIX MAJEUR : RE-RENDER DE LA PAGE COURANTE SI SES DONNÉES ONT CHANGÉ ═══
@@ -15919,6 +16182,15 @@ function initFirebaseSync(){
               var tribModalOpen = !!document.getElementById('trib-modal');
               if(!tribModalOpen && typeof tribRenderPage === 'function'){
                 try{ tribRenderPage(activePage); }catch(e){}
+              }
+            }
+            // ─── HOSPITAL : re-render des pages Hôpital/Scientifique/Comptabilité si DB.hospital a changé ───
+            // Pages concernées : medical-*, sci-*, compta-* (après refonte)
+            if(activePage && _changedKeys.has('hospital') && /^(medical|sci|compta)-/.test(activePage)){
+              // Protection : ne pas re-render si une modal Hospital est ouverte (édition en cours)
+              var hospModalOpen = !!document.getElementById('hosp-modal');
+              if(!hospModalOpen && typeof hospRenderPage === 'function'){
+                try{ hospRenderPage(activePage); }catch(e){}
               }
             }
             // Toujours mettre à jour les badges de notification (tout en haut + bottom-nav)
@@ -16187,10 +16459,20 @@ function defaultData(){
   // au moins une fois après une réinitialisation. À renommer/sécuriser via le panel.
   return{commissaire:"Commissaire à définir",
     logo:"",
-    grades:["Gérant","Co-Gérant","Sergent","Officier","Stagiaire"],
+    grades:["Gérant","Co-Gérant","Sergent","Officier","Stagiaire",
+      // Grades section Hôpital (médical) — Apprenti < Confirmé < Expert < Maître
+      "Apprenti médecin","Confirmé médecin","Expert médecin","Maître médecin",
+      // Grades section Scientifique — même hiérarchie
+      "Apprenti scientifique","Confirmé scientifique","Expert scientifique","Maître scientifique"
+    ],
     users:[{id:1,login:"admin",pass:"__PENDING_HASH__",nom:"Développeur",grade:"Gérant",role:"admin",statut:"Actif",photo:"",created:now()}],
     annonces:[{id:1,titre:"Bienvenue sur le portail Police de Sunagakure",cat:"Information",contenu:"Ce portail est le centre névralgique des communications internes.\n\nToutes les informations officielles y seront publiées.",auteur:"Administration",pin:true,date:now()}],
-    recenses:[],candidatures:[],plaintes:[],dossiers:[],operations:[],sanctions:[],infractions:[],timeline:[],adminNotes:{},messages:{},loginHistory:[],features:{map_active:false}}
+    recenses:[],candidatures:[],plaintes:[],dossiers:[],operations:[],sanctions:[],infractions:[],timeline:[],adminNotes:{},messages:{},loginHistory:[],features:{map_active:false},
+    // ═══ HÔPITAL & SCIENTIFIQUE ═══
+    // Stockage centralisé : DB.hospital = { patients, consultations, pharmacie, psy, scientifique, morgue, paiements, dons }
+    // Chaque tableau contient des entrées { id, ...champs propres à la collection, auteurId, auteurNom, created, modified }
+    hospital:{patients:[],consultations:[],pharmacie:[],psy:[],scientifique:[],morgue:[],paiements:[],dons:[]}
+  }
 }
 let DB=loadData();
 
@@ -17220,7 +17502,15 @@ async function doRegister(){
   // _lastFbArrays.users est maintenu en temps réel par onValue — toujours frais, pas de GET nécessaire
   const freshUsers=(_lastFbArrays.users&&_lastFbArrays.users.length>0)?_lastFbArrays.users:DB.users;
   // (Vérification d'unicité déplacée plus bas pour gérer login + section)
-  const hashed=await hashPass(pass);
+  let hashed;
+  try{
+    hashed=await hashPass(pass);
+  }catch(e){
+    ra.textContent='Erreur de chiffrement du mot de passe. Réessayez ou vérifiez que vous êtes bien sur HTTPS.';
+    ra.style.display='block';
+    _loginInProgress=false;
+    return;
+  }
   // Utiliser le dernier grade disponible plutôt que 'Visiteur' (absent de la liste des grades)
   const defaultGrade=(DB.grades&&DB.grades.length?DB.grades[DB.grades.length-1]:'Stagiaire');
   // SECTION : récupérer la card sélectionnée sur l'écran de connexion (fallback police)
@@ -17383,7 +17673,11 @@ function doLogin(){
       if(u.login !== login) continue;
       if(u.statut === "Désactivé") continue;
       if(!isHashed(u.pass)) continue; // hash invalide / __NEEDS_RESET__
-      if(await verifyPass(pass, u.pass)){
+      // Si verifyPass throw sur un compte (ex: hash corrompu), on saute ce compte
+      // au lieu de faire planter toute la boucle de login.
+      let _ok = false;
+      try{ _ok = await verifyPass(pass, u.pass); }catch(e){ _ok = false; }
+      if(_ok){
         matchingUsers.push(u);
       }
     }
@@ -17541,7 +17835,9 @@ async function emergencyReset(){
   if(code===null)return;
   const adminAcc=DB.users.find(u=>u.role==="admin");
   if(!adminAcc){alert("❌ Aucun compte admin trouvé.");return;}
-  const ok = await verifyPass(code, adminAcc.pass);
+  let ok = false;
+  try{ ok = await verifyPass(code, adminAcc.pass); }
+  catch(e){ alert("❌ Erreur de vérification (crypto indisponible). Vérifiez que vous êtes sur HTTPS."); return; }
   if(!ok){alert("❌ Mot de passe incorrect. Accès refusé.");return;}
 
   // Demander un nouveau mot de passe
@@ -17561,7 +17857,9 @@ async function emergencyReset(){
   askDelete(
     "🔑 Changer le mot de passe admin ?\n\nAucune autre donnée ne sera affectée (comptes, plaintes, dossiers, etc. seront préservés).",
     async ()=>{
-      const h = await hashPass(newPass);
+      let h;
+      try{ h = await hashPass(newPass); }
+      catch(e){ alert("❌ Erreur de chiffrement. Réessayez."); return; }
       const a = DB.users.find(u=>u.role==="admin");
       if(a){
         a.pass = h;
@@ -17582,7 +17880,9 @@ async function resetAllData(){
   if(code===null)return;
   const adminAcc=DB.users.find(u=>u.role==="admin");
   if(!adminAcc){alert("❌ Aucun compte admin trouvé.");return;}
-  const ok = await verifyPass(code, adminAcc.pass);
+  let ok = false;
+  try{ ok = await verifyPass(code, adminAcc.pass); }
+  catch(e){ alert("❌ Erreur de vérification (crypto indisponible). Vérifiez que vous êtes sur HTTPS."); return; }
   if(!ok){alert("❌ Mot de passe incorrect.");return;}
 
   const confirm1 = prompt('Tapez "RESET TOTAL" pour confirmer la suppression de TOUTES les données :');
@@ -18271,7 +18571,8 @@ function updateBadges(){
   _setBadge("dbadge-operations",nOp,true);
   _setBadge("dbadge-dossiers",nD,true);
   // Prefs masquage
-  const pref=JSON.parse(localStorage.getItem("suna_notifs")||"{}");
+  let pref={};
+  try{ pref=JSON.parse(localStorage.getItem("suna_notifs")||"{}"); }catch(e){ pref={}; }
   if(ba&&pref.annonces===false)ba.style.display="none";
   if(bp&&pref.plaintes===false)bp.style.display="none";
   if(br&&pref.recenses===false)br.style.display="none";
@@ -19374,12 +19675,14 @@ function viewCandidature(id){
     </div>
     ${modif}
   `;
-  const footer=el("vc-footer");footer.innerHTML="";
+  const footer=el("vc-footer");
+  let footerHtml="";
   if(canModify()&&c.statut==="en_attente"){
-    footer.innerHTML+=`<button class="btn btn-success" onclick="setCandidature(${c.id},'acceptee');closeModal('modal-view-candidature')">✓ Accepter</button>`;
-    footer.innerHTML+=`<button class="btn btn-danger" onclick="setCandidature(${c.id},'refusee');closeModal('modal-view-candidature')">✕ Refuser</button>`;
+    footerHtml+=`<button class="btn btn-success" onclick="setCandidature(${c.id},'acceptee');closeModal('modal-view-candidature')">✓ Accepter</button>`;
+    footerHtml+=`<button class="btn btn-danger" onclick="setCandidature(${c.id},'refusee');closeModal('modal-view-candidature')">✕ Refuser</button>`;
   }
-  footer.innerHTML+=`<button class="btn btn-outline" onclick="closeModal('modal-view-candidature')">Fermer</button>`;
+  footerHtml+=`<button class="btn btn-outline" onclick="closeModal('modal-view-candidature')">Fermer</button>`;
+  footer.innerHTML=footerHtml;
   openModal("modal-view-candidature");
 }
 
@@ -19465,7 +19768,12 @@ function setCandidature(id,statut){
       const userId=Date.now();
       const userLogin="recrue_"+userId;
       (async()=>{
-        const h=await hashPass("recrue123");
+        let h;
+        try{ h = await hashPass("recrue123"); }
+        catch(e){
+          showToast("❌ Erreur de chiffrement — compte recrue non créé. Réessayez.","error");
+          return;
+        }
         DB.users.push({id:userId,login:userLogin,pass:h,nom:c.nom,grade:c.grade||"Stagiaire",role:"stagiaire",statut:"Actif",photo:"",created:now()});
         addTimeline(`Candidature de ${c.nom} : acceptée ✅ par ${currentUser.nom}`);
         if(!window._fbDB||!window._fbRef||!window._fbUpdate){
@@ -19651,14 +19959,15 @@ function viewPlainte(id){
   const liensRecense=recenseAcc?`<div style="margin-top:8px;padding:10px 13px;background:rgba(109,40,217,0.06);border:1px solid rgba(109,40,217,0.2);border-radius:9px;font-size:12px;display:flex;align-items:center;gap:8px">📝 <span>Fiche de recensement trouvée</span><button class="btn btn-purple btn-sm" onclick="closeModal('modal-view-plainte');showPage('recensement');setTimeout(()=>{const s=el('search-recense');if(s){s.value='${esc(p.accuse||'')}';renderRecensement();}},150)">Voir la fiche</button></div>`:"";
   const photoAccuseHTML=p.photoAccuse&&safeImgSrc(p.photoAccuse)?`<div class="form-group"><label class="form-label" style="display:flex;align-items:center;gap:6px">📸 Photo de l'accusé</label><div style="display:flex;justify-content:center;padding:6px 0"><img src="${safeImgSrc(p.photoAccuse)}" alt="Photo accusé" style="max-width:180px;max-height:180px;border-radius:10px;object-fit:cover;border:2px solid rgba(180,140,20,0.25);box-shadow:0 4px 16px rgba(0,0,0,0.18)"></div></div>`:"";
   vpBody.innerHTML=`${photoAccuseHTML}<div class="form-group"><label class="form-label">Plaignant</label><div style="font-size:13.5px">${esc(p.plaignant)}</div></div><div class="form-group"><label class="form-label">Accusé</label><div style="font-size:13.5px">${esc(p.accuse)}</div></div><div class="form-group"><label class="form-label">Type</label><div>${esc(p.type)}</div></div><div class="form-group"><label class="form-label">Description</label><div style="font-size:12.5px;color:rgba(240,232,208,0.65);line-height:1.65;white-space:pre-wrap">${esc(p.desc)}</div></div><div class="form-group"><label class="form-label">Date des faits</label><div>${esc(p.dateFaits)||"—"}</div></div><div class="form-group"><label class="form-label">Statut</label><span class="badge ${statutPlainte(p.statut)}">${fmtStatut(p.statut)}</span></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:8px"><div class="form-group" style="margin:0"><label class="form-label">Déposée par</label><div style="font-size:12px;font-weight:600">${esc(p.auteur||p.plaignant||"—")}</div></div><div class="form-group" style="margin:0"><label class="form-label">Agent en charge</label><div style="font-size:12px;font-weight:600;color:${p.agent?"var(--green)":"var(--muted)"}">${esc(p.agent||"Non assigné")}</div></div></div>${liensDossier}${liensRecense}`;
-  vpFooter.innerHTML="";
+  let vpFooterHtml="";
   if(canModify()){
-    if(p.statut==="ouverte")vpFooter.innerHTML+=`<button class="btn btn-primary btn-sm" onclick="setPlainteStatut(${p.id},'en_cours')">Prendre en charge</button>`;
-    if(p.statut==="en_cours")vpFooter.innerHTML+=`<button class="btn btn-success btn-sm" onclick="setPlainteStatut(${p.id},'fermee')">Clôturer</button>`;
+    if(p.statut==="ouverte")vpFooterHtml+=`<button class="btn btn-primary btn-sm" onclick="setPlainteStatut(${p.id},'en_cours')">Prendre en charge</button>`;
+    if(p.statut==="en_cours")vpFooterHtml+=`<button class="btn btn-success btn-sm" onclick="setPlainteStatut(${p.id},'fermee')">Clôturer</button>`;
     // Bouton transmettre au Tribunal (disponible sur ouverte ou en_cours)
-    if(p.statut==="ouverte"||p.statut==="en_cours")vpFooter.innerHTML+=`<button class="btn btn-gold btn-sm" onclick="setPlainteStatut(${p.id},'transmise_tribunal')" title="Transmettre cette plainte au Tribunal pour ouvrir une affaire">⚖️ Transmettre au Tribunal</button>`;
+    if(p.statut==="ouverte"||p.statut==="en_cours")vpFooterHtml+=`<button class="btn btn-gold btn-sm" onclick="setPlainteStatut(${p.id},'transmise_tribunal')" title="Transmettre cette plainte au Tribunal pour ouvrir une affaire">⚖️ Transmettre au Tribunal</button>`;
   }
-  vpFooter.innerHTML+=`<button class="btn btn-outline btn-sm" onclick="closeModal('modal-view-plainte')">Fermer</button>`;
+  vpFooterHtml+=`<button class="btn btn-outline btn-sm" onclick="closeModal('modal-view-plainte')">Fermer</button>`;
+  vpFooter.innerHTML=vpFooterHtml;
   openModal("modal-view-plainte");
 }
 function setPlainteStatut(id,statut){
@@ -21176,7 +21485,8 @@ function applyLogo(){
 // NOTIFICATIONS PREFS
 const NOTIF_KEYS=["annonces","plaintes","recenses","recrutement","operations"];
 function loadNotifPrefs(){
-  const p=JSON.parse(localStorage.getItem("suna_notifs")||"{}");
+  let p={};
+  try{ p=JSON.parse(localStorage.getItem("suna_notifs")||"{}"); }catch(e){ p={}; }
   NOTIF_KEYS.forEach(k=>{const cb=el("notif-"+k);if(cb)cb.checked=p[k]!==false;});
   applyNotifPrefs(p);
   refreshNotifCounts();
@@ -26824,7 +27134,8 @@ var _prevCounts={plaintes:0,annonces:0,operations:0,recenses:0};
 var _notifReady=false;
 function _checkRealtimeNotifs(){
   if(!currentUser||isVisiteur()) return;
-  var prefs=JSON.parse(localStorage.getItem('suna_notifs')||'{}');
+  var prefs={};
+  try{ prefs=JSON.parse(localStorage.getItem('suna_notifs')||'{}'); }catch(e){ prefs={}; }
   var nP=(DB.plaintes||[]).length;
   var nA=(DB.annonces||[]).length;
   var nO=(DB.operations||[]).filter(function(o){return o.statut==='Active';}).length;
@@ -30130,7 +30441,8 @@ function opsBriefingSave() {
     // Surcharger la fonction existante
     window._checkRealtimeNotifs = function() {
       if (!currentUser || (typeof isVisiteur === 'function' && isVisiteur())) return;
-      var prefs = JSON.parse(localStorage.getItem('suna_notifs') || '{}');
+      var prefs = {};
+      try { prefs = JSON.parse(localStorage.getItem('suna_notifs') || '{}'); } catch(e) { prefs = {}; }
       var nP = (DB.plaintes || []).length;
       var nA = (DB.annonces || []).length;
       var nO = (DB.operations || []).filter(function(o) { return o.statut === 'Active'; }).length;
@@ -30567,6 +30879,1167 @@ function bbCancelForm() {
   _bbPortraitData = '';
   document.getElementById('bb-form-wrap').style.display='none';
 }
+
+/* ═══════════════════════════════════════════════════════════════════════
+   HÔPITAL & SCIENTIFIQUE & COMPTABILITÉ — système refondu
+   Stockage : DB.hospital = { patients, consultations, pharmacie, psy,
+                              scientifique, morgue, paiements, dons }
+   Sync Firebase : sunagakure/hospital (push automatique via saveData())
+   Permissions par grade :
+     - Apprenti / Confirmé : peut ajouter, modifier ses propres entrées
+     - Expert / Maître    : peut tout modifier/supprimer dans sa section
+     - Admin / Gérant     : contrôle total partout
+   ═══════════════════════════════════════════════════════════════════════ */
+
+/* ─── INIT ─── */
+function _hospInit(){
+  if(!DB.hospital || typeof DB.hospital !== 'object') DB.hospital = {};
+  ['patients','consultations','pharmacie','psy','scientifique','morgue','paiements','dons'].forEach(function(k){
+    if(!Array.isArray(DB.hospital[k])){
+      // Firebase RTDB peut renvoyer {0:...,1:...} → normaliser
+      if(DB.hospital[k] && typeof DB.hospital[k] === 'object'){
+        DB.hospital[k] = Object.values(DB.hospital[k]).filter(Boolean);
+      } else {
+        DB.hospital[k] = [];
+      }
+    }
+  });
+}
+_hospInit();
+
+/* ─── SAVE ─── (utilise le saveData global qui pousse tout DB → Firebase) */
+function _hospSave(){
+  _hospInit(); // garantit l'intégrité avant push
+  if(typeof saveData === 'function'){ saveData(); }
+}
+
+/* ─── HELPERS ─── */
+function _hospEsc(s){
+  if(s==null) return '';
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+function _hospNl2br(s){ return _hospEsc(s).replace(/\n/g,'<br>'); }
+function _hospFmtDate(ts){
+  if(!ts) return '—';
+  try{
+    var d = new Date(ts);
+    if(isNaN(d.getTime())) return '—';
+    var dd = String(d.getDate()).padStart(2,'0');
+    var mm = String(d.getMonth()+1).padStart(2,'0');
+    var yy = d.getFullYear();
+    return dd+'/'+mm+'/'+yy;
+  }catch(e){ return '—'; }
+}
+function _hospFmtDateTime(ts){
+  if(!ts) return '—';
+  try{
+    var d = new Date(ts);
+    if(isNaN(d.getTime())) return '—';
+    var dd = String(d.getDate()).padStart(2,'0');
+    var mm = String(d.getMonth()+1).padStart(2,'0');
+    var yy = d.getFullYear();
+    var hh = String(d.getHours()).padStart(2,'0');
+    var mn = String(d.getMinutes()).padStart(2,'0');
+    return dd+'/'+mm+'/'+yy+' '+hh+':'+mn;
+  }catch(e){ return '—'; }
+}
+function _hospNextId(arr){
+  var max = 0;
+  (arr||[]).forEach(function(x){ if(x && x.id && x.id > max) max = x.id; });
+  return max + 1;
+}
+
+/* ─── PERMISSIONS ─── 
+ * section : 'medical' (Hôpital, Psy, Dons, Paiements) ou 'sci' (Scientifique, Morgue)
+ * Comptabilité (Paiements) : tous les médicaux peuvent voir, mais seuls
+ *   admin/gérant + Expert/Maître médecin peuvent modifier (gestion financière sensible)
+ */
+function _hospUserGrade(){
+  if(!currentUser) return '';
+  return currentUser.grade || '';
+}
+function _hospIsAdmin(){
+  if(!currentUser) return false;
+  var r = currentUser.role || '';
+  return r === 'admin' || r === 'gerant' || r === 'cogerant';
+}
+function _hospIsMaster(section){
+  // Expert ou Maître dans la section donnée
+  var g = _hospUserGrade();
+  if(!g) return false;
+  if(section === 'medical') return /^(Expert|Maître) médecin$/.test(g);
+  if(section === 'sci')     return /^(Expert|Maître) scientifique$/.test(g);
+  return false;
+}
+function _hospIsMember(section){
+  // Membre de la section (n'importe quel grade)
+  var g = _hospUserGrade();
+  if(!g) return false;
+  if(section === 'medical') return /médecin$/.test(g);
+  if(section === 'sci')     return /scientifique$/.test(g);
+  return false;
+}
+// Peut ajouter une entrée dans cette section
+function hospCanAdd(section){
+  if(!currentUser) return false;
+  if(_hospIsAdmin()) return true;
+  return _hospIsMember(section);
+}
+// Peut modifier/supprimer une entrée précise (selon auteur + grade)
+function hospCanEditEntry(entry, section){
+  if(!currentUser) return false;
+  if(_hospIsAdmin()) return true;
+  if(_hospIsMaster(section)) return true; // Expert/Maître peuvent tout dans leur section
+  // Apprenti/Confirmé : seulement leurs propres entrées
+  if(_hospIsMember(section) && entry && entry.auteurId && String(entry.auteurId) === String(currentUser.id)) return true;
+  return false;
+}
+// Comptabilité (paiements) : règle plus stricte (Expert/Maître médecin uniquement, ou admin)
+function hospCanEditPaiement(entry){
+  if(!currentUser) return false;
+  if(_hospIsAdmin()) return true;
+  if(_hospIsMaster('medical')) return true;
+  // Apprenti/Confirmé médecin ne peuvent modifier QUE leurs propres paiements
+  if(_hospIsMember('medical') && entry && entry.auteurId && String(entry.auteurId) === String(currentUser.id)) return true;
+  return false;
+}
+function hospCanAddPaiement(){
+  // Tout membre médical peut créer un paiement (mais ne pourra modifier que les siens
+  // sauf s'il est Expert/Maître/Admin)
+  if(!currentUser) return false;
+  if(_hospIsAdmin()) return true;
+  return _hospIsMember('medical');
+}
+
+/* ─── MODAL GÉNÉRIQUE ─── (réutilisé par toutes les sous-pages) */
+function _hospCloseModal(){
+  var m = document.getElementById('hosp-modal');
+  if(m){ m.classList.remove('open'); setTimeout(function(){ if(m.parentNode) m.parentNode.removeChild(m); }, 200); }
+}
+function _hospBuildModal(title, bodyHtml, footerHtml){
+  // Retire l'ancienne modal si elle existe (évite ID dupliqué)
+  var existing = document.getElementById('hosp-modal');
+  if(existing) existing.remove();
+  var m = document.createElement('div');
+  m.id = 'hosp-modal';
+  m.className = 'modal-overlay open';
+  m.innerHTML = '<div class="modal" style="max-width:620px"><div class="modal-header"><h3>'+title+'</h3><span class="modal-close" onclick="_hospCloseModal()">✕</span></div><div class="modal-body">'+bodyHtml+'</div><div class="modal-footer">'+footerHtml+'</div></div>';
+  document.body.appendChild(m);
+  m.addEventListener('click', function(e){ if(e.target === m) _hospCloseModal(); });
+  return m;
+}
+
+/* ─── DISPATCHER ─── (appelé par le sync Firebase) */
+function hospRenderPage(pageId){
+  switch(pageId){
+    case 'medical-patients':       return renderHospPatients();
+    case 'medical-consultations':  return renderHospConsultations();
+    case 'medical-pharmacie':      return renderHospPharmacie();
+    case 'medical-psy':            return renderHospPsy();
+    case 'medical-dons':           return renderHospDons();
+    case 'sci-rapports':           return renderHospSci();
+    case 'sci-morgue':             return renderHospMorgue();
+    case 'compta-paiements':       return renderHospPaiements();
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   1. PATIENTS
+   ═══════════════════════════════════════════════════════════════════════ */
+function renderHospPatients(){
+  _hospInit();
+  var list = DB.hospital.patients || [];
+  var q = (document.getElementById('hosp-pat-search')||{}).value || '';
+  q = q.toLowerCase().trim();
+  var f = (document.getElementById('hosp-pat-filter')||{}).value || 'all';
+  var filtered = list.filter(function(p){
+    if(f !== 'all' && p.statut !== f) return false;
+    if(!q) return true;
+    var hay = ((p.nom||'')+' '+(p.pathologie||'')+' '+(p.medecin||'')+' '+(p.chambre||'')).toLowerCase();
+    return hay.indexOf(q) !== -1;
+  });
+  // Stats
+  var nActifs = list.filter(function(p){ return p.statut==='hospitalise' || p.statut==='critique'; }).length;
+  var nSortis = list.filter(function(p){ return p.statut==='sorti'; }).length;
+  var sa = document.getElementById('hosp-stat-pat-actifs'); if(sa) sa.textContent = nActifs;
+  var ss = document.getElementById('hosp-stat-pat-sortis'); if(ss) ss.textContent = nSortis;
+  var st = document.getElementById('hosp-stat-pat-total'); if(st) st.textContent = list.length;
+  // Render
+  var el = document.getElementById('hosp-pat-list'); if(!el) return;
+  if(filtered.length === 0){
+    el.innerHTML = '<div style="padding:40px 20px;text-align:center;color:var(--muted);font-size:13px"><div style="font-size:36px;opacity:0.35;margin-bottom:8px">🛌</div>Aucun patient '+(q||f!=='all'?'(filtre actif)':'enregistré')+'</div>';
+    return;
+  }
+  var rows = filtered.map(function(p){
+    var statutBadge = {
+      'hospitalise': '<span class="badge badge-orange">🛌 Hospitalisé</span>',
+      'suivi':       '<span class="badge badge-blue">📋 En suivi</span>',
+      'sorti':       '<span class="badge badge-green">✅ Sorti</span>',
+      'critique':    '<span class="badge badge-red">⚠️ Critique</span>'
+    }[p.statut] || '<span class="badge badge-gray">—</span>';
+    var canEdit = hospCanEditEntry(p, 'medical');
+    var actions = canEdit
+      ? '<button class="btn btn-gold btn-sm" onclick="hospOpenPatient('+p.id+')" title="Modifier">✏️</button> <button class="btn btn-danger btn-sm" onclick="hospDeletePatient('+p.id+')" title="Supprimer">🗑</button>'
+      : '<span style="color:var(--muted);font-size:10px">—</span>';
+    return '<tr>'
+      +'<td><strong>'+_hospEsc(p.nom)+'</strong></td>'
+      +'<td>'+(p.age?_hospEsc(p.age)+' ans':'—')+'</td>'
+      +'<td>'+_hospEsc(p.pathologie||'—')+'</td>'
+      +'<td class="mono">'+_hospEsc(p.chambre||'—')+'</td>'
+      +'<td>'+_hospEsc(p.medecin||'—')+'</td>'
+      +'<td>'+statutBadge+'</td>'
+      +'<td class="mono" style="font-size:11px">'+_hospFmtDate(p.dateAdmission)+'</td>'
+      +'<td>'+actions+'</td>'
+      +'</tr>';
+  }).join('');
+  el.innerHTML = '<table class="data-table"><thead><tr><th>Nom</th><th>Âge</th><th>Pathologie</th><th>Chambre</th><th>Médecin</th><th>Statut</th><th>Admission</th><th style="width:110px">Actions</th></tr></thead><tbody>'+rows+'</tbody></table>';
+}
+
+function hospOpenPatient(editId){
+  if(!hospCanAdd('medical') && !editId){ showToast('⛔ Réservé aux membres de l\'Hôpital.','error'); return; }
+  var ed = editId ? (DB.hospital.patients||[]).find(function(p){ return p.id===editId; }) : null;
+  if(editId && !ed){ showToast('Patient introuvable.','error'); return; }
+  if(ed && !hospCanEditEntry(ed,'medical')){ showToast('⛔ Vous ne pouvez modifier que vos propres patients.','error'); return; }
+  var defDate = ed ? new Date(ed.dateAdmission||Date.now()) : new Date();
+  var dateStr = defDate.getFullYear()+'-'+String(defDate.getMonth()+1).padStart(2,'0')+'-'+String(defDate.getDate()).padStart(2,'0');
+  var body = ''
+    +'<div class="form-group"><label class="form-label">Nom du patient</label><input type="text" id="hp-nom" class="form-control" value="'+_hospEsc(ed?ed.nom:'')+'" placeholder="Ex: Hatake Kakashi" required></div>'
+    +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'
+    +'  <div class="form-group"><label class="form-label">Âge</label><input type="number" id="hp-age" class="form-control" value="'+_hospEsc(ed?ed.age:'')+'" min="0" max="150"></div>'
+    +'  <div class="form-group"><label class="form-label">Chambre</label><input type="text" id="hp-chambre" class="form-control" value="'+_hospEsc(ed?ed.chambre:'')+'" placeholder="Ex: 204"></div>'
+    +'</div>'
+    +'<div class="form-group"><label class="form-label">Pathologie / Motif</label><input type="text" id="hp-patho" class="form-control" value="'+_hospEsc(ed?ed.pathologie:'')+'" placeholder="Ex: Empoisonnement, fracture, etc."></div>'
+    +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'
+    +'  <div class="form-group"><label class="form-label">Médecin référent</label><input type="text" id="hp-medecin" class="form-control" value="'+_hospEsc(ed?ed.medecin:(currentUser&&currentUser.nom||''))+'"></div>'
+    +'  <div class="form-group"><label class="form-label">Date admission</label><input type="date" id="hp-date" class="form-control" value="'+dateStr+'"></div>'
+    +'</div>'
+    +'<div class="form-group"><label class="form-label">Statut</label><select id="hp-statut" class="form-control">'
+    +'  <option value="hospitalise"'+(ed&&ed.statut==='hospitalise'?' selected':'')+'>🛌 Hospitalisé</option>'
+    +'  <option value="suivi"'+(ed&&ed.statut==='suivi'?' selected':'')+'>📋 En suivi</option>'
+    +'  <option value="critique"'+(ed&&ed.statut==='critique'?' selected':'')+'>⚠️ Critique</option>'
+    +'  <option value="sorti"'+(ed&&ed.statut==='sorti'?' selected':'')+'>✅ Sorti</option>'
+    +'</select></div>'
+    +'<div class="form-group"><label class="form-label">Notes / Traitement</label><textarea id="hp-notes" class="form-control" rows="3" placeholder="Traitement en cours, allergies, observations...">'+_hospEsc(ed?ed.notes:'')+'</textarea></div>';
+  var footer = '<button class="btn btn-outline" onclick="_hospCloseModal()">Annuler</button> <button class="btn btn-primary" onclick="hospSavePatient('+(editId||'null')+')">'+(ed?'Mettre à jour':'Ajouter le patient')+'</button>';
+  _hospBuildModal((ed?'✏️ Modifier le patient':'🛌 Nouveau patient'), body, footer);
+}
+
+function hospSavePatient(editId){
+  var nom = (document.getElementById('hp-nom')||{}).value || '';
+  nom = nom.trim();
+  if(!nom){ showToast('Le nom est obligatoire.','error'); return; }
+  var entry = {
+    nom: nom,
+    age: parseInt((document.getElementById('hp-age')||{}).value,10) || null,
+    chambre: ((document.getElementById('hp-chambre')||{}).value||'').trim(),
+    pathologie: ((document.getElementById('hp-patho')||{}).value||'').trim(),
+    medecin: ((document.getElementById('hp-medecin')||{}).value||'').trim(),
+    statut: (document.getElementById('hp-statut')||{}).value || 'hospitalise',
+    notes: ((document.getElementById('hp-notes')||{}).value||'').trim()
+  };
+  var dateStr = (document.getElementById('hp-date')||{}).value;
+  entry.dateAdmission = dateStr ? new Date(dateStr+'T12:00:00').getTime() : Date.now();
+  if(editId){
+    var idx = DB.hospital.patients.findIndex(function(p){ return p.id===editId; });
+    if(idx<0){ showToast('Patient introuvable.','error'); return; }
+    Object.assign(DB.hospital.patients[idx], entry, { modified: Date.now() });
+  } else {
+    entry.id = _hospNextId(DB.hospital.patients);
+    entry.auteurId = currentUser ? currentUser.id : null;
+    entry.auteurNom = currentUser ? currentUser.nom : '';
+    entry.created = Date.now();
+    DB.hospital.patients.push(entry);
+  }
+  _hospSave();
+  _hospCloseModal();
+  renderHospPatients();
+  showToast(editId?'Patient mis à jour.':'Patient ajouté.','success');
+}
+
+function hospDeletePatient(id){
+  var p = (DB.hospital.patients||[]).find(function(x){ return x.id===id; });
+  if(!p) return;
+  if(!hospCanEditEntry(p,'medical')){ showToast('⛔ Suppression non autorisée.','error'); return; }
+  askDelete('Supprimer le patient « '+(p.nom||'')+' » ?', function(){
+    DB.hospital.patients = DB.hospital.patients.filter(function(x){ return x.id!==id; });
+    _hospSave();
+    renderHospPatients();
+    showToast('Patient supprimé.','info');
+  });
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   2. CONSULTATIONS
+   ═══════════════════════════════════════════════════════════════════════ */
+function renderHospConsultations(){
+  _hospInit();
+  var list = DB.hospital.consultations || [];
+  var q = ((document.getElementById('hosp-cons-search')||{}).value||'').toLowerCase().trim();
+  var f = (document.getElementById('hosp-cons-filter')||{}).value || 'all';
+  var filtered = list.filter(function(c){
+    if(f !== 'all' && c.statut !== f) return false;
+    if(!q) return true;
+    var hay = ((c.patient||'')+' '+(c.medecin||'')+' '+(c.motif||'')).toLowerCase();
+    return hay.indexOf(q) !== -1;
+  });
+  // Stats
+  var now = new Date();
+  var startDay = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+  var endDay = startDay + 86400000;
+  var nJour = list.filter(function(c){ return c.dateTs >= startDay && c.dateTs < endDay; }).length;
+  var nPrev = list.filter(function(c){ return c.statut === 'prevue'; }).length;
+  var sj = document.getElementById('hosp-stat-cons-jour'); if(sj) sj.textContent = nJour;
+  var sp = document.getElementById('hosp-stat-cons-prevues'); if(sp) sp.textContent = nPrev;
+  var sto = document.getElementById('hosp-stat-cons-total'); if(sto) sto.textContent = list.length;
+  // Tri par date desc (plus récent d'abord)
+  filtered.sort(function(a,b){ return (b.dateTs||0) - (a.dateTs||0); });
+  var el = document.getElementById('hosp-cons-list'); if(!el) return;
+  if(filtered.length === 0){
+    el.innerHTML = '<div style="padding:40px 20px;text-align:center;color:var(--muted);font-size:13px"><div style="font-size:36px;opacity:0.35;margin-bottom:8px">🩺</div>Aucune consultation</div>';
+    return;
+  }
+  var rows = filtered.map(function(c){
+    var statutBadge = {
+      'prevue':   '<span class="badge badge-gold">📅 Prévue</span>',
+      'encours':  '<span class="badge badge-orange">⏳ En cours</span>',
+      'terminee': '<span class="badge badge-green">✅ Terminée</span>',
+      'annulee':  '<span class="badge badge-gray">❌ Annulée</span>'
+    }[c.statut] || '<span class="badge badge-gray">—</span>';
+    var canEdit = hospCanEditEntry(c,'medical');
+    var actions = canEdit
+      ? '<button class="btn btn-gold btn-sm" onclick="hospOpenConsultation('+c.id+')">✏️</button> <button class="btn btn-danger btn-sm" onclick="hospDeleteConsultation('+c.id+')">🗑</button>'
+      : '<span style="color:var(--muted);font-size:10px">—</span>';
+    var compteRendu = c.compteRendu ? '<div style="font-size:11px;color:var(--muted);margin-top:3px;max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+_hospEsc(c.compteRendu)+'</div>' : '';
+    return '<tr>'
+      +'<td class="mono" style="font-size:11px;white-space:nowrap">'+_hospFmtDateTime(c.dateTs)+'</td>'
+      +'<td><strong>'+_hospEsc(c.patient)+'</strong></td>'
+      +'<td>'+_hospEsc(c.medecin||'—')+'</td>'
+      +'<td>'+_hospEsc(c.motif||'—')+compteRendu+'</td>'
+      +'<td>'+statutBadge+'</td>'
+      +'<td>'+actions+'</td>'
+      +'</tr>';
+  }).join('');
+  el.innerHTML = '<table class="data-table"><thead><tr><th>Date / Heure</th><th>Patient</th><th>Médecin</th><th>Motif</th><th>Statut</th><th style="width:110px">Actions</th></tr></thead><tbody>'+rows+'</tbody></table>';
+}
+
+function hospOpenConsultation(editId){
+  if(!hospCanAdd('medical') && !editId){ showToast('⛔ Réservé aux membres de l\'Hôpital.','error'); return; }
+  var ed = editId ? (DB.hospital.consultations||[]).find(function(c){ return c.id===editId; }) : null;
+  if(editId && !ed){ showToast('Consultation introuvable.','error'); return; }
+  if(ed && !hospCanEditEntry(ed,'medical')){ showToast('⛔ Vous ne pouvez modifier que vos propres consultations.','error'); return; }
+  var defDate = ed ? new Date(ed.dateTs||Date.now()) : new Date();
+  var dateStr = defDate.getFullYear()+'-'+String(defDate.getMonth()+1).padStart(2,'0')+'-'+String(defDate.getDate()).padStart(2,'0');
+  var timeStr = String(defDate.getHours()).padStart(2,'0')+':'+String(defDate.getMinutes()).padStart(2,'0');
+  var body = ''
+    +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'
+    +'  <div class="form-group"><label class="form-label">Date</label><input type="date" id="hc-date" class="form-control" value="'+dateStr+'"></div>'
+    +'  <div class="form-group"><label class="form-label">Heure</label><input type="time" id="hc-time" class="form-control" value="'+timeStr+'"></div>'
+    +'</div>'
+    +'<div class="form-group"><label class="form-label">Patient</label><input type="text" id="hc-patient" class="form-control" value="'+_hospEsc(ed?ed.patient:'')+'" placeholder="Nom du patient" required></div>'
+    +'<div class="form-group"><label class="form-label">Médecin</label><input type="text" id="hc-medecin" class="form-control" value="'+_hospEsc(ed?ed.medecin:(currentUser&&currentUser.nom||''))+'"></div>'
+    +'<div class="form-group"><label class="form-label">Motif de consultation</label><input type="text" id="hc-motif" class="form-control" value="'+_hospEsc(ed?ed.motif:'')+'" placeholder="Ex: Examen post-mission, contrôle, douleurs..."></div>'
+    +'<div class="form-group"><label class="form-label">Statut</label><select id="hc-statut" class="form-control">'
+    +'  <option value="prevue"'+(ed&&ed.statut==='prevue'?' selected':'')+'>📅 Prévue</option>'
+    +'  <option value="encours"'+(ed&&ed.statut==='encours'?' selected':'')+'>⏳ En cours</option>'
+    +'  <option value="terminee"'+(ed&&ed.statut==='terminee'?' selected':'')+'>✅ Terminée</option>'
+    +'  <option value="annulee"'+(ed&&ed.statut==='annulee'?' selected':'')+'>❌ Annulée</option>'
+    +'</select></div>'
+    +'<div class="form-group"><label class="form-label">Compte-rendu / Diagnostic</label><textarea id="hc-cr" class="form-control" rows="4" placeholder="Observations cliniques, diagnostic, traitement prescrit...">'+_hospEsc(ed?ed.compteRendu:'')+'</textarea></div>';
+  var footer = '<button class="btn btn-outline" onclick="_hospCloseModal()">Annuler</button> <button class="btn btn-primary" onclick="hospSaveConsultation('+(editId||'null')+')">'+(ed?'Mettre à jour':'Enregistrer')+'</button>';
+  _hospBuildModal((ed?'✏️ Modifier la consultation':'🩺 Nouvelle consultation'), body, footer);
+}
+
+function hospSaveConsultation(editId){
+  var patient = ((document.getElementById('hc-patient')||{}).value||'').trim();
+  if(!patient){ showToast('Le patient est obligatoire.','error'); return; }
+  var dateStr = (document.getElementById('hc-date')||{}).value;
+  var timeStr = (document.getElementById('hc-time')||{}).value || '12:00';
+  var dateTs = dateStr ? new Date(dateStr+'T'+timeStr+':00').getTime() : Date.now();
+  var entry = {
+    patient: patient,
+    medecin: ((document.getElementById('hc-medecin')||{}).value||'').trim(),
+    motif: ((document.getElementById('hc-motif')||{}).value||'').trim(),
+    statut: (document.getElementById('hc-statut')||{}).value || 'prevue',
+    compteRendu: ((document.getElementById('hc-cr')||{}).value||'').trim(),
+    dateTs: dateTs
+  };
+  if(editId){
+    var idx = DB.hospital.consultations.findIndex(function(c){ return c.id===editId; });
+    if(idx<0){ showToast('Introuvable.','error'); return; }
+    Object.assign(DB.hospital.consultations[idx], entry, { modified: Date.now() });
+  } else {
+    entry.id = _hospNextId(DB.hospital.consultations);
+    entry.auteurId = currentUser ? currentUser.id : null;
+    entry.auteurNom = currentUser ? currentUser.nom : '';
+    entry.created = Date.now();
+    DB.hospital.consultations.push(entry);
+  }
+  _hospSave();
+  _hospCloseModal();
+  renderHospConsultations();
+  showToast(editId?'Consultation mise à jour.':'Consultation enregistrée.','success');
+}
+
+function hospDeleteConsultation(id){
+  var c = (DB.hospital.consultations||[]).find(function(x){ return x.id===id; });
+  if(!c) return;
+  if(!hospCanEditEntry(c,'medical')){ showToast('⛔ Suppression non autorisée.','error'); return; }
+  askDelete('Supprimer cette consultation ?', function(){
+    DB.hospital.consultations = DB.hospital.consultations.filter(function(x){ return x.id!==id; });
+    _hospSave();
+    renderHospConsultations();
+    showToast('Consultation supprimée.','info');
+  });
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   3. PHARMACIE
+   ═══════════════════════════════════════════════════════════════════════ */
+function renderHospPharmacie(){
+  _hospInit();
+  var list = DB.hospital.pharmacie || [];
+  var q = ((document.getElementById('hosp-pharm-search')||{}).value||'').toLowerCase().trim();
+  var f = (document.getElementById('hosp-pharm-filter')||{}).value || 'all';
+  var filtered = list.filter(function(p){
+    var stockState = _hospPharmStock(p);
+    if(f === 'ok' && stockState !== 'ok') return false;
+    if(f === 'low' && stockState !== 'low') return false;
+    if(f === 'out' && stockState !== 'out') return false;
+    if(!q) return true;
+    var hay = ((p.nom||'')+' '+(p.categorie||'')).toLowerCase();
+    return hay.indexOf(q) !== -1;
+  });
+  // Stats
+  var nLow = list.filter(function(p){ return _hospPharmStock(p)==='low'; }).length;
+  var nOut = list.filter(function(p){ return _hospPharmStock(p)==='out'; }).length;
+  var st = document.getElementById('hosp-stat-pharm-total'); if(st) st.textContent = list.length;
+  var sl = document.getElementById('hosp-stat-pharm-low'); if(sl) sl.textContent = nLow;
+  var so = document.getElementById('hosp-stat-pharm-out'); if(so) so.textContent = nOut;
+  // Render
+  var el = document.getElementById('hosp-pharm-list'); if(!el) return;
+  if(filtered.length === 0){
+    el.innerHTML = '<div style="padding:40px 20px;text-align:center;color:var(--muted);font-size:13px"><div style="font-size:36px;opacity:0.35;margin-bottom:8px">💊</div>Aucun produit</div>';
+    return;
+  }
+  var rows = filtered.map(function(p){
+    var stockState = _hospPharmStock(p);
+    var stockBadge = {
+      'ok':  '<span class="badge badge-green">'+(p.stock||0)+'</span>',
+      'low': '<span class="badge badge-orange">⚠️ '+(p.stock||0)+'</span>',
+      'out': '<span class="badge badge-red">❌ Rupture</span>'
+    }[stockState];
+    var canEdit = hospCanEditEntry(p,'medical');
+    var actions = canEdit
+      ? '<button class="btn btn-gold btn-sm" onclick="hospOpenPharmacie('+p.id+')">✏️</button> <button class="btn btn-danger btn-sm" onclick="hospDeletePharmacie('+p.id+')">🗑</button>'
+      : '<span style="color:var(--muted);font-size:10px">—</span>';
+    return '<tr>'
+      +'<td><strong>'+_hospEsc(p.nom)+'</strong></td>'
+      +'<td>'+_hospEsc(p.categorie||'—')+'</td>'
+      +'<td>'+stockBadge+'</td>'
+      +'<td class="mono">'+(p.seuil||0)+'</td>'
+      +'<td class="mono">'+(p.prix||0)+' ryōs</td>'
+      +'<td class="mono" style="font-size:11px">'+_hospFmtDate(p.modified||p.created)+'</td>'
+      +'<td>'+actions+'</td>'
+      +'</tr>';
+  }).join('');
+  el.innerHTML = '<table class="data-table"><thead><tr><th>Produit</th><th>Catégorie</th><th>Stock</th><th>Seuil alerte</th><th>Prix unité</th><th>Dernière MAJ</th><th style="width:110px">Actions</th></tr></thead><tbody>'+rows+'</tbody></table>';
+}
+
+function _hospPharmStock(p){
+  var s = parseInt(p.stock,10) || 0;
+  var seuil = parseInt(p.seuil,10) || 0;
+  if(s <= 0) return 'out';
+  if(seuil > 0 && s <= seuil) return 'low';
+  return 'ok';
+}
+
+function hospOpenPharmacie(editId){
+  if(!hospCanAdd('medical') && !editId){ showToast('⛔ Réservé aux membres de l\'Hôpital.','error'); return; }
+  var ed = editId ? (DB.hospital.pharmacie||[]).find(function(p){ return p.id===editId; }) : null;
+  if(editId && !ed){ showToast('Produit introuvable.','error'); return; }
+  if(ed && !hospCanEditEntry(ed,'medical')){ showToast('⛔ Vous ne pouvez modifier que vos propres entrées.','error'); return; }
+  var body = ''
+    +'<div class="form-group"><label class="form-label">Nom du produit</label><input type="text" id="hph-nom" class="form-control" value="'+_hospEsc(ed?ed.nom:'')+'" placeholder="Ex: Antidote serpent" required></div>'
+    +'<div class="form-group"><label class="form-label">Catégorie</label><select id="hph-cat" class="form-control">'
+    +'  <option value="Antidote"'+(ed&&ed.categorie==='Antidote'?' selected':'')+'>🧪 Antidote</option>'
+    +'  <option value="Analgésique"'+(ed&&ed.categorie==='Analgésique'?' selected':'')+'>💊 Analgésique</option>'
+    +'  <option value="Antibiotique"'+(ed&&ed.categorie==='Antibiotique'?' selected':'')+'>🦠 Antibiotique</option>'
+    +'  <option value="Soin"'+(ed&&ed.categorie==='Soin'?' selected':'')+'>🩹 Pansement / Soin</option>'
+    +'  <option value="Pilule médicale"'+(ed&&ed.categorie==='Pilule médicale'?' selected':'')+'>💠 Pilule médicale</option>'
+    +'  <option value="Matériel"'+(ed&&ed.categorie==='Matériel'?' selected':'')+'>🔬 Matériel</option>'
+    +'  <option value="Autre"'+(ed&&ed.categorie==='Autre'?' selected':'')+'>📦 Autre</option>'
+    +'</select></div>'
+    +'<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">'
+    +'  <div class="form-group"><label class="form-label">Stock</label><input type="number" id="hph-stock" class="form-control" value="'+_hospEsc(ed?ed.stock:'0')+'" min="0"></div>'
+    +'  <div class="form-group"><label class="form-label">Seuil alerte</label><input type="number" id="hph-seuil" class="form-control" value="'+_hospEsc(ed?ed.seuil:'5')+'" min="0"></div>'
+    +'  <div class="form-group"><label class="form-label">Prix (ryōs)</label><input type="number" id="hph-prix" class="form-control" value="'+_hospEsc(ed?ed.prix:'0')+'" min="0"></div>'
+    +'</div>'
+    +'<div class="form-group"><label class="form-label">Notes</label><textarea id="hph-notes" class="form-control" rows="2" placeholder="Indications, posologie, contre-indications...">'+_hospEsc(ed?ed.notes:'')+'</textarea></div>';
+  var footer = '<button class="btn btn-outline" onclick="_hospCloseModal()">Annuler</button> <button class="btn btn-primary" onclick="hospSavePharmacie('+(editId||'null')+')">'+(ed?'Mettre à jour':'Ajouter')+'</button>';
+  _hospBuildModal((ed?'✏️ Modifier le produit':'💊 Nouveau produit'), body, footer);
+}
+
+function hospSavePharmacie(editId){
+  var nom = ((document.getElementById('hph-nom')||{}).value||'').trim();
+  if(!nom){ showToast('Le nom est obligatoire.','error'); return; }
+  var entry = {
+    nom: nom,
+    categorie: (document.getElementById('hph-cat')||{}).value || 'Autre',
+    stock: parseInt((document.getElementById('hph-stock')||{}).value,10) || 0,
+    seuil: parseInt((document.getElementById('hph-seuil')||{}).value,10) || 0,
+    prix: parseInt((document.getElementById('hph-prix')||{}).value,10) || 0,
+    notes: ((document.getElementById('hph-notes')||{}).value||'').trim()
+  };
+  if(editId){
+    var idx = DB.hospital.pharmacie.findIndex(function(p){ return p.id===editId; });
+    if(idx<0){ showToast('Introuvable.','error'); return; }
+    Object.assign(DB.hospital.pharmacie[idx], entry, { modified: Date.now() });
+  } else {
+    entry.id = _hospNextId(DB.hospital.pharmacie);
+    entry.auteurId = currentUser ? currentUser.id : null;
+    entry.auteurNom = currentUser ? currentUser.nom : '';
+    entry.created = Date.now();
+    entry.modified = Date.now();
+    DB.hospital.pharmacie.push(entry);
+  }
+  _hospSave();
+  _hospCloseModal();
+  renderHospPharmacie();
+  showToast(editId?'Produit mis à jour.':'Produit ajouté.','success');
+}
+
+function hospDeletePharmacie(id){
+  var p = (DB.hospital.pharmacie||[]).find(function(x){ return x.id===id; });
+  if(!p) return;
+  if(!hospCanEditEntry(p,'medical')){ showToast('⛔ Suppression non autorisée.','error'); return; }
+  askDelete('Supprimer le produit « '+(p.nom||'')+' » ?', function(){
+    DB.hospital.pharmacie = DB.hospital.pharmacie.filter(function(x){ return x.id!==id; });
+    _hospSave();
+    renderHospPharmacie();
+    showToast('Produit supprimé.','info');
+  });
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   4. SALON PSY
+   ═══════════════════════════════════════════════════════════════════════ */
+function renderHospPsy(){
+  _hospInit();
+  var list = DB.hospital.psy || [];
+  var q = ((document.getElementById('hosp-psy-search')||{}).value||'').toLowerCase().trim();
+  var filtered = list.filter(function(c){
+    if(!q) return true;
+    var hay = ((c.patient||'')+' '+(c.psychologue||'')+' '+(c.motif||'')).toLowerCase();
+    return hay.indexOf(q) !== -1;
+  });
+  // Stats : patients distincts avec une consultation < 30 jours = suivis actifs
+  var now = Date.now();
+  var startMonth = (function(){ var d = new Date(); d.setDate(1); d.setHours(0,0,0,0); return d.getTime(); })();
+  var nMois = list.filter(function(c){ return c.dateTs >= startMonth; }).length;
+  var actifsSet = new Set();
+  list.forEach(function(c){ if(c.suiviPrevu && c.suiviPrevu > now) actifsSet.add((c.patient||'').toLowerCase()); });
+  var sa = document.getElementById('hosp-stat-psy-actifs'); if(sa) sa.textContent = actifsSet.size;
+  var sm = document.getElementById('hosp-stat-psy-mois'); if(sm) sm.textContent = nMois;
+  var st = document.getElementById('hosp-stat-psy-total'); if(st) st.textContent = list.length;
+  // Tri par date desc
+  filtered.sort(function(a,b){ return (b.dateTs||0) - (a.dateTs||0); });
+  var el = document.getElementById('hosp-psy-list'); if(!el) return;
+  if(filtered.length === 0){
+    el.innerHTML = '<div style="padding:40px 20px;text-align:center;color:var(--muted);font-size:13px"><div style="font-size:36px;opacity:0.35;margin-bottom:8px">🧠</div>Aucune consultation psychologique</div>';
+    return;
+  }
+  var rows = filtered.map(function(c){
+    var canEdit = hospCanEditEntry(c,'medical');
+    var actions = canEdit
+      ? '<button class="btn btn-gold btn-sm" onclick="hospOpenPsy('+c.id+')">✏️</button> <button class="btn btn-danger btn-sm" onclick="hospDeletePsy('+c.id+')">🗑</button>'
+      : '<span style="color:var(--muted);font-size:10px">—</span>';
+    var notes = c.notes ? '<div style="font-size:11px;color:var(--muted);margin-top:3px;max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+_hospEsc(c.notes)+'</div>' : '';
+    var suiviTxt = c.suiviPrevu ? _hospFmtDate(c.suiviPrevu) : '—';
+    return '<tr>'
+      +'<td class="mono" style="font-size:11px;white-space:nowrap">'+_hospFmtDate(c.dateTs)+'</td>'
+      +'<td><strong>'+_hospEsc(c.patient)+'</strong></td>'
+      +'<td>'+_hospEsc(c.psychologue||'—')+'</td>'
+      +'<td>'+_hospEsc(c.motif||'—')+notes+'</td>'
+      +'<td class="mono" style="font-size:11px">'+suiviTxt+'</td>'
+      +'<td>'+actions+'</td>'
+      +'</tr>';
+  }).join('');
+  el.innerHTML = '<table class="data-table"><thead><tr><th>Date</th><th>Patient</th><th>Psychologue</th><th>Motif / Notes</th><th>Suivi prévu</th><th style="width:110px">Actions</th></tr></thead><tbody>'+rows+'</tbody></table>';
+}
+
+function hospOpenPsy(editId){
+  if(!hospCanAdd('medical') && !editId){ showToast('⛔ Réservé aux membres de l\'Hôpital.','error'); return; }
+  var ed = editId ? (DB.hospital.psy||[]).find(function(c){ return c.id===editId; }) : null;
+  if(editId && !ed){ showToast('Introuvable.','error'); return; }
+  if(ed && !hospCanEditEntry(ed,'medical')){ showToast('⛔ Vous ne pouvez modifier que vos propres consultations.','error'); return; }
+  var defDate = ed ? new Date(ed.dateTs||Date.now()) : new Date();
+  var dateStr = defDate.getFullYear()+'-'+String(defDate.getMonth()+1).padStart(2,'0')+'-'+String(defDate.getDate()).padStart(2,'0');
+  var suiviStr = '';
+  if(ed && ed.suiviPrevu){
+    var ds = new Date(ed.suiviPrevu);
+    suiviStr = ds.getFullYear()+'-'+String(ds.getMonth()+1).padStart(2,'0')+'-'+String(ds.getDate()).padStart(2,'0');
+  }
+  var body = ''
+    +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'
+    +'  <div class="form-group"><label class="form-label">Date</label><input type="date" id="hpsy-date" class="form-control" value="'+dateStr+'"></div>'
+    +'  <div class="form-group"><label class="form-label">Suivi prévu (optionnel)</label><input type="date" id="hpsy-suivi" class="form-control" value="'+suiviStr+'"></div>'
+    +'</div>'
+    +'<div class="form-group"><label class="form-label">Patient</label><input type="text" id="hpsy-patient" class="form-control" value="'+_hospEsc(ed?ed.patient:'')+'" required></div>'
+    +'<div class="form-group"><label class="form-label">Psychologue</label><input type="text" id="hpsy-psy" class="form-control" value="'+_hospEsc(ed?ed.psychologue:(currentUser&&currentUser.nom||''))+'"></div>'
+    +'<div class="form-group"><label class="form-label">Motif</label><input type="text" id="hpsy-motif" class="form-control" value="'+_hospEsc(ed?ed.motif:'')+'" placeholder="Ex: stress post-mission, anxiété, deuil..."></div>'
+    +'<div class="form-group"><label class="form-label">Notes / Compte-rendu</label><textarea id="hpsy-notes" class="form-control" rows="5" placeholder="Observations, échanges, recommandations...">'+_hospEsc(ed?ed.notes:'')+'</textarea></div>';
+  var footer = '<button class="btn btn-outline" onclick="_hospCloseModal()">Annuler</button> <button class="btn btn-primary" onclick="hospSavePsy('+(editId||'null')+')">'+(ed?'Mettre à jour':'Enregistrer')+'</button>';
+  _hospBuildModal((ed?'✏️ Modifier la consultation':'🧠 Nouvelle consultation psy'), body, footer);
+}
+
+function hospSavePsy(editId){
+  var patient = ((document.getElementById('hpsy-patient')||{}).value||'').trim();
+  if(!patient){ showToast('Le patient est obligatoire.','error'); return; }
+  var dateStr = (document.getElementById('hpsy-date')||{}).value;
+  var suiviStr = (document.getElementById('hpsy-suivi')||{}).value;
+  var entry = {
+    patient: patient,
+    psychologue: ((document.getElementById('hpsy-psy')||{}).value||'').trim(),
+    motif: ((document.getElementById('hpsy-motif')||{}).value||'').trim(),
+    notes: ((document.getElementById('hpsy-notes')||{}).value||'').trim(),
+    dateTs: dateStr ? new Date(dateStr+'T12:00:00').getTime() : Date.now(),
+    suiviPrevu: suiviStr ? new Date(suiviStr+'T12:00:00').getTime() : null
+  };
+  if(editId){
+    var idx = DB.hospital.psy.findIndex(function(c){ return c.id===editId; });
+    if(idx<0){ showToast('Introuvable.','error'); return; }
+    Object.assign(DB.hospital.psy[idx], entry, { modified: Date.now() });
+  } else {
+    entry.id = _hospNextId(DB.hospital.psy);
+    entry.auteurId = currentUser ? currentUser.id : null;
+    entry.auteurNom = currentUser ? currentUser.nom : '';
+    entry.created = Date.now();
+    DB.hospital.psy.push(entry);
+  }
+  _hospSave();
+  _hospCloseModal();
+  renderHospPsy();
+  showToast(editId?'Consultation mise à jour.':'Consultation enregistrée.','success');
+}
+
+function hospDeletePsy(id){
+  var c = (DB.hospital.psy||[]).find(function(x){ return x.id===id; });
+  if(!c) return;
+  if(!hospCanEditEntry(c,'medical')){ showToast('⛔ Suppression non autorisée.','error'); return; }
+  askDelete('Supprimer cette consultation psychologique ?', function(){
+    DB.hospital.psy = DB.hospital.psy.filter(function(x){ return x.id!==id; });
+    _hospSave();
+    renderHospPsy();
+    showToast('Consultation supprimée.','info');
+  });
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   5. DONS DU SANG
+   ═══════════════════════════════════════════════════════════════════════ */
+function renderHospDons(){
+  _hospInit();
+  var list = DB.hospital.dons || [];
+  var q = ((document.getElementById('hosp-dons-search')||{}).value||'').toLowerCase().trim();
+  var f = (document.getElementById('hosp-dons-filter')||{}).value || 'all';
+  var filtered = list.filter(function(d){
+    if(f !== 'all' && d.groupe !== f) return false;
+    if(!q) return true;
+    var hay = ((d.donneur||'')+' '+(d.medecin||'')+' '+(d.groupe||'')).toLowerCase();
+    return hay.indexOf(q) !== -1;
+  });
+  // Stats
+  var now = Date.now();
+  var startMonth = (function(){ var d = new Date(); d.setDate(1); d.setHours(0,0,0,0); return d.getTime(); })();
+  var stockTotal = list.reduce(function(acc,d){ return acc + (parseInt(d.poches,10)||0) - (parseInt(d.utilisees,10)||0); }, 0);
+  if(stockTotal < 0) stockTotal = 0; // clamp à 0 (cohérent avec l'affichage par groupe et par ligne)
+  var nMois = list.filter(function(d){ return d.dateTs >= startMonth; }).reduce(function(acc,d){ return acc + (parseInt(d.poches,10)||0); }, 0);
+  var donneursSet = new Set();
+  list.forEach(function(d){ if(d.donneur) donneursSet.add(d.donneur.toLowerCase()); });
+  var ss = document.getElementById('hosp-stat-dons-stock'); if(ss) ss.textContent = stockTotal;
+  var sm = document.getElementById('hosp-stat-dons-mois'); if(sm) sm.textContent = nMois;
+  var sd = document.getElementById('hosp-stat-dons-donneurs'); if(sd) sd.textContent = donneursSet.size;
+  // Tri
+  filtered.sort(function(a,b){ return (b.dateTs||0) - (a.dateTs||0); });
+  var el = document.getElementById('hosp-dons-list'); if(!el) return;
+  if(filtered.length === 0){
+    el.innerHTML = '<div style="padding:40px 20px;text-align:center;color:var(--muted);font-size:13px"><div style="font-size:36px;opacity:0.35;margin-bottom:8px">🩸</div>Aucun don enregistré</div>';
+    return;
+  }
+  // Stock par groupe (récap)
+  var stockParGroupe = {};
+  list.forEach(function(d){
+    var g = d.groupe || '?';
+    if(!stockParGroupe[g]) stockParGroupe[g] = 0;
+    stockParGroupe[g] += (parseInt(d.poches,10)||0) - (parseInt(d.utilisees,10)||0);
+  });
+  var groupesHtml = Object.keys(stockParGroupe).sort().map(function(g){
+    return '<div style="display:inline-block;margin:3px;padding:5px 11px;border-radius:14px;background:rgba(220,38,38,0.08);border:1px solid rgba(220,38,38,0.2);font-family:\'Share Tech Mono\',monospace;font-size:11px"><strong>'+_hospEsc(g)+'</strong> · '+Math.max(0,stockParGroupe[g])+' poches</div>';
+  }).join('');
+  var rows = filtered.map(function(d){
+    var dispo = Math.max(0, (parseInt(d.poches,10)||0) - (parseInt(d.utilisees,10)||0));
+    var canEdit = hospCanEditEntry(d,'medical');
+    var actions = canEdit
+      ? '<button class="btn btn-gold btn-sm" onclick="hospOpenDon('+d.id+')">✏️</button> <button class="btn btn-danger btn-sm" onclick="hospDeleteDon('+d.id+')">🗑</button>'
+      : '<span style="color:var(--muted);font-size:10px">—</span>';
+    return '<tr>'
+      +'<td class="mono" style="font-size:11px;white-space:nowrap">'+_hospFmtDate(d.dateTs)+'</td>'
+      +'<td><strong>'+_hospEsc(d.donneur)+'</strong></td>'
+      +'<td><span class="badge badge-red">'+_hospEsc(d.groupe||'?')+'</span></td>'
+      +'<td class="mono">'+(d.poches||0)+'</td>'
+      +'<td class="mono"><span style="color:'+(dispo>0?'var(--green)':'var(--muted)')+'">'+dispo+'</span></td>'
+      +'<td>'+_hospEsc(d.medecin||'—')+'</td>'
+      +'<td>'+actions+'</td>'
+      +'</tr>';
+  }).join('');
+  el.innerHTML = '<div style="padding:12px 14px;background:rgba(220,38,38,0.04);border-bottom:1px solid rgba(220,38,38,0.15)"><div style="font-size:9px;letter-spacing:2px;color:var(--gold2);font-family:\'Share Tech Mono\',monospace;text-transform:uppercase;margin-bottom:6px">Stock disponible par groupe</div>'+(groupesHtml||'<span style="color:var(--muted);font-size:11px">Aucun stock</span>')+'</div>'
+    +'<table class="data-table"><thead><tr><th>Date</th><th>Donneur</th><th>Groupe</th><th>Récolté</th><th>Disponible</th><th>Médecin</th><th style="width:110px">Actions</th></tr></thead><tbody>'+rows+'</tbody></table>';
+}
+
+function hospOpenDon(editId){
+  if(!hospCanAdd('medical') && !editId){ showToast('⛔ Réservé aux membres de l\'Hôpital.','error'); return; }
+  var ed = editId ? (DB.hospital.dons||[]).find(function(d){ return d.id===editId; }) : null;
+  if(editId && !ed){ showToast('Introuvable.','error'); return; }
+  if(ed && !hospCanEditEntry(ed,'medical')){ showToast('⛔ Vous ne pouvez modifier que vos propres dons.','error'); return; }
+  var defDate = ed ? new Date(ed.dateTs||Date.now()) : new Date();
+  var dateStr = defDate.getFullYear()+'-'+String(defDate.getMonth()+1).padStart(2,'0')+'-'+String(defDate.getDate()).padStart(2,'0');
+  var groupes = ['O+','O-','A+','A-','B+','B-','AB+','AB-'];
+  var grOpts = groupes.map(function(g){ return '<option value="'+g+'"'+(ed&&ed.groupe===g?' selected':'')+'>'+g+'</option>'; }).join('');
+  var body = ''
+    +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'
+    +'  <div class="form-group"><label class="form-label">Date du don</label><input type="date" id="hd-date" class="form-control" value="'+dateStr+'"></div>'
+    +'  <div class="form-group"><label class="form-label">Groupe sanguin</label><select id="hd-groupe" class="form-control">'+grOpts+'</select></div>'
+    +'</div>'
+    +'<div class="form-group"><label class="form-label">Donneur</label><input type="text" id="hd-donneur" class="form-control" value="'+_hospEsc(ed?ed.donneur:'')+'" required></div>'
+    +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'
+    +'  <div class="form-group"><label class="form-label">Poches récoltées</label><input type="number" id="hd-poches" class="form-control" value="'+_hospEsc(ed?ed.poches:'1')+'" min="0"></div>'
+    +'  <div class="form-group"><label class="form-label">Poches utilisées</label><input type="number" id="hd-util" class="form-control" value="'+_hospEsc(ed?ed.utilisees:'0')+'" min="0"></div>'
+    +'</div>'
+    +'<div class="form-group"><label class="form-label">Médecin receveur</label><input type="text" id="hd-medecin" class="form-control" value="'+_hospEsc(ed?ed.medecin:(currentUser&&currentUser.nom||''))+'"></div>'
+    +'<div class="form-group"><label class="form-label">Notes</label><textarea id="hd-notes" class="form-control" rows="2">'+_hospEsc(ed?ed.notes:'')+'</textarea></div>';
+  var footer = '<button class="btn btn-outline" onclick="_hospCloseModal()">Annuler</button> <button class="btn btn-primary" onclick="hospSaveDon('+(editId||'null')+')">'+(ed?'Mettre à jour':'Enregistrer')+'</button>';
+  _hospBuildModal((ed?'✏️ Modifier le don':'🩸 Nouveau don du sang'), body, footer);
+}
+
+function hospSaveDon(editId){
+  var donneur = ((document.getElementById('hd-donneur')||{}).value||'').trim();
+  if(!donneur){ showToast('Le donneur est obligatoire.','error'); return; }
+  var dateStr = (document.getElementById('hd-date')||{}).value;
+  var entry = {
+    donneur: donneur,
+    groupe: (document.getElementById('hd-groupe')||{}).value || 'O+',
+    poches: parseInt((document.getElementById('hd-poches')||{}).value,10) || 0,
+    utilisees: parseInt((document.getElementById('hd-util')||{}).value,10) || 0,
+    medecin: ((document.getElementById('hd-medecin')||{}).value||'').trim(),
+    notes: ((document.getElementById('hd-notes')||{}).value||'').trim(),
+    dateTs: dateStr ? new Date(dateStr+'T12:00:00').getTime() : Date.now()
+  };
+  if(editId){
+    var idx = DB.hospital.dons.findIndex(function(d){ return d.id===editId; });
+    if(idx<0){ showToast('Introuvable.','error'); return; }
+    Object.assign(DB.hospital.dons[idx], entry, { modified: Date.now() });
+  } else {
+    entry.id = _hospNextId(DB.hospital.dons);
+    entry.auteurId = currentUser ? currentUser.id : null;
+    entry.auteurNom = currentUser ? currentUser.nom : '';
+    entry.created = Date.now();
+    DB.hospital.dons.push(entry);
+  }
+  _hospSave();
+  _hospCloseModal();
+  renderHospDons();
+  showToast(editId?'Don mis à jour.':'Don enregistré.','success');
+}
+
+function hospDeleteDon(id){
+  var d = (DB.hospital.dons||[]).find(function(x){ return x.id===id; });
+  if(!d) return;
+  if(!hospCanEditEntry(d,'medical')){ showToast('⛔ Suppression non autorisée.','error'); return; }
+  askDelete('Supprimer ce don ?', function(){
+    DB.hospital.dons = DB.hospital.dons.filter(function(x){ return x.id!==id; });
+    _hospSave();
+    renderHospDons();
+    showToast('Don supprimé.','info');
+  });
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   6. SALON SCIENTIFIQUE (rapports)
+   ═══════════════════════════════════════════════════════════════════════ */
+function renderHospSci(){
+  _hospInit();
+  var list = DB.hospital.scientifique || [];
+  var q = ((document.getElementById('hosp-sci-search')||{}).value||'').toLowerCase().trim();
+  var f = (document.getElementById('hosp-sci-filter')||{}).value || 'all';
+  var filtered = list.filter(function(r){
+    if(f !== 'all' && r.statut !== f) return false;
+    if(!q) return true;
+    var hay = ((r.titre||'')+' '+(r.scientifique||'')+' '+(r.type||'')+' '+(r.resultats||'')).toLowerCase();
+    return hay.indexOf(q) !== -1;
+  });
+  // Stats
+  var nEnc = list.filter(function(r){ return r.statut==='encours'; }).length;
+  var nPub = list.filter(function(r){ return r.statut==='publie'; }).length;
+  var se = document.getElementById('hosp-stat-sci-encours'); if(se) se.textContent = nEnc;
+  var sp = document.getElementById('hosp-stat-sci-publies'); if(sp) sp.textContent = nPub;
+  var st = document.getElementById('hosp-stat-sci-total'); if(st) st.textContent = list.length;
+  filtered.sort(function(a,b){ return (b.dateTs||0) - (a.dateTs||0); });
+  var el = document.getElementById('hosp-sci-list'); if(!el) return;
+  if(filtered.length === 0){
+    el.innerHTML = '<div style="padding:40px 20px;text-align:center;color:var(--muted);font-size:13px"><div style="font-size:36px;opacity:0.35;margin-bottom:8px">🧪</div>Aucun rapport scientifique</div>';
+    return;
+  }
+  var rows = filtered.map(function(r){
+    var statutBadge = {
+      'encours': '<span class="badge badge-cyan">⏳ En cours</span>',
+      'publie':  '<span class="badge badge-green">✅ Publié</span>',
+      'archive': '<span class="badge badge-gray">📦 Archivé</span>'
+    }[r.statut] || '<span class="badge badge-gray">—</span>';
+    var canEdit = hospCanEditEntry(r,'sci');
+    var actions = canEdit
+      ? '<button class="btn btn-gold btn-sm" onclick="hospOpenSci('+r.id+')">✏️</button> <button class="btn btn-danger btn-sm" onclick="hospDeleteSci('+r.id+')">🗑</button>'
+      : '<span style="color:var(--muted);font-size:10px">—</span>';
+    var resume = r.resultats ? '<div style="font-size:11px;color:var(--muted);margin-top:3px;max-width:340px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+_hospEsc(r.resultats)+'</div>' : '';
+    return '<tr>'
+      +'<td class="mono" style="font-size:11px;white-space:nowrap">'+_hospFmtDate(r.dateTs)+'</td>'
+      +'<td><strong>'+_hospEsc(r.titre)+'</strong>'+resume+'</td>'
+      +'<td>'+_hospEsc(r.scientifique||'—')+'</td>'
+      +'<td>'+_hospEsc(r.type||'—')+'</td>'
+      +'<td>'+_hospEsc(r.echantillons||'—')+'</td>'
+      +'<td>'+statutBadge+'</td>'
+      +'<td>'+actions+'</td>'
+      +'</tr>';
+  }).join('');
+  el.innerHTML = '<table class="data-table"><thead><tr><th>Date</th><th>Titre / Résultats</th><th>Scientifique</th><th>Type d\'étude</th><th>Échantillons</th><th>Statut</th><th style="width:110px">Actions</th></tr></thead><tbody>'+rows+'</tbody></table>';
+}
+
+function hospOpenSci(editId){
+  if(!hospCanAdd('sci') && !editId){ showToast('⛔ Réservé aux membres du service Scientifique.','error'); return; }
+  var ed = editId ? (DB.hospital.scientifique||[]).find(function(r){ return r.id===editId; }) : null;
+  if(editId && !ed){ showToast('Introuvable.','error'); return; }
+  if(ed && !hospCanEditEntry(ed,'sci')){ showToast('⛔ Vous ne pouvez modifier que vos propres rapports.','error'); return; }
+  var defDate = ed ? new Date(ed.dateTs||Date.now()) : new Date();
+  var dateStr = defDate.getFullYear()+'-'+String(defDate.getMonth()+1).padStart(2,'0')+'-'+String(defDate.getDate()).padStart(2,'0');
+  var body = ''
+    +'<div class="form-group"><label class="form-label">Titre du rapport</label><input type="text" id="hsc-titre" class="form-control" value="'+_hospEsc(ed?ed.titre:'')+'" placeholder="Ex: Analyse toxicologique du poison X" required></div>'
+    +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'
+    +'  <div class="form-group"><label class="form-label">Date</label><input type="date" id="hsc-date" class="form-control" value="'+dateStr+'"></div>'
+    +'  <div class="form-group"><label class="form-label">Scientifique</label><input type="text" id="hsc-sci" class="form-control" value="'+_hospEsc(ed?ed.scientifique:(currentUser&&currentUser.nom||''))+'"></div>'
+    +'</div>'
+    +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'
+    +'  <div class="form-group"><label class="form-label">Type d\'étude</label><select id="hsc-type" class="form-control">'
+    +'    <option value="Toxicologie"'+(ed&&ed.type==='Toxicologie'?' selected':'')+'>🧪 Toxicologie</option>'
+    +'    <option value="ADN"'+(ed&&ed.type==='ADN'?' selected':'')+'>🧬 ADN / Génétique</option>'
+    +'    <option value="Balistique"'+(ed&&ed.type==='Balistique'?' selected':'')+'>🎯 Balistique</option>'
+    +'    <option value="Autopsie"'+(ed&&ed.type==='Autopsie'?' selected':'')+'>⚰️ Autopsie</option>'
+    +'    <option value="Chimie"'+(ed&&ed.type==='Chimie'?' selected':'')+'>⚗️ Chimie</option>'
+    +'    <option value="Recherche"'+(ed&&ed.type==='Recherche'?' selected':'')+'>🔬 Recherche fondamentale</option>'
+    +'    <option value="Autre"'+(ed&&ed.type==='Autre'?' selected':'')+'>📁 Autre</option>'
+    +'  </select></div>'
+    +'  <div class="form-group"><label class="form-label">Statut</label><select id="hsc-statut" class="form-control">'
+    +'    <option value="encours"'+(!ed||ed.statut==='encours'?' selected':'')+'>⏳ En cours</option>'
+    +'    <option value="publie"'+(ed&&ed.statut==='publie'?' selected':'')+'>✅ Publié</option>'
+    +'    <option value="archive"'+(ed&&ed.statut==='archive'?' selected':'')+'>📦 Archivé</option>'
+    +'  </select></div>'
+    +'</div>'
+    +'<div class="form-group"><label class="form-label">Échantillons / Sources</label><input type="text" id="hsc-ech" class="form-control" value="'+_hospEsc(ed?ed.echantillons:'')+'" placeholder="Ex: Échantillon sanguin patient #42, fragment trouvé sur scène..."></div>'
+    +'<div class="form-group"><label class="form-label">Résultats / Conclusions</label><textarea id="hsc-res" class="form-control" rows="6" placeholder="Méthodologie, mesures, conclusions tirées...">'+_hospEsc(ed?ed.resultats:'')+'</textarea></div>';
+  var footer = '<button class="btn btn-outline" onclick="_hospCloseModal()">Annuler</button> <button class="btn btn-primary" onclick="hospSaveSci('+(editId||'null')+')">'+(ed?'Mettre à jour':'Enregistrer')+'</button>';
+  _hospBuildModal((ed?'✏️ Modifier le rapport':'🧪 Nouveau rapport'), body, footer);
+}
+
+function hospSaveSci(editId){
+  var titre = ((document.getElementById('hsc-titre')||{}).value||'').trim();
+  if(!titre){ showToast('Le titre est obligatoire.','error'); return; }
+  var dateStr = (document.getElementById('hsc-date')||{}).value;
+  var entry = {
+    titre: titre,
+    scientifique: ((document.getElementById('hsc-sci')||{}).value||'').trim(),
+    type: (document.getElementById('hsc-type')||{}).value || 'Autre',
+    statut: (document.getElementById('hsc-statut')||{}).value || 'encours',
+    echantillons: ((document.getElementById('hsc-ech')||{}).value||'').trim(),
+    resultats: ((document.getElementById('hsc-res')||{}).value||'').trim(),
+    dateTs: dateStr ? new Date(dateStr+'T12:00:00').getTime() : Date.now()
+  };
+  if(editId){
+    var idx = DB.hospital.scientifique.findIndex(function(r){ return r.id===editId; });
+    if(idx<0){ showToast('Introuvable.','error'); return; }
+    Object.assign(DB.hospital.scientifique[idx], entry, { modified: Date.now() });
+  } else {
+    entry.id = _hospNextId(DB.hospital.scientifique);
+    entry.auteurId = currentUser ? currentUser.id : null;
+    entry.auteurNom = currentUser ? currentUser.nom : '';
+    entry.created = Date.now();
+    DB.hospital.scientifique.push(entry);
+  }
+  _hospSave();
+  _hospCloseModal();
+  renderHospSci();
+  showToast(editId?'Rapport mis à jour.':'Rapport enregistré.','success');
+}
+
+function hospDeleteSci(id){
+  var r = (DB.hospital.scientifique||[]).find(function(x){ return x.id===id; });
+  if(!r) return;
+  if(!hospCanEditEntry(r,'sci')){ showToast('⛔ Suppression non autorisée.','error'); return; }
+  askDelete('Supprimer le rapport « '+(r.titre||'')+' » ?', function(){
+    DB.hospital.scientifique = DB.hospital.scientifique.filter(function(x){ return x.id!==id; });
+    _hospSave();
+    renderHospSci();
+    showToast('Rapport supprimé.','info');
+  });
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   7. MORGUE
+   ═══════════════════════════════════════════════════════════════════════ */
+function renderHospMorgue(){
+  _hospInit();
+  var list = DB.hospital.morgue || [];
+  var q = ((document.getElementById('hosp-morg-search')||{}).value||'').toLowerCase().trim();
+  var f = (document.getElementById('hosp-morg-filter')||{}).value || 'all';
+  var filtered = list.filter(function(m){
+    if(f !== 'all' && m.statut !== f) return false;
+    if(!q) return true;
+    var hay = ((m.nom||'')+' '+(m.cause||'')+' '+(m.legiste||'')).toLowerCase();
+    return hay.indexOf(q) !== -1;
+  });
+  var nAut = list.filter(function(m){ return m.statut==='autopsie'; }).length;
+  var nClos = list.filter(function(m){ return m.statut==='clos'; }).length;
+  var sa = document.getElementById('hosp-stat-morg-autopsie'); if(sa) sa.textContent = nAut;
+  var sc = document.getElementById('hosp-stat-morg-clos'); if(sc) sc.textContent = nClos;
+  var st = document.getElementById('hosp-stat-morg-total'); if(st) st.textContent = list.length;
+  filtered.sort(function(a,b){ return (b.dateDeces||0) - (a.dateDeces||0); });
+  var el = document.getElementById('hosp-morg-list'); if(!el) return;
+  if(filtered.length === 0){
+    el.innerHTML = '<div style="padding:40px 20px;text-align:center;color:var(--muted);font-size:13px"><div style="font-size:36px;opacity:0.35;margin-bottom:8px">⚰️</div>Aucun défunt enregistré</div>';
+    return;
+  }
+  var rows = filtered.map(function(m){
+    var statutBadge = {
+      'autopsie': '<span class="badge badge-orange">🔬 Autopsie</span>',
+      'clos':     '<span class="badge badge-gray">📁 Clos</span>',
+      'restitue': '<span class="badge badge-purple">⚱️ Restitué</span>'
+    }[m.statut] || '<span class="badge badge-gray">—</span>';
+    var canEdit = hospCanEditEntry(m,'sci');
+    var actions = canEdit
+      ? '<button class="btn btn-gold btn-sm" onclick="hospOpenMorgue('+m.id+')">✏️</button> <button class="btn btn-danger btn-sm" onclick="hospDeleteMorgue('+m.id+')">🗑</button>'
+      : '<span style="color:var(--muted);font-size:10px">—</span>';
+    var notes = m.notes ? '<div style="font-size:11px;color:var(--muted);margin-top:3px;max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+_hospEsc(m.notes)+'</div>' : '';
+    return '<tr>'
+      +'<td><strong>'+_hospEsc(m.nom)+'</strong></td>'
+      +'<td class="mono" style="font-size:11px;white-space:nowrap">'+_hospFmtDate(m.dateDeces)+'</td>'
+      +'<td>'+_hospEsc(m.cause||'—')+notes+'</td>'
+      +'<td>'+_hospEsc(m.legiste||'—')+'</td>'
+      +'<td>'+statutBadge+'</td>'
+      +'<td>'+actions+'</td>'
+      +'</tr>';
+  }).join('');
+  el.innerHTML = '<table class="data-table"><thead><tr><th>Nom</th><th>Date décès</th><th>Cause / Notes</th><th>Médecin légiste</th><th>Statut</th><th style="width:110px">Actions</th></tr></thead><tbody>'+rows+'</tbody></table>';
+}
+
+function hospOpenMorgue(editId){
+  if(!hospCanAdd('sci') && !editId){ showToast('⛔ Réservé aux membres du service Scientifique.','error'); return; }
+  var ed = editId ? (DB.hospital.morgue||[]).find(function(m){ return m.id===editId; }) : null;
+  if(editId && !ed){ showToast('Introuvable.','error'); return; }
+  if(ed && !hospCanEditEntry(ed,'sci')){ showToast('⛔ Vous ne pouvez modifier que vos propres entrées.','error'); return; }
+  var defDate = ed ? new Date(ed.dateDeces||Date.now()) : new Date();
+  var dateStr = defDate.getFullYear()+'-'+String(defDate.getMonth()+1).padStart(2,'0')+'-'+String(defDate.getDate()).padStart(2,'0');
+  var body = ''
+    +'<div class="form-group"><label class="form-label">Nom du défunt</label><input type="text" id="hm-nom" class="form-control" value="'+_hospEsc(ed?ed.nom:'')+'" required></div>'
+    +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'
+    +'  <div class="form-group"><label class="form-label">Date du décès</label><input type="date" id="hm-date" class="form-control" value="'+dateStr+'"></div>'
+    +'  <div class="form-group"><label class="form-label">Médecin légiste</label><input type="text" id="hm-legiste" class="form-control" value="'+_hospEsc(ed?ed.legiste:(currentUser&&currentUser.nom||''))+'"></div>'
+    +'</div>'
+    +'<div class="form-group"><label class="form-label">Cause du décès</label><input type="text" id="hm-cause" class="form-control" value="'+_hospEsc(ed?ed.cause:'')+'" placeholder="Ex: Plaie par arme blanche, empoisonnement, mort naturelle..."></div>'
+    +'<div class="form-group"><label class="form-label">Statut</label><select id="hm-statut" class="form-control">'
+    +'  <option value="autopsie"'+(!ed||ed.statut==='autopsie'?' selected':'')+'>🔬 En autopsie</option>'
+    +'  <option value="clos"'+(ed&&ed.statut==='clos'?' selected':'')+'>📁 Clos</option>'
+    +'  <option value="restitue"'+(ed&&ed.statut==='restitue'?' selected':'')+'>⚱️ Restitué famille</option>'
+    +'</select></div>'
+    +'<div class="form-group"><label class="form-label">Notes / Constatations</label><textarea id="hm-notes" class="form-control" rows="5" placeholder="Observations à l\'autopsie, particularités, indices...">'+_hospEsc(ed?ed.notes:'')+'</textarea></div>';
+  var footer = '<button class="btn btn-outline" onclick="_hospCloseModal()">Annuler</button> <button class="btn btn-primary" onclick="hospSaveMorgue('+(editId||'null')+')">'+(ed?'Mettre à jour':'Enregistrer')+'</button>';
+  _hospBuildModal((ed?'✏️ Modifier l\'entrée':'⚰️ Nouvelle entrée morgue'), body, footer);
+}
+
+function hospSaveMorgue(editId){
+  var nom = ((document.getElementById('hm-nom')||{}).value||'').trim();
+  if(!nom){ showToast('Le nom est obligatoire.','error'); return; }
+  var dateStr = (document.getElementById('hm-date')||{}).value;
+  var entry = {
+    nom: nom,
+    cause: ((document.getElementById('hm-cause')||{}).value||'').trim(),
+    legiste: ((document.getElementById('hm-legiste')||{}).value||'').trim(),
+    statut: (document.getElementById('hm-statut')||{}).value || 'autopsie',
+    notes: ((document.getElementById('hm-notes')||{}).value||'').trim(),
+    dateDeces: dateStr ? new Date(dateStr+'T12:00:00').getTime() : Date.now()
+  };
+  if(editId){
+    var idx = DB.hospital.morgue.findIndex(function(m){ return m.id===editId; });
+    if(idx<0){ showToast('Introuvable.','error'); return; }
+    Object.assign(DB.hospital.morgue[idx], entry, { modified: Date.now() });
+  } else {
+    entry.id = _hospNextId(DB.hospital.morgue);
+    entry.auteurId = currentUser ? currentUser.id : null;
+    entry.auteurNom = currentUser ? currentUser.nom : '';
+    entry.created = Date.now();
+    DB.hospital.morgue.push(entry);
+  }
+  _hospSave();
+  _hospCloseModal();
+  renderHospMorgue();
+  showToast(editId?'Entrée mise à jour.':'Entrée enregistrée.','success');
+}
+
+function hospDeleteMorgue(id){
+  var m = (DB.hospital.morgue||[]).find(function(x){ return x.id===id; });
+  if(!m) return;
+  if(!hospCanEditEntry(m,'sci')){ showToast('⛔ Suppression non autorisée.','error'); return; }
+  askDelete('Supprimer l\'entrée de « '+(m.nom||'')+' » ?', function(){
+    DB.hospital.morgue = DB.hospital.morgue.filter(function(x){ return x.id!==id; });
+    _hospSave();
+    renderHospMorgue();
+    showToast('Entrée supprimée.','info');
+  });
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   8. PAIEMENTS (Comptabilité)
+   ═══════════════════════════════════════════════════════════════════════ */
+function renderHospPaiements(){
+  _hospInit();
+  var list = DB.hospital.paiements || [];
+  var q = ((document.getElementById('hosp-pay-search')||{}).value||'').toLowerCase().trim();
+  var f = (document.getElementById('hosp-pay-filter')||{}).value || 'all';
+  var filtered = list.filter(function(p){
+    if(f !== 'all' && p.statut !== f) return false;
+    if(!q) return true;
+    var hay = ((p.patient||'')+' '+(p.medecin||'')+' '+(p.acte||'')).toLowerCase();
+    return hay.indexOf(q) !== -1;
+  });
+  // Stats (totaux en ryōs)
+  var encaisse = list.filter(function(p){ return p.statut==='paye'; }).reduce(function(acc,p){ return acc + (parseInt(p.montant,10)||0); }, 0);
+  var attente  = list.filter(function(p){ return p.statut==='attente'; }).reduce(function(acc,p){ return acc + (parseInt(p.montant,10)||0); }, 0);
+  var impaye   = list.filter(function(p){ return p.statut==='impaye'; }).reduce(function(acc,p){ return acc + (parseInt(p.montant,10)||0); }, 0);
+  var se = document.getElementById('hosp-stat-pay-encaisse'); if(se) se.textContent = encaisse.toLocaleString('fr-FR');
+  var sa = document.getElementById('hosp-stat-pay-attente'); if(sa) sa.textContent = attente.toLocaleString('fr-FR');
+  var si = document.getElementById('hosp-stat-pay-impaye'); if(si) si.textContent = impaye.toLocaleString('fr-FR');
+  filtered.sort(function(a,b){ return (b.dateTs||0) - (a.dateTs||0); });
+  var el = document.getElementById('hosp-pay-list'); if(!el) return;
+  if(filtered.length === 0){
+    el.innerHTML = '<div style="padding:40px 20px;text-align:center;color:var(--muted);font-size:13px"><div style="font-size:36px;opacity:0.35;margin-bottom:8px">💴</div>Aucun paiement enregistré</div>';
+    return;
+  }
+  var rows = filtered.map(function(p){
+    var statutBadge = {
+      'paye':       '<span class="badge badge-green">✅ Payé</span>',
+      'attente':    '<span class="badge badge-orange">⏳ En attente</span>',
+      'impaye':     '<span class="badge badge-red">❌ Impayé</span>',
+      'rembourse':  '<span class="badge badge-purple">↩️ Remboursé</span>'
+    }[p.statut] || '<span class="badge badge-gray">—</span>';
+    var canEdit = hospCanEditPaiement(p);
+    var actions = canEdit
+      ? '<button class="btn btn-gold btn-sm" onclick="hospOpenPaiement('+p.id+')">✏️</button> <button class="btn btn-danger btn-sm" onclick="hospDeletePaiement('+p.id+')">🗑</button>'
+      : '<span style="color:var(--muted);font-size:10px">—</span>';
+    return '<tr>'
+      +'<td class="mono" style="font-size:11px;white-space:nowrap">'+_hospFmtDate(p.dateTs)+'</td>'
+      +'<td><strong>'+_hospEsc(p.patient)+'</strong></td>'
+      +'<td>'+_hospEsc(p.medecin||'—')+'</td>'
+      +'<td>'+_hospEsc(p.acte||'—')+'</td>'
+      +'<td class="mono" style="font-weight:700;color:var(--gold2)">'+(parseInt(p.montant,10)||0).toLocaleString('fr-FR')+' ryōs</td>'
+      +'<td>'+statutBadge+'</td>'
+      +'<td>'+actions+'</td>'
+      +'</tr>';
+  }).join('');
+  el.innerHTML = '<table class="data-table"><thead><tr><th>Date</th><th>Patient</th><th>Médecin</th><th>Acte / Soin</th><th>Montant</th><th>Statut</th><th style="width:110px">Actions</th></tr></thead><tbody>'+rows+'</tbody></table>';
+}
+
+function hospOpenPaiement(editId){
+  if(!hospCanAddPaiement() && !editId){ showToast('⛔ Réservé aux membres de l\'Hôpital.','error'); return; }
+  var ed = editId ? (DB.hospital.paiements||[]).find(function(p){ return p.id===editId; }) : null;
+  if(editId && !ed){ showToast('Introuvable.','error'); return; }
+  if(ed && !hospCanEditPaiement(ed)){ showToast('⛔ Modification réservée à un Expert/Maître médecin ou à un admin.','error'); return; }
+  var defDate = ed ? new Date(ed.dateTs||Date.now()) : new Date();
+  var dateStr = defDate.getFullYear()+'-'+String(defDate.getMonth()+1).padStart(2,'0')+'-'+String(defDate.getDate()).padStart(2,'0');
+  var body = ''
+    +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'
+    +'  <div class="form-group"><label class="form-label">Date</label><input type="date" id="hpay-date" class="form-control" value="'+dateStr+'"></div>'
+    +'  <div class="form-group"><label class="form-label">Statut</label><select id="hpay-statut" class="form-control">'
+    +'    <option value="attente"'+(!ed||ed.statut==='attente'?' selected':'')+'>⏳ En attente</option>'
+    +'    <option value="paye"'+(ed&&ed.statut==='paye'?' selected':'')+'>✅ Payé</option>'
+    +'    <option value="impaye"'+(ed&&ed.statut==='impaye'?' selected':'')+'>❌ Impayé</option>'
+    +'    <option value="rembourse"'+(ed&&ed.statut==='rembourse'?' selected':'')+'>↩️ Remboursé</option>'
+    +'  </select></div>'
+    +'</div>'
+    +'<div class="form-group"><label class="form-label">Patient</label><input type="text" id="hpay-patient" class="form-control" value="'+_hospEsc(ed?ed.patient:'')+'" required></div>'
+    +'<div class="form-group"><label class="form-label">Médecin</label><input type="text" id="hpay-medecin" class="form-control" value="'+_hospEsc(ed?ed.medecin:(currentUser&&currentUser.nom||''))+'"></div>'
+    +'<div style="display:grid;grid-template-columns:2fr 1fr;gap:10px">'
+    +'  <div class="form-group"><label class="form-label">Acte / Soin</label><input type="text" id="hpay-acte" class="form-control" value="'+_hospEsc(ed?ed.acte:'')+'" placeholder="Ex: Consultation, intervention chirurgicale, antidote..."></div>'
+    +'  <div class="form-group"><label class="form-label">Montant (ryōs)</label><input type="number" id="hpay-montant" class="form-control" value="'+_hospEsc(ed?ed.montant:'0')+'" min="0"></div>'
+    +'</div>'
+    +'<div class="form-group"><label class="form-label">Notes</label><textarea id="hpay-notes" class="form-control" rows="2">'+_hospEsc(ed?ed.notes:'')+'</textarea></div>';
+  var footer = '<button class="btn btn-outline" onclick="_hospCloseModal()">Annuler</button> <button class="btn btn-primary" onclick="hospSavePaiement('+(editId||'null')+')">'+(ed?'Mettre à jour':'Enregistrer')+'</button>';
+  _hospBuildModal((ed?'✏️ Modifier le paiement':'💴 Nouveau paiement'), body, footer);
+}
+
+function hospSavePaiement(editId){
+  var patient = ((document.getElementById('hpay-patient')||{}).value||'').trim();
+  if(!patient){ showToast('Le patient est obligatoire.','error'); return; }
+  var dateStr = (document.getElementById('hpay-date')||{}).value;
+  var entry = {
+    patient: patient,
+    medecin: ((document.getElementById('hpay-medecin')||{}).value||'').trim(),
+    acte: ((document.getElementById('hpay-acte')||{}).value||'').trim(),
+    montant: parseInt((document.getElementById('hpay-montant')||{}).value,10) || 0,
+    statut: (document.getElementById('hpay-statut')||{}).value || 'attente',
+    notes: ((document.getElementById('hpay-notes')||{}).value||'').trim(),
+    dateTs: dateStr ? new Date(dateStr+'T12:00:00').getTime() : Date.now()
+  };
+  if(editId){
+    var idx = DB.hospital.paiements.findIndex(function(p){ return p.id===editId; });
+    if(idx<0){ showToast('Introuvable.','error'); return; }
+    Object.assign(DB.hospital.paiements[idx], entry, { modified: Date.now() });
+  } else {
+    entry.id = _hospNextId(DB.hospital.paiements);
+    entry.auteurId = currentUser ? currentUser.id : null;
+    entry.auteurNom = currentUser ? currentUser.nom : '';
+    entry.created = Date.now();
+    DB.hospital.paiements.push(entry);
+  }
+  _hospSave();
+  _hospCloseModal();
+  renderHospPaiements();
+  showToast(editId?'Paiement mis à jour.':'Paiement enregistré.','success');
+}
+
+function hospDeletePaiement(id){
+  var p = (DB.hospital.paiements||[]).find(function(x){ return x.id===id; });
+  if(!p) return;
+  if(!hospCanEditPaiement(p)){ showToast('⛔ Suppression réservée aux Experts/Maîtres médecins ou admins.','error'); return; }
+  askDelete('Supprimer ce paiement ?', function(){
+    DB.hospital.paiements = DB.hospital.paiements.filter(function(x){ return x.id!==id; });
+    _hospSave();
+    renderHospPaiements();
+    showToast('Paiement supprimé.','info');
+  });
+}
+
+/* ─── Auto-render au showPage ─── 
+ * Hook : intercepter showPage pour appeler le bon renderer. 
+ * On wrappe l'original sans le casser. */
+(function(){
+  if(typeof window.showPage !== 'function') return;
+  var _origShow = window.showPage;
+  window.showPage = function(pageId){
+    var ret = _origShow.apply(this, arguments);
+    // Si la page activée est une page Hospital, lancer son render
+    if(typeof pageId === 'string' && /^(medical-(patients|consultations|pharmacie|psy|dons)|sci-(rapports|morgue)|compta-paiements)$/.test(pageId)){
+      try{ hospRenderPage(pageId); }catch(e){ console.warn('[hospital]', e); }
+    }
+    return ret;
+  };
+})();
+
 
 /* ═══════════════════════════════════════════════════════════════════════
    TRIBUNAL DE SUNAGAKURE — système complet d'affaires + audiences + jugements
