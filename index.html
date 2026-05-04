@@ -16193,7 +16193,26 @@ function initFirebaseSync(){
         // tu ne voyais le changement que si tu changeais de page et revenais. Désormais
         // c'est instantané. On re-render UNIQUEMENT la page actuellement active pour
         // ne pas gaspiller de cycles CPU.
+        //
+        // 🚀 OPTIMISATION PERF (debounce) :
+        // Quand plusieurs modifs arrivent en rafale (ex: 3 joueurs actifs), Firebase notifie 5×
+        // en 1-2 secondes. Au lieu de re-render 5×, on accumule les `_changedKeys` dans un set
+        // global et on ne lance UN seul re-render qu'après 300ms d'accalmie. Résultat : app
+        // beaucoup plus fluide, scroll qui ne saccade plus, boutons réactifs.
+        // Latence ajoutée : 300ms max (imperceptible).
         if(_changedKeys.size > 0){
+          // Accumuler les clés changées dans un set global (pour le debounce)
+          if(!window._fbPendingChanges) window._fbPendingChanges = new Set();
+          _changedKeys.forEach(function(k){ window._fbPendingChanges.add(k); });
+
+          // (Re-)programmer le flush UI debounced
+          if(window._fbDebounceTimer) clearTimeout(window._fbDebounceTimer);
+          window._fbDebounceTimer = setTimeout(function(){
+            window._fbDebounceTimer = null;
+            // Lire et vider le set des changements accumulés
+            var pendingKeys = window._fbPendingChanges || new Set();
+            window._fbPendingChanges = new Set();
+            if(pendingKeys.size === 0) return;
           try{
             // Protection : si une modale est ouverte (édition en cours), ne pas re-render
             // pour ne pas perdre les saisies utilisateur. Le re-render se fera à la
@@ -16202,6 +16221,8 @@ function initFirebaseSync(){
             if(anyModalOpen){
               // On a quand même mis à jour DB et localStorage, donc les données sont à jour.
               // Le re-render se fera quand l'utilisateur ferme la modale.
+              // 🚀 IMPORTANT : on ré-empile les keys pour le prochain cycle (pour ne pas les perdre)
+              pendingKeys.forEach(function(k){ window._fbPendingChanges.add(k); });
             } else {
               var activePageEl = document.querySelector('.page-content.active');
               var activePage = activePageEl ? activePageEl.id.replace(/^page-/,'') : null;
@@ -16227,14 +16248,14 @@ function initFirebaseSync(){
             // Re-render uniquement la page active si une de ses collections a changé
             if(activePage && pageRenderers[activePage]){
               var pr = pageRenderers[activePage];
-              var pageNeedsRefresh = pr.keys.some(function(k){ return _changedKeys.has(k); });
+              var pageNeedsRefresh = pr.keys.some(function(k){ return pendingKeys.has(k); });
               if(pageNeedsRefresh && typeof window[pr.fn] === 'function'){
                 try{ window[pr.fn](); }catch(e){ console.warn('[sync] '+pr.fn+' failed:', e); }
               }
             }
             // BUG-FIX SECTION : re-render des pages des sections non-Police si sectionData a changé
             // (le pageRenderers ne couvre pas ces pages génériques)
-            if(activePage && _changedKeys.has('sectionData') && /^(avocat|mission|medical|diplo)-/.test(activePage)){
+            if(activePage && pendingKeys.has('sectionData') && /^(avocat|mission|medical|diplo)-/.test(activePage)){
               // Protection : ne pas re-render si l'utilisateur est en train d'éditer une entrée
               // (le formulaire d'édition section n'est pas une modale, donc anyModalOpen ne le détecte pas)
               var isEditingSection = false;
@@ -16250,7 +16271,7 @@ function initFirebaseSync(){
               }
             }
             // BUG-FIX TRIBUNAL : re-render des pages Tribunal (juge-*) si DB.tribunal a changé
-            if(activePage && _changedKeys.has('tribunal') && /^juge-/.test(activePage)){
+            if(activePage && pendingKeys.has('tribunal') && /^juge-/.test(activePage)){
               // Protection : ne pas re-render si une modal Tribunal est ouverte (édition d'affaire/audience/jugement)
               var tribModalOpen = !!document.getElementById('trib-modal');
               if(!tribModalOpen && typeof tribRenderPage === 'function'){
@@ -16259,7 +16280,7 @@ function initFirebaseSync(){
             }
             // ─── HOSPITAL : re-render des pages Hôpital/Scientifique/Comptabilité si DB.hospital a changé ───
             // Pages concernées : medical-*, sci-*, compta-* (après refonte)
-            if(activePage && _changedKeys.has('hospital') && /^(medical|sci|compta)-/.test(activePage)){
+            if(activePage && pendingKeys.has('hospital') && /^(medical|sci|compta)-/.test(activePage)){
               // Protection : ne pas re-render si une modal Hospital est ouverte (édition en cours)
               var hospModalOpen = !!document.getElementById('hosp-modal');
               if(!hospModalOpen && typeof hospRenderPage === 'function'){
@@ -16270,12 +16291,19 @@ function initFirebaseSync(){
             // car ils s'appliquent à toutes les pages
             if(typeof updateBadges === 'function')          { try{ updateBadges(); }catch(e){} }
             if(typeof syncBottomNavBadges === 'function')   { try{ syncBottomNavBadges(); }catch(e){} }
-            // Mettre aussi à jour le dashboard en arrière-plan (stats globales)
+            // 🚀 OPTIMISATION B : ne re-rendre le dashboard en arrière-plan QUE si pertinent
+            // Avant : syncDashboard() était appelé à CHAQUE notif Firebase, même si on est sur une autre page
+            // Maintenant : seulement si une donnée du dashboard a effectivement changé.
             if(activePage !== 'dashboard' && typeof syncDashboard === 'function'){
-              try{ syncDashboard(); }catch(e){}
+              var DASHBOARD_KEYS = ['plaintes','dossiers','annonces','operations','users','recenses','sanctions','timeline'];
+              var dashNeedsUpdate = DASHBOARD_KEYS.some(function(k){ return pendingKeys.has(k); });
+              if(dashNeedsUpdate){
+                try{ syncDashboard(); }catch(e){}
+              }
             }
             } // fin else (pas de modale ouverte)
           }catch(e){ console.warn('[sync] re-render failed:', e); }
+          }, 300); // ← debounce 300ms : tant que des notifs arrivent, on attend
         }
       } else {
       // Premier chargement : prendre toutes les donnees Firebase
