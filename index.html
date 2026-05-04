@@ -15722,17 +15722,57 @@ function _mergeArrayById(base, extra){
 // ── SAVE DATA ──
 // Stratégie : lire Firebase → fusionner notre DB locale → réécrire
 // Ainsi les données des autres utilisateurs ne sont JAMAIS écrasées.
-let _fbSaveQueue=null; // dernière DB en attente d'écriture
+//
+// 🚀 OPTIMISATION CONSOMMATION (Phase 2 — décembre 2025) :
+// saveData() accepte désormais une CLÉ OPTIONNELLE pour ne sync qu'une partie de la DB.
+//   - saveData()              → Full save (toute la DB) — comportement historique
+//   - saveData('annonces')    → Push uniquement DB.annonces (~50 Ko au lieu de 1.6 Mo)
+//   - saveData(['annonces','users']) → Push plusieurs clés sélectionnées
+// Avant : chaque modif d'annonce push toute la DB = ~1.6 Mo × N joueurs.
+// Après : chaque modif push juste la clé concernée = ~50 Ko × N joueurs (95% de gain).
+//
+// Sécurité : la fusion intelligente (anti-écrasement de comptes, anti-restauration
+// d'éléments supprimés) reste active mais s'applique uniquement aux clés pushées.
+let _fbSaveQueue=null;       // dernière DB en attente d'écriture (full ou partial)
 let _fbSaveRunning=false;
+let _fbSavePartialKeys=null; // si non-null, _flushSaveQueue ne push QUE ces clés
 
-function saveData(){
-  // Sauvegarde locale immédiate (fallback offline)
+function saveData(keyOrKeys){
+  // Sauvegarde locale immédiate (fallback offline) — toujours full pour le localStorage
   try{localStorage.setItem(STORE,JSON.stringify(DB))}catch(e){}
   // Invalider le cache d'empreinte de la page active → forcer re-render au prochain refreshAll
   const _ap=document.querySelector(".page-content.active");
   if(_ap){window['_rfp_'+_ap.id.replace("page-","")]=null;}
   if(!window._fbDB||!window._fbRef||!window._fbUpdate){return;}
-  _fbSaveQueue=JSON.parse(JSON.stringify(DB));
+
+  // Normaliser keyOrKeys → array de clés ou null (= full save)
+  var partialKeys = null;
+  if(typeof keyOrKeys === 'string' && keyOrKeys.length>0){
+    partialKeys = [keyOrKeys];
+  } else if(Array.isArray(keyOrKeys) && keyOrKeys.length>0){
+    partialKeys = keyOrKeys.slice();
+  }
+
+  // Si une sauvegarde full est déjà en file, on ne la "rétrograde" pas en partial.
+  // Inversement, si une partielle est en file et qu'on demande full, on upgrade.
+  if(_fbSaveQueue){
+    if(_fbSavePartialKeys === null){
+      // Une full save est en file → englobe déjà tout, on l'écrase juste avec la DB la plus récente
+      _fbSaveQueue = JSON.parse(JSON.stringify(DB));
+    } else if(partialKeys === null){
+      // On demande full alors qu'une partielle est en file → upgrade en full
+      _fbSavePartialKeys = null;
+      _fbSaveQueue = JSON.parse(JSON.stringify(DB));
+    } else {
+      // Les deux sont partielles → fusionner les listes de clés
+      var s = new Set(_fbSavePartialKeys.concat(partialKeys));
+      _fbSavePartialKeys = Array.from(s);
+      _fbSaveQueue = JSON.parse(JSON.stringify(DB));
+    }
+  } else {
+    _fbSaveQueue = JSON.parse(JSON.stringify(DB));
+    _fbSavePartialKeys = partialKeys;
+  }
   if(_fbSaveRunning)return;
   _flushSaveQueue();
 }
@@ -15742,13 +15782,22 @@ async function _flushSaveQueue(){
   _fbSaveRunning=true;
   const toSave=_fbSaveQueue;
   _fbSaveQueue=null;
+  // Capturer la liste de clés partielles maintenant pour qu'elle ne soit pas
+  // modifiée par un saveData() concurrent pendant qu'on attend le _fbGet ci-dessous
+  var _partialKeysForThisFlush = _fbSavePartialKeys ? _fbSavePartialKeys.slice() : null;
+  _fbSavePartialKeys = null;
   try{
+    // 🚀 Optimisation : si la save est partial ET ne touche PAS aux users, on saute
+    // toute la logique de fusion (GET users + garde-fous) qui ne sert à rien dans ce cas.
+    var _shouldSyncUsers = (_partialKeysForThisFlush === null)
+                        || (_partialKeysForThisFlush.indexOf('users') !== -1);
+
     // ── FIX RACE CONDITION : GET frais des users Firebase avant chaque écriture ──
     // Sans ça, si deux utilisateurs sauvegardent en même temps, l'un peut écraser
     // les users de l'autre (car _lastFbArrays peut être obsolète).
     let liveFbUsers=Array.isArray(_lastFbArrays.users)?[..._lastFbArrays.users]:[];
     let _fbGetOK=false; // bug-fix : track si on a vraiment un état Firebase frais
-    if(window._fbGet&&window._fbRef&&window._fbDB){
+    if(_shouldSyncUsers && window._fbGet&&window._fbRef&&window._fbDB){
       try{
         const _snap=await window._fbGet(window._fbRef(window._fbDB,'sunagakure/users'));
         const _liveArr=_snap.val();
@@ -15779,37 +15828,32 @@ async function _flushSaveQueue(){
     // locale partielle. Sinon les comptes créés par d'autres utilisateurs
     // (ex: amis qui se sont inscrits sur leur appareil) seraient effacés
     // car absents du localStorage de l'utilisateur courant.
-    if(!_fbGetOK && _fbFirstLoad && Array.isArray(toSave.users) && toSave.users.length > 0){
+    // 🚀 Skipped si la save est partial sans clé 'users' (rien à protéger).
+    if(_shouldSyncUsers && !_fbGetOK && _fbFirstLoad && Array.isArray(toSave.users) && toSave.users.length > 0){
       if(window._yunoLogInternal) _yunoLogInternal.warn('[Firebase] Sauvegarde reportée — état Firebase non confirmé (protection anti-perte)'); else console.warn('[FB-SAVE] ⏸ Sauvegarde reportée');
       _fbSaveQueue = toSave;
+      _fbSavePartialKeys = _partialKeysForThisFlush;
       _fbSaveRunning = false;
       setTimeout(_flushSaveQueue, 1500);
       return;
     }
     // ── GARDE-FOU SUPPLÉMENTAIRE — seuil plus protecteur ──
     // Si on a des users Firebase confirmés ET qu'on s'apprête à écrire moins de
-    // users qu'il n'y en avait, c'est suspect. On couvre 3 cas :
-    // 1) Beaucoup d'users (≥3) → seuil à 50% (anti-écrasement massif)
-    // 2) Peu d'users (2-3) → on protège dès qu'on en perd 1 (bug commun)
-    // 3) On ne reporte JAMAIS si la suppression est volontaire (deleteUserById
-    //    met à jour _lastFbArrays.users avant saveData, donc la liste FB déjà
-    //    fraîche reflète l'absence de l'user supprimé → pas de garde-fou)
-    if(_fbGetOK && Array.isArray(toSave.users)){
+    // users qu'il n'y en avait, c'est suspect.
+    // 🚀 Skipped si la save est partial sans clé 'users'.
+    if(_shouldSyncUsers && _fbGetOK && Array.isArray(toSave.users)){
       var fbCount = liveFbUsers.length;
       var localCount = toSave.users.length;
       // Cas 1 : grosse perte massive (≥50%)
       if(fbCount >= 3 && localCount < Math.floor(fbCount / 2)){
         if(window._yunoLogInternal) _yunoLogInternal.warn('[Firebase] Écriture suspecte : ' + localCount + ' users locaux vs ' + fbCount + ' distants — reportée'); else console.warn('[FB-SAVE] Écriture suspecte');
         _fbSaveQueue = toSave;
+        _fbSavePartialKeys = _partialKeysForThisFlush;
         _fbSaveRunning = false;
         setTimeout(_flushSaveQueue, 2000);
         return;
       }
       // Cas 2 : Petite perte (1+ user disparu) si Firebase a 2-5 users.
-      // Vérifier que cette perte n'est pas intentionnelle (= cohérente avec
-      // _lastFbArrays.users : si un user est dans liveFbUsers MAIS PAS dans
-      // _lastFbArrays.users__known au cycle précédent, c'est un nouveau user
-      // distant qu'on doit garder).
       if(fbCount >= 2 && fbCount <= 5 && localCount < fbCount){
         var localIdsSet = new Set(toSave.users.map(function(u){ return u && String(u.id); }).filter(Boolean));
         var missingFromLocal = liveFbUsers.filter(function(fbU){
@@ -15818,9 +15862,7 @@ async function _flushSaveQueue(){
         });
         if(missingFromLocal.length > 0){
           if(window._yunoLogInternal) _yunoLogInternal.warn('[Firebase] ' + missingFromLocal.length + ' user(s) disparaîtraient — récupérés automatiquement', missingFromLocal.map(function(u){return u.nom||u.login;})); else console.warn('[FB-SAVE]');
-          // On préserve les users disparus (probablement un cache local incomplet)
           toSave.users = toSave.users.concat(missingFromLocal);
-          // Et on continue avec la sauvegarde (pas de return)
         }
       }
     }
@@ -15828,38 +15870,37 @@ async function _flushSaveQueue(){
     // Fusionner les users locaux avec la liste fraîche Firebase
     // LOCAL fait autorité : les suppressions locales sont respectées.
     // On n'ajoute depuis Firebase que les users INCONNUS (créés par un autre admin).
-    const localUsers=Array.isArray(toSave.users)?toSave.users:[];
-    const fbUsers=liveFbUsers;
-    const localUserIds=new Set(localUsers.map(u=>u&&u.id));
-    const prevKnownUsers=Array.isArray(_lastFbArrays['users__known'])?_lastFbArrays['users__known']:[];
-    const knownFbUserIds=new Set(prevKnownUsers.map(String));
-    // Nouveaux users distants = présents dans Firebase, absents en local, ET pas connus avant (créés par un autre admin)
-    const remoteNewUsers=fbUsers.filter(u=>u&&u.id&&!localUserIds.has(u.id)&&!knownFbUserIds.has(String(u.id))&&!_isDeletedProtected("users",u.id));
-    // bug-fix : pour les users existants en local ET distant, fusionner intelligemment :
-    // - garder en priorité la version locale (qui contient nos modifs en cours)
-    // - MAIS si la version distante a des champs que la nôtre n'a pas (ex: photo
-    //   modifiée par un autre admin), les rapatrier
-    const fbUserById={};fbUsers.forEach(u=>{if(u&&u.id)fbUserById[u.id]=u;});
-    const updatedLocalUsers=localUsers.map(u=>{
-      if(!u||!u.id||!fbUserById[u.id])return u;
-      var fbU = fbUserById[u.id];
-      // Merger : local prioritaire, mais on récupère les champs distants modifiés
-      // si on n'a pas de modif locale en cours sur eux. La règle simple :
-      // si une propriété distante est NON-vide alors que la locale est vide ou
-      // identique, prendre la distante. Sinon garder la locale.
-      var merged = Object.assign({}, fbU, u); // local écrase distant pour les champs qu'on possède
-      return merged;
-    });
-    const mergedUsers=[...updatedLocalUsers,...remoteNewUsers];
-    toSave.users=mergedUsers;
-    _lastFbArrays.users=JSON.parse(JSON.stringify(mergedUsers));
-    _lastFbArrays['users__known']=fbUsers.map(u=>u&&String(u.id)).filter(Boolean);
+    // 🚀 Skipped si la save est partial sans clé 'users'.
+    if(_shouldSyncUsers){
+      const localUsers=Array.isArray(toSave.users)?toSave.users:[];
+      const fbUsers=liveFbUsers;
+      const localUserIds=new Set(localUsers.map(u=>u&&u.id));
+      const prevKnownUsers=Array.isArray(_lastFbArrays['users__known'])?_lastFbArrays['users__known']:[];
+      const knownFbUserIds=new Set(prevKnownUsers.map(String));
+      const remoteNewUsers=fbUsers.filter(u=>u&&u.id&&!localUserIds.has(u.id)&&!knownFbUserIds.has(String(u.id))&&!_isDeletedProtected("users",u.id));
+      const fbUserById={};fbUsers.forEach(u=>{if(u&&u.id)fbUserById[u.id]=u;});
+      const updatedLocalUsers=localUsers.map(u=>{
+        if(!u||!u.id||!fbUserById[u.id])return u;
+        var fbU = fbUserById[u.id];
+        var merged = Object.assign({}, fbU, u);
+        return merged;
+      });
+      const mergedUsers=[...updatedLocalUsers,...remoteNewUsers];
+      toSave.users=mergedUsers;
+      _lastFbArrays.users=JSON.parse(JSON.stringify(mergedUsers));
+      _lastFbArrays['users__known']=fbUsers.map(u=>u&&String(u.id)).filter(Boolean);
+    }
 
     // Fusionner les autres tableaux
     // LOCAL fait autorite : si supprime localement, reste supprime.
     // On ajoute depuis Firebase uniquement les items crees par d'autres users (absents en local ET inconnus).
+    // 🚀 En mode partial, on ne fusionne que les clés concernées (les autres ne sont pas pushées).
     const ARRAY_KEYS=['plaintes','dossiers','annonces','candidatures','operations','sanctions','recenses','infractions','timeline'];
+    var _partialKeysSet = _partialKeysForThisFlush ? new Set(_partialKeysForThisFlush) : null;
     ARRAY_KEYS.forEach(k=>{
+      // Si on est en mode partial et que cette clé n'est pas dans la liste, on la saute
+      // (les données distantes resteront intactes côté Firebase)
+      if(_partialKeysSet && !_partialKeysSet.has(k)) return;
       const fbArr=Array.isArray(_lastFbArrays[k])?[..._lastFbArrays[k]]:[];
       const localArr=Array.isArray(toSave[k])?toSave[k]:[];
       // IDs presents en local (apres suppression eventuelle)
@@ -15881,10 +15922,30 @@ async function _flushSaveQueue(){
     Object.assign(DB,toSave);
     try{localStorage.setItem(STORE,JSON.stringify(DB));}catch(e){}
 
-    // Écriture Firebase avec fbSet (plus fiable que fbUpdate pour la RTDB)
-    const payload=JSON.parse(JSON.stringify(toSave));
-    delete payload.messages; // messages gérés séparément
-    await window._fbSet(window._fbRef(window._fbDB,"sunagakure"),payload);
+    // Écriture Firebase
+    // Mode FULL  : _fbSet sur la racine /sunagakure (réécrit tout)
+    // Mode PARTIAL : _fbUpdate sur la racine avec uniquement les clés concernées
+    //   → seules ces clés sont mises à jour, le reste reste intact côté Firebase
+    //   → consommation drastiquement réduite (95% de gain typique)
+    var partialKeysSnapshot = _partialKeysForThisFlush; // capturé au début du flush
+    if(partialKeysSnapshot && partialKeysSnapshot.length > 0){
+      // Mode partial : push uniquement les clés sélectionnées
+      const partialPayload = {};
+      partialKeysSnapshot.forEach(function(k){
+        if(k === 'messages') return; // messages gérés séparément
+        if(toSave.hasOwnProperty(k)){
+          partialPayload[k] = JSON.parse(JSON.stringify(toSave[k]));
+        }
+      });
+      if(Object.keys(partialPayload).length > 0){
+        await window._fbUpdate(window._fbRef(window._fbDB,"sunagakure"), partialPayload);
+      }
+    } else {
+      // Mode full (legacy) : réécrit toute la base
+      const payload=JSON.parse(JSON.stringify(toSave));
+      delete payload.messages; // messages gérés séparément
+      await window._fbSet(window._fbRef(window._fbDB,"sunagakure"),payload);
+    }
     // Reset du flag d'erreur Firebase si un save réussit
     if(window._fbWriteFailed){
       window._fbWriteFailed = false;
@@ -19099,7 +19160,7 @@ function saveAnnonce(){
   addTimeline(`Annonce publiée : "${titre}"`);
   localStorage.setItem("suna_read_annonces_prev", localStorage.getItem("suna_read_annonces")||"0");
   flashSubmitSuccess(document.querySelector('#modal-annonce .modal-footer .btn-primary'), 'Annonce publiée');
-  setTimeout(function(){ saveData();closeModal("modal-annonce");renderAnnonces();syncDashboard();updateBadges();clearForm(["a-titre","a-contenu"]);removeAnnoncePhoto(); }, 600);
+  setTimeout(function(){ saveData(['annonces','timeline']);closeModal("modal-annonce");renderAnnonces();syncDashboard();updateBadges();clearForm(["a-titre","a-contenu"]);removeAnnoncePhoto(); }, 600);
 }
 let _annoncePhoto="";
 function loadAnnoncePhoto(input){
@@ -19133,7 +19194,7 @@ function removeAnnoncePhoto(ev){
 }
 function deleteAnnonce(id){
   if(typeof canModify === 'function' && !canModify()){ showToast('⛔ Action réservée aux modérateurs.','error'); return; }
-  id=parseInt(id);askDelete("Supprimer cette annonce ?",()=>{_markDeleted("annonces",id);DB.annonces=DB.annonces.filter(a=>String(a.id)!==String(id));saveData();renderAnnonces();syncDashboard()})
+  id=parseInt(id);askDelete("Supprimer cette annonce ?",()=>{_markDeleted("annonces",id);DB.annonces=DB.annonces.filter(a=>String(a.id)!==String(id));saveData('annonces');renderAnnonces();syncDashboard()})
 }
 
 // ─── RÉACTIONS ANNONCES ─────────────────────────────────────────
@@ -19171,7 +19232,7 @@ function toggleReaction(annonceId, emoji){
   const idx = a.reactions[emoji].indexOf(uid);
   if(idx >= 0) a.reactions[emoji].splice(idx,1);
   else a.reactions[emoji].push(uid);
-  saveData();
+  saveData('annonces'); // 🚀 partial : ne push que la branche annonces
   // Re-render toutes les annonces (léger)
   renderAnnonces();
 }
@@ -19426,7 +19487,7 @@ function saveRecense(){
       // Sync auto vers le registre des impôts
       if(typeof impSyncFromRecense === 'function') impSyncFromRecense(DB.recenses[idx]);
       addTimeline(`Fiche modifiée : ${prenom} ${nom}`);
-      saveData();closeModal("modal-recense");renderRecensement();syncDashboard();
+      saveData(['recenses','impots','timeline']);closeModal("modal-recense");renderRecensement();syncDashboard();
       if(typeof renderImpots === 'function') renderImpots();
       showToast("Fiche mise à jour.","success");
     }
@@ -19444,7 +19505,7 @@ function saveRecense(){
   // Sync auto vers le registre des impôts (le ninja apparaît directement dans Impôts)
   if(typeof impSyncFromRecense === 'function') impSyncFromRecense(newRec);
   addTimeline(`Joueur recensé : ${prenom} ${nom}`);
-  saveData();closeModal("modal-recense");renderRecensement();syncDashboard();
+  saveData(['recenses','impots','timeline']);closeModal("modal-recense");renderRecensement();syncDashboard();
   if(typeof renderImpots === 'function') renderImpots();
   clearForm(["r-prenom","r-nom","r-age","r-faction","r-competences","r-notes"]);
   document.querySelectorAll("#nature-checkboxes input").forEach(c=>c.checked=false);
@@ -19634,7 +19695,7 @@ document.addEventListener('DOMContentLoaded',function(){
 });
 function deleteRecense(id){
   if(typeof canModify === 'function' && !canModify()){ showToast('⛔ Action réservée aux modérateurs.','error'); return; }
-  id=parseInt(id);askDelete("Supprimer cette fiche de recensement ?",()=>{_markDeleted("recenses",id);DB.recenses=DB.recenses.filter(r=>String(r.id)!==String(id));if(typeof impRemoveByRecenseId==='function')impRemoveByRecenseId(id);saveData();renderRecensement();syncDashboard();if(typeof renderImpots==='function')renderImpots();})
+  id=parseInt(id);askDelete("Supprimer cette fiche de recensement ?",()=>{_markDeleted("recenses",id);DB.recenses=DB.recenses.filter(r=>String(r.id)!==String(id));if(typeof impRemoveByRecenseId==='function')impRemoveByRecenseId(id);saveData(['recenses','impots']);renderRecensement();syncDashboard();if(typeof renderImpots==='function')renderImpots();})
 }
 
 // CANDIDATURES
@@ -19760,7 +19821,7 @@ function recrueAction(type){
       const sancId=Date.now();
       DB.sanctions.push({id:sancId,type:"Exclusion",cible:c.nom,motif:motif||"Renvoi",auteur:currentUser.nom,date:now()});
       addTimeline(`${c.nom} renvoyé(e) de la police par ${currentUser.nom}. Motif: ${motif||"—"}`);
-      saveData();renderRecrues();renderCandidatures();renderEffectifs();renderAdmin();syncDashboard();
+      saveData(['sanctions','users','candidatures','timeline']);renderRecrues();renderCandidatures();renderEffectifs();renderAdmin();syncDashboard();
     });
   } else {
     const newGrade=v("ra-grade");
@@ -19771,7 +19832,7 @@ function recrueAction(type){
     const sancId2=Date.now();
     DB.sanctions.push({id:sancId2,type:actionType,cible:c.nom,motif:motif||actionType,auteur:currentUser.nom,date:now()});
     addTimeline(`${c.nom} : ${oldGrade} → ${newGrade} par ${currentUser.nom}`);
-    saveData();closeModal("modal-recrue-action");renderRecrues();renderCandidatures();renderEffectifs();renderAdmin();syncDashboard();
+    saveData(['sanctions','users','candidatures','timeline']);closeModal("modal-recrue-action");renderRecrues();renderCandidatures();renderEffectifs();renderAdmin();syncDashboard();
   }
 }
 function saveCandidature(){
@@ -19784,7 +19845,7 @@ function saveCandidature(){
   var casier=v("c-casier");
   DB.candidatures.push({id:Date.now(),nom,age,discord:v("c-discord"),motif,exp:v("c-exp"),section:section,genre:genre,gradeShinobi:gradeShinobi,sectionActuelle:sectionActuelle,casier:casier,statut:"en_attente",grade:"Stagiaire",actif:true,date:now(),authorId:currentUser?currentUser.id:null});
   addTimeline(`Candidature reçue de ${nom}`);
-  saveData();closeModal("modal-candidature");renderCandidatures();syncDashboard();clearForm(["c-nom","c-age","c-discord","c-motif","c-exp"]);
+  saveData(['candidatures','timeline']);closeModal("modal-candidature");renderCandidatures();syncDashboard();clearForm(["c-nom","c-age","c-discord","c-motif","c-exp"]);
   // Reset les nouveaux selects
   ["c-genre","c-grade-shinobi","c-section-actuelle","c-casier"].forEach(function(id){var e=el(id);if(e)e.value="";});
   // Reset section visée à Police
@@ -19958,7 +20019,7 @@ function savePlainte(){
     if(idx!==-1){
       DB.plaintes[idx]=Object.assign({},DB.plaintes[idx],{plaignant:pl,accuse:ac,type:v("p-type"),desc,dateFaits:v("p-date"),cible:cible,photoAccuse:_plaintePhoto||DB.plaintes[idx].photoAccuse||""});
       addTimeline(`Plainte #${_plainteEditId} modifiée par ${currentUser.nom}`);
-      saveData();closeModal("modal-plainte");renderPlaintes();syncDashboard();
+      saveData(['plaintes','timeline']);closeModal("modal-plainte");renderPlaintes();syncDashboard();
       showToast("Plainte mise à jour.","success");
       clearForm(["p-plaignant","p-accuse","p-desc","p-date"]);removePlaintePhoto();
     }
@@ -19969,7 +20030,7 @@ function savePlainte(){
   addTimeline(`Plainte déposée par ${pl} contre ${ac}`);
   _plaintePhoto="";
   flashSubmitSuccess(document.querySelector('#modal-plainte .modal-footer .btn-primary'), 'Plainte enregistrée');
-  setTimeout(function(){ saveData();closeModal("modal-plainte");renderPlaintes();syncDashboard();clearForm(["p-plaignant","p-accuse","p-desc","p-date"]);removePlaintePhoto(); }, 600);
+  setTimeout(function(){ saveData(['plaintes','timeline']);closeModal("modal-plainte");renderPlaintes();syncDashboard();clearForm(["p-plaignant","p-accuse","p-desc","p-date"]);removePlaintePhoto(); }, 600);
 }
 function viewPlainte(id){
   id=parseInt(id);
@@ -20017,7 +20078,7 @@ function setPlainteStatut(id,statut){
 }
 function deletePlainte(id){
   if(typeof canModify === 'function' && !canModify()){ showToast('⛔ Action réservée aux modérateurs.','error'); return; }
-  id=parseInt(id);askDelete("Supprimer cette plainte ?",()=>{_markDeleted("plaintes",id);DB.plaintes=DB.plaintes.filter(p=>String(p.id)!==String(id));saveData();renderPlaintes();syncDashboard()})
+  id=parseInt(id);askDelete("Supprimer cette plainte ?",()=>{_markDeleted("plaintes",id);DB.plaintes=DB.plaintes.filter(p=>String(p.id)!==String(id));saveData('plaintes');renderPlaintes();syncDashboard()})
 }
 
 // DOSSIERS
@@ -20271,7 +20332,7 @@ function saveDossier(force){
   const amendeImpayee=parseInt(el("d-amende-impayee").value)||0;
   DB.dossiers.push({id:Date.now(),nom,infractions:v("d-infractions"),danger:v("d-danger"),statut:v("d-statut"),notes:v("d-notes"),amendePayee,amendeImpayee,photo,auteur:currentUser.nom,date:now(),tags:getAllTags('d')});
   addTimeline(`Dossier ouvert sur ${nom}`);
-  saveData();closeModal("modal-dossier");renderDossiers();syncDashboard();
+  saveData(['dossiers','timeline']);closeModal("modal-dossier");renderDossiers();syncDashboard();
   clearForm(["d-nom","d-infractions","d-notes","d-amende-payee","d-amende-impayee"]);
   buildTagPicker('d',[]);
   clearDossierPhoto();
@@ -20324,7 +20385,7 @@ function clearDossierPhoto(){
 }
 function deleteDossier(id){
   if(typeof canModify === 'function' && !canModify()){ showToast('⛔ Action réservée aux modérateurs.','error'); return; }
-  id=parseInt(id);askDelete("Supprimer ce dossier criminel ?",()=>{_markDeleted("dossiers",id);DB.dossiers=DB.dossiers.filter(d=>String(d.id)!==String(id));saveData();renderDossiers();syncDashboard()})
+  id=parseInt(id);askDelete("Supprimer ce dossier criminel ?",()=>{_markDeleted("dossiers",id);DB.dossiers=DB.dossiers.filter(d=>String(d.id)!==String(id));saveData('dossiers');renderDossiers();syncDashboard()})
 }
 
 function openEditDossier(id){
@@ -21340,11 +21401,11 @@ function saveOperation(){
   DB.operations.push({id:Date.now(),nom,type:v("op-type"),statut:v("op-statut"),resp:v("op-resp"),dateOp:v("op-date"),desc:v("op-desc"),date:now()});
   addTimeline(`Opération "${nom}" créée`);
   flashSubmitSuccess(document.querySelector('#modal-operation .modal-footer .btn-primary'), 'Opération créée');
-  setTimeout(function(){ saveData();closeModal("modal-operation");renderOperations();syncDashboard();if(typeof renderOpsMap==='function') renderOpsMap();clearForm(["op-nom","op-resp","op-desc","op-date"]); }, 600);
+  setTimeout(function(){ saveData(['operations','timeline']);closeModal("modal-operation");renderOperations();syncDashboard();if(typeof renderOpsMap==='function') renderOpsMap();clearForm(["op-nom","op-resp","op-desc","op-date"]); }, 600);
 }
 function deleteOperation(id){
   if(typeof canModify === 'function' && !canModify()){ showToast('⛔ Action réservée aux modérateurs.','error'); return; }
-  id=parseInt(id);askDelete("Supprimer cette opération ?",()=>{_markDeleted("operations",id);DB.operations=DB.operations.filter(o=>String(o.id)!==String(id));saveData();renderOperations();syncDashboard();if(typeof renderOpsMap==='function') renderOpsMap();})
+  id=parseInt(id);askDelete("Supprimer cette opération ?",()=>{_markDeleted("operations",id);DB.operations=DB.operations.filter(o=>String(o.id)!==String(id));saveData('operations');renderOperations();syncDashboard();if(typeof renderOpsMap==='function') renderOpsMap();})
 }
 
 // GRADES MANAGEMENT
@@ -22023,11 +22084,11 @@ function saveSanction(){
   DB.sanctions.push({id:Date.now(),type:v("s-type"),cible,motif,auteur:currentUser.nom,date:now()});
   addTimeline(`${v("s-type")} : ${cible}`);
   flashSubmitSuccess(document.querySelector('#modal-sanction .modal-footer .btn-primary'), 'Enregistré');
-  setTimeout(function(){ saveData();closeModal("modal-sanction");renderSanctions();syncDashboard();clearForm(["s-cible","s-motif"]); }, 600);
+  setTimeout(function(){ saveData(['sanctions','timeline']);closeModal("modal-sanction");renderSanctions();syncDashboard();clearForm(["s-cible","s-motif"]); }, 600);
 }
 function deleteSanction(id){
   if(typeof canModify === 'function' && !canModify()){ showToast('⛔ Action réservée aux modérateurs.','error'); return; }
-  id=parseInt(id);askDelete("Supprimer cette entrée ?",()=>{_markDeleted("sanctions",id);DB.sanctions=DB.sanctions.filter(s=>String(s.id)!==String(id));saveData();renderSanctions();syncDashboard()})
+  id=parseInt(id);askDelete("Supprimer cette entrée ?",()=>{_markDeleted("sanctions",id);DB.sanctions=DB.sanctions.filter(s=>String(s.id)!==String(id));saveData('sanctions');renderSanctions();syncDashboard()})
 }
 
 // ADMIN (continued)
@@ -22872,7 +22933,7 @@ function saveInfraction(){
   if(!DB.infractions)DB.infractions=[];
   DB.infractions.push({id:Date.now(),nom,cat:v("cp-cat"),amende:v("cp-amende"),prison:v("cp-prison"),duree:v("cp-duree"),notes:v("cp-notes")});
   addTimeline(`Infraction ajoutée au code pénal : ${nom}`);
-  saveData();renderCodePenal();clearForm(["cp-nom","cp-amende","cp-duree","cp-notes"]);
+  saveData('infractions');renderCodePenal();clearForm(["cp-nom","cp-amende","cp-duree","cp-notes"]);
 }
 function doDeleteInfraction(id){
   if(typeof canModify === 'function' && !canModify()){ showToast('⛔ Action réservée aux modérateurs.','error'); return; }
@@ -29612,7 +29673,8 @@ _hospInit();
 /* ─── SAVE ─── (utilise le saveData global qui pousse tout DB → Firebase) */
 function _hospSave(){
   _hospInit(); // garantit l'intégrité avant push
-  if(typeof saveData === 'function'){ saveData(); }
+  // 🚀 Optimisation : push uniquement la branche hospital (au lieu de toute la DB)
+  if(typeof saveData === 'function'){ saveData('hospital'); }
 }
 
 /* ─── HELPERS ─── */
