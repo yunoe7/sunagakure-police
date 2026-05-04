@@ -16459,12 +16459,7 @@ function defaultData(){
   // au moins une fois après une réinitialisation. À renommer/sécuriser via le panel.
   return{commissaire:"Commissaire à définir",
     logo:"",
-    grades:["Gérant","Co-Gérant","Sergent","Officier","Stagiaire",
-      // Grades section Hôpital (médical) — Apprenti < Confirmé < Expert < Maître
-      "Apprenti médecin","Confirmé médecin","Expert médecin","Maître médecin",
-      // Grades section Scientifique — même hiérarchie
-      "Apprenti scientifique","Confirmé scientifique","Expert scientifique","Maître scientifique"
-    ],
+    grades:["Gérant","Co-Gérant","Sergent","Officier","Stagiaire"],
     users:[{id:1,login:"admin",pass:"__PENDING_HASH__",nom:"Développeur",grade:"Gérant",role:"admin",statut:"Actif",photo:"",created:now()}],
     annonces:[{id:1,titre:"Bienvenue sur le portail Police de Sunagakure",cat:"Information",contenu:"Ce portail est le centre névralgique des communications internes.\n\nToutes les informations officielles y seront publiées.",auteur:"Administration",pin:true,date:now()}],
     recenses:[],candidatures:[],plaintes:[],dossiers:[],operations:[],sanctions:[],infractions:[],timeline:[],adminNotes:{},messages:{},loginHistory:[],features:{map_active:false},
@@ -18269,7 +18264,7 @@ function showPage(name){
   // BYPASS ADMIN : les admins ont accès à tout, peu importe leur section
   var isFullAccess = !!(currentUser && currentUser.role === 'admin');
   var ALL_PAGES = ['dashboard','bingobook','codepenal','histoire','profil','admin','messagerie'];
-  var SECTION_PREFIXES = { juge:/^juge-/, avocat:/^avocat-/, mission:/^mission-/, medical:/^medical-/, diplomatie:/^diplo-/ };
+  var SECTION_PREFIXES = { juge:/^juge-/, avocat:/^avocat-/, mission:/^mission-/, medical:/^(medical|sci|compta)-/, diplomatie:/^diplo-/ };
   var POLICE_PAGES = ['annonces','recensement','recrutement','plaintes','dossiers','operations','effectifs','sanctions','impots','hierarchie'];
   var userSection = (currentUser && currentUser.section) || 'police';
   if(!isFullAccess && !ALL_PAGES.includes(name)){
@@ -30950,9 +30945,13 @@ function _hospNextId(arr){
 }
 
 /* ─── PERMISSIONS ─── 
- * section : 'medical' (Hôpital, Psy, Dons, Paiements) ou 'sci' (Scientifique, Morgue)
- * Comptabilité (Paiements) : tous les médicaux peuvent voir, mais seuls
- *   admin/gérant + Expert/Maître médecin peuvent modifier (gestion financière sensible)
+ * section : ignoré (legacy) — toute la détection est désormais basée sur currentUser.section
+ *   qui couvre tout le pôle Médical (Hôpital + Scientifique + Comptabilité)
+ *
+ * Hiérarchie : les 2 premiers grades de la liste DB.sectionGrades.medical sont "seniors"
+ *   (par défaut : Médecin-chef, Médecin senior). Ils peuvent tout modifier dans le pôle.
+ *   Les autres grades sont "juniors" et ne peuvent éditer/supprimer que leurs propres entrées.
+ *   Admin / Gérant / Co-Gérant : contrôle total.
  */
 function _hospUserGrade(){
   if(!currentUser) return '';
@@ -30963,52 +30962,61 @@ function _hospIsAdmin(){
   var r = currentUser.role || '';
   return r === 'admin' || r === 'gerant' || r === 'cogerant';
 }
-function _hospIsMaster(section){
-  // Expert ou Maître dans la section donnée
-  var g = _hospUserGrade();
-  if(!g) return false;
-  if(section === 'medical') return /^(Expert|Maître) médecin$/.test(g);
-  if(section === 'sci')     return /^(Expert|Maître) scientifique$/.test(g);
-  return false;
+// Récupère la liste des grades du pôle Médical (utilise getGradesForSection si dispo, sinon fallback)
+function _hospMedicalGrades(){
+  if(typeof getGradesForSection === 'function'){
+    try{ return getGradesForSection('medical') || []; }catch(e){}
+  }
+  // Fallback : default
+  return (window.DEFAULT_SECTION_GRADES && DEFAULT_SECTION_GRADES.medical)
+    || ["Médecin-chef","Médecin senior","Médecin","Infirmier","Stagiaire"];
 }
-function _hospIsMember(section){
-  // Membre de la section (n'importe quel grade)
-  var g = _hospUserGrade();
-  if(!g) return false;
-  if(section === 'medical') return /médecin$/.test(g);
-  if(section === 'sci')     return /scientifique$/.test(g);
-  return false;
+// Membre du pôle Médical (n'importe quel grade) — basé sur currentUser.section
+function _hospIsMember(/*section ignored*/){
+  if(!currentUser) return false;
+  // La section "medical" couvre Hôpital + Scientifique + Comptabilité dans l'app
+  return (currentUser.section || 'police') === 'medical';
 }
-// Peut ajouter une entrée dans cette section
-function hospCanAdd(section){
+// Senior (= 2 premiers grades de la liste : par défaut Médecin-chef, Médecin senior)
+function _hospIsMaster(/*section ignored*/){
+  if(!_hospIsMember()) return false;
+  var grade = _hospUserGrade();
+  if(!grade) return false;
+  var grades = _hospMedicalGrades();
+  var idx = grades.indexOf(grade);
+  // Top 2 = senior. Si grade introuvable, considérer junior par sécurité.
+  return idx >= 0 && idx <= 1;
+}
+// Peut ajouter une entrée dans le pôle Médical
+function hospCanAdd(/*section*/){
   if(!currentUser) return false;
   if(_hospIsAdmin()) return true;
-  return _hospIsMember(section);
+  return _hospIsMember();
 }
 // Peut modifier/supprimer une entrée précise (selon auteur + grade)
-function hospCanEditEntry(entry, section){
+function hospCanEditEntry(entry /*, section*/){
   if(!currentUser) return false;
   if(_hospIsAdmin()) return true;
-  if(_hospIsMaster(section)) return true; // Expert/Maître peuvent tout dans leur section
-  // Apprenti/Confirmé : seulement leurs propres entrées
-  if(_hospIsMember(section) && entry && entry.auteurId && String(entry.auteurId) === String(currentUser.id)) return true;
+  if(_hospIsMaster()) return true; // Senior peut tout modifier dans le pôle Médical
+  // Junior : seulement ses propres entrées
+  if(_hospIsMember() && entry && entry.auteurId && String(entry.auteurId) === String(currentUser.id)) return true;
   return false;
 }
-// Comptabilité (paiements) : règle plus stricte (Expert/Maître médecin uniquement, ou admin)
+// Comptabilité (paiements) : règle plus stricte (Senior uniquement, ou admin)
 function hospCanEditPaiement(entry){
   if(!currentUser) return false;
   if(_hospIsAdmin()) return true;
-  if(_hospIsMaster('medical')) return true;
-  // Apprenti/Confirmé médecin ne peuvent modifier QUE leurs propres paiements
-  if(_hospIsMember('medical') && entry && entry.auteurId && String(entry.auteurId) === String(currentUser.id)) return true;
+  if(_hospIsMaster()) return true;
+  // Junior : QUE ses propres paiements
+  if(_hospIsMember() && entry && entry.auteurId && String(entry.auteurId) === String(currentUser.id)) return true;
   return false;
 }
 function hospCanAddPaiement(){
-  // Tout membre médical peut créer un paiement (mais ne pourra modifier que les siens
-  // sauf s'il est Expert/Maître/Admin)
+  // Tout membre Médical peut créer un paiement (mais ne pourra modifier que les siens
+  // sauf s'il est Senior ou Admin)
   if(!currentUser) return false;
   if(_hospIsAdmin()) return true;
-  return _hospIsMember('medical');
+  return _hospIsMember();
 }
 
 /* ─── MODAL GÉNÉRIQUE ─── (réutilisé par toutes les sous-pages) */
