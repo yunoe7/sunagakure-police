@@ -13682,6 +13682,31 @@ document.addEventListener('error', function(e){
         </div>
       </div>
     </div>
+    <!-- 🗜 Optimisation photos (compression bulk) -->
+    <div class="card mb-4">
+      <div class="card-header"><span>🗜</span><h3>Optimisation des photos</h3></div>
+      <div class="card-body">
+        <div style="font-size:13px;color:var(--text);line-height:1.6;margin-bottom:12px">
+          Compresse toutes les photos déjà uploadées (recensés, dossiers, annonces, profils) pour <strong>réduire la taille de la base</strong>.
+          Utile si tu as des problèmes de stockage saturé ou de consommation Firebase élevée.
+          La qualité visuelle reste excellente (~95% identique).
+        </div>
+        <div id="compress-stats" style="background:rgba(180,140,20,0.08);border:1px solid rgba(180,140,20,0.2);border-radius:8px;padding:12px 14px;margin-bottom:12px;font-family:'Share Tech Mono',monospace;font-size:11.5px;letter-spacing:0.5px">
+          <div style="color:var(--muted);font-size:10px;text-transform:uppercase;margin-bottom:6px">État actuel</div>
+          <div id="compress-stats-content" style="color:var(--text)">Cliquez "Analyser" pour voir l'état des photos.</div>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn btn-outline" onclick="adminAnalyzePhotos()">📊 Analyser</button>
+          <button class="btn btn-gold" id="btn-compress-all" onclick="adminCompressAllPhotos()" disabled>🗜 Compresser toutes les photos</button>
+        </div>
+        <div id="compress-progress" style="display:none;margin-top:14px">
+          <div style="font-size:11px;color:var(--muted);margin-bottom:6px" id="compress-progress-label">Préparation...</div>
+          <div style="height:8px;background:rgba(255,255,255,0.05);border-radius:4px;overflow:hidden">
+            <div id="compress-progress-bar" style="height:100%;width:0%;background:linear-gradient(90deg,var(--gold),#f59e0b);transition:width 0.3s ease;border-radius:4px"></div>
+          </div>
+        </div>
+      </div>
+    </div>
     <!-- Grades -->
     <div class="card mb-4">
       <div class="card-header" style="justify-content:space-between">
@@ -19191,6 +19216,66 @@ function saveAnnonce(){
   setTimeout(function(){ saveData(['annonces','timeline']);closeModal("modal-annonce");renderAnnonces();syncDashboard();updateBadges();clearForm(["a-titre","a-contenu"]);removeAnnoncePhoto(); }, 600);
 }
 let _annoncePhoto="";
+// 🗜 COMPRESSION D'IMAGES — réduit drastiquement la taille des photos uploadées
+// Avant : photos jusqu'à 1.2 Mo (data URL base64) → DB qui explose, localStorage saturé
+// Après : redimensionnement max 800px + qualité JPEG 0.75 → ~100-150 Ko par photo (gain ~85%)
+//
+// Comment ça marche :
+// 1. Charge l'image source dans un <canvas> en mémoire
+// 2. Redimensionne si trop grande (max 800px sur le côté le plus long)
+// 3. Réexporte en JPEG avec qualité 0.75 (qualité visuelle ~95% identique)
+// 4. Renvoie le data URL résultant via callback
+//
+// Compatible avec tous les types d'images en entrée (PNG, JPEG, WebP, GIF)
+// Sortie : toujours JPEG (le format le plus compact pour des photos)
+window.compressImageDataURL = function(srcDataURL, options, callback){
+  options = options || {};
+  var maxSize = options.maxSize || 800;        // pixel max sur le côté le plus long
+  var quality = options.quality || 0.75;       // qualité JPEG (0-1)
+  var maxBytes = options.maxBytes || 200000;   // 200 Ko max après compression (sinon on baisse la qualité)
+
+  if(!srcDataURL || typeof srcDataURL !== 'string' || !srcDataURL.startsWith('data:image/')){
+    // Pas une image valide → renvoyer telle quelle
+    if(typeof callback === 'function') callback(srcDataURL);
+    return;
+  }
+
+  var img = new Image();
+  img.onload = function(){
+    var w = img.width, h = img.height;
+    // Calcul du redimensionnement (préserve le ratio)
+    if(w > maxSize || h > maxSize){
+      if(w > h){ h = Math.round(h * maxSize / w); w = maxSize; }
+      else     { w = Math.round(w * maxSize / h); h = maxSize; }
+    }
+    var canvas = document.createElement('canvas');
+    canvas.width = w; canvas.height = h;
+    var ctx = canvas.getContext('2d');
+    // Fond blanc pour les PNG transparents (sinon JPEG les rend en noir)
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, w, h);
+    ctx.drawImage(img, 0, 0, w, h);
+
+    // Compression itérative : si le résultat est encore trop gros, baisser la qualité
+    var q = quality;
+    var result = canvas.toDataURL('image/jpeg', q);
+    var attempts = 0;
+    while(result.length > maxBytes * 1.37 && q > 0.4 && attempts < 5){
+      // 1.37 = ratio approximatif base64 vs binaire
+      q -= 0.1;
+      result = canvas.toDataURL('image/jpeg', q);
+      attempts++;
+    }
+
+    if(typeof callback === 'function') callback(result);
+  };
+  img.onerror = function(){
+    // Image corrompue ou format non supporté → renvoyer la source
+    if(typeof callback === 'function') callback(srcDataURL);
+  };
+  img.src = srcDataURL;
+};
+
 function loadAnnoncePhoto(input){
   const file=input.files[0];if(!file)return;
   if(!file.type.startsWith("image/")){showToast('Fichier invalide : image uniquement.','error');input.value='';return;}
@@ -19207,10 +19292,13 @@ function handleAnnonceDrop(e){
   reader.readAsDataURL(file);
 }
 function applyAnnoncePhoto(src){
-  _annoncePhoto=src;
-  el("a-photo-placeholder").style.display="none";
-  const img=el("a-photo-preview");img.src=src;img.style.display="block";
-  el("a-photo-remove").style.display="block";
+  // 🗜 Compresser avant de stocker (économise jusqu'à 85% d'espace Firebase)
+  window.compressImageDataURL(src, {maxSize:1200, quality:0.78, maxBytes:200000}, function(compressed){
+    _annoncePhoto=compressed;
+    el("a-photo-placeholder").style.display="none";
+    const img=el("a-photo-preview");img.src=compressed;img.style.display="block";
+    el("a-photo-remove").style.display="block";
+  });
 }
 function removeAnnoncePhoto(ev){
   if(ev)ev.stopPropagation();
@@ -19557,13 +19645,16 @@ function handleRecenseDrop(e){
   reader.readAsDataURL(file);
 }
 function applyRecensePhoto(src){
-  _recensePhoto=src;
-  const av=el("r-photo-avatar-preview");
-  if(av) av.innerHTML=`<img src="${esc(src)}" alt="Photo recensé" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`;
-  const ph=el("r-photo-placeholder");
-  if(ph) ph.innerHTML='<div style="color:var(--green) !important">✓ Photo chargée</div><div>Cliquez pour changer</div>';
-  const rm=el("r-photo-remove");
-  if(rm) rm.style.display="inline-flex";
+  // 🗜 Compresser avant de stocker
+  window.compressImageDataURL(src, {maxSize:600, quality:0.75, maxBytes:120000}, function(compressed){
+    _recensePhoto=compressed;
+    const av=el("r-photo-avatar-preview");
+    if(av) av.innerHTML=`<img src="${esc(compressed)}" alt="Photo recensé" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`;
+    const ph=el("r-photo-placeholder");
+    if(ph) ph.innerHTML='<div style="color:var(--green) !important">✓ Photo chargée</div><div>Cliquez pour changer</div>';
+    const rm=el("r-photo-remove");
+    if(rm) rm.style.display="inline-flex";
+  });
 }
 function removeRecensePhoto(ev){
   if(ev)ev.stopPropagation();
@@ -19944,12 +20035,15 @@ function loadPlaintePhoto(input){
   if(file.size>512000){showToast('Image trop lourde (max 500 Ko).','error');input.value='';return;}
   const reader=new FileReader();
   reader.onload=function(e){
-    _plaintePhoto=e.target.result;
-    const av=el("p-photo-avatar");
-    av.innerHTML=`<img alt="" src="${e.target.result}" style="width:100%;height:100%;object-fit:cover">`;
-    av.style.borderColor="rgba(180,140,20,0.6)";
-    el("p-photo-placeholder").innerHTML='<div style="font-size:11.5px;color:var(--green);font-weight:600">✓ Photo chargée</div><div style="font-size:10px;color:var(--muted);margin-top:2px">Cliquez pour changer</div>';
-    el("p-photo-remove").style.display="block";
+    // 🗜 Compresser avant de stocker
+    window.compressImageDataURL(e.target.result, {maxSize:600, quality:0.75, maxBytes:120000}, function(compressed){
+      _plaintePhoto=compressed;
+      const av=el("p-photo-avatar");
+      av.innerHTML=`<img alt="" src="${compressed}" style="width:100%;height:100%;object-fit:cover">`;
+      av.style.borderColor="rgba(180,140,20,0.6)";
+      el("p-photo-placeholder").innerHTML='<div style="font-size:11.5px;color:var(--green);font-weight:600">✓ Photo chargée</div><div style="font-size:10px;color:var(--muted);margin-top:2px">Cliquez pour changer</div>';
+      el("p-photo-remove").style.display="block";
+    });
   };
   reader.readAsDataURL(input.files[0]);
 }
@@ -20395,11 +20489,14 @@ async function pasteDossierPhoto(){
   }catch(e){showToast("Accès presse-papier refusé. Utilisez le bouton Fichier.","error");}
 }
 function applyDossierPhoto(src){
-  el("d-photo-data").value=src;
-  const prev=el("d-photo-preview");
-  prev.innerHTML=`<img src="${esc(src)}" alt="Photo dossier" style="width:100%;height:100%;object-fit:cover;border-radius:6px">`;
-  prev.style.border="2px solid rgba(180,140,20,0.5)";
-  if(el("d-photo-clear"))el("d-photo-clear").style.display="";
+  // 🗜 Compresser avant de stocker
+  window.compressImageDataURL(src, {maxSize:600, quality:0.75, maxBytes:120000}, function(compressed){
+    el("d-photo-data").value=compressed;
+    const prev=el("d-photo-preview");
+    prev.innerHTML=`<img src="${esc(compressed)}" alt="Photo dossier" style="width:100%;height:100%;object-fit:cover;border-radius:6px">`;
+    prev.style.border="2px solid rgba(180,140,20,0.5)";
+    if(el("d-photo-clear"))el("d-photo-clear").style.display="";
+  });
 }
 function clearDossierPhoto(){
   if(el("d-photo-data"))el("d-photo-data").value="";
@@ -20487,11 +20584,14 @@ async function pasteEditDossierPhoto(){
   }catch(e){showToast("Accès presse-papier refusé. Utilisez Fichier.","error");}
 }
 function applyEditDossierPhoto(src){
-  el("ed-photo-data").value=src;
-  const prev=el("ed-photo-preview");
-  prev.innerHTML=`<img src="${esc(src)}" alt="Photo dossier" style="width:100%;height:100%;object-fit:cover;border-radius:6px">`;
-  prev.style.border="2px solid rgba(180,140,20,0.5)";
-  if(el("ed-photo-clear"))el("ed-photo-clear").style.display="";
+  // 🗜 Compresser avant de stocker
+  window.compressImageDataURL(src, {maxSize:600, quality:0.75, maxBytes:120000}, function(compressed){
+    el("ed-photo-data").value=compressed;
+    const prev=el("ed-photo-preview");
+    prev.innerHTML=`<img src="${esc(compressed)}" alt="Photo dossier" style="width:100%;height:100%;object-fit:cover;border-radius:6px">`;
+    prev.style.border="2px solid rgba(180,140,20,0.5)";
+    if(el("ed-photo-clear"))el("ed-photo-clear").style.display="";
+  });
 }
 function clearEditDossierPhoto(){
   el("ed-photo-data").value="";
@@ -21540,6 +21640,212 @@ function removeGrade(i){
 }
 
 // LOGO
+// ═══════════════════════════════════════════════════════════════════
+// 🗜 COMPRESSION BULK — outil admin pour recompresser toutes les photos existantes
+// ═══════════════════════════════════════════════════════════════════
+// Parcourt toutes les collections qui contiennent des photos (recensés, dossiers,
+// annonces, profils, candidatures, etc.) et applique la compression côté navigateur.
+// Pousse ensuite le résultat sur Firebase en mode partial pour réduire la consommation.
+
+// Liste des "endroits" où des photos peuvent être stockées dans la DB
+function _adminCollectPhotoEntries(){
+  var entries = []; // { collection, idx, key, dataURL }
+  // Recensés : champ 'photo'
+  if(Array.isArray(DB.recenses)){
+    DB.recenses.forEach(function(r, idx){
+      if(r && r.photo && typeof r.photo === 'string' && r.photo.startsWith('data:image/')){
+        entries.push({ collection: 'recenses', idx: idx, key: 'photo', dataURL: r.photo, name: (r.prenom||'')+' '+(r.nom||'') });
+      }
+    });
+  }
+  // Dossiers : champ 'photo'
+  if(Array.isArray(DB.dossiers)){
+    DB.dossiers.forEach(function(d, idx){
+      if(d && d.photo && typeof d.photo === 'string' && d.photo.startsWith('data:image/')){
+        entries.push({ collection: 'dossiers', idx: idx, key: 'photo', dataURL: d.photo, name: d.nom || 'Dossier' });
+      }
+    });
+  }
+  // Annonces : champ 'photo'
+  if(Array.isArray(DB.annonces)){
+    DB.annonces.forEach(function(a, idx){
+      if(a && a.photo && typeof a.photo === 'string' && a.photo.startsWith('data:image/')){
+        entries.push({ collection: 'annonces', idx: idx, key: 'photo', dataURL: a.photo, name: a.titre || 'Annonce' });
+      }
+    });
+  }
+  // Plaintes : champ 'photoAccuse'
+  if(Array.isArray(DB.plaintes)){
+    DB.plaintes.forEach(function(p, idx){
+      if(p && p.photoAccuse && typeof p.photoAccuse === 'string' && p.photoAccuse.startsWith('data:image/')){
+        entries.push({ collection: 'plaintes', idx: idx, key: 'photoAccuse', dataURL: p.photoAccuse, name: 'Plainte de '+(p.plaignant||'?') });
+      }
+    });
+  }
+  // Users : champ 'photo'
+  if(Array.isArray(DB.users)){
+    DB.users.forEach(function(u, idx){
+      if(u && u.photo && typeof u.photo === 'string' && u.photo.startsWith('data:image/')){
+        entries.push({ collection: 'users', idx: idx, key: 'photo', dataURL: u.photo, name: u.nom || u.login || 'User' });
+      }
+    });
+  }
+  // Candidatures : champ 'photo'
+  if(Array.isArray(DB.candidatures)){
+    DB.candidatures.forEach(function(c, idx){
+      if(c && c.photo && typeof c.photo === 'string' && c.photo.startsWith('data:image/')){
+        entries.push({ collection: 'candidatures', idx: idx, key: 'photo', dataURL: c.photo, name: c.nom || 'Candidature' });
+      }
+    });
+  }
+  return entries;
+}
+
+function _adminFormatBytes(bytes){
+  if(bytes < 1024) return bytes + ' B';
+  if(bytes < 1024*1024) return (bytes/1024).toFixed(1) + ' Ko';
+  return (bytes/1024/1024).toFixed(2) + ' Mo';
+}
+
+function adminAnalyzePhotos(){
+  if(typeof isAdmin === 'function' && !isAdmin()){
+    showToast('⛔ Action réservée aux administrateurs.','error'); return;
+  }
+  var entries = _adminCollectPhotoEntries();
+  var totalSize = 0;
+  var bigPhotos = 0; // photos > 200 Ko
+  entries.forEach(function(e){
+    var size = e.dataURL.length;
+    totalSize += size;
+    if(size > 200000) bigPhotos++;
+  });
+
+  // Compter par collection
+  var byColl = {};
+  entries.forEach(function(e){
+    if(!byColl[e.collection]) byColl[e.collection] = { count: 0, size: 0 };
+    byColl[e.collection].count++;
+    byColl[e.collection].size += e.dataURL.length;
+  });
+
+  var html = '';
+  html += '<div style="margin-bottom:6px"><strong>'+entries.length+'</strong> photo(s) trouvée(s) — taille totale : <strong>'+_adminFormatBytes(totalSize)+'</strong></div>';
+  if(bigPhotos > 0){
+    html += '<div style="color:#f59e0b;margin-bottom:8px">⚠ '+bigPhotos+' photo(s) > 200 Ko (à compresser)</div>';
+  } else {
+    html += '<div style="color:#22c55e;margin-bottom:8px">✓ Toutes les photos sont déjà optimisées (<200 Ko)</div>';
+  }
+  html += '<div style="font-size:10px;color:var(--muted);text-transform:uppercase;margin:8px 0 4px">Détail par section :</div>';
+  Object.keys(byColl).forEach(function(c){
+    html += '<div style="display:flex;justify-content:space-between;padding:2px 0">';
+    html += '<span>• '+c+' :</span>';
+    html += '<span>'+byColl[c].count+' photos · '+_adminFormatBytes(byColl[c].size)+'</span>';
+    html += '</div>';
+  });
+  el('compress-stats-content').innerHTML = html;
+
+  // Activer le bouton si au moins une photo > 200 Ko
+  var btn = el('btn-compress-all');
+  if(btn){
+    btn.disabled = (bigPhotos === 0);
+    if(bigPhotos > 0){
+      btn.textContent = '🗜 Compresser ' + bigPhotos + ' photo(s)';
+    } else {
+      btn.textContent = '🗜 Tout est déjà optimisé';
+    }
+  }
+}
+
+async function adminCompressAllPhotos(){
+  if(typeof isAdmin === 'function' && !isAdmin()){
+    showToast('⛔ Action réservée aux administrateurs.','error'); return;
+  }
+
+  var entries = _adminCollectPhotoEntries();
+  var toCompress = entries.filter(function(e){ return e.dataURL.length > 200000; });
+
+  if(toCompress.length === 0){
+    showToast('Aucune photo à compresser — tout est déjà optimisé.', 'info');
+    return;
+  }
+
+  // Confirmation
+  if(typeof askDelete !== 'function'){
+    if(!confirm('Compresser '+toCompress.length+' photo(s) ? Cette action met à jour la base de données.')) return;
+  }
+
+  // Wrapper pour async/await sur compressImageDataURL
+  function compressAsync(dataURL, opts){
+    return new Promise(function(resolve){
+      window.compressImageDataURL(dataURL, opts, function(result){ resolve(result); });
+    });
+  }
+
+  // UI : afficher la progress bar
+  var progress = el('compress-progress');
+  var label = el('compress-progress-label');
+  var bar = el('compress-progress-bar');
+  if(progress) progress.style.display = 'block';
+  el('btn-compress-all').disabled = true;
+
+  // Map des modifications par collection (pour push partial à la fin)
+  var changedCollections = new Set();
+  var totalSavedBytes = 0;
+  var failedCount = 0;
+
+  for(var i = 0; i < toCompress.length; i++){
+    var e = toCompress[i];
+    if(label) label.textContent = '('+(i+1)+'/'+toCompress.length+') Compression de "' + (e.name || 'photo') + '"...';
+    if(bar) bar.style.width = ((i / toCompress.length) * 100) + '%';
+
+    try {
+      var sizeBefore = e.dataURL.length;
+      // Adapter la qualité selon le type de collection
+      var opts;
+      if(e.collection === 'annonces') opts = {maxSize:1200, quality:0.78, maxBytes:200000};
+      else if(e.collection === 'users' || e.collection === 'candidatures') opts = {maxSize:400, quality:0.78, maxBytes:80000};
+      else opts = {maxSize:600, quality:0.75, maxBytes:120000};
+
+      var compressed = await compressAsync(e.dataURL, opts);
+
+      if(compressed && compressed.length < sizeBefore){
+        // Mettre à jour la donnée en place dans DB
+        DB[e.collection][e.idx][e.key] = compressed;
+        totalSavedBytes += (sizeBefore - compressed.length);
+        changedCollections.add(e.collection);
+      }
+    } catch(err){
+      console.warn('Compression échouée pour:', e, err);
+      failedCount++;
+    }
+
+    // Pause UI pour laisser le navigateur respirer
+    if(i % 3 === 2){
+      await new Promise(function(r){ setTimeout(r, 50); });
+    }
+  }
+
+  if(bar) bar.style.width = '100%';
+  if(label) label.textContent = '✅ Terminé. Sauvegarde sur Firebase...';
+
+  // Push partial de toutes les collections modifiées en une seule requête
+  if(changedCollections.size > 0 && typeof saveData === 'function'){
+    try {
+      saveData(Array.from(changedCollections));
+    } catch(err){
+      console.warn('saveData échoué:', err);
+      showToast('⚠ Compression OK localement mais sauvegarde Firebase échouée. Réessaie.', 'error');
+    }
+  }
+
+  // Stats finales
+  showToast('✅ ' + (toCompress.length - failedCount) + ' photo(s) compressée(s). Économie : ' + _adminFormatBytes(totalSavedBytes), 'success');
+  setTimeout(function(){
+    if(progress) progress.style.display = 'none';
+    adminAnalyzePhotos(); // re-scanner pour mettre à jour l'affichage
+  }, 1500);
+}
+
 function uploadLogo(input){
   if(typeof isAdmin === 'function' && !isAdmin()){ showToast('⛔ Action réservée aux administrateurs.','error'); input.value=''; return; }
   const file=input.files[0];if(!file)return;
@@ -21549,7 +21855,12 @@ function uploadLogo(input){
 }
 function loadImageFile(file){
   const reader=new FileReader();
-  reader.onload=e=>{DB.logo=e.target.result;saveData();applyLogo();showToast("Logo mis à jour !","success")};
+  reader.onload=e=>{
+    // 🗜 Compresser le logo (max 400px, qualité 0.85 — c'est un logo, qualité prioritaire)
+    window.compressImageDataURL(e.target.result, {maxSize:400, quality:0.85, maxBytes:80000}, function(compressed){
+      DB.logo=compressed;saveData('logo');applyLogo();showToast("Logo mis à jour !","success");
+    });
+  };
   reader.readAsDataURL(file);
 }
 function handleLogoDrop(e){
@@ -21571,7 +21882,12 @@ async function openLogoClipboard(){
         const blob=await item.getType(imgType);
         if(blob.size>512000){showToast('Image trop lourde (max 500 Ko).','error');return;}
         const reader=new FileReader();
-        reader.onload=e=>{DB.logo=e.target.result;saveData();applyLogo();showToast("Logo collé depuis le presse-papier !","success")};
+        reader.onload=e=>{
+          // 🗜 Compresser le logo
+          window.compressImageDataURL(e.target.result, {maxSize:400, quality:0.85, maxBytes:80000}, function(compressed){
+            DB.logo=compressed;saveData('logo');applyLogo();showToast("Logo collé depuis le presse-papier !","success");
+          });
+        };
         reader.readAsDataURL(blob);
         return;
       }
@@ -21784,12 +22100,15 @@ function uploadMemberPhoto(userId,input){
   if(file.size>512000){showToast('Image trop lourde (max 500 Ko).','error');input.value='';return;}
   const reader=new FileReader();
   reader.onload=e=>{
-    const u=DB.users.find(x=>String(x.id)===String(userId));if(!u)return;
-    u.photo=e.target.result;
-    if(currentUser&&currentUser.id===userId){currentUser.photo=e.target.result;refreshSidebarAvatar();}
-    saveData();renderEffectifs();
-    const c=DB.candidatures.find(x=>x.authorId===userId||x.nom===u.nom);
-    if(c){c.photo=e.target.result;renderRecrues();}
+    // 🗜 Compresser l'avatar (petit, qualité OK pour ce qu'on en fait)
+    window.compressImageDataURL(e.target.result, {maxSize:400, quality:0.78, maxBytes:80000}, function(compressed){
+      const u=DB.users.find(x=>String(x.id)===String(userId));if(!u)return;
+      u.photo=compressed;
+      if(currentUser&&currentUser.id===userId){currentUser.photo=compressed;refreshSidebarAvatar();}
+      saveData('users');renderEffectifs();
+      const c=DB.candidatures.find(x=>x.authorId===userId||x.nom===u.nom);
+      if(c){c.photo=compressed;renderRecrues();}
+    });
   };
   reader.readAsDataURL(file);
 }
@@ -21819,10 +22138,13 @@ function uploadRecruPhoto(id,input){
   const file=input.files[0];if(!file)return;
   const reader=new FileReader();
   reader.onload=e=>{
-    const c=DB.candidatures.find(x=>String(x.id)===String(id));if(!c)return;
-    c.photo=e.target.result;
-    const u=DB.users.find(x=>x.id===c.authorId||x.nom===c.nom);if(u){u.photo=e.target.result;}
-    saveData();renderRecrues();renderEffectifs();
+    // 🗜 Compresser
+    window.compressImageDataURL(e.target.result, {maxSize:400, quality:0.78, maxBytes:80000}, function(compressed){
+      const c=DB.candidatures.find(x=>String(x.id)===String(id));if(!c)return;
+      c.photo=compressed;
+      const u=DB.users.find(x=>x.id===c.authorId||x.nom===c.nom);if(u){u.photo=compressed;}
+      saveData(['candidatures','users']);renderRecrues();renderEffectifs();
+    });
   };
   reader.readAsDataURL(file);
 }
