@@ -19218,27 +19218,49 @@ function saveAnnonce(){
 let _annoncePhoto="";
 // 🗜 COMPRESSION D'IMAGES — réduit drastiquement la taille des photos uploadées
 // Avant : photos jusqu'à 1.2 Mo (data URL base64) → DB qui explose, localStorage saturé
-// Après : redimensionnement max 800px + qualité JPEG 0.75 → ~100-150 Ko par photo (gain ~85%)
+// Après : redimensionnement + WebP (avec fallback JPEG) → ~50-80 Ko par photo (gain ~92%)
 //
 // Comment ça marche :
 // 1. Charge l'image source dans un <canvas> en mémoire
-// 2. Redimensionne si trop grande (max 800px sur le côté le plus long)
-// 3. Réexporte en JPEG avec qualité 0.75 (qualité visuelle ~95% identique)
-// 4. Renvoie le data URL résultant via callback
+// 2. Redimensionne si trop grande (préserve le ratio)
+// 3. Réexporte en WebP (format moderne, ~30% plus léger que JPEG)
+//    Si le navigateur ne supporte pas WebP (très rare en 2026) → fallback JPEG
+// 4. Boucle de compression itérative : si trop gros, baisser la qualité
+// 5. Renvoie le data URL résultant via callback
 //
 // Compatible avec tous les types d'images en entrée (PNG, JPEG, WebP, GIF)
-// Sortie : toujours JPEG (le format le plus compact pour des photos)
+
+// Détection unique du support WebP (mise en cache pour ne pas refaire à chaque appel)
+window._webpSupportCache = null;
+function _webpIsSupported(){
+  if(window._webpSupportCache !== null) return window._webpSupportCache;
+  try {
+    var c = document.createElement('canvas');
+    c.width = 1; c.height = 1;
+    var dataURL = c.toDataURL('image/webp');
+    window._webpSupportCache = dataURL.indexOf('data:image/webp') === 0;
+  } catch(e){
+    window._webpSupportCache = false;
+  }
+  return window._webpSupportCache;
+}
+
 window.compressImageDataURL = function(srcDataURL, options, callback){
   options = options || {};
-  var maxSize = options.maxSize || 800;        // pixel max sur le côté le plus long
-  var quality = options.quality || 0.75;       // qualité JPEG (0-1)
-  var maxBytes = options.maxBytes || 200000;   // 200 Ko max après compression (sinon on baisse la qualité)
+  var maxSize = options.maxSize || 480;        // pixel max sur le côté le plus long
+  var quality = options.quality || 0.72;       // qualité initiale (0-1)
+  var maxBytes = options.maxBytes || 120000;   // taille max après compression (en bytes binaires)
+  var preferredFormat = options.format;        // 'webp' ou 'jpeg' (défaut: webp si supporté)
 
   if(!srcDataURL || typeof srcDataURL !== 'string' || !srcDataURL.startsWith('data:image/')){
     // Pas une image valide → renvoyer telle quelle
     if(typeof callback === 'function') callback(srcDataURL);
     return;
   }
+
+  // Choisir le format final
+  var useWebP = (preferredFormat !== 'jpeg') && _webpIsSupported();
+  var mimeType = useWebP ? 'image/webp' : 'image/jpeg';
 
   var img = new Image();
   img.onload = function(){
@@ -19252,19 +19274,34 @@ window.compressImageDataURL = function(srcDataURL, options, callback){
     canvas.width = w; canvas.height = h;
     var ctx = canvas.getContext('2d');
     // Fond blanc pour les PNG transparents (sinon JPEG les rend en noir)
-    ctx.fillStyle = '#ffffff';
-    ctx.fillRect(0, 0, w, h);
+    // WebP supporte la transparence mais on garde le fond blanc pour cohérence
+    if(!useWebP){
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, w, h);
+    }
     ctx.drawImage(img, 0, 0, w, h);
 
     // Compression itérative : si le résultat est encore trop gros, baisser la qualité
     var q = quality;
-    var result = canvas.toDataURL('image/jpeg', q);
+    var result = canvas.toDataURL(mimeType, q);
     var attempts = 0;
+    // 1.37 = ratio approximatif base64 vs binaire (4/3)
     while(result.length > maxBytes * 1.37 && q > 0.4 && attempts < 5){
-      // 1.37 = ratio approximatif base64 vs binaire
       q -= 0.1;
-      result = canvas.toDataURL('image/jpeg', q);
+      result = canvas.toDataURL(mimeType, q);
       attempts++;
+    }
+
+    // Si WebP a échoué (navigateur récalcitrant qui retourne PNG), fallback JPEG
+    if(useWebP && result.indexOf('data:image/webp') !== 0){
+      result = canvas.toDataURL('image/jpeg', quality);
+      var attempts2 = 0;
+      var q2 = quality;
+      while(result.length > maxBytes * 1.37 && q2 > 0.4 && attempts2 < 5){
+        q2 -= 0.1;
+        result = canvas.toDataURL('image/jpeg', q2);
+        attempts2++;
+      }
     }
 
     if(typeof callback === 'function') callback(result);
@@ -19293,7 +19330,7 @@ function handleAnnonceDrop(e){
 }
 function applyAnnoncePhoto(src){
   // 🗜 Compresser avant de stocker (économise jusqu'à 85% d'espace Firebase)
-  window.compressImageDataURL(src, {maxSize:1200, quality:0.78, maxBytes:200000}, function(compressed){
+  window.compressImageDataURL(src, {maxSize:900, quality:0.78, maxBytes:150000}, function(compressed){
     _annoncePhoto=compressed;
     el("a-photo-placeholder").style.display="none";
     const img=el("a-photo-preview");img.src=compressed;img.style.display="block";
@@ -19646,7 +19683,7 @@ function handleRecenseDrop(e){
 }
 function applyRecensePhoto(src){
   // 🗜 Compresser avant de stocker
-  window.compressImageDataURL(src, {maxSize:600, quality:0.75, maxBytes:120000}, function(compressed){
+  window.compressImageDataURL(src, {maxSize:480, quality:0.72, maxBytes:80000}, function(compressed){
     _recensePhoto=compressed;
     const av=el("r-photo-avatar-preview");
     if(av) av.innerHTML=`<img src="${esc(compressed)}" alt="Photo recensé" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`;
@@ -20036,7 +20073,7 @@ function loadPlaintePhoto(input){
   const reader=new FileReader();
   reader.onload=function(e){
     // 🗜 Compresser avant de stocker
-    window.compressImageDataURL(e.target.result, {maxSize:600, quality:0.75, maxBytes:120000}, function(compressed){
+    window.compressImageDataURL(e.target.result, {maxSize:480, quality:0.72, maxBytes:80000}, function(compressed){
       _plaintePhoto=compressed;
       const av=el("p-photo-avatar");
       av.innerHTML=`<img alt="" src="${compressed}" style="width:100%;height:100%;object-fit:cover">`;
@@ -20490,7 +20527,7 @@ async function pasteDossierPhoto(){
 }
 function applyDossierPhoto(src){
   // 🗜 Compresser avant de stocker
-  window.compressImageDataURL(src, {maxSize:600, quality:0.75, maxBytes:120000}, function(compressed){
+  window.compressImageDataURL(src, {maxSize:480, quality:0.72, maxBytes:80000}, function(compressed){
     el("d-photo-data").value=compressed;
     const prev=el("d-photo-preview");
     prev.innerHTML=`<img src="${esc(compressed)}" alt="Photo dossier" style="width:100%;height:100%;object-fit:cover;border-radius:6px">`;
@@ -20585,7 +20622,7 @@ async function pasteEditDossierPhoto(){
 }
 function applyEditDossierPhoto(src){
   // 🗜 Compresser avant de stocker
-  window.compressImageDataURL(src, {maxSize:600, quality:0.75, maxBytes:120000}, function(compressed){
+  window.compressImageDataURL(src, {maxSize:480, quality:0.72, maxBytes:80000}, function(compressed){
     el("ed-photo-data").value=compressed;
     const prev=el("ed-photo-preview");
     prev.innerHTML=`<img src="${esc(compressed)}" alt="Photo dossier" style="width:100%;height:100%;object-fit:cover;border-radius:6px">`;
@@ -21713,11 +21750,21 @@ function adminAnalyzePhotos(){
   }
   var entries = _adminCollectPhotoEntries();
   var totalSize = 0;
-  var bigPhotos = 0; // photos > 200 Ko
+  var bigPhotos = 0;     // photos > 100 Ko (peuvent encore être réduites)
+  var nonWebpCount = 0;  // photos pas en WebP (peuvent gagner ~30% en passant à WebP)
+  var webpSupported = (typeof _webpIsSupported === 'function') ? _webpIsSupported() : false;
   entries.forEach(function(e){
     var size = e.dataURL.length;
     totalSize += size;
-    if(size > 200000) bigPhotos++;
+    if(size > 100000) bigPhotos++; // > 100 Ko
+    if(webpSupported && !e.dataURL.startsWith('data:image/webp')) nonWebpCount++;
+  });
+
+  // Photos "à recompresser" = grosses OU pas en WebP (si WebP supporté)
+  var toCompress = entries.filter(function(e){
+    if(e.dataURL.length > 100000) return true;
+    if(webpSupported && !e.dataURL.startsWith('data:image/webp')) return true;
+    return false;
   });
 
   // Compter par collection
@@ -21730,10 +21777,13 @@ function adminAnalyzePhotos(){
 
   var html = '';
   html += '<div style="margin-bottom:6px"><strong>'+entries.length+'</strong> photo(s) trouvée(s) — taille totale : <strong>'+_adminFormatBytes(totalSize)+'</strong></div>';
-  if(bigPhotos > 0){
-    html += '<div style="color:#f59e0b;margin-bottom:8px">⚠ '+bigPhotos+' photo(s) > 200 Ko (à compresser)</div>';
+  if(toCompress.length > 0){
+    var reasons = [];
+    if(bigPhotos > 0) reasons.push(bigPhotos + ' > 100 Ko');
+    if(nonWebpCount > 0) reasons.push(nonWebpCount + ' non WebP');
+    html += '<div style="color:#f59e0b;margin-bottom:8px">⚠ '+toCompress.length+' photo(s) à optimiser ('+reasons.join(', ')+')</div>';
   } else {
-    html += '<div style="color:#22c55e;margin-bottom:8px">✓ Toutes les photos sont déjà optimisées (<200 Ko)</div>';
+    html += '<div style="color:#22c55e;margin-bottom:8px">✓ Toutes les photos sont déjà optimisées</div>';
   }
   html += '<div style="font-size:10px;color:var(--muted);text-transform:uppercase;margin:8px 0 4px">Détail par section :</div>';
   Object.keys(byColl).forEach(function(c){
@@ -21744,12 +21794,12 @@ function adminAnalyzePhotos(){
   });
   el('compress-stats-content').innerHTML = html;
 
-  // Activer le bouton si au moins une photo > 200 Ko
+  // Activer le bouton si au moins une photo à recompresser
   var btn = el('btn-compress-all');
   if(btn){
-    btn.disabled = (bigPhotos === 0);
-    if(bigPhotos > 0){
-      btn.textContent = '🗜 Compresser ' + bigPhotos + ' photo(s)';
+    btn.disabled = (toCompress.length === 0);
+    if(toCompress.length > 0){
+      btn.textContent = '🗜 Optimiser ' + toCompress.length + ' photo(s)';
     } else {
       btn.textContent = '🗜 Tout est déjà optimisé';
     }
@@ -21762,7 +21812,13 @@ async function adminCompressAllPhotos(){
   }
 
   var entries = _adminCollectPhotoEntries();
-  var toCompress = entries.filter(function(e){ return e.dataURL.length > 200000; });
+  // Détection : photos > 100 Ko OU pas en WebP (si WebP supporté)
+  var webpSupported = (typeof _webpIsSupported === 'function') ? _webpIsSupported() : false;
+  var toCompress = entries.filter(function(e){
+    if(e.dataURL.length > 100000) return true;
+    if(webpSupported && !e.dataURL.startsWith('data:image/webp')) return true;
+    return false;
+  });
 
   if(toCompress.length === 0){
     showToast('Aucune photo à compresser — tout est déjà optimisé.', 'info');
@@ -21800,11 +21856,11 @@ async function adminCompressAllPhotos(){
 
     try {
       var sizeBefore = e.dataURL.length;
-      // Adapter la qualité selon le type de collection
+      // Profil de compression selon la collection (Optimisé ++ : WebP + dimensions réduites)
       var opts;
-      if(e.collection === 'annonces') opts = {maxSize:1200, quality:0.78, maxBytes:200000};
-      else if(e.collection === 'users' || e.collection === 'candidatures') opts = {maxSize:400, quality:0.78, maxBytes:80000};
-      else opts = {maxSize:600, quality:0.75, maxBytes:120000};
+      if(e.collection === 'annonces') opts = {maxSize:900, quality:0.78, maxBytes:150000};
+      else if(e.collection === 'users' || e.collection === 'candidatures') opts = {maxSize:300, quality:0.78, maxBytes:50000};
+      else opts = {maxSize:480, quality:0.72, maxBytes:80000};
 
       var compressed = await compressAsync(e.dataURL, opts);
 
@@ -21857,7 +21913,7 @@ function loadImageFile(file){
   const reader=new FileReader();
   reader.onload=e=>{
     // 🗜 Compresser le logo (max 400px, qualité 0.85 — c'est un logo, qualité prioritaire)
-    window.compressImageDataURL(e.target.result, {maxSize:400, quality:0.85, maxBytes:80000}, function(compressed){
+    window.compressImageDataURL(e.target.result, {maxSize:300, quality:0.85, maxBytes:50000}, function(compressed){
       DB.logo=compressed;saveData('logo');applyLogo();showToast("Logo mis à jour !","success");
     });
   };
@@ -21884,7 +21940,7 @@ async function openLogoClipboard(){
         const reader=new FileReader();
         reader.onload=e=>{
           // 🗜 Compresser le logo
-          window.compressImageDataURL(e.target.result, {maxSize:400, quality:0.85, maxBytes:80000}, function(compressed){
+          window.compressImageDataURL(e.target.result, {maxSize:300, quality:0.85, maxBytes:50000}, function(compressed){
             DB.logo=compressed;saveData('logo');applyLogo();showToast("Logo collé depuis le presse-papier !","success");
           });
         };
@@ -22101,7 +22157,7 @@ function uploadMemberPhoto(userId,input){
   const reader=new FileReader();
   reader.onload=e=>{
     // 🗜 Compresser l'avatar (petit, qualité OK pour ce qu'on en fait)
-    window.compressImageDataURL(e.target.result, {maxSize:400, quality:0.78, maxBytes:80000}, function(compressed){
+    window.compressImageDataURL(e.target.result, {maxSize:300, quality:0.78, maxBytes:50000}, function(compressed){
       const u=DB.users.find(x=>String(x.id)===String(userId));if(!u)return;
       u.photo=compressed;
       if(currentUser&&currentUser.id===userId){currentUser.photo=compressed;refreshSidebarAvatar();}
@@ -22139,7 +22195,7 @@ function uploadRecruPhoto(id,input){
   const reader=new FileReader();
   reader.onload=e=>{
     // 🗜 Compresser
-    window.compressImageDataURL(e.target.result, {maxSize:400, quality:0.78, maxBytes:80000}, function(compressed){
+    window.compressImageDataURL(e.target.result, {maxSize:300, quality:0.78, maxBytes:50000}, function(compressed){
       const c=DB.candidatures.find(x=>String(x.id)===String(id));if(!c)return;
       c.photo=compressed;
       const u=DB.users.find(x=>x.id===c.authorId||x.nom===c.nom);if(u){u.photo=compressed;}
