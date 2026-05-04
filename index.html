@@ -13110,7 +13110,7 @@ document.addEventListener('error', function(e){
     <!-- Membres -->
     <div class="card" style="overflow:visible">
       <div class="card-header" style="flex-wrap:wrap;gap:10px">
-        <div style="display:flex;align-items:center;gap:10px"><span id="adm-mem-icon">👮</span><h3 id="adm-mem-title">Membres du département</h3></div>
+        <div style="display:flex;align-items:center;gap:10px"><span id="adm-mem-icon">🌐</span><h3 id="adm-mem-title">Membres — Toutes sections</h3></div>
         <div class="admin-filters-row" style="display:flex;gap:8px;align-items:center;margin-left:auto;flex-wrap:wrap">
           <!-- Filtre rôle -->
           <select id="admin-role-filter" class="form-control" style="max-width:140px;padding:6px 10px;font-size:11px;margin:0" onchange="renderAdmin()">
@@ -13124,16 +13124,6 @@ document.addEventListener('error', function(e){
             <option value="stagiaire">Stagiaire</option>
             <option value="visiteur">👁 Visiteur</option>
           </select>
-          <!-- Filtre section (NOUVEAU) -->
-          <select id="admin-section-filter" class="form-control" style="max-width:160px;padding:6px 10px;font-size:11px;margin:0" onchange="renderAdmin()">
-            <option value="">🌐 Toutes sections</option>
-            <option value="police">👮 Police</option>
-            <option value="juge">⚖️ Tribunal</option>
-            <option value="avocat">👨‍💼 Cabinet d'avocats</option>
-            <option value="mission">🎯 Missions</option>
-            <option value="medical">⚕️ Médical</option>
-            <option value="diplomatie">🤝 Diplomatie</option>
-          </select>
           <!-- Filtre statut -->
           <select id="admin-statut-filter" class="form-control" style="max-width:130px;padding:6px 10px;font-size:11px;margin:0" onchange="renderAdmin()">
             <option value="">Tous statuts</option>
@@ -13143,6 +13133,18 @@ document.addEventListener('error', function(e){
           <input type="text" id="admin-search" class="form-control" placeholder="🔍 Rechercher..." style="max-width:200px;margin:0" oninput="renderAdmin()">
         </div>
       </div>
+      <!-- Onglets par section : un tableau séparé par département -->
+      <div id="admin-section-tabs" style="display:flex;gap:0;padding:10px 18px 0;border-bottom:1px solid rgba(180,140,20,0.15);overflow-x:auto;-webkit-overflow-scrolling:touch">
+        <button class="adm-sec-tab active" data-sec="" onclick="setAdminSectionTab('')" style="background:transparent;border:none;padding:9px 14px;cursor:pointer;font-family:'Share Tech Mono',monospace;font-size:10.5px;letter-spacing:1.3px;color:var(--gold2);text-transform:uppercase;font-weight:600;position:relative;white-space:nowrap;transition:all 0.18s;border-bottom:2px solid var(--gold2);margin-bottom:-1px">🌐 Toutes <span class="adm-sec-tab-count" style="display:inline-block;margin-left:5px;padding:1px 7px;border-radius:8px;background:rgba(201,162,39,0.15);font-size:9px">0</span></button>
+        <button class="adm-sec-tab" data-sec="police" onclick="setAdminSectionTab('police')" style="background:transparent;border:none;padding:9px 14px;cursor:pointer;font-family:'Share Tech Mono',monospace;font-size:10.5px;letter-spacing:1.3px;color:var(--muted);text-transform:uppercase;font-weight:600;position:relative;white-space:nowrap;transition:all 0.18s;border-bottom:2px solid transparent;margin-bottom:-1px">👮 Police <span class="adm-sec-tab-count" style="display:inline-block;margin-left:5px;padding:1px 7px;border-radius:8px;background:rgba(180,140,20,0.1);font-size:9px">0</span></button>
+        <button class="adm-sec-tab" data-sec="juge" onclick="setAdminSectionTab('juge')" style="background:transparent;border:none;padding:9px 14px;cursor:pointer;font-family:'Share Tech Mono',monospace;font-size:10.5px;letter-spacing:1.3px;color:var(--muted);text-transform:uppercase;font-weight:600;position:relative;white-space:nowrap;transition:all 0.18s;border-bottom:2px solid transparent;margin-bottom:-1px">⚖️ Tribunal <span class="adm-sec-tab-count" style="display:inline-block;margin-left:5px;padding:1px 7px;border-radius:8px;background:rgba(124,58,237,0.12);font-size:9px;color:#a78bfa">0</span></button>
+        <button class="adm-sec-tab" data-sec="avocat" onclick="setAdminSectionTab('avocat')" style="background:transparent;border:none;padding:9px 14px;cursor:pointer;font-family:'Share Tech Mono',monospace;font-size:10.5px;letter-spacing:1.3px;color:var(--muted);text-transform:uppercase;font-weight:600;position:relative;white-space:nowrap;transition:all 0.18s;border-bottom:2px solid transparent;margin-bottom:-1px">👨‍💼 Cabinet <span class="adm-sec-tab-count" style="display:inline-block;margin-left:5px;padding:1px 7px;border-radius:8px;background:rgba(14,165,233,0.12);font-size:9px;color:#38bdf8">0</span></button>
+        <button class="adm-sec-tab" data-sec="mission" onclick="setAdminSectionTab('mission')" style="background:transparent;border:none;padding:9px 14px;cursor:pointer;font-family:'Share Tech Mono',monospace;font-size:10.5px;letter-spacing:1.3px;color:var(--muted);text-transform:uppercase;font-weight:600;position:relative;white-space:nowrap;transition:all 0.18s;border-bottom:2px solid transparent;margin-bottom:-1px">🎯 Mission <span class="adm-sec-tab-count" style="display:inline-block;margin-left:5px;padding:1px 7px;border-radius:8px;background:rgba(245,158,11,0.12);font-size:9px;color:#fbbf24">0</span></button>
+        <button class="adm-sec-tab" data-sec="medical" onclick="setAdminSectionTab('medical')" style="background:transparent;border:none;padding:9px 14px;cursor:pointer;font-family:'Share Tech Mono',monospace;font-size:10.5px;letter-spacing:1.3px;color:var(--muted);text-transform:uppercase;font-weight:600;position:relative;white-space:nowrap;transition:all 0.18s;border-bottom:2px solid transparent;margin-bottom:-1px">⚕️ Médical <span class="adm-sec-tab-count" style="display:inline-block;margin-left:5px;padding:1px 7px;border-radius:8px;background:rgba(220,38,38,0.12);font-size:9px;color:#f87171">0</span></button>
+        <button class="adm-sec-tab" data-sec="diplomatie" onclick="setAdminSectionTab('diplomatie')" style="background:transparent;border:none;padding:9px 14px;cursor:pointer;font-family:'Share Tech Mono',monospace;font-size:10.5px;letter-spacing:1.3px;color:var(--muted);text-transform:uppercase;font-weight:600;position:relative;white-space:nowrap;transition:all 0.18s;border-bottom:2px solid transparent;margin-bottom:-1px">🤝 Diplomatie <span class="adm-sec-tab-count" style="display:inline-block;margin-left:5px;padding:1px 7px;border-radius:8px;background:rgba(22,163,74,0.12);font-size:9px;color:#4ade80">0</span></button>
+      </div>
+      <!-- Champ caché qui contient la section sélectionnée (compat avec le code existant qui lit admin-section-filter) -->
+      <input type="hidden" id="admin-section-filter" value="">
       <div class="table-scroll-wrapper">
         <table class="data-table">
           <thead><tr>
@@ -17818,12 +17820,20 @@ function _applySectionUI(){
   else document.body.removeAttribute('data-admin-full-access');
 }
 
-// CSS injecté pour cacher les éléments qui ne correspondent pas à la section
+/* CSS injecté pour cacher les éléments qui ne correspondent pas à la section
+   (utilisé avec _applySectionUI pour limiter les nav-items selon la section du user) */
 (function(){
   if(document.getElementById('section-ui-style')) return;
   var s = document.createElement('style');
   s.id = 'section-ui-style';
-  s.textContent = '[data-sec-hidden]{display:none !important}';
+  s.textContent = [
+    '[data-sec-hidden]{display:none !important}',
+    /* Onglets de section dans le panel Admin → Membres */
+    '.adm-sec-tab:hover:not(.active){color:rgba(240,232,208,0.85) !important;background:rgba(180,140,20,0.04) !important}',
+    '.adm-sec-tab.active{color:var(--gold2) !important;border-bottom-color:var(--gold2) !important}',
+    '.adm-sec-tab{position:relative;border-radius:6px 6px 0 0}',
+    '.adm-sec-tab.active::before{content:"";position:absolute;top:0;left:8px;right:8px;height:1px;background:linear-gradient(to right,transparent,var(--gold2),transparent);opacity:0.4}'
+  ].join('\n');
   document.head.appendChild(s);
 })();
 
@@ -21412,6 +21422,18 @@ function renderAdmin(){
   if(el("adm-stat-actif"))el("adm-stat-actif").textContent=DB.users.filter(u=>u.statut==="Actif").length;
   if(el("adm-stat-inactif"))el("adm-stat-inactif").textContent=DB.users.filter(u=>u.statut!=="Actif").length;
   if(el("adm-stat-admin"))el("adm-stat-admin").textContent=DB.users.filter(u=>u.role==="admin").length;
+  // Mettre à jour les compteurs des onglets de section
+  var allUsers = DB.users || [];
+  var counts = { '': allUsers.length, police:0, juge:0, avocat:0, mission:0, medical:0, diplomatie:0 };
+  allUsers.forEach(function(u){
+    var s = u.section || 'police';
+    if(typeof counts[s] !== 'undefined') counts[s]++;
+  });
+  document.querySelectorAll('.adm-sec-tab').forEach(function(tab){
+    var s = tab.getAttribute('data-sec') || '';
+    var countEl = tab.querySelector('.adm-sec-tab-count');
+    if(countEl) countEl.textContent = counts[s] || 0;
+  });
   const q=(el("admin-search")?.value||"").toLowerCase();
   const roleF=(el("admin-role-filter")?.value||"").toLowerCase();
   const statutF=(el("admin-statut-filter")?.value||"");
@@ -21470,6 +21492,31 @@ function renderAdmin(){
     </tr>`;
   }).join("")||`<tr><td colspan="8" style="text-align:center;color:var(--muted);padding:18px">Aucun résultat</td></tr>`;
 }
+
+// ─── Onglets de section dans le panel Admin → Membres ───
+// Permet de filtrer la liste des membres par département (Police, Tribunal, Cabinet, etc.)
+function setAdminSectionTab(section){
+  // Mettre à jour le champ caché qui sert de filtre dans renderAdmin
+  var hidden = el('admin-section-filter');
+  if(hidden) hidden.value = section || '';
+  // Mettre à jour le style des onglets
+  document.querySelectorAll('.adm-sec-tab').forEach(function(tab){
+    var s = tab.getAttribute('data-sec') || '';
+    var isActive = s === (section || '');
+    if(isActive){
+      tab.classList.add('active');
+      tab.style.color = 'var(--gold2)';
+      tab.style.borderBottomColor = 'var(--gold2)';
+    } else {
+      tab.classList.remove('active');
+      tab.style.color = 'var(--muted)';
+      tab.style.borderBottomColor = 'transparent';
+    }
+  });
+  // Re-render avec le nouveau filtre
+  renderAdmin();
+}
+
 function exportAdminData(){
   const rows=[["Identifiant","Nom RP","Section","Grade","Rôle","Statut","Créé le"],...DB.users.map(u=>[u.login,u.nom,(u.section||'police'),u.grade,u.role,u.statut||"Actif",u.created?fmtDate(u.created):""])];
   const csv=rows.map(r=>r.map(c=>'"'+String(c).replace(/"/g,'""')+'"').join(",")).join("\n");
@@ -21544,6 +21591,28 @@ function openEditUser(id){
     sectionSelect.disabled = !canChangeSection;
     sectionSelect.title = canChangeSection ? '' : 'Seuls les Administrateurs peuvent changer la section d\'un compte';
   }
+  // PERMISSION NOM / MOT DE PASSE : seuls les Admins peuvent les modifier
+  // (les Gérants/Sergents/etc. peuvent voir mais pas modifier ces champs sensibles)
+  var canChangeIdentity = isAdmin();
+  var nomInput = el("eu-nom");
+  var passInput = el("eu-pass");
+  var nomGroup = nomInput && nomInput.closest('.form-group');
+  var passGroup = passInput && passInput.closest('.form-group');
+  if(nomGroup){
+    nomGroup.classList.toggle('is-locked', !canChangeIdentity);
+    nomInput.disabled = !canChangeIdentity;
+    nomInput.readOnly = !canChangeIdentity;
+    nomInput.title = canChangeIdentity ? '' : 'Seuls les Administrateurs peuvent modifier le nom RP';
+  }
+  if(passGroup){
+    passGroup.classList.toggle('is-locked', !canChangeIdentity);
+    passInput.disabled = !canChangeIdentity;
+    passInput.readOnly = !canChangeIdentity;
+    passInput.title = canChangeIdentity ? '' : 'Seuls les Administrateurs peuvent modifier le mot de passe';
+    // Cacher l'œil "afficher mot de passe" pour les non-admins
+    var passEye = passInput.parentElement && passInput.parentElement.querySelector('span[onclick*="togglePass"]');
+    if(passEye) passEye.style.display = canChangeIdentity ? '' : 'none';
+  }
   // Bloquer uniquement la suppression de son propre compte
   const delBtn=document.querySelector("#modal-edituser .btn-danger");
   if(delBtn){const isSelf=u.id===currentUser.id;delBtn.disabled=isSelf;delBtn.style.opacity=isSelf?"0.4":"1";delBtn.title=isSelf?"Vous ne pouvez pas supprimer votre propre compte":""}
@@ -21617,11 +21686,21 @@ function saveEditUser(){
   const newGrade=v("eu-grade");
   const newSection=v("eu-section")||(u.section||'police');
   const oldSection=u.section||'police';
+  const newNom=v("eu-nom")||u.nom;
+  const newPass=el("eu-pass").value;
   // SÉCURITÉ : si l'utilisateur n'est pas Admin/Gérant, on FORCE grade et rôle inchangés
   // (même si quelqu'un déverrouille les champs via la console pour bypass le cadenas visuel)
   const canEdit = canEditGrade();
   if(!canEdit && (newGrade !== u.grade || newRole !== u.role)){
     showToast("⛔ Seuls les Administrateurs et Gérants peuvent modifier le grade et le rôle.","error");return;
+  }
+  // SÉCURITÉ NOM / MOT DE PASSE : seuls les Admins peuvent les modifier
+  // (double check : même si le bypass via console désactive readOnly, on refuse côté JS)
+  if(!isAdmin() && newNom !== u.nom){
+    showToast("⛔ Seuls les Administrateurs peuvent modifier le nom RP.","error");return;
+  }
+  if(!isAdmin() && newPass){
+    showToast("⛔ Seuls les Administrateurs peuvent modifier le mot de passe.","error");return;
   }
   // SÉCURITÉ SECTION : seuls les Admins peuvent changer la section
   if(newSection !== oldSection && !isAdmin()){
@@ -21641,8 +21720,8 @@ function saveEditUser(){
     showToast("Impossible : vous êtes le seul administrateur. Attribuez d'abord le rôle Admin à un autre compte.","error");return;
   }
   const oldNom=u.nom;
-  u.nom=v("eu-nom")||u.nom;
-  const newPass=el("eu-pass").value;
+  // Appliquer le nom UNIQUEMENT si admin (sinon on garde l'ancien)
+  if(isAdmin()) u.nom = newNom;
   const finalize=()=>{
     _loginInProgress=false;
     // Appliquer grade/rôle UNIQUEMENT si l'utilisateur a la permission
@@ -21657,7 +21736,8 @@ function saveEditUser(){
     closeModal("modal-edituser");renderAdmin();renderEffectifs();renderRecrues();syncDashboard();
     showToast("Compte mis à jour.","success");
   };
-  if(newPass){
+  // Appliquer le mot de passe UNIQUEMENT si admin
+  if(newPass && isAdmin()){
     _loginInProgress=true;
     hashPass(newPass).then(h=>{u.pass=h;finalize();}).catch(()=>{_loginInProgress=false;showToast("Erreur lors du hachage du mot de passe.","error");});
   } else {
