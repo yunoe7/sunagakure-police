@@ -23683,12 +23683,52 @@ var SECTION_ROLE_LABELS = {
     cogerant:  "⚕️ Médecin-chef",
     gerant:    "🎖 Directeur d'hôpital",
     admin:     "🔴 Administrateur"
+  },
+  juge: {
+    visiteur:  "👁 Visiteur",
+    stagiaire: "🎓 Greffier stagiaire",
+    officier:  "📜 Greffier",
+    sergent:   "⚖️ Juge",
+    cogerant:  "🏛️ Juge senior",
+    gerant:    "👨‍⚖️ Juge suprême",
+    admin:     "🔴 Administrateur"
+  },
+  avocat: {
+    visiteur:  "👁 Visiteur",
+    stagiaire: "🎓 Avocat stagiaire",
+    officier:  "💼 Avocat",
+    sergent:   "📚 Avocat senior",
+    cogerant:  "⚖️ Maître associé",
+    gerant:    "🏛️ Bâtonnier",
+    admin:     "🔴 Administrateur"
+  },
+  mission: {
+    visiteur:  "👁 Visiteur",
+    stagiaire: "🎓 Recrue",
+    officier:  "🥷 Agent",
+    sergent:   "⚔️ Agent senior",
+    cogerant:  "🎯 Chef de mission",
+    gerant:    "🗺️ Coordinateur",
+    admin:     "🔴 Administrateur"
+  },
+  diplomatie: {
+    visiteur:  "👁 Visiteur",
+    stagiaire: "🎓 Attaché stagiaire",
+    officier:  "📋 Attaché",
+    sergent:   "🤝 Diplomate",
+    cogerant:  "📜 Conseiller",
+    gerant:    "🏛️ Ambassadeur",
+    admin:     "🔴 Administrateur"
   }
 };
 // Rôles à EXCLURE des selects (par section). Le rôle reste valide techniquement
 // (legacy users) mais n'apparaît plus dans les listes déroulantes.
 var SECTION_ROLE_EXCLUDES = {
-  medical: ['membre']
+  medical:    ['membre'],
+  juge:       ['membre'],
+  avocat:     ['membre'],
+  mission:    ['membre'],
+  diplomatie: ['membre']
 };
 // roleLabel(role, section?) — section optionnelle pour rétrocompatibilité.
 // Si la section a un mapping personnalisé qui couvre ce rôle, on l'utilise.
