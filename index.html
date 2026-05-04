@@ -7292,7 +7292,9 @@ document.addEventListener('error', function(e){
     <!-- TRIBUNAL (Juge) -->
     <div class="nav-section" data-sec="juge">Tribunal</div>
     <div class="nav-item" role="button" tabindex="0" onclick="showPage('juge-audiences')" data-page="juge-audiences" data-sec="juge"><span class="icon">📅</span> Audiences</div>
-    <div class="nav-item" role="button" tabindex="0" onclick="showPage('juge-jugements')" data-page="juge-jugements" data-sec="juge"><span class="icon">⚖️</span> Jugements</div>
+    <div class="nav-item" role="button" tabindex="0" onclick="showPage('juge-affaires')" data-page="juge-affaires" data-sec="juge"><span class="icon">📁</span> Affaires en cours <span class="nav-badge" id="badge-juge-affaires" style="background:var(--accent);display:none">0</span></div>
+    <div class="nav-item" role="button" tabindex="0" onclick="showPage('juge-jugements')" data-page="juge-jugements" data-sec="juge"><span class="icon">⚖️</span> Jugements rendus</div>
+    <div class="nav-item" role="button" tabindex="0" onclick="showPage('juge-procedure')" data-page="juge-procedure" data-sec="juge"><span class="icon">📜</span> Code de procédure</div>
     <div class="nav-item" role="button" tabindex="0" onclick="showPage('juge-archives')" data-page="juge-archives" data-sec="juge"><span class="icon">📚</span> Archives</div>
     <!-- AVOCAT -->
     <div class="nav-section" data-sec="avocat">Cabinet d'avocats</div>
@@ -8445,6 +8447,7 @@ document.addEventListener('error', function(e){
       <div class="tab-btn active" onclick="filterPlaintes('all',this)">Toutes</div>
       <div class="tab-btn" onclick="filterPlaintes('ouverte',this)">Ouvertes</div>
       <div class="tab-btn" onclick="filterPlaintes('en_cours',this)">En cours</div>
+      <div class="tab-btn" onclick="filterPlaintes('transmise_tribunal',this)">⚖️ Au Tribunal</div>
       <div class="tab-btn" onclick="filterPlaintes('fermee',this)">Fermées</div>
     </div>
     <div class="card" style="overflow:visible">
@@ -10652,7 +10655,12 @@ document.addEventListener('error', function(e){
        Stockage Firebase : DB.sectionData[section][page] = [{id, titre, contenu, auteur, date}]
        ═══════════════════════════════════════════════════════════════════════ -->
 
-  <!-- TRIBUNAL — Audiences -->
+  <!-- ═══════════════════════════════════════════════════════════════════════
+       TRIBUNAL DE SUNAGAKURE — 5 pages avec système d'affaires complet
+       Stockage : DB.tribunal = { affaires:[], audiences:[], jugements:[], procedure:[], jurisprudence:[] }
+       ═══════════════════════════════════════════════════════════════════════ -->
+
+  <!-- TRIBUNAL — Audiences (calendrier + planification) -->
   <div class="page-content" id="page-juge-audiences" data-sec-page="juge">
     <div class="pgv2-hero" data-tone="profil">
       <div class="pgv2-hero-inner">
@@ -10660,41 +10668,180 @@ document.addEventListener('error', function(e){
         <div class="pgv2-hero-text">
           <div class="pgv2-hero-tag">Tribunal de Sunagakure</div>
           <div class="pgv2-hero-title">Audiences</div>
-          <div class="pgv2-hero-sub">Calendrier officiel des audiences du tribunal</div>
+          <div class="pgv2-hero-sub">Calendrier officiel des audiences planifiées</div>
+        </div>
+        <div class="pgv2-hero-stats">
+          <div class="pgv2-hero-stat" data-tone="green"><div class="num" id="trib-stat-aud-jour">0</div><div class="lbl">Aujourd'hui</div></div>
+          <div class="pgv2-hero-stat"><div class="num" id="trib-stat-aud-semaine">0</div><div class="lbl">Cette semaine</div></div>
+          <div class="pgv2-hero-stat" data-tone="blue"><div class="num" id="trib-stat-aud-total">0</div><div class="lbl">Total à venir</div></div>
+        </div>
+        <div class="pgv2-hero-actions">
+          <button class="btn btn-primary" id="btn-trib-new-audience" onclick="tribOpenAudience()">+ Planifier une audience</button>
         </div>
       </div>
     </div>
-    <div class="card" data-sec-card="juge:audiences"></div>
+
+    <!-- Filtres -->
+    <div class="card" style="margin-bottom:14px;padding:14px 16px">
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        <input type="text" id="trib-aud-search" class="form-control" placeholder="🔍 Rechercher (affaire, juge, lieu...)" style="flex:1;min-width:200px;margin:0" oninput="tribRenderAudiences()">
+        <select id="trib-aud-filter" class="form-control" style="max-width:170px;margin:0" onchange="tribRenderAudiences()">
+          <option value="all">📅 Toutes</option>
+          <option value="upcoming">⏳ À venir</option>
+          <option value="today">📍 Aujourd'hui</option>
+          <option value="week">📆 Cette semaine</option>
+          <option value="past">✓ Passées</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Liste -->
+    <div id="trib-aud-list"></div>
   </div>
 
-  <!-- TRIBUNAL — Jugements -->
+  <!-- TRIBUNAL — Affaires en cours (système complet) -->
+  <div class="page-content" id="page-juge-affaires" data-sec-page="juge">
+    <div class="pgv2-hero" data-tone="profil">
+      <div class="pgv2-hero-inner">
+        <div class="pgv2-hero-icon">📁</div>
+        <div class="pgv2-hero-text">
+          <div class="pgv2-hero-tag">Tribunal de Sunagakure</div>
+          <div class="pgv2-hero-title">Affaires en cours</div>
+          <div class="pgv2-hero-sub">Dossiers actifs, charges, parties et audiences associées</div>
+        </div>
+        <div class="pgv2-hero-stats">
+          <div class="pgv2-hero-stat" data-tone="orange"><div class="num" id="trib-stat-aff-instr">0</div><div class="lbl">Instruction</div></div>
+          <div class="pgv2-hero-stat" data-tone="blue"><div class="num" id="trib-stat-aff-aud">0</div><div class="lbl">En audience</div></div>
+          <div class="pgv2-hero-stat" data-tone="purple"><div class="num" id="trib-stat-aff-delib">0</div><div class="lbl">Délibéré</div></div>
+        </div>
+        <div class="pgv2-hero-actions">
+          <button class="btn btn-primary" onclick="tribOpenAffaire()">+ Ouvrir une affaire</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Plaintes Police transmises (alerte) -->
+    <div id="trib-plaintes-banner" style="display:none;margin-bottom:14px"></div>
+
+    <!-- Filtres -->
+    <div class="card" style="margin-bottom:14px;padding:14px 16px">
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        <input type="text" id="trib-aff-search" class="form-control" placeholder="🔍 Rechercher (n° dossier, accusé, charges...)" style="flex:1;min-width:220px;margin:0" oninput="tribRenderAffaires()">
+        <select id="trib-aff-statut" class="form-control" style="max-width:170px;margin:0" onchange="tribRenderAffaires()">
+          <option value="all">⚖️ Tous statuts</option>
+          <option value="instruction">📂 Instruction</option>
+          <option value="audience">🎤 En audience</option>
+          <option value="delibere">⏸ Délibéré</option>
+          <option value="cloturee">✓ Clôturée</option>
+        </select>
+        <select id="trib-aff-gravite" class="form-control" style="max-width:160px;margin:0" onchange="tribRenderAffaires()">
+          <option value="all">Toutes gravités</option>
+          <option value="legere">▸ Légère</option>
+          <option value="moyenne">◆ Moyenne</option>
+          <option value="grave">⚠ Grave</option>
+          <option value="critique">🔥 Critique</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Liste -->
+    <div id="trib-aff-list"></div>
+  </div>
+
+  <!-- TRIBUNAL — Jugements rendus -->
   <div class="page-content" id="page-juge-jugements" data-sec-page="juge">
     <div class="pgv2-hero" data-tone="profil">
       <div class="pgv2-hero-inner">
         <div class="pgv2-hero-icon">⚖️</div>
         <div class="pgv2-hero-text">
           <div class="pgv2-hero-tag">Tribunal de Sunagakure</div>
-          <div class="pgv2-hero-title">Jugements</div>
-          <div class="pgv2-hero-sub">Registre des décisions rendues par le tribunal</div>
+          <div class="pgv2-hero-title">Jugements rendus</div>
+          <div class="pgv2-hero-sub">Registre officiel des décisions et verdicts</div>
+        </div>
+        <div class="pgv2-hero-stats">
+          <div class="pgv2-hero-stat" data-tone="green"><div class="num" id="trib-stat-jug-acq">0</div><div class="lbl">Acquittements</div></div>
+          <div class="pgv2-hero-stat" data-tone="orange"><div class="num" id="trib-stat-jug-cond">0</div><div class="lbl">Condamnations</div></div>
+          <div class="pgv2-hero-stat"><div class="num" id="trib-stat-jug-total">0</div><div class="lbl">Total</div></div>
         </div>
       </div>
     </div>
-    <div class="card" data-sec-card="juge:jugements"></div>
+
+    <!-- Filtres -->
+    <div class="card" style="margin-bottom:14px;padding:14px 16px">
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        <input type="text" id="trib-jug-search" class="form-control" placeholder="🔍 Rechercher (accusé, charge, juge...)" style="flex:1;min-width:220px;margin:0" oninput="tribRenderJugements()">
+        <select id="trib-jug-verdict" class="form-control" style="max-width:170px;margin:0" onchange="tribRenderJugements()">
+          <option value="all">Tous verdicts</option>
+          <option value="acquitte">✓ Acquitté</option>
+          <option value="coupable">⚠ Coupable</option>
+          <option value="reduit">◆ Charges réduites</option>
+          <option value="renvoi">↻ Renvoyé</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Liste -->
+    <div id="trib-jug-list"></div>
   </div>
 
-  <!-- TRIBUNAL — Archives -->
+  <!-- TRIBUNAL — Code de procédure -->
+  <div class="page-content" id="page-juge-procedure" data-sec-page="juge">
+    <div class="pgv2-hero" data-tone="profil">
+      <div class="pgv2-hero-inner">
+        <div class="pgv2-hero-icon">📜</div>
+        <div class="pgv2-hero-text">
+          <div class="pgv2-hero-tag">Tribunal de Sunagakure</div>
+          <div class="pgv2-hero-title">Code de procédure</div>
+          <div class="pgv2-hero-sub">Articles régissant le déroulement des procédures judiciaires</div>
+        </div>
+        <div class="pgv2-hero-actions">
+          <button class="btn btn-primary" id="btn-trib-new-proc" onclick="tribOpenProcedure()">+ Nouvel article</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-bottom:14px;padding:14px 16px">
+      <input type="text" id="trib-proc-search" class="form-control" placeholder="🔍 Rechercher dans le code de procédure..." style="margin:0" oninput="tribRenderProcedure()">
+    </div>
+    <div id="trib-proc-list"></div>
+  </div>
+
+  <!-- TRIBUNAL — Archives & Jurisprudence -->
   <div class="page-content" id="page-juge-archives" data-sec-page="juge">
     <div class="pgv2-hero" data-tone="profil">
       <div class="pgv2-hero-inner">
         <div class="pgv2-hero-icon">📚</div>
         <div class="pgv2-hero-text">
           <div class="pgv2-hero-tag">Tribunal de Sunagakure</div>
-          <div class="pgv2-hero-title">Archives</div>
-          <div class="pgv2-hero-sub">Anciennes affaires, jurisprudences et documents historiques</div>
+          <div class="pgv2-hero-title">Archives & Jurisprudence</div>
+          <div class="pgv2-hero-sub">Affaires clôturées et précédents juridiques</div>
+        </div>
+        <div class="pgv2-hero-stats">
+          <div class="pgv2-hero-stat"><div class="num" id="trib-stat-arch-aff">0</div><div class="lbl">Affaires archivées</div></div>
+          <div class="pgv2-hero-stat" data-tone="green"><div class="num" id="trib-stat-arch-jur">0</div><div class="lbl">Précédents</div></div>
         </div>
       </div>
     </div>
-    <div class="card" data-sec-card="juge:archives"></div>
+
+    <!-- Tabs -->
+    <div class="tab-row" style="margin-bottom:14px">
+      <button class="tab-btn active" id="trib-arch-tab-aff" onclick="tribArchSwitch('affaires')">📁 Affaires archivées</button>
+      <button class="tab-btn" id="trib-arch-tab-jur" onclick="tribArchSwitch('jurisprudence')">⚖️ Jurisprudence</button>
+    </div>
+
+    <div id="trib-arch-aff-pane">
+      <div class="card" style="margin-bottom:14px;padding:14px 16px">
+        <input type="text" id="trib-arch-search" class="form-control" placeholder="🔍 Rechercher dans les archives..." style="margin:0" oninput="tribRenderArchives()">
+      </div>
+      <div id="trib-arch-list"></div>
+    </div>
+
+    <div id="trib-arch-jur-pane" style="display:none">
+      <div class="card" style="margin-bottom:14px;padding:14px 16px">
+        <input type="text" id="trib-jur-search" class="form-control" placeholder="🔍 Rechercher dans la jurisprudence..." style="margin:0" oninput="tribRenderJurisprudence()">
+      </div>
+      <div id="trib-jur-list"></div>
+    </div>
   </div>
 
   <!-- AVOCAT — Mes clients -->
@@ -13301,8 +13448,21 @@ document.addEventListener('error', function(e){
     </div>
     <!-- Grades -->
     <div class="card mb-4">
-      <div class="card-header"><span>🎖️</span><h3>Gestion des grades</h3></div>
+      <div class="card-header" style="justify-content:space-between">
+        <div style="display:flex;align-items:center;gap:8px"><span>🎖️</span><h3>Gestion des grades</h3></div>
+        <select id="grades-section-tabs" class="form-control" style="max-width:200px;padding:5px 10px;font-size:11px;margin:0" onchange="renderGradesList();populateGradeSelects()">
+          <option value="police">👮 Police</option>
+          <option value="juge">⚖️ Tribunal</option>
+          <option value="avocat">👨‍💼 Cabinet d'avocats</option>
+          <option value="mission">🎯 Bureau des missions</option>
+          <option value="medical">⚕️ Hôpital</option>
+          <option value="diplomatie">🤝 Diplomatie</option>
+        </select>
+      </div>
       <div class="card-body">
+        <div style="font-size:10px;color:var(--muted);font-family:'Share Tech Mono',monospace;letter-spacing:1px;margin-bottom:10px;text-transform:uppercase" id="grades-section-info">
+          Grades affichés pour la section sélectionnée. Chaque section a ses propres grades, indépendants des autres.
+        </div>
         <div id="grades-list" style="display:flex;flex-wrap:wrap;gap:7px;margin-bottom:14px"></div>
         <div class="flex gap-2 items-center flex-wrap">
           <input type="text" id="new-grade-input" class="form-control" placeholder="Nouveau grade..." style="max-width:220px">
@@ -15123,6 +15283,16 @@ function plv2SelectCible(el,val){
       <div class="form-group"><label class="form-label">Nom RP</label><input type="text" id="eu-nom" class="form-control"></div>
       <div class="form-group"><label class="form-label">Nouveau mot de passe <span style="color:var(--muted)">(laisser vide = inchangé)</span></label>
         <div style="position:relative"><input type="password" id="eu-pass" class="form-control" placeholder="Nouveau mot de passe" style="padding-right:40px"><span onclick="togglePass('eu-pass',this)" style="position:absolute;right:11px;top:50%;transform:translateY(-50%);cursor:pointer;font-size:18px;opacity:0.75;transition:opacity 0.2s;user-select:none" title="Afficher/masquer">👁</span></div></div>
+      <div class="form-group"><label class="form-label">Section / Département</label>
+        <select id="eu-section" class="form-control" onchange="onEuSectionChange()">
+          <option value="police">👮 Police</option>
+          <option value="juge">⚖️ Tribunal</option>
+          <option value="avocat">👨‍💼 Cabinet d'avocats</option>
+          <option value="mission">🎯 Bureau des missions</option>
+          <option value="medical">⚕️ Hôpital</option>
+          <option value="diplomatie">🤝 Diplomatie</option>
+        </select>
+      </div>
       <div class="grid grid-2">
         <div class="form-group"><label class="form-label">Grade</label>
           <select id="eu-grade" class="form-control"></select></div>
@@ -15597,6 +15767,10 @@ function initFirebaseSync(){
           if(_ai && document.activeElement!==_ai) _ai.value = DB.commissaire || "";
         }
         if(data.grades) DB.grades=data.grades;
+        // Sync des grades par section (Tribunal, Cabinet, Médical, etc.)
+        if(data.sectionGrades && typeof data.sectionGrades === 'object'){
+          DB.sectionGrades = data.sectionGrades;
+        }
         if(data.adminNotes) DB.adminNotes=data.adminNotes;
         if(data.loginHistory) DB.loginHistory=data.loginHistory;
         // bug-fix : synchroniser le logo. Sans ça, quand l'admin change le logo
@@ -15662,6 +15836,18 @@ function initFirebaseSync(){
             _changedKeys.add('sectionData');
           }
         }
+        // Pareil pour DB.tribunal (système d'affaires, audiences, jugements, etc.)
+        if(data.tribunal && typeof data.tribunal === 'object'){
+          var _tribChanged = JSON.stringify(DB.tribunal||{}) !== JSON.stringify(data.tribunal);
+          if(_tribChanged){
+            DB.tribunal = data.tribunal;
+            // Garantir que les arrays existent toujours (sinon les .filter() crashent)
+            ['affaires','audiences','jugements','procedure','jurisprudence'].forEach(function(k){
+              if(!Array.isArray(DB.tribunal[k])) DB.tribunal[k] = [];
+            });
+            _changedKeys.add('tribunal');
+          }
+        }
         try{localStorage.setItem(STORE,JSON.stringify(DB));}catch(e){}
 
         // ═══ BUG-FIX MAJEUR : RE-RENDER DE LA PAGE COURANTE SI SES DONNÉES ONT CHANGÉ ═══
@@ -15710,7 +15896,7 @@ function initFirebaseSync(){
             }
             // BUG-FIX SECTION : re-render des pages des sections non-Police si sectionData a changé
             // (le pageRenderers ne couvre pas ces pages génériques)
-            if(activePage && _changedKeys.has('sectionData') && /^(juge|avocat|mission|medical|diplo)-/.test(activePage)){
+            if(activePage && _changedKeys.has('sectionData') && /^(avocat|mission|medical|diplo)-/.test(activePage)){
               // Protection : ne pas re-render si l'utilisateur est en train d'éditer une entrée
               // (le formulaire d'édition section n'est pas une modale, donc anyModalOpen ne le détecte pas)
               var isEditingSection = false;
@@ -15723,6 +15909,14 @@ function initFirebaseSync(){
               }catch(e){}
               if(!isEditingSection && typeof renderSectionPage === 'function'){
                 try{ renderSectionPage(activePage); }catch(e){}
+              }
+            }
+            // BUG-FIX TRIBUNAL : re-render des pages Tribunal (juge-*) si DB.tribunal a changé
+            if(activePage && _changedKeys.has('tribunal') && /^juge-/.test(activePage)){
+              // Protection : ne pas re-render si une modal Tribunal est ouverte (édition d'affaire/audience/jugement)
+              var tribModalOpen = !!document.getElementById('trib-modal');
+              if(!tribModalOpen && typeof tribRenderPage === 'function'){
+                try{ tribRenderPage(activePage); }catch(e){}
               }
             }
             // Toujours mettre à jour les badges de notification (tout en haut + bottom-nav)
@@ -17731,8 +17925,8 @@ function saveCommNameAdmin(){
 
 // NAV
 const PAGES={dashboard:"Tableau de bord",annonces:"Annonces",recensement:"Recensement",recrutement:"Recrutement",plaintes:"Plaintes",dossiers:"Dossiers criminels",codepenal:"Code Pénal",histoire:"Histoire",operations:"Opérations",effectifs:"Effectifs",hierarchie:"Hiérarchie",sanctions:"Sanctions & Promotions",impots:"Impôts",admin:"Panel Admin",messagerie:"Messagerie",profil:"Mon profil",bingobook:"Bingo Book",
-  // Tribunal
-  "juge-audiences":"Audiences","juge-jugements":"Jugements","juge-archives":"Archives",
+  // Tribunal (5 pages)
+  "juge-audiences":"Audiences","juge-affaires":"Affaires en cours","juge-jugements":"Jugements rendus","juge-procedure":"Code de procédure","juge-archives":"Archives & Jurisprudence",
   // Avocat
   "avocat-clients":"Mes clients","avocat-affaires":"Affaires en cours","avocat-plaidoiries":"Plaidoiries",
   // Mission
@@ -17744,7 +17938,7 @@ const PAGES={dashboard:"Tableau de bord",annonces:"Annonces",recensement:"Recens
 };
 const VISITOR_PAGES=["dashboard","annonces","recensement","recrutement","plaintes","codepenal","histoire","profil","bingobook",
   // Pages des sections : visibles par les visiteurs de leur section (les visiteurs des autres sections ne pourront pas y accéder via _applySectionUI)
-  "juge-audiences","juge-jugements","juge-archives",
+  "juge-audiences","juge-affaires","juge-jugements","juge-procedure","juge-archives",
   "avocat-clients","avocat-affaires","avocat-plaidoiries",
   "mission-disponibles","mission-actives","mission-recompenses",
   "medical-patients","medical-consultations","medical-pharmacie",
@@ -17884,8 +18078,12 @@ function renderPage(name){
     }
   }
   if(name==="bingobook")bbRender();
-  // Pages des sections non-Police (juge, avocat, mission, médical, diplomatie)
-  if(typeof renderSectionPage === 'function' && /^(juge|avocat|mission|medical|diplo)-/.test(name)){
+  // Pages du Tribunal : système dédié riche (affaires, audiences, jugements, procédure, jurisprudence)
+  if(typeof tribRenderPage === 'function' && /^juge-/.test(name)){
+    tribRenderPage(name);
+  }
+  // Pages des AUTRES sections (avocat, mission, médical, diplomatie) : système générique
+  else if(typeof renderSectionPage === 'function' && /^(avocat|mission|medical|diplo)-/.test(name)){
     renderSectionPage(name);
   }
   if(name==="messagerie"){
@@ -18050,6 +18248,14 @@ function updateBadges(){
   _setBadge("badge-recrutement",nRec,true);
   _setBadge("badge-operations",nOp,true);
   _setBadge("badge-dossiers",nD,true);
+  // Badge Tribunal — Affaires en cours (toutes les affaires non jugées et non archivées)
+  if(DB.tribunal && Array.isArray(DB.tribunal.affaires)){
+    var nAff = DB.tribunal.affaires.filter(function(a){
+      var s = a.statut || 'ouverte';
+      return s !== 'jugee' && s !== 'archivee';
+    }).length;
+    _setBadge("badge-juge-affaires", nAff, true);
+  }
   // Drawer badges
   _setBadge("dbadge-recrutement",nRec,true);
   _setBadge("dbadge-operations",nOp,true);
@@ -19439,6 +19645,8 @@ function viewPlainte(id){
   if(canModify()){
     if(p.statut==="ouverte")vpFooter.innerHTML+=`<button class="btn btn-primary btn-sm" onclick="setPlainteStatut(${p.id},'en_cours')">Prendre en charge</button>`;
     if(p.statut==="en_cours")vpFooter.innerHTML+=`<button class="btn btn-success btn-sm" onclick="setPlainteStatut(${p.id},'fermee')">Clôturer</button>`;
+    // Bouton transmettre au Tribunal (disponible sur ouverte ou en_cours)
+    if(p.statut==="ouverte"||p.statut==="en_cours")vpFooter.innerHTML+=`<button class="btn btn-gold btn-sm" onclick="setPlainteStatut(${p.id},'transmise_tribunal')" title="Transmettre cette plainte au Tribunal pour ouvrir une affaire">⚖️ Transmettre au Tribunal</button>`;
   }
   vpFooter.innerHTML+=`<button class="btn btn-outline btn-sm" onclick="closeModal('modal-view-plainte')">Fermer</button>`;
   openModal("modal-view-plainte");
@@ -20791,33 +20999,99 @@ function isProtectedGradeName(name){
   return PROTECTED_ROLE_NAMES.includes(name.toLowerCase().trim());
 }
 function getGrades(){return DB.grades||(DB.grades=["Gérant","Co-Gérant","Sergent","Officier","Stagiaire"])}
+// Grades par défaut pour chaque section non-Police
+var DEFAULT_SECTION_GRADES = {
+  juge:      ["Juge suprême","Juge senior","Juge","Greffier","Stagiaire"],
+  avocat:    ["Bâtonnier","Avocat sénior","Avocat","Avocat stagiaire","Stagiaire"],
+  mission:   ["Coordinateur","Chef de mission","Agent senior","Agent","Stagiaire"],
+  medical:   ["Médecin-chef","Médecin senior","Médecin","Infirmier","Stagiaire"],
+  diplomatie:["Ambassadeur","Conseiller","Diplomate","Attaché","Stagiaire"]
+};
+// Grades stockés par section dans DB.sectionGrades[section] = [...]
+function getGradesForSection(section){
+  if(!section || section === 'police') return getGrades();
+  if(!DB.sectionGrades) DB.sectionGrades = {};
+  if(!Array.isArray(DB.sectionGrades[section])){
+    DB.sectionGrades[section] = (DEFAULT_SECTION_GRADES[section] || ["Membre"]).slice();
+  }
+  return DB.sectionGrades[section];
+}
+// Récupère la section actuellement sélectionnée dans le panel admin (gestion des grades)
+function _currentGradesSection(){
+  var sel = el("grades-section-tabs");
+  return sel ? sel.value : 'police';
+}
 function populateGradeSelects(){
-  const opts=getGrades().map(g=>`<option>${esc(g)}</option>`).join("");
-  ["u-grade","eu-grade","ra-grade"].forEach(id=>{const s=el(id);if(s)s.innerHTML=opts});
+  // u-grade et ra-grade sont pour les nouveaux comptes Police par défaut
+  // Ils prennent les grades de la section actuellement sélectionnée dans l'onglet Grades
+  // (sinon Police par défaut)
+  var section = _currentGradesSection();
+  var grades = getGradesForSection(section);
+  const opts = grades.map(g=>`<option>${esc(g)}</option>`).join("");
+  ["u-grade","ra-grade"].forEach(id=>{const s=el(id);if(s)s.innerHTML=opts});
+  // eu-grade adapté à la section du user édité (rempli quand le modal s'ouvre via openEditUser)
+  const eu=el("eu-grade");if(eu) eu.innerHTML=opts; // par défaut
+}
+// Met à jour le select eu-grade selon la section du user édité
+function populateGradeSelectForSection(section){
+  const grades = getGradesForSection(section||'police');
+  const opts = grades.map(g=>`<option>${esc(g)}</option>`).join("");
+  const eu = el("eu-grade"); if(eu) eu.innerHTML = opts;
 }
 function renderGradesList(){
   const g=el("grades-list");if(!g)return;
-  g.innerHTML=getGrades().map((gr,i)=>{
-    const locked=i===0||isProtectedGradeName(gr);
+  var section = _currentGradesSection();
+  var grades = getGradesForSection(section);
+  // Mettre à jour le label info
+  var info = el("grades-section-info");
+  var SECTION_LABELS = {police:'la Police',juge:'le Tribunal',avocat:'le Cabinet d\'avocats',mission:'le Bureau des missions',medical:'l\'Hôpital',diplomatie:'la Diplomatie'};
+  if(info){
+    info.innerHTML = (grades.length===0?'Aucun grade défini pour cette section.<br>':'')
+      + 'Grades de <strong>'+SECTION_LABELS[section]+'</strong>. Indépendants des autres sections — ne s\'affichent qu\'aux membres concernés.';
+  }
+  if(grades.length === 0){
+    g.innerHTML = '<div style="padding:18px 6px;color:var(--muted);font-size:11px;font-style:italic">Aucun grade — ajoutez-en ci-dessous</div>';
+    return;
+  }
+  g.innerHTML=grades.map((gr,i)=>{
+    // Pour Police, les premiers grades sont protégés (liés à des rôles système)
+    const locked = (section === 'police') && (i===0||isProtectedGradeName(gr));
     const lockIcon=locked?`<span title="Grade protégé — lié à un rôle système" style="font-size:11px;margin-left:4px;opacity:0.5">🔒</span>`:`<span style="cursor:pointer;color:var(--muted);font-size:12px;margin-left:4px" onclick="removeGrade(${i})" title="Supprimer">✕</span>`;
     return `<div style="display:flex;align-items:center;gap:5px;background:${locked?"rgba(220,38,38,0.06)":"rgba(180,140,20,0.07)"};border:1px solid ${locked?"rgba(220,38,38,0.18)":"rgba(180,140,20,0.2)"};border-radius:5px;padding:4px 10px"><span style="font-size:12px;font-weight:600">${esc(gr)}</span>${lockIcon}</div>`;
   }).join("");
 }
 function addGrade(){
+  if(!isAdmin()){showToast("⛔ Action réservée aux administrateurs.","error");return;}
   const inp=el("new-grade-input");const g=inp.value.trim();if(!g)return;
-  if(isProtectedGradeName(g)){showToast("❌ Ce nom est réservé à un rôle système et ne peut pas être utilisé comme grade.","error");return;}
-  if(getGrades().includes(g)){showToast("Ce grade existe déjà.","error");return;}
-  getGrades().push(g);saveData();inp.value="";renderGradesList();populateGradeSelects();
+  var section = _currentGradesSection();
+  var grades = getGradesForSection(section);
+  // Pour Police, vérifier les noms réservés
+  if(section === 'police' && isProtectedGradeName(g)){showToast("❌ Ce nom est réservé à un rôle système et ne peut pas être utilisé comme grade.","error");return;}
+  if(grades.includes(g)){showToast("Ce grade existe déjà dans cette section.","error");return;}
+  if(section === 'police'){
+    getGrades().push(g);
+  } else {
+    if(!DB.sectionGrades) DB.sectionGrades = {};
+    if(!Array.isArray(DB.sectionGrades[section])) DB.sectionGrades[section] = [];
+    DB.sectionGrades[section].push(g);
+  }
+  saveData();inp.value="";renderGradesList();populateGradeSelects();
+  showToast("✅ Grade ajouté à "+ (section==='police'?'la Police':'la section '+section), "success");
 }
 function removeGrade(i){
-  const name=getGrades()[i];
+  if(!isAdmin()){showToast("⛔ Action réservée aux administrateurs.","error");return;}
+  var section = _currentGradesSection();
+  var grades = getGradesForSection(section);
+  const name=grades[i];
   if(!name)return;
-  if(isProtectedGradeName(name)){showToast("❌ Ce grade est protégé — il est lié à un rôle système et ne peut pas être supprimé.","error");return;}
+  if(section === 'police' && isProtectedGradeName(name)){showToast("❌ Ce grade est protégé — il est lié à un rôle système et ne peut pas être supprimé.","error");return;}
   askDelete(`Supprimer le grade "${name}" ?`,()=>{
-    // Rechercher par nom pour éviter un mauvais index après sync Firebase
-    const idx=getGrades().indexOf(name);
+    var current = getGradesForSection(section);
+    const idx=current.indexOf(name);
     if(idx===-1){showToast("Grade introuvable (peut-être déjà supprimé).","error");renderGradesList();populateGradeSelects();return;}
-    getGrades().splice(idx,1);saveData();renderGradesList();populateGradeSelects();
+    current.splice(idx,1);
+    saveData();renderGradesList();populateGradeSelects();
+    showToast("Grade supprimé.","info");
   });
 }
 
@@ -21219,6 +21493,10 @@ function exportAdminData(){
 function openEditUser(id){
   populateGradeSelects();
   const u=DB.users.find(x=>String(x.id)===String(id));if(!u)return;
+  // Adapter les grades selon la section du compte édité (Tribunal/Cabinet/Médical/etc.)
+  if(typeof populateGradeSelectForSection === 'function'){
+    populateGradeSelectForSection(u.section || 'police');
+  }
   // Protect admin accounts — only an admin can edit another admin
   if(u.role==="admin"&&!isAdmin()){
     showToast("Seul un Administrateur peut modifier un compte Admin.","error");return;
@@ -21228,17 +21506,26 @@ function openEditUser(id){
   el("eu-id").value=u.id;
   el("eu-nom").value=u.nom;
   el("eu-pass").value="";
+  // Set section AVANT le grade pour que les options soient bien chargées
+  var euSec = el("eu-section");
+  if(euSec) euSec.value = u.section || 'police';
+  // Re-populate grade select pour la bonne section (au cas où)
+  if(typeof populateGradeSelectForSection === 'function'){
+    populateGradeSelectForSection(u.section || 'police');
+  }
   el("eu-grade").value=u.grade;
   el("eu-role").value=u.role;
   // Hide admin option for non-admins
   const adminOpt=el("eu-role-admin-opt");
   if(adminOpt)adminOpt.style.display=isAdmin()?"":"none";
-  // PERMISSION GRADE/RÔLE : seuls Admin et Gérant peuvent les modifier
+  // PERMISSION GRADE/RÔLE/SECTION : seuls Admin et Gérant peuvent les modifier
   const canEdit = canEditGrade();
   const gradeSelect = el("eu-grade");
   const roleSelect  = el("eu-role");
+  const sectionSelect = el("eu-section");
   const gradeGroup  = gradeSelect && gradeSelect.closest('.form-group');
   const roleGroup   = roleSelect  && roleSelect.closest('.form-group');
+  const sectionGroup = sectionSelect && sectionSelect.closest('.form-group');
   if(gradeGroup){
     gradeGroup.classList.toggle('is-locked', !canEdit);
     gradeSelect.disabled = !canEdit;
@@ -21249,10 +21536,32 @@ function openEditUser(id){
     roleSelect.disabled = !canEdit;
     roleSelect.title = canEdit ? '' : 'Seuls les Administrateurs et Gérants peuvent modifier le rôle';
   }
+  if(sectionGroup){
+    // Section : seuls les ADMINS peuvent changer la section (plus restrictif que canEdit car
+    // changer la section déplace le compte dans un autre département entier)
+    var canChangeSection = isAdmin();
+    sectionGroup.classList.toggle('is-locked', !canChangeSection);
+    sectionSelect.disabled = !canChangeSection;
+    sectionSelect.title = canChangeSection ? '' : 'Seuls les Administrateurs peuvent changer la section d\'un compte';
+  }
   // Bloquer uniquement la suppression de son propre compte
   const delBtn=document.querySelector("#modal-edituser .btn-danger");
   if(delBtn){const isSelf=u.id===currentUser.id;delBtn.disabled=isSelf;delBtn.style.opacity=isSelf?"0.4":"1";delBtn.title=isSelf?"Vous ne pouvez pas supprimer votre propre compte":""}
   openModal("modal-edituser");
+}
+
+// Quand l'admin change la section d'un user dans le modal d'édition,
+// recharger les grades correspondants à la nouvelle section
+function onEuSectionChange(){
+  var euSec = el("eu-section");
+  var euGrade = el("eu-grade");
+  if(!euSec || !euGrade) return;
+  var newSection = euSec.value;
+  if(typeof populateGradeSelectForSection === 'function'){
+    populateGradeSelectForSection(newSection);
+  }
+  // Sélectionner le premier grade par défaut (l'ancien grade ne fait probablement plus partie de la nouvelle section)
+  if(euGrade.options.length > 0) euGrade.selectedIndex = 0;
 }
 
 // SANCTIONS (kept below)
@@ -21306,11 +21615,24 @@ function saveEditUser(){
   if(u.role==="admin"&&!isAdmin()){showToast("Permission refusée.","error");return;}
   const newRole=v("eu-role");
   const newGrade=v("eu-grade");
+  const newSection=v("eu-section")||(u.section||'police');
+  const oldSection=u.section||'police';
   // SÉCURITÉ : si l'utilisateur n'est pas Admin/Gérant, on FORCE grade et rôle inchangés
   // (même si quelqu'un déverrouille les champs via la console pour bypass le cadenas visuel)
   const canEdit = canEditGrade();
   if(!canEdit && (newGrade !== u.grade || newRole !== u.role)){
     showToast("⛔ Seuls les Administrateurs et Gérants peuvent modifier le grade et le rôle.","error");return;
+  }
+  // SÉCURITÉ SECTION : seuls les Admins peuvent changer la section
+  if(newSection !== oldSection && !isAdmin()){
+    showToast("⛔ Seuls les Administrateurs peuvent changer la section d'un compte.","error");return;
+  }
+  // Vérifier que le nouveau login+section n'existe pas déjà ailleurs (si on change la section)
+  if(newSection !== oldSection){
+    var collision = DB.users.find(x=>x.id!==u.id && x.login===u.login && (x.section||'police')===newSection);
+    if(collision){
+      showToast("⚠️ Un compte avec cet identifiant existe déjà dans la section "+newSection+".","error");return;
+    }
   }
   if(newRole==="admin"&&!isAdmin()){showToast("Seul un Administrateur peut attribuer le rôle Admin.","error");return;}
   // Empêcher de retirer le rôle admin au dernier compte admin
@@ -21325,6 +21647,8 @@ function saveEditUser(){
     _loginInProgress=false;
     // Appliquer grade/rôle UNIQUEMENT si l'utilisateur a la permission
     if(canEdit){ u.grade=newGrade; u.role=newRole; }
+    // Appliquer la section UNIQUEMENT si l'utilisateur est admin
+    if(isAdmin()){ u.section=newSection; }
     const c=DB.candidatures.find(x=>x.authorId===id||x.nom===oldNom);if(c)c.grade=u.grade;
     if(currentUser.id===id){currentUser=u;el("user-name-display").textContent=u.nom;el("user-rank-display").textContent=roleLabel(u.role)+" · "+u.grade;refreshSidebarAvatar();}
     addTimeline(`Compte de ${u.nom} modifié par ${currentUser.nom}`);
@@ -22937,8 +23261,8 @@ function esc(s){if(!s)return"";return String(s).replace(/&/g,"&amp;").replace(/<
 // Sécurité : valide que src est bien un data:image/ ou une URL https avant injection dans src=""
 function safeImgSrc(src){if(!src)return"";const s=String(src);if(/^data:image\/(png|jpe?g|gif|webp|svg\+xml);base64,/.test(s))return s;if(/^https:\/\//.test(s))return s;return""}
 function catBadge(c){return{Information:"badge-blue",Opérationnel:"badge-green",Recrutement:"badge-gold",Alerte:"badge-red",Disciplinaire:"badge-gold"}[c]||"badge-gray"}
-function statutPlainte(s){return{ouverte:"badge-red",en_cours:"badge-gold",fermee:"badge-gray"}[s]||"badge-gray"}
-function fmtStatut(s){return{ouverte:"Ouverte",en_cours:"En cours",fermee:"Fermée"}[s]||s}
+function statutPlainte(s){return{ouverte:"badge-red",en_cours:"badge-gold",fermee:"badge-gray",transmise_tribunal:"badge-purple"}[s]||"badge-gray"}
+function fmtStatut(s){return{ouverte:"Ouverte",en_cours:"En cours",fermee:"Fermée",transmise_tribunal:"⚖️ Au Tribunal"}[s]||s}
 function statutCand(s){return{en_attente:"badge-blue",acceptee:"badge-green",refusee:"badge-red"}[s]||"badge-gray"}
 function fmtCand(s){return{en_attente:"En attente",acceptee:"Acceptée",refusee:"Refusée"}[s]||s}
 function dangerBadge(d){return{Faible:"badge-green",Modéré:"badge-blue",Élevé:"badge-gold",Extrême:"badge-red"}[d]||"badge-gray"}
@@ -30165,12 +30489,756 @@ function bbCancelForm() {
 }
 
 /* ═══════════════════════════════════════════════════════════════════════
-   SYSTÈME GÉNÉRIQUE DE SECTIONS (Juge / Avocat / Mission / Médical / Diplomatie)
-   Chaque page est un registre simple : titre, contenu, auteur, date.
-   Les modérateurs (canModify) peuvent ajouter/éditer/supprimer.
-   Stockage : DB.sectionData[section][page] = [{id, titre, contenu, auteur, date}]
-   Sync Firebase : sunagakure/sectionData
+   TRIBUNAL DE SUNAGAKURE — système complet d'affaires + audiences + jugements
+   Stockage : DB.tribunal = { affaires:[], audiences:[], jugements:[], procedure:[], jurisprudence:[] }
+   Sync Firebase : sunagakure/tribunal
    ═══════════════════════════════════════════════════════════════════════ */
+
+function _tribInit(){
+  if(!DB.tribunal){
+    try{
+      var raw = localStorage.getItem('suna_tribunal');
+      DB.tribunal = raw ? JSON.parse(raw) : {};
+    }catch(e){ DB.tribunal = {}; }
+  }
+  ['affaires','audiences','jugements','procedure','jurisprudence'].forEach(function(k){
+    if(!Array.isArray(DB.tribunal[k])) DB.tribunal[k] = [];
+  });
+}
+_tribInit();
+
+function _tribSave(){
+  try{ localStorage.setItem('suna_tribunal', JSON.stringify(DB.tribunal||{})); }catch(e){}
+  if(window._fbDB && window._fbRef && window._fbSet){
+    try{
+      window._fbSet(window._fbRef(window._fbDB,'sunagakure/tribunal'), DB.tribunal||{});
+    }catch(e){}
+  }
+}
+
+function tribCanEdit(){ return canModify(); }
+
+// Helper : numéro de dossier auto (TRIB-2026-001)
+function _tribNextDossierNum(){
+  var year = new Date().getFullYear();
+  var prefix = 'TRIB-'+year+'-';
+  var existing = (DB.tribunal.affaires||[]).filter(function(a){ return a.numero && a.numero.indexOf(prefix)===0; });
+  var maxN = 0;
+  existing.forEach(function(a){
+    var n = parseInt(a.numero.replace(prefix,''),10) || 0;
+    if(n > maxN) maxN = n;
+  });
+  return prefix + String(maxN+1).padStart(3,'0');
+}
+
+function _tribEsc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+function _tribFmtDate(ts){
+  if(!ts) return '—';
+  var d = new Date(ts);
+  return d.toLocaleDateString('fr-FR') + ' à ' + d.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});
+}
+
+function _tribFmtDateOnly(ts){
+  if(!ts) return '—';
+  return new Date(ts).toLocaleDateString('fr-FR');
+}
+
+// Couleurs et labels par statut
+function _tribStatutInfo(s){
+  return ({
+    instruction:{ color:'#f59e0b', bg:'rgba(245,158,11,0.12)', label:'📂 Instruction' },
+    audience:   { color:'#0ea5e9', bg:'rgba(14,165,233,0.12)', label:'🎤 En audience' },
+    delibere:   { color:'#7c3aed', bg:'rgba(124,58,237,0.12)', label:'⏸ Délibéré' },
+    cloturee:   { color:'#16a34a', bg:'rgba(22,163,74,0.12)', label:'✓ Clôturée' }
+  })[s] || { color:'#6b7280', bg:'rgba(107,114,128,0.12)', label:s||'—' };
+}
+function _tribGraviteInfo(g){
+  return ({
+    legere:  { color:'#16a34a', bg:'rgba(22,163,74,0.12)', label:'▸ Légère' },
+    moyenne: { color:'#c9a227', bg:'rgba(201,162,39,0.12)', label:'◆ Moyenne' },
+    grave:   { color:'#f97316', bg:'rgba(249,115,22,0.15)', label:'⚠ Grave' },
+    critique:{ color:'#dc2626', bg:'rgba(220,38,38,0.15)', label:'🔥 Critique' }
+  })[g] || { color:'#6b7280', bg:'rgba(107,114,128,0.12)', label:g||'—' };
+}
+function _tribVerdictInfo(v){
+  return ({
+    acquitte:{ color:'#16a34a', bg:'rgba(22,163,74,0.15)', label:'✓ ACQUITTÉ' },
+    coupable:{ color:'#dc2626', bg:'rgba(220,38,38,0.15)', label:'⚠ COUPABLE' },
+    reduit:  { color:'#c9a227', bg:'rgba(201,162,39,0.15)', label:'◆ CHARGES RÉDUITES' },
+    renvoi:  { color:'#7c3aed', bg:'rgba(124,58,237,0.15)', label:'↻ RENVOYÉ' }
+  })[v] || { color:'#6b7280', bg:'rgba(107,114,128,0.12)', label:v||'—' };
+}
+
+/* ─── PAGES & DISPATCHER ─── */
+function tribRenderPage(name){
+  if(name === 'juge-audiences')   return tribRenderAudiences();
+  if(name === 'juge-affaires')    return tribRenderAffaires();
+  if(name === 'juge-jugements')   return tribRenderJugements();
+  if(name === 'juge-procedure')   return tribRenderProcedure();
+  if(name === 'juge-archives')    { tribArchSwitch(_tribArchTab||'affaires'); return; }
+}
+
+/* ─── PAGE AUDIENCES ─── */
+function tribRenderAudiences(){
+  if(!el('trib-aud-list')) return;
+  var allAud = (DB.tribunal.audiences||[]).slice();
+  var now = Date.now();
+  var todayStart = new Date(); todayStart.setHours(0,0,0,0);
+  var todayEnd = new Date(); todayEnd.setHours(23,59,59,999);
+  var weekEnd = new Date(); weekEnd.setDate(weekEnd.getDate()+7);
+  // Stats hero
+  var todayCount = allAud.filter(function(a){ return a.dateTs >= todayStart.getTime() && a.dateTs <= todayEnd.getTime(); }).length;
+  var weekCount  = allAud.filter(function(a){ return a.dateTs >= todayStart.getTime() && a.dateTs <= weekEnd.getTime(); }).length;
+  var upcomingCount = allAud.filter(function(a){ return a.dateTs >= now; }).length;
+  if(el('trib-stat-aud-jour'))     el('trib-stat-aud-jour').textContent = todayCount;
+  if(el('trib-stat-aud-semaine'))  el('trib-stat-aud-semaine').textContent = weekCount;
+  if(el('trib-stat-aud-total'))    el('trib-stat-aud-total').textContent = upcomingCount;
+  // Filtres
+  var f = (el('trib-aud-filter')||{}).value || 'all';
+  var q = ((el('trib-aud-search')||{}).value || '').toLowerCase().trim();
+  var list = allAud.slice();
+  if(f === 'upcoming') list = list.filter(function(a){ return a.dateTs >= now; });
+  else if(f === 'today') list = list.filter(function(a){ return a.dateTs >= todayStart.getTime() && a.dateTs <= todayEnd.getTime(); });
+  else if(f === 'week') list = list.filter(function(a){ return a.dateTs >= todayStart.getTime() && a.dateTs <= weekEnd.getTime(); });
+  else if(f === 'past') list = list.filter(function(a){ return a.dateTs < now; });
+  if(q) list = list.filter(function(a){
+    var aff = (DB.tribunal.affaires||[]).find(function(x){ return x.id===a.affaireId; });
+    var s = (a.lieu||'')+' '+(a.juge||'')+' '+(a.notes||'')+' '+(aff?aff.numero+' '+aff.accuse:'');
+    return s.toLowerCase().indexOf(q) !== -1;
+  });
+  // Tri : à venir en premier (croissant), puis passées (décroissant)
+  list.sort(function(a,b){
+    var aPast = a.dateTs < now, bPast = b.dateTs < now;
+    if(aPast !== bPast) return aPast ? 1 : -1;
+    return aPast ? (b.dateTs - a.dateTs) : (a.dateTs - b.dateTs);
+  });
+  if(list.length === 0){
+    el('trib-aud-list').innerHTML = '<div class="card" style="padding:48px 20px;text-align:center"><div style="font-size:42px;opacity:0.35;margin-bottom:10px">📅</div><div style="color:var(--muted);font-family:\'Share Tech Mono\',monospace;letter-spacing:1px;font-size:11px">Aucune audience '+(f==='upcoming'?'à venir':f==='past'?'passée':'enregistrée')+'</div></div>';
+    return;
+  }
+  var canEdit = tribCanEdit();
+  el('trib-aud-list').innerHTML = list.map(function(a){
+    var aff = (DB.tribunal.affaires||[]).find(function(x){ return x.id===a.affaireId; });
+    var isPast = a.dateTs < now;
+    var d = new Date(a.dateTs);
+    var dayLabel = d.toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+    var timeLabel = d.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});
+    var actions = canEdit
+      ? '<div style="display:flex;gap:5px"><button class="btn btn-outline btn-sm" onclick="tribOpenAudience('+a.id+')">✏️</button><button class="btn btn-danger btn-sm" onclick="tribDeleteAudience('+a.id+')">🗑</button></div>'
+      : '';
+    var affBadge = aff
+      ? '<span style="display:inline-block;padding:2px 8px;border-radius:3px;background:rgba(124,58,237,0.12);color:#a78bfa;border:1px solid rgba(124,58,237,0.3);font-family:\'Share Tech Mono\',monospace;font-size:9px;letter-spacing:1px">'+_tribEsc(aff.numero)+' · '+_tribEsc(aff.accuse)+'</span>'
+      : '<span style="color:var(--muted);font-style:italic;font-size:11px">Audience hors affaire</span>';
+    return '<div class="card" style="margin-bottom:12px;padding:0;'+(isPast?'opacity:0.65':'')+'overflow:hidden;border-left:3px solid '+(isPast?'#6b7280':'#7c3aed')+'">'+
+      '<div style="display:flex;align-items:stretch">'+
+        // Date block
+        '<div style="background:linear-gradient(135deg,rgba(124,58,237,0.15),rgba(124,58,237,0.05));padding:18px 22px;text-align:center;flex-shrink:0;min-width:120px;border-right:1px solid rgba(124,58,237,0.2)">'+
+          '<div style="font-family:\'Cinzel\',serif;font-size:28px;font-weight:700;color:#a78bfa;line-height:1">'+d.getDate()+'</div>'+
+          '<div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:rgba(167,139,250,0.7);letter-spacing:1.5px;text-transform:uppercase;margin-top:4px">'+d.toLocaleDateString('fr-FR',{month:'short'}).replace('.','')+' '+d.getFullYear()+'</div>'+
+          '<div style="margin-top:8px;font-family:\'Share Tech Mono\',monospace;font-size:13px;font-weight:700;color:#f0e8d0">'+timeLabel+'</div>'+
+          (isPast?'<div style="margin-top:4px;font-size:8px;color:var(--muted);letter-spacing:1px;font-family:\'Share Tech Mono\',monospace">PASSÉE</div>':'')+
+        '</div>'+
+        // Content
+        '<div style="flex:1;padding:14px 18px;min-width:0">'+
+          '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:8px;flex-wrap:wrap">'+
+            '<div style="flex:1;min-width:0">'+
+              '<div style="font-family:\'Cinzel\',serif;font-size:16px;font-weight:600;color:var(--text);margin-bottom:3px">'+_tribEsc(a.titre||'Audience')+'</div>'+
+              '<div style="font-size:11px;color:var(--muted);font-family:\'Share Tech Mono\',monospace;letter-spacing:0.5px;text-transform:capitalize">'+dayLabel+'</div>'+
+            '</div>'+
+            actions+
+          '</div>'+
+          '<div style="display:flex;flex-wrap:wrap;gap:14px;font-size:12px;margin:10px 0 6px">'+
+            (a.lieu?'<div><span style="color:var(--muted);font-family:\'Share Tech Mono\',monospace;font-size:10px;letter-spacing:1px">📍 LIEU</span><div style="color:var(--text);margin-top:2px">'+_tribEsc(a.lieu)+'</div></div>':'')+
+            (a.juge?'<div><span style="color:var(--muted);font-family:\'Share Tech Mono\',monospace;font-size:10px;letter-spacing:1px">👨‍⚖️ JUGE</span><div style="color:var(--text);margin-top:2px">'+_tribEsc(a.juge)+'</div></div>':'')+
+            (a.duree?'<div><span style="color:var(--muted);font-family:\'Share Tech Mono\',monospace;font-size:10px;letter-spacing:1px">⏱ DURÉE</span><div style="color:var(--text);margin-top:2px">'+_tribEsc(a.duree)+'</div></div>':'')+
+          '</div>'+
+          '<div style="margin-top:10px">'+affBadge+'</div>'+
+          (a.notes?'<div style="margin-top:10px;padding:10px 12px;background:rgba(0,0,0,0.25);border-radius:6px;font-size:12px;color:rgba(240,232,208,0.85);line-height:1.55;white-space:pre-wrap">'+_tribEsc(a.notes)+'</div>':'')+
+        '</div>'+
+      '</div>'+
+    '</div>';
+  }).join('');
+}
+
+function tribOpenAudience(editId){
+  if(!tribCanEdit()){ showToast('⛔ Action réservée aux modérateurs.','error'); return; }
+  var ed = editId ? (DB.tribunal.audiences||[]).find(function(a){ return a.id===editId; }) : null;
+  // Construire les options affaires
+  var affOpts = '<option value="">(Aucune affaire associée)</option>' + (DB.tribunal.affaires||[]).map(function(a){
+    return '<option value="'+a.id+'"'+(ed&&ed.affaireId===a.id?' selected':'')+'>'+_tribEsc(a.numero)+' — '+_tribEsc(a.accuse)+'</option>';
+  }).join('');
+  // Date par défaut : demain 14h
+  var defaultDate = ed ? new Date(ed.dateTs) : (function(){ var d = new Date(); d.setDate(d.getDate()+1); d.setHours(14,0,0,0); return d; })();
+  var dateStr = defaultDate.getFullYear()+'-'+String(defaultDate.getMonth()+1).padStart(2,'0')+'-'+String(defaultDate.getDate()).padStart(2,'0');
+  var timeStr = String(defaultDate.getHours()).padStart(2,'0')+':'+String(defaultDate.getMinutes()).padStart(2,'0');
+  // Modal
+  var existing = document.getElementById('trib-modal'); if(existing) existing.remove();
+  var modal = document.createElement('div');
+  modal.id = 'trib-modal';
+  modal.className = 'modal-overlay open';
+  modal.innerHTML = '<div class="modal" style="max-width:560px"><div class="modal-header"><h3>'+(ed?'✏️ Modifier l\'audience':'📅 Planifier une audience')+'</h3><span class="modal-close" onclick="document.getElementById(\'trib-modal\').remove()">✕</span></div><div class="modal-body"><div class="form-group"><label class="form-label">Titre / Objet</label><input type="text" id="trib-aud-titre" class="form-control" value="'+_tribEsc(ed?ed.titre||'':'')+'" placeholder="Ex: Audience publique, Mise en examen..."></div><div class="grid grid-2" style="gap:12px"><div class="form-group"><label class="form-label">Date</label><input type="date" id="trib-aud-date" class="form-control" value="'+dateStr+'"></div><div class="form-group"><label class="form-label">Heure</label><input type="time" id="trib-aud-time" class="form-control" value="'+timeStr+'"></div></div><div class="grid grid-2" style="gap:12px"><div class="form-group"><label class="form-label">Lieu</label><input type="text" id="trib-aud-lieu" class="form-control" value="'+_tribEsc(ed?ed.lieu||'':'')+'" placeholder="Ex: Salle d\'audience principale"></div><div class="form-group"><label class="form-label">Juge assigné</label><input type="text" id="trib-aud-juge" class="form-control" value="'+_tribEsc(ed?ed.juge||'':'')+'" placeholder="Nom du juge"></div></div><div class="form-group"><label class="form-label">Affaire associée</label><select id="trib-aud-affaire" class="form-control">'+affOpts+'</select></div><div class="form-group"><label class="form-label">Durée prévue</label><input type="text" id="trib-aud-duree" class="form-control" value="'+_tribEsc(ed?ed.duree||'':'')+'" placeholder="Ex: 1h30, 2 heures..."></div><div class="form-group"><label class="form-label">Notes / Ordre du jour</label><textarea id="trib-aud-notes" class="form-control" rows="4" placeholder="Détails de l\'audience, points à aborder...">'+_tribEsc(ed?ed.notes||'':'')+'</textarea></div></div><div class="modal-footer"><button class="btn btn-outline" onclick="document.getElementById(\'trib-modal\').remove()">Annuler</button>'+(ed?'<button class="btn btn-danger" onclick="tribDeleteAudience('+ed.id+');document.getElementById(\'trib-modal\').remove()">🗑 Supprimer</button>':'')+'<button class="btn btn-primary" onclick="tribSaveAudience('+(ed?ed.id:'null')+')">💾 Enregistrer</button></div></div>';
+  document.body.appendChild(modal);
+}
+
+function tribSaveAudience(editId){
+  if(!tribCanEdit()) return;
+  var titre = el('trib-aud-titre').value.trim();
+  var date  = el('trib-aud-date').value;
+  var time  = el('trib-aud-time').value;
+  if(!titre){ showToast('Le titre est obligatoire.','error'); return; }
+  if(!date || !time){ showToast('Date et heure obligatoires.','error'); return; }
+  var dateTs = new Date(date+'T'+time).getTime();
+  var data = {
+    titre: titre,
+    dateTs: dateTs,
+    lieu: el('trib-aud-lieu').value.trim(),
+    juge: el('trib-aud-juge').value.trim(),
+    affaireId: parseInt(el('trib-aud-affaire').value)||null,
+    duree: el('trib-aud-duree').value.trim(),
+    notes: el('trib-aud-notes').value.trim(),
+    updated: Date.now(),
+    auteur: (currentUser&&(currentUser.nom||currentUser.login))||'?'
+  };
+  if(editId){
+    var idx = DB.tribunal.audiences.findIndex(function(a){ return a.id===editId; });
+    if(idx>-1){ data.id = editId; data.created = DB.tribunal.audiences[idx].created; DB.tribunal.audiences[idx] = data; }
+  } else {
+    data.id = Date.now();
+    data.created = Date.now();
+    DB.tribunal.audiences.push(data);
+  }
+  _tribSave();
+  document.getElementById('trib-modal').remove();
+  tribRenderAudiences();
+  showToast(editId?'✅ Audience modifiée':'✅ Audience planifiée','success');
+}
+
+function tribDeleteAudience(id){
+  if(!tribCanEdit()) return;
+  askDelete('Supprimer cette audience ?', function(){
+    DB.tribunal.audiences = (DB.tribunal.audiences||[]).filter(function(a){ return a.id!==id; });
+    _tribSave();
+    tribRenderAudiences();
+    showToast('Audience supprimée.','info');
+  });
+}
+
+/* ─── PAGE AFFAIRES ─── */
+function tribRenderAffaires(){
+  if(!el('trib-aff-list')) return;
+  var all = (DB.tribunal.affaires||[]).filter(function(a){ return a.statut!=='cloturee'; });
+  // Stats
+  if(el('trib-stat-aff-instr'))  el('trib-stat-aff-instr').textContent = all.filter(function(a){ return a.statut==='instruction'; }).length;
+  if(el('trib-stat-aff-aud'))    el('trib-stat-aff-aud').textContent = all.filter(function(a){ return a.statut==='audience'; }).length;
+  if(el('trib-stat-aff-delib'))  el('trib-stat-aff-delib').textContent = all.filter(function(a){ return a.statut==='delibere'; }).length;
+  // Banner plaintes Police transmises (alerte)
+  var transmises = (DB.plaintes||[]).filter(function(p){ return p.statut==='transmise_tribunal' && !(DB.tribunal.affaires||[]).find(function(a){ return a.plainteId===p.id; }); });
+  var banner = el('trib-plaintes-banner');
+  if(banner){
+    if(transmises.length > 0){
+      banner.style.display = 'block';
+      banner.innerHTML = '<div class="card" style="padding:14px 18px;border-left:3px solid var(--accent);background:rgba(192,65,14,0.06)"><div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap"><div style="font-size:28px">📨</div><div style="flex:1;min-width:200px"><div style="font-family:\'Cinzel\',serif;font-size:14px;font-weight:600;color:var(--text);margin-bottom:2px">'+transmises.length+' plainte'+(transmises.length>1?'s':'')+' transmise'+(transmises.length>1?'s':'')+' par la Police</div><div style="font-size:11px;color:var(--muted);font-family:\'Share Tech Mono\',monospace;letter-spacing:0.5px">À traiter : ouvrir une affaire pour chaque plainte transmise</div></div><button class="btn btn-primary btn-sm" onclick="tribShowPlaintesTransmises()">📂 Consulter</button></div></div>';
+    } else {
+      banner.style.display = 'none';
+    }
+  }
+  // Filtres
+  var q = (el('trib-aff-search')||{}).value || '';
+  var stF = (el('trib-aff-statut')||{}).value || 'all';
+  var grF = (el('trib-aff-gravite')||{}).value || 'all';
+  var list = all.slice();
+  if(stF !== 'all') list = list.filter(function(a){ return a.statut===stF; });
+  if(grF !== 'all') list = list.filter(function(a){ return a.gravite===grF; });
+  if(q.trim()){
+    var ql = q.toLowerCase();
+    list = list.filter(function(a){
+      return (a.numero+' '+a.accuse+' '+a.charges+' '+(a.notes||'')).toLowerCase().indexOf(ql) !== -1;
+    });
+  }
+  // Tri par date d'ouverture (plus récent en premier)
+  list.sort(function(a,b){ return (b.created||0) - (a.created||0); });
+  if(list.length === 0){
+    el('trib-aff-list').innerHTML = '<div class="card" style="padding:48px 20px;text-align:center"><div style="font-size:42px;opacity:0.35;margin-bottom:10px">📁</div><div style="color:var(--muted);font-family:\'Share Tech Mono\',monospace;letter-spacing:1px;font-size:11px">Aucune affaire en cours</div>'+(tribCanEdit()?'<div style="font-size:11px;color:var(--muted);margin-top:6px">Cliquez sur « Ouvrir une affaire » pour commencer</div>':'')+'</div>';
+    return;
+  }
+  var canEdit = tribCanEdit();
+  el('trib-aff-list').innerHTML = list.map(function(a){
+    var sti = _tribStatutInfo(a.statut);
+    var gri = _tribGraviteInfo(a.gravite);
+    var nbAud = (DB.tribunal.audiences||[]).filter(function(au){ return au.affaireId===a.id; }).length;
+    var canVote = canEdit && a.statut==='delibere';
+    var votes = a.votes||{};
+    var userVote = currentUser ? votes[currentUser.id] : null;
+    var totalVotes = Object.keys(votes).length;
+    return '<div class="card" style="margin-bottom:12px;padding:0;overflow:hidden;border-left:3px solid '+sti.color+'">'+
+      '<div style="padding:14px 18px;display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap;border-bottom:1px solid rgba(180,140,20,0.08)">'+
+        '<div style="flex:1;min-width:200px">'+
+          '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:6px">'+
+            '<span style="font-family:\'Share Tech Mono\',monospace;font-size:11px;color:var(--gold2);letter-spacing:1.5px;font-weight:700">'+_tribEsc(a.numero)+'</span>'+
+            '<span style="display:inline-flex;align-items:center;padding:2px 8px;border-radius:3px;background:'+sti.bg+';color:'+sti.color+';border:1px solid '+sti.color+'4d;font-family:\'Share Tech Mono\',monospace;font-size:9px;letter-spacing:1px;font-weight:700">'+sti.label+'</span>'+
+            '<span style="display:inline-flex;align-items:center;padding:2px 8px;border-radius:3px;background:'+gri.bg+';color:'+gri.color+';border:1px solid '+gri.color+'4d;font-family:\'Share Tech Mono\',monospace;font-size:9px;letter-spacing:1px;font-weight:700">'+gri.label+'</span>'+
+          '</div>'+
+          '<div style="font-family:\'Cinzel\',serif;font-size:17px;font-weight:600;color:var(--text);line-height:1.25">⚖️ '+_tribEsc(a.accuse)+'</div>'+
+          (a.parties?'<div style="font-size:11px;color:var(--muted);font-family:\'Share Tech Mono\',monospace;margin-top:4px">Parties : '+_tribEsc(a.parties)+'</div>':'')+
+        '</div>'+
+        (canEdit?'<div style="display:flex;gap:5px;flex-shrink:0"><button class="btn btn-outline btn-sm" onclick="tribOpenAffaire('+a.id+')">✏️</button>'+(a.statut!=='cloturee'?'<button class="btn btn-gold btn-sm" onclick="tribOpenJugement(null,'+a.id+')">⚖️ Juger</button>':'')+'</div>':'')+
+      '</div>'+
+      '<div style="padding:12px 18px;display:flex;flex-wrap:wrap;gap:18px;font-size:12px;background:rgba(0,0,0,0.15)">'+
+        '<div><span style="color:var(--muted);font-family:\'Share Tech Mono\',monospace;font-size:10px;letter-spacing:1px">📅 OUVERT</span><div style="color:var(--text);margin-top:2px">'+_tribFmtDateOnly(a.created)+'</div></div>'+
+        '<div><span style="color:var(--muted);font-family:\'Share Tech Mono\',monospace;font-size:10px;letter-spacing:1px">📅 AUDIENCES</span><div style="color:var(--text);margin-top:2px">'+nbAud+'</div></div>'+
+        (a.juge?'<div><span style="color:var(--muted);font-family:\'Share Tech Mono\',monospace;font-size:10px;letter-spacing:1px">👨‍⚖️ JUGE</span><div style="color:var(--text);margin-top:2px">'+_tribEsc(a.juge)+'</div></div>':'')+
+      '</div>'+
+      (a.charges?'<div style="padding:12px 18px;border-top:1px solid rgba(180,140,20,0.08)"><div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:var(--muted);letter-spacing:1.5px;margin-bottom:5px">CHARGES</div><div style="font-size:13px;color:rgba(240,232,208,0.9);line-height:1.55;white-space:pre-wrap">'+_tribEsc(a.charges)+'</div></div>':'')+
+      (a.notes?'<div style="padding:12px 18px;border-top:1px solid rgba(180,140,20,0.08);background:rgba(0,0,0,0.2)"><div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:var(--muted);letter-spacing:1.5px;margin-bottom:5px">NOTES</div><div style="font-size:12.5px;color:rgba(240,232,208,0.8);line-height:1.55;white-space:pre-wrap">'+_tribEsc(a.notes)+'</div></div>':'')+
+      // Vote collégial si statut "délibéré"
+      (a.statut==='delibere'?_tribRenderVotes(a):'')+
+    '</div>';
+  }).join('');
+}
+
+function _tribRenderVotes(a){
+  var votes = a.votes||{};
+  var counts = { acquitte:0, coupable:0, reduit:0 };
+  var voters = { acquitte:[], coupable:[], reduit:[] };
+  Object.keys(votes).forEach(function(uid){
+    var v = votes[uid];
+    if(counts[v.vote]!==undefined){ counts[v.vote]++; voters[v.vote].push(v.nom); }
+  });
+  var total = counts.acquitte+counts.coupable+counts.reduit;
+  var myVote = (currentUser && votes[currentUser.id]) ? votes[currentUser.id].vote : null;
+  var canVote = tribCanEdit();
+  var html = '<div style="padding:14px 18px;border-top:1px solid rgba(124,58,237,0.2);background:rgba(124,58,237,0.05)">';
+  html += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px"><span style="font-size:13px">⚖️</span><span style="font-family:\'Share Tech Mono\',monospace;font-size:10px;color:#a78bfa;letter-spacing:1.5px;font-weight:700">VOTE COLLÉGIAL — '+total+' juge'+(total>1?'s':'')+' a'+(total>1?'yant':'yant')+' voté</span></div>';
+  html += '<div style="display:flex;gap:8px;flex-wrap:wrap">';
+  ['acquitte','coupable','reduit'].forEach(function(v){
+    var info = _tribVerdictInfo(v);
+    var isMine = myVote===v;
+    var pct = total>0 ? Math.round((counts[v]/total)*100) : 0;
+    html += '<div style="flex:1;min-width:130px;background:rgba(0,0,0,0.25);border:1px solid '+info.color+(isMine?'':'33')+';border-radius:8px;padding:10px;'+(canVote?'cursor:pointer;':'')+'transition:all 0.2s"'+(canVote?' onclick="tribVote('+a.id+',\''+v+'\')"':'')+'>';
+    html += '<div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:'+info.color+';letter-spacing:1px;font-weight:700;margin-bottom:4px">'+info.label+(isMine?' ✓ MON VOTE':'')+'</div>';
+    html += '<div style="display:flex;align-items:baseline;gap:6px"><span style="font-family:\'Cinzel\',serif;font-size:22px;font-weight:700;color:'+info.color+'">'+counts[v]+'</span><span style="font-size:10px;color:var(--muted)">vote'+(counts[v]>1?'s':'')+' · '+pct+'%</span></div>';
+    if(voters[v].length>0){
+      html += '<div style="margin-top:4px;font-size:10px;color:var(--muted);font-style:italic;line-height:1.4">'+voters[v].slice(0,3).map(_tribEsc).join(', ')+(voters[v].length>3?' +'+(voters[v].length-3):'')+'</div>';
+    }
+    html += '</div>';
+  });
+  html += '</div>';
+  if(canVote && total>=1){
+    html += '<div style="margin-top:10px;text-align:center"><button class="btn btn-primary btn-sm" onclick="tribOpenJugement(null,'+a.id+')">⚖️ Conclure le délibéré et rendre le jugement</button></div>';
+  }
+  html += '</div>';
+  return html;
+}
+
+function tribVote(affaireId, vote){
+  if(!tribCanEdit()){ showToast('⛔ Action réservée aux modérateurs.','error'); return; }
+  var a = (DB.tribunal.affaires||[]).find(function(x){ return x.id===affaireId; });
+  if(!a) return;
+  if(!a.votes) a.votes = {};
+  a.votes[currentUser.id] = { vote: vote, nom: currentUser.nom||currentUser.login, ts: Date.now() };
+  _tribSave();
+  tribRenderAffaires();
+  showToast('Vote enregistré : '+_tribVerdictInfo(vote).label,'success');
+}
+
+function tribOpenAffaire(editId){
+  if(!tribCanEdit()){ showToast('⛔ Action réservée aux modérateurs.','error'); return; }
+  var ed = editId ? (DB.tribunal.affaires||[]).find(function(a){ return a.id===editId; }) : null;
+  var existing = document.getElementById('trib-modal'); if(existing) existing.remove();
+  var modal = document.createElement('div');
+  modal.id = 'trib-modal';
+  modal.className = 'modal-overlay open';
+  var nextNum = ed ? ed.numero : _tribNextDossierNum();
+  modal.innerHTML = '<div class="modal" style="max-width:620px"><div class="modal-header"><h3>'+(ed?'✏️ Modifier l\'affaire':'📁 Ouvrir une nouvelle affaire')+'</h3><span class="modal-close" onclick="document.getElementById(\'trib-modal\').remove()">✕</span></div><div class="modal-body"><div class="grid grid-2" style="gap:12px"><div class="form-group"><label class="form-label">N° dossier</label><input type="text" id="trib-aff-numero" class="form-control" value="'+_tribEsc(nextNum)+'" '+(ed?'':'readonly')+'></div><div class="form-group"><label class="form-label">Statut</label><select id="trib-aff-statut-input" class="form-control"><option value="instruction"'+(ed&&ed.statut==='instruction'?' selected':'')+'>📂 Instruction</option><option value="audience"'+(ed&&ed.statut==='audience'?' selected':'')+'>🎤 En audience</option><option value="delibere"'+(ed&&ed.statut==='delibere'?' selected':'')+'>⏸ Délibéré</option><option value="cloturee"'+(ed&&ed.statut==='cloturee'?' selected':'')+'>✓ Clôturée</option></select></div></div><div class="form-group"><label class="form-label">Accusé</label><input type="text" id="trib-aff-accuse" class="form-control" value="'+_tribEsc(ed?ed.accuse||'':'')+'" placeholder="Nom RP de l\'accusé"></div><div class="form-group"><label class="form-label">Parties (plaignant, témoins...)</label><input type="text" id="trib-aff-parties" class="form-control" value="'+_tribEsc(ed?ed.parties||'':'')+'" placeholder="Ex: Plainte de Yuno, témoins : Aoi, Riku"></div><div class="grid grid-2" style="gap:12px"><div class="form-group"><label class="form-label">Gravité</label><select id="trib-aff-gravite-input" class="form-control"><option value="legere"'+(ed&&ed.gravite==='legere'?' selected':'')+'>▸ Légère</option><option value="moyenne"'+((!ed||ed.gravite==='moyenne')?' selected':'')+'>◆ Moyenne</option><option value="grave"'+(ed&&ed.gravite==='grave'?' selected':'')+'>⚠ Grave</option><option value="critique"'+(ed&&ed.gravite==='critique'?' selected':'')+'>🔥 Critique</option></select></div><div class="form-group"><label class="form-label">Juge instructeur</label><input type="text" id="trib-aff-juge" class="form-control" value="'+_tribEsc(ed?ed.juge||'':'')+'" placeholder="Nom du juge en charge"></div></div><div class="form-group"><label class="form-label">Charges retenues</label><textarea id="trib-aff-charges" class="form-control" rows="3" placeholder="Liste des charges et infractions reprochées...">'+_tribEsc(ed?ed.charges||'':'')+'</textarea></div><div class="form-group"><label class="form-label">Notes / Éléments du dossier</label><textarea id="trib-aff-notes" class="form-control" rows="4" placeholder="Faits, preuves, témoignages, contexte...">'+_tribEsc(ed?ed.notes||'':'')+'</textarea></div></div><div class="modal-footer"><button class="btn btn-outline" onclick="document.getElementById(\'trib-modal\').remove()">Annuler</button>'+(ed?'<button class="btn btn-danger" onclick="tribDeleteAffaire('+ed.id+');document.getElementById(\'trib-modal\').remove()">🗑 Supprimer</button>':'')+'<button class="btn btn-primary" onclick="tribSaveAffaire('+(ed?ed.id:'null')+')">💾 Enregistrer</button></div></div>';
+  document.body.appendChild(modal);
+}
+
+function tribSaveAffaire(editId){
+  if(!tribCanEdit()) return;
+  var accuse = el('trib-aff-accuse').value.trim();
+  if(!accuse){ showToast('Le nom de l\'accusé est obligatoire.','error'); return; }
+  var data = {
+    numero: el('trib-aff-numero').value.trim(),
+    accuse: accuse,
+    parties: el('trib-aff-parties').value.trim(),
+    statut: el('trib-aff-statut-input').value,
+    gravite: el('trib-aff-gravite-input').value,
+    juge: el('trib-aff-juge').value.trim(),
+    charges: el('trib-aff-charges').value.trim(),
+    notes: el('trib-aff-notes').value.trim(),
+    updated: Date.now(),
+    auteur: (currentUser&&(currentUser.nom||currentUser.login))||'?'
+  };
+  if(editId){
+    var idx = DB.tribunal.affaires.findIndex(function(a){ return a.id===editId; });
+    if(idx>-1){ data.id = editId; data.created = DB.tribunal.affaires[idx].created; data.votes = DB.tribunal.affaires[idx].votes||{}; data.plainteId = DB.tribunal.affaires[idx].plainteId; DB.tribunal.affaires[idx] = data; }
+  } else {
+    data.id = Date.now();
+    data.created = Date.now();
+    data.votes = {};
+    DB.tribunal.affaires.push(data);
+  }
+  _tribSave();
+  document.getElementById('trib-modal').remove();
+  tribRenderAffaires();
+  showToast(editId?'✅ Affaire modifiée':'✅ Affaire ouverte ('+data.numero+')','success');
+}
+
+function tribDeleteAffaire(id){
+  if(!tribCanEdit()) return;
+  askDelete('Supprimer cette affaire et toutes ses données ?', function(){
+    DB.tribunal.affaires = (DB.tribunal.affaires||[]).filter(function(a){ return a.id!==id; });
+    DB.tribunal.audiences = (DB.tribunal.audiences||[]).map(function(au){ if(au.affaireId===id) au.affaireId=null; return au; });
+    _tribSave();
+    tribRenderAffaires();
+    showToast('Affaire supprimée.','info');
+  });
+}
+
+/* ─── PLAINTES POLICE TRANSMISES ─── */
+function tribShowPlaintesTransmises(){
+  var transmises = (DB.plaintes||[]).filter(function(p){ return p.statut==='transmise_tribunal' && !(DB.tribunal.affaires||[]).find(function(a){ return a.plainteId===p.id; }); });
+  var existing = document.getElementById('trib-modal'); if(existing) existing.remove();
+  var modal = document.createElement('div');
+  modal.id = 'trib-modal';
+  modal.className = 'modal-overlay open';
+  var html = '<div class="modal" style="max-width:680px"><div class="modal-header"><h3>📨 Plaintes transmises par la Police</h3><span class="modal-close" onclick="document.getElementById(\'trib-modal\').remove()">✕</span></div><div class="modal-body">';
+  if(transmises.length === 0){
+    html += '<div style="padding:30px;text-align:center;color:var(--muted)">Aucune plainte en attente de traitement.</div>';
+  } else {
+    html += '<div style="font-size:11px;color:var(--muted);margin-bottom:14px;font-family:\'Share Tech Mono\',monospace;letter-spacing:0.5px">'+transmises.length+' plainte'+(transmises.length>1?'s':'')+' transmise'+(transmises.length>1?'s':'')+' à traiter. Cliquez pour ouvrir une affaire à partir d\'une plainte.</div>';
+    html += transmises.map(function(p){
+      return '<div style="background:rgba(20,16,9,0.6);border:1px solid rgba(180,140,20,0.15);border-radius:8px;padding:14px 16px;margin-bottom:10px;cursor:pointer;transition:all 0.2s" onclick="tribOpenAffaireFromPlainte('+p.id+')" onmouseover="this.style.borderColor=\'var(--gold2)\'" onmouseout="this.style.borderColor=\'rgba(180,140,20,0.15)\'"><div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:6px"><div style="flex:1;min-width:0"><div style="font-family:\'Cinzel\',serif;font-size:14px;font-weight:600;color:var(--text)">⚠️ '+_tribEsc(p.accuse||'(accusé inconnu)')+'</div><div style="font-size:11px;color:var(--muted);font-family:\'Share Tech Mono\',monospace;margin-top:3px">Plainte #'+p.id+' · '+_tribFmtDateOnly(p.date)+' · Plaignant : '+_tribEsc(p.plaignant||'—')+'</div></div><div style="color:var(--gold2);font-size:18px">→</div></div>'+(p.desc?'<div style="font-size:12px;color:rgba(240,232,208,0.7);line-height:1.5;margin-top:6px">'+_tribEsc(p.desc.slice(0,200))+(p.desc.length>200?'...':'')+'</div>':'')+(p.type?'<div style="margin-top:6px;font-size:10px"><span style="display:inline-block;padding:1px 7px;border-radius:3px;background:rgba(192,65,14,0.12);color:#f97316;border:1px solid rgba(192,65,14,0.3);font-family:\'Share Tech Mono\',monospace;letter-spacing:0.8px">'+_tribEsc(p.type)+'</span></div>':'')+'</div>';
+    }).join('');
+  }
+  html += '</div><div class="modal-footer"><button class="btn btn-outline" onclick="document.getElementById(\'trib-modal\').remove()">Fermer</button></div></div>';
+  modal.innerHTML = html;
+  document.body.appendChild(modal);
+}
+
+function tribOpenAffaireFromPlainte(plainteId){
+  if(!tribCanEdit()) return;
+  var p = (DB.plaintes||[]).find(function(x){ return x.id===plainteId; });
+  if(!p) return;
+  document.getElementById('trib-modal').remove();
+  // Pré-remplir l'affaire avec les données de la plainte
+  setTimeout(function(){
+    tribOpenAffaire();
+    // Pré-remplir
+    setTimeout(function(){
+      if(el('trib-aff-accuse')) el('trib-aff-accuse').value = p.accuse||'';
+      if(el('trib-aff-parties')) el('trib-aff-parties').value = 'Plaignant : '+(p.plaignant||'—');
+      if(el('trib-aff-charges')) el('trib-aff-charges').value = (p.type?p.type+'\n\n':'') + (p.desc||'');
+      if(el('trib-aff-notes')) el('trib-aff-notes').value = 'Issue de la plainte Police #'+p.id+' du '+_tribFmtDateOnly(p.date);
+    }, 100);
+  }, 100);
+  // Marquer la plainte comme liée (sauvegarde après création de l'affaire — TODO)
+}
+
+/* ─── PAGE JUGEMENTS ─── */
+function tribRenderJugements(){
+  if(!el('trib-jug-list')) return;
+  var all = DB.tribunal.jugements||[];
+  // Stats
+  if(el('trib-stat-jug-acq'))  el('trib-stat-jug-acq').textContent = all.filter(function(j){ return j.verdict==='acquitte'; }).length;
+  if(el('trib-stat-jug-cond')) el('trib-stat-jug-cond').textContent = all.filter(function(j){ return j.verdict==='coupable'; }).length;
+  if(el('trib-stat-jug-total'))el('trib-stat-jug-total').textContent = all.length;
+  // Filtres
+  var q = ((el('trib-jug-search')||{}).value || '').toLowerCase().trim();
+  var vF = (el('trib-jug-verdict')||{}).value || 'all';
+  var list = all.slice();
+  if(vF !== 'all') list = list.filter(function(j){ return j.verdict===vF; });
+  if(q) list = list.filter(function(j){
+    return ((j.accuse||'')+' '+(j.charges||'')+' '+(j.juge||'')+' '+(j.motifs||'')).toLowerCase().indexOf(q) !== -1;
+  });
+  list.sort(function(a,b){ return (b.date||0) - (a.date||0); });
+  if(list.length === 0){
+    el('trib-jug-list').innerHTML = '<div class="card" style="padding:48px 20px;text-align:center"><div style="font-size:42px;opacity:0.35;margin-bottom:10px">⚖️</div><div style="color:var(--muted);font-family:\'Share Tech Mono\',monospace;letter-spacing:1px;font-size:11px">Aucun jugement enregistré</div></div>';
+    return;
+  }
+  var canEdit = tribCanEdit();
+  el('trib-jug-list').innerHTML = list.map(function(j){
+    var vi = _tribVerdictInfo(j.verdict);
+    var aff = (DB.tribunal.affaires||[]).find(function(a){ return a.id===j.affaireId; });
+    var actions = canEdit
+      ? '<div style="display:flex;gap:5px"><button class="btn btn-outline btn-sm" onclick="tribOpenJugement('+j.id+')">✏️</button>'+(j.verdict==='coupable'||j.verdict==='reduit'?'<button class="btn btn-gold btn-sm" onclick="tribCreateJurisprudence('+j.id+')" title="Créer un précédent">📜+</button>':'')+'<button class="btn btn-danger btn-sm" onclick="tribDeleteJugement('+j.id+')">🗑</button></div>'
+      : '';
+    return '<div class="card" style="margin-bottom:12px;padding:0;overflow:hidden;border-left:3px solid '+vi.color+'">'+
+      '<div style="padding:14px 18px;background:linear-gradient(90deg,'+vi.bg+',transparent);display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">'+
+        '<div style="display:flex;align-items:center;gap:14px;flex:1;min-width:200px">'+
+          '<div style="font-family:\'Cinzel\',serif;font-size:13px;font-weight:900;color:'+vi.color+';letter-spacing:1.5px;padding:4px 10px;border:2px solid '+vi.color+';border-radius:4px;background:'+vi.bg+';white-space:nowrap">'+vi.label+'</div>'+
+          '<div style="flex:1;min-width:0">'+
+            '<div style="font-family:\'Cinzel\',serif;font-size:16px;font-weight:600;color:var(--text)">'+_tribEsc(j.accuse||'(inconnu)')+'</div>'+
+            '<div style="font-size:11px;color:var(--muted);font-family:\'Share Tech Mono\',monospace;margin-top:3px">'+(aff?_tribEsc(aff.numero)+' · ':'')+_tribFmtDate(j.date)+(j.juge?' · Juge : '+_tribEsc(j.juge):'')+'</div>'+
+          '</div>'+
+        '</div>'+
+        actions+
+      '</div>'+
+      (j.charges?'<div style="padding:12px 18px;border-top:1px solid rgba(180,140,20,0.08)"><div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:var(--muted);letter-spacing:1.5px;margin-bottom:5px">CHARGES</div><div style="font-size:12.5px;color:rgba(240,232,208,0.85);line-height:1.55;white-space:pre-wrap">'+_tribEsc(j.charges)+'</div></div>':'')+
+      (j.motifs?'<div style="padding:12px 18px;border-top:1px solid rgba(180,140,20,0.08);background:rgba(0,0,0,0.2)"><div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:var(--muted);letter-spacing:1.5px;margin-bottom:5px">📝 MOTIFS DU JUGEMENT</div><div style="font-size:12.5px;color:rgba(240,232,208,0.85);line-height:1.55;white-space:pre-wrap;font-style:italic">'+_tribEsc(j.motifs)+'</div></div>':'')+
+      (j.sanction?'<div style="padding:12px 18px;border-top:1px solid rgba(180,140,20,0.08)"><div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:'+vi.color+';letter-spacing:1.5px;margin-bottom:5px">⚖️ SANCTION PRONONCÉE</div><div style="font-size:13px;color:'+vi.color+';font-weight:600;line-height:1.55">'+_tribEsc(j.sanction)+'</div></div>':'')+
+    '</div>';
+  }).join('');
+}
+
+function tribOpenJugement(editId, affaireIdHint){
+  if(!tribCanEdit()){ showToast('⛔ Action réservée aux modérateurs.','error'); return; }
+  var ed = editId ? (DB.tribunal.jugements||[]).find(function(j){ return j.id===editId; }) : null;
+  var hintAff = affaireIdHint ? (DB.tribunal.affaires||[]).find(function(a){ return a.id===affaireIdHint; }) : null;
+  var affOpts = '<option value="">(Sans affaire)</option>' + (DB.tribunal.affaires||[]).map(function(a){
+    var sel = (ed&&ed.affaireId===a.id) || (!ed && hintAff && hintAff.id===a.id);
+    return '<option value="'+a.id+'"'+(sel?' selected':'')+'>'+_tribEsc(a.numero)+' — '+_tribEsc(a.accuse)+'</option>';
+  }).join('');
+  var existing = document.getElementById('trib-modal'); if(existing) existing.remove();
+  var modal = document.createElement('div');
+  modal.id = 'trib-modal';
+  modal.className = 'modal-overlay open';
+  var defAccuse = ed?ed.accuse:(hintAff?hintAff.accuse:'');
+  var defCharges = ed?ed.charges:(hintAff?hintAff.charges:'');
+  var defJuge = ed?ed.juge:(hintAff?hintAff.juge:'');
+  modal.innerHTML = '<div class="modal" style="max-width:620px"><div class="modal-header"><h3>'+(ed?'✏️ Modifier le jugement':'⚖️ Rendre un jugement')+'</h3><span class="modal-close" onclick="document.getElementById(\'trib-modal\').remove()">✕</span></div><div class="modal-body"><div class="form-group"><label class="form-label">Affaire associée</label><select id="trib-jug-affaire" class="form-control">'+affOpts+'</select></div><div class="grid grid-2" style="gap:12px"><div class="form-group"><label class="form-label">Accusé</label><input type="text" id="trib-jug-accuse" class="form-control" value="'+_tribEsc(defAccuse)+'"></div><div class="form-group"><label class="form-label">Juge</label><input type="text" id="trib-jug-juge" class="form-control" value="'+_tribEsc(defJuge)+'"></div></div><div class="form-group"><label class="form-label">Verdict</label><select id="trib-jug-verdict-input" class="form-control"><option value="acquitte"'+(ed&&ed.verdict==='acquitte'?' selected':'')+'>✓ Acquitté</option><option value="coupable"'+(ed&&ed.verdict==='coupable'?' selected':'')+'>⚠ Coupable</option><option value="reduit"'+(ed&&ed.verdict==='reduit'?' selected':'')+'>◆ Charges réduites</option><option value="renvoi"'+(ed&&ed.verdict==='renvoi'?' selected':'')+'>↻ Renvoyé pour complément d\'enquête</option></select></div><div class="form-group"><label class="form-label">Charges retenues</label><textarea id="trib-jug-charges" class="form-control" rows="3">'+_tribEsc(defCharges)+'</textarea></div><div class="form-group"><label class="form-label">Motifs du jugement</label><textarea id="trib-jug-motifs" class="form-control" rows="4" placeholder="Considérants juridiques, raisonnement du tribunal...">'+_tribEsc(ed?ed.motifs||'':'')+'</textarea></div><div class="form-group"><label class="form-label">Sanction prononcée</label><textarea id="trib-jug-sanction" class="form-control" rows="2" placeholder="Ex: 3 mois de suspension de mission, amende de 50 000 ryos...">'+_tribEsc(ed?ed.sanction||'':'')+'</textarea></div></div><div class="modal-footer"><button class="btn btn-outline" onclick="document.getElementById(\'trib-modal\').remove()">Annuler</button>'+(ed?'<button class="btn btn-danger" onclick="tribDeleteJugement('+ed.id+');document.getElementById(\'trib-modal\').remove()">🗑 Supprimer</button>':'')+'<button class="btn btn-primary" onclick="tribSaveJugement('+(ed?ed.id:'null')+')">⚖️ Rendre le jugement</button></div></div>';
+  document.body.appendChild(modal);
+}
+
+function tribSaveJugement(editId){
+  if(!tribCanEdit()) return;
+  var accuse = el('trib-jug-accuse').value.trim();
+  if(!accuse){ showToast('Le nom de l\'accusé est obligatoire.','error'); return; }
+  var data = {
+    affaireId: parseInt(el('trib-jug-affaire').value)||null,
+    accuse: accuse,
+    juge: el('trib-jug-juge').value.trim(),
+    verdict: el('trib-jug-verdict-input').value,
+    charges: el('trib-jug-charges').value.trim(),
+    motifs: el('trib-jug-motifs').value.trim(),
+    sanction: el('trib-jug-sanction').value.trim(),
+    date: Date.now(),
+    auteur: (currentUser&&(currentUser.nom||currentUser.login))||'?'
+  };
+  if(editId){
+    var idx = DB.tribunal.jugements.findIndex(function(j){ return j.id===editId; });
+    if(idx>-1){ data.id = editId; data.date = DB.tribunal.jugements[idx].date; DB.tribunal.jugements[idx] = data; }
+  } else {
+    data.id = Date.now();
+    DB.tribunal.jugements.push(data);
+    // Clôturer l'affaire associée
+    if(data.affaireId){
+      var aff = DB.tribunal.affaires.find(function(a){ return a.id===data.affaireId; });
+      if(aff) aff.statut = 'cloturee';
+    }
+  }
+  _tribSave();
+  document.getElementById('trib-modal').remove();
+  tribRenderJugements();
+  showToast(editId?'✅ Jugement modifié':'⚖️ Jugement rendu','success');
+}
+
+function tribDeleteJugement(id){
+  if(!tribCanEdit()) return;
+  askDelete('Supprimer ce jugement ?', function(){
+    DB.tribunal.jugements = (DB.tribunal.jugements||[]).filter(function(j){ return j.id!==id; });
+    _tribSave();
+    tribRenderJugements();
+    showToast('Jugement supprimé.','info');
+  });
+}
+
+/* ─── JURISPRUDENCE ─── */
+function tribCreateJurisprudence(jugementId){
+  if(!tribCanEdit()) return;
+  var j = (DB.tribunal.jugements||[]).find(function(x){ return x.id===jugementId; });
+  if(!j) return;
+  // Vérifier si déjà créé
+  var existing = (DB.tribunal.jurisprudence||[]).find(function(jr){ return jr.jugementId===jugementId; });
+  if(existing){ showToast('Un précédent existe déjà pour ce jugement.','info'); return; }
+  var titre = prompt('Titre du précédent (ex: "Affaire de la falsification des grades 2026") :', j.accuse+' — '+_tribFmtDateOnly(j.date));
+  if(!titre) return;
+  var resume = prompt('Résumé du principe juridique établi par ce jugement :', j.motifs ? j.motifs.slice(0,200) : '');
+  if(resume === null) return;
+  DB.tribunal.jurisprudence.push({
+    id: Date.now(),
+    jugementId: jugementId,
+    titre: titre,
+    resume: resume,
+    verdict: j.verdict,
+    accuse: j.accuse,
+    charges: j.charges,
+    sanction: j.sanction,
+    date: Date.now(),
+    auteur: (currentUser&&(currentUser.nom||currentUser.login))||'?'
+  });
+  _tribSave();
+  showToast('📜 Précédent juridique créé !','success');
+  tribRenderJugements();
+}
+
+/* ─── PAGE PROCÉDURE ─── */
+function tribRenderProcedure(){
+  if(!el('trib-proc-list')) return;
+  var all = DB.tribunal.procedure||[];
+  var q = ((el('trib-proc-search')||{}).value || '').toLowerCase().trim();
+  var list = q ? all.filter(function(p){ return ((p.titre||'')+' '+(p.contenu||'')).toLowerCase().indexOf(q) !== -1; }) : all.slice();
+  list.sort(function(a,b){ return (a.numero||0) - (b.numero||0); });
+  if(list.length === 0){
+    el('trib-proc-list').innerHTML = '<div class="card" style="padding:48px 20px;text-align:center"><div style="font-size:42px;opacity:0.35;margin-bottom:10px">📜</div><div style="color:var(--muted);font-family:\'Share Tech Mono\',monospace;letter-spacing:1px;font-size:11px">Aucun article du code de procédure</div></div>';
+    return;
+  }
+  var canEdit = tribCanEdit();
+  el('trib-proc-list').innerHTML = list.map(function(p){
+    var actions = canEdit
+      ? '<div style="display:flex;gap:5px"><button class="btn btn-outline btn-sm" onclick="tribOpenProcedure('+p.id+')">✏️</button><button class="btn btn-danger btn-sm" onclick="tribDeleteProcedure('+p.id+')">🗑</button></div>'
+      : '';
+    return '<div class="card" style="margin-bottom:12px;padding:14px 18px"><div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:8px"><div style="flex:1;min-width:0"><div style="display:flex;align-items:center;gap:8px;margin-bottom:4px"><span style="font-family:\'Share Tech Mono\',monospace;font-size:11px;color:var(--gold2);letter-spacing:1.5px;font-weight:700">ARTICLE '+(p.numero||'?')+'</span></div><div style="font-family:\'Cinzel\',serif;font-size:15px;font-weight:600;color:var(--text)">'+_tribEsc(p.titre||'(sans titre)')+'</div></div>'+actions+'</div>'+(p.contenu?'<div style="font-size:13px;color:rgba(240,232,208,0.85);line-height:1.65;white-space:pre-wrap;padding-top:8px;border-top:1px solid rgba(180,140,20,0.08)">'+_tribEsc(p.contenu)+'</div>':'')+'</div>';
+  }).join('');
+}
+
+function tribOpenProcedure(editId){
+  if(!tribCanEdit()){ showToast('⛔ Action réservée aux modérateurs.','error'); return; }
+  var ed = editId ? (DB.tribunal.procedure||[]).find(function(p){ return p.id===editId; }) : null;
+  var nextNum = ed ? ed.numero : (Math.max(0, ...((DB.tribunal.procedure||[]).map(function(p){ return p.numero||0; })))+1);
+  var existing = document.getElementById('trib-modal'); if(existing) existing.remove();
+  var modal = document.createElement('div');
+  modal.id = 'trib-modal';
+  modal.className = 'modal-overlay open';
+  modal.innerHTML = '<div class="modal" style="max-width:560px"><div class="modal-header"><h3>'+(ed?'✏️ Modifier l\'article':'📜 Nouvel article du code')+'</h3><span class="modal-close" onclick="document.getElementById(\'trib-modal\').remove()">✕</span></div><div class="modal-body"><div class="grid grid-2" style="gap:12px"><div class="form-group"><label class="form-label">Numéro</label><input type="number" id="trib-proc-numero" class="form-control" value="'+nextNum+'" min="1"></div><div class="form-group" style="grid-column:span 1"><label class="form-label">Titre</label><input type="text" id="trib-proc-titre" class="form-control" value="'+_tribEsc(ed?ed.titre||'':'')+'" placeholder="Ex: De la convocation des accusés"></div></div><div class="form-group"><label class="form-label">Contenu de l\'article</label><textarea id="trib-proc-contenu" class="form-control" rows="8" placeholder="Texte de l\'article...">'+_tribEsc(ed?ed.contenu||'':'')+'</textarea></div></div><div class="modal-footer"><button class="btn btn-outline" onclick="document.getElementById(\'trib-modal\').remove()">Annuler</button>'+(ed?'<button class="btn btn-danger" onclick="tribDeleteProcedure('+ed.id+');document.getElementById(\'trib-modal\').remove()">🗑 Supprimer</button>':'')+'<button class="btn btn-primary" onclick="tribSaveProcedure('+(ed?ed.id:'null')+')">💾 Enregistrer</button></div></div>';
+  document.body.appendChild(modal);
+}
+
+function tribSaveProcedure(editId){
+  if(!tribCanEdit()) return;
+  var titre = el('trib-proc-titre').value.trim();
+  if(!titre){ showToast('Titre obligatoire.','error'); return; }
+  var data = {
+    numero: parseInt(el('trib-proc-numero').value)||1,
+    titre: titre,
+    contenu: el('trib-proc-contenu').value.trim(),
+    updated: Date.now(),
+    auteur: (currentUser&&(currentUser.nom||currentUser.login))||'?'
+  };
+  if(editId){
+    var idx = DB.tribunal.procedure.findIndex(function(p){ return p.id===editId; });
+    if(idx>-1){ data.id = editId; data.created = DB.tribunal.procedure[idx].created; DB.tribunal.procedure[idx] = data; }
+  } else {
+    data.id = Date.now();
+    data.created = Date.now();
+    DB.tribunal.procedure.push(data);
+  }
+  _tribSave();
+  document.getElementById('trib-modal').remove();
+  tribRenderProcedure();
+  showToast('✅ Article '+(editId?'modifié':'créé'),'success');
+}
+
+function tribDeleteProcedure(id){
+  if(!tribCanEdit()) return;
+  askDelete('Supprimer cet article du code ?', function(){
+    DB.tribunal.procedure = (DB.tribunal.procedure||[]).filter(function(p){ return p.id!==id; });
+    _tribSave();
+    tribRenderProcedure();
+    showToast('Article supprimé.','info');
+  });
+}
+
+/* ─── PAGE ARCHIVES & JURISPRUDENCE ─── */
+var _tribArchTab = 'affaires';
+
+function tribArchSwitch(tab){
+  _tribArchTab = tab;
+  if(el('trib-arch-tab-aff')) el('trib-arch-tab-aff').classList.toggle('active', tab==='affaires');
+  if(el('trib-arch-tab-jur')) el('trib-arch-tab-jur').classList.toggle('active', tab==='jurisprudence');
+  if(el('trib-arch-aff-pane')) el('trib-arch-aff-pane').style.display = tab==='affaires'?'':'none';
+  if(el('trib-arch-jur-pane')) el('trib-arch-jur-pane').style.display = tab==='jurisprudence'?'':'none';
+  if(tab==='affaires') tribRenderArchives();
+  else tribRenderJurisprudence();
+}
+
+function tribRenderArchives(){
+  if(!el('trib-arch-list')) return;
+  var all = (DB.tribunal.affaires||[]).filter(function(a){ return a.statut==='cloturee'; });
+  if(el('trib-stat-arch-aff')) el('trib-stat-arch-aff').textContent = all.length;
+  if(el('trib-stat-arch-jur')) el('trib-stat-arch-jur').textContent = (DB.tribunal.jurisprudence||[]).length;
+  var q = ((el('trib-arch-search')||{}).value || '').toLowerCase().trim();
+  var list = q ? all.filter(function(a){ return ((a.numero||'')+' '+(a.accuse||'')+' '+(a.charges||'')).toLowerCase().indexOf(q) !== -1; }) : all.slice();
+  list.sort(function(a,b){ return (b.created||0) - (a.created||0); });
+  if(list.length === 0){
+    el('trib-arch-list').innerHTML = '<div class="card" style="padding:48px 20px;text-align:center"><div style="font-size:42px;opacity:0.35;margin-bottom:10px">📁</div><div style="color:var(--muted);font-family:\'Share Tech Mono\',monospace;letter-spacing:1px;font-size:11px">Aucune affaire archivée</div></div>';
+    return;
+  }
+  el('trib-arch-list').innerHTML = list.map(function(a){
+    var jug = (DB.tribunal.jugements||[]).find(function(j){ return j.affaireId===a.id; });
+    var vi = jug ? _tribVerdictInfo(jug.verdict) : { color:'#6b7280', label:'—' };
+    return '<div class="card" style="margin-bottom:10px;padding:13px 16px;display:flex;align-items:center;gap:14px;flex-wrap:wrap"><div style="flex:1;min-width:200px"><div style="display:flex;align-items:center;gap:8px;margin-bottom:3px"><span style="font-family:\'Share Tech Mono\',monospace;font-size:11px;color:var(--gold2);letter-spacing:1.5px;font-weight:700">'+_tribEsc(a.numero)+'</span>'+(jug?'<span style="font-family:\'Share Tech Mono\',monospace;font-size:9px;font-weight:700;color:'+vi.color+';padding:1px 6px;border:1px solid '+vi.color+'66;border-radius:3px;letter-spacing:1px">'+vi.label+'</span>':'')+'</div><div style="font-family:\'Cinzel\',serif;font-size:14px;font-weight:600;color:var(--text)">'+_tribEsc(a.accuse)+'</div><div style="font-size:10px;color:var(--muted);font-family:\'Share Tech Mono\',monospace;margin-top:3px">Ouvert le '+_tribFmtDateOnly(a.created)+(jug?' · Jugé le '+_tribFmtDateOnly(jug.date):'')+'</div></div></div>';
+  }).join('');
+}
+
+function tribRenderJurisprudence(){
+  if(!el('trib-jur-list')) return;
+  var all = DB.tribunal.jurisprudence||[];
+  var q = ((el('trib-jur-search')||{}).value || '').toLowerCase().trim();
+  var list = q ? all.filter(function(j){ return ((j.titre||'')+' '+(j.resume||'')+' '+(j.accuse||'')+' '+(j.charges||'')).toLowerCase().indexOf(q) !== -1; }) : all.slice();
+  list.sort(function(a,b){ return (b.date||0) - (a.date||0); });
+  if(list.length === 0){
+    el('trib-jur-list').innerHTML = '<div class="card" style="padding:48px 20px;text-align:center"><div style="font-size:42px;opacity:0.35;margin-bottom:10px">📜</div><div style="color:var(--muted);font-family:\'Share Tech Mono\',monospace;letter-spacing:1px;font-size:11px">Aucun précédent juridique enregistré</div><div style="font-size:11px;color:var(--muted);margin-top:6px">Créez un précédent depuis un jugement (icône 📜+ sur les jugements coupables)</div></div>';
+    return;
+  }
+  var canEdit = tribCanEdit();
+  el('trib-jur-list').innerHTML = list.map(function(j){
+    var vi = _tribVerdictInfo(j.verdict);
+    var actions = canEdit
+      ? '<button class="btn btn-danger btn-sm" onclick="tribDeleteJurisprudence('+j.id+')">🗑</button>'
+      : '';
+    return '<div class="card" style="margin-bottom:12px;padding:0;overflow:hidden;border-left:3px solid '+vi.color+'"><div style="padding:14px 18px;background:linear-gradient(90deg,'+vi.bg+',transparent);display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap"><div style="flex:1;min-width:200px"><div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:5px"><span style="font-size:14px">📜</span><span style="font-family:\'Share Tech Mono\',monospace;font-size:9px;font-weight:700;color:'+vi.color+';padding:2px 7px;border:1px solid '+vi.color+';border-radius:3px;letter-spacing:1px">'+vi.label+'</span></div><div style="font-family:\'Cinzel\',serif;font-size:16px;font-weight:600;color:var(--text);line-height:1.3">'+_tribEsc(j.titre)+'</div><div style="font-size:11px;color:var(--muted);font-family:\'Share Tech Mono\',monospace;margin-top:4px">'+_tribFmtDateOnly(j.date)+(j.accuse?' · '+_tribEsc(j.accuse):'')+'</div></div>'+actions+'</div>'+(j.resume?'<div style="padding:14px 18px;border-top:1px solid rgba(180,140,20,0.08)"><div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:var(--muted);letter-spacing:1.5px;margin-bottom:6px">PRINCIPE ÉTABLI</div><div style="font-size:13px;color:rgba(240,232,208,0.9);line-height:1.65;font-style:italic">'+_tribEsc(j.resume)+'</div></div>':'')+'</div>';
+  }).join('');
+}
+
+function tribDeleteJurisprudence(id){
+  if(!tribCanEdit()) return;
+  askDelete('Supprimer ce précédent juridique ?', function(){
+    DB.tribunal.jurisprudence = (DB.tribunal.jurisprudence||[]).filter(function(j){ return j.id!==id; });
+    _tribSave();
+    tribRenderJurisprudence();
+    showToast('Précédent supprimé.','info');
+  });
+}
+
+/* ─── SYNC FIREBASE pour DB.tribunal ─── */
+document.addEventListener('DOMContentLoaded', function(){
+  var w = 0;
+  var itv = setInterval(function(){
+    w++;
+    if(window._fbDB && window._fbRef && window._fbOnValue){
+      clearInterval(itv);
+      try{
+        var r = window._fbRef(window._fbDB, 'sunagakure/tribunal');
+        window._fbOnValue(r, function(snap){
+          var v = snap.val();
+          if(v && typeof v === 'object'){
+            // Protection : si modal d'édition tribunal ouverte, ne pas re-render
+            var modalOpen = !!document.getElementById('trib-modal');
+            DB.tribunal = v;
+            try{ localStorage.setItem('suna_tribunal', JSON.stringify(v)); }catch(e){}
+            ['affaires','audiences','jugements','procedure','jurisprudence'].forEach(function(k){
+              if(!Array.isArray(DB.tribunal[k])) DB.tribunal[k] = [];
+            });
+            if(!modalOpen){
+              try{
+                var active = document.querySelector('.page-content.active');
+                if(active && /^page-juge-/.test(active.id)){
+                  tribRenderPage(active.id.replace('page-',''));
+                }
+              }catch(e){}
+            }
+          }
+        });
+      }catch(e){}
+    } else if(w > 60){
+      clearInterval(itv);
+    }
+  }, 100);
+});
+
+
 function _ensureSectionData(){
   if(!DB.sectionData) DB.sectionData = {};
 }
@@ -30370,10 +31438,11 @@ document.addEventListener('DOMContentLoaded', function(){
             }
             DB.sectionData = v;
             try{ localStorage.setItem('suna_section_data', JSON.stringify(v)); }catch(e){}
-            // Re-render la page courante si c'est une page de section
+            // Re-render la page courante si c'est une page de section générique
+            // Note : juge-* est exclu car le Tribunal utilise son propre système (DB.tribunal)
             try{
               var active = document.querySelector('.page-content.active');
-              if(active && /^page-(juge|avocat|mission|medical|diplo)-/.test(active.id)){
+              if(active && /^page-(avocat|mission|medical|diplo)-/.test(active.id)){
                 renderSectionPage(active.id.replace('page-',''));
               }
             }catch(e){}
