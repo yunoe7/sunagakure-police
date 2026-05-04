@@ -15708,6 +15708,23 @@ function initFirebaseSync(){
                 try{ window[pr.fn](); }catch(e){ console.warn('[sync] '+pr.fn+' failed:', e); }
               }
             }
+            // BUG-FIX SECTION : re-render des pages des sections non-Police si sectionData a changé
+            // (le pageRenderers ne couvre pas ces pages génériques)
+            if(activePage && _changedKeys.has('sectionData') && /^(juge|avocat|mission|medical|diplo)-/.test(activePage)){
+              // Protection : ne pas re-render si l'utilisateur est en train d'éditer une entrée
+              // (le formulaire d'édition section n'est pas une modale, donc anyModalOpen ne le détecte pas)
+              var isEditingSection = false;
+              try{
+                var openForm = document.querySelector('[id^="sec-form-"]');
+                if(openForm && openForm.style.display !== 'none'){
+                  var co = openForm.querySelector('textarea[id^="sec-content-"]');
+                  if(co && co.getAttribute('data-edit-id')) isEditingSection = true;
+                }
+              }catch(e){}
+              if(!isEditingSection && typeof renderSectionPage === 'function'){
+                try{ renderSectionPage(activePage); }catch(e){}
+              }
+            }
             // Toujours mettre à jour les badges de notification (tout en haut + bottom-nav)
             // car ils s'appliquent à toutes les pages
             if(typeof updateBadges === 'function')          { try{ updateBadges(); }catch(e){} }
