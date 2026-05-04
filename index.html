@@ -31029,6 +31029,210 @@ function _hospBuildModal(title, bodyHtml, footerHtml){
   return m;
 }
 
+/* ─── VIEWER (lecture seule) ─── 
+ * Construit une fiche en lecture seule à partir d'un tableau de champs.
+ * fields = [{label, value, type}] où type ∈ 'text'|'multiline'|'badge'|'mono'|'html'
+ * Si value est null/undefined/'' , on affiche '—'. */
+function _hospView(title, fields, footerExtra){
+  var body = '<div class="hosp-view-grid">';
+  for(var i=0; i<fields.length; i++){
+    var f = fields[i];
+    var val = f.value;
+    var isEmpty = (val === null || val === undefined || val === '' || val === 0 && f.type !== 'mono' && f.type !== 'number');
+    var displayVal;
+    if(isEmpty && f.type !== 'badge'){
+      displayVal = '<span style="color:var(--muted);font-style:italic">—</span>';
+    } else if(f.type === 'badge'){
+      displayVal = val || '<span style="color:var(--muted)">—</span>';
+    } else if(f.type === 'multiline'){
+      displayVal = '<div style="white-space:pre-wrap;line-height:1.5;color:var(--text);background:rgba(201,162,39,0.04);padding:10px 12px;border-radius:6px;border:1px solid rgba(201,162,39,0.1);font-size:13px">'+_hospEsc(val)+'</div>';
+    } else if(f.type === 'html'){
+      displayVal = val; // déjà sécurisé par l'appelant
+    } else if(f.type === 'mono'){
+      displayVal = '<span class="mono" style="color:var(--text)">'+_hospEsc(val)+'</span>';
+    } else if(f.type === 'number'){
+      displayVal = '<span class="mono" style="color:var(--text);font-weight:600">'+_hospEsc(val)+'</span>';
+    } else {
+      displayVal = '<span style="color:var(--text)">'+_hospEsc(val)+'</span>';
+    }
+    body += '<div class="hosp-view-row">'
+      +  '<div class="hosp-view-label">'+_hospEsc(f.label)+'</div>'
+      +  '<div class="hosp-view-value">'+displayVal+'</div>'
+      +'</div>';
+  }
+  body += '</div>';
+  // Petit style inline (one-shot, ne pollue pas le CSS global)
+  body = '<style>'
+    +'.hosp-view-grid{display:flex;flex-direction:column;gap:12px}'
+    +'.hosp-view-row{display:grid;grid-template-columns:130px 1fr;gap:12px;align-items:start}'
+    +'.hosp-view-label{font-size:9.5px;letter-spacing:1.5px;text-transform:uppercase;color:var(--gold2);font-family:\'Share Tech Mono\',monospace;padding-top:3px}'
+    +'.hosp-view-value{font-size:13px;color:var(--text);min-width:0;word-break:break-word}'
+    +'@media (max-width: 600px){.hosp-view-row{grid-template-columns:1fr;gap:3px}.hosp-view-label{padding-top:0}}'
+    +'</style>'+body;
+  var footer = (footerExtra||'') + '<button class="btn btn-outline" onclick="_hospCloseModal()">Fermer</button>';
+  _hospBuildModal(title, body, footer);
+}
+
+/* Helper : récupère le label lisible d'un statut */
+function _hospStatutLabel(statut, mapping){
+  return mapping[statut] || statut || '—';
+}
+
+/* ─── 8 FONCTIONS VIEW (une par collection) ─── */
+function hospViewPatient(id){
+  var p = (DB.hospital.patients||[]).find(function(x){ return x.id===id; });
+  if(!p){ showToast('Patient introuvable.','error'); return; }
+  var statutMap = {
+    'hospitalise': '<span class="badge badge-orange">🛌 Hospitalisé</span>',
+    'suivi':       '<span class="badge badge-blue">📋 En suivi</span>',
+    'sorti':       '<span class="badge badge-green">✅ Sorti</span>',
+    'critique':    '<span class="badge badge-red">⚠️ Critique</span>'
+  };
+  _hospView('🛌 Fiche patient — '+_hospEsc(p.nom||''), [
+    { label: 'Nom',         value: p.nom },
+    { label: 'Âge',         value: p.age ? p.age + ' ans' : null },
+    { label: 'Chambre',     value: p.chambre, type: 'mono' },
+    { label: 'Pathologie',  value: p.pathologie },
+    { label: 'Médecin',     value: p.medecin },
+    { label: 'Statut',      value: statutMap[p.statut]||'—', type: 'badge' },
+    { label: 'Admission',   value: _hospFmtDate(p.dateAdmission), type: 'mono' },
+    { label: 'Notes',       value: p.notes, type: 'multiline' },
+    { label: 'Saisi par',   value: p.auteurNom||'—' }
+  ]);
+}
+
+function hospViewConsultation(id){
+  var c = (DB.hospital.consultations||[]).find(function(x){ return x.id===id; });
+  if(!c){ showToast('Consultation introuvable.','error'); return; }
+  var statutMap = {
+    'prevue':   '<span class="badge badge-gold">📅 Prévue</span>',
+    'encours':  '<span class="badge badge-orange">⏳ En cours</span>',
+    'terminee': '<span class="badge badge-green">✅ Terminée</span>',
+    'annulee':  '<span class="badge badge-gray">❌ Annulée</span>'
+  };
+  _hospView('🩺 Consultation', [
+    { label: 'Date / Heure',  value: _hospFmtDateTime(c.dateTs), type: 'mono' },
+    { label: 'Patient',       value: c.patient },
+    { label: 'Médecin',       value: c.medecin },
+    { label: 'Motif',         value: c.motif },
+    { label: 'Statut',        value: statutMap[c.statut]||'—', type: 'badge' },
+    { label: 'Compte-rendu',  value: c.compteRendu, type: 'multiline' },
+    { label: 'Saisi par',     value: c.auteurNom||'—' }
+  ]);
+}
+
+function hospViewPharmacie(id){
+  var p = (DB.hospital.pharmacie||[]).find(function(x){ return x.id===id; });
+  if(!p){ showToast('Produit introuvable.','error'); return; }
+  var stockState = _hospPharmStock(p);
+  var stockBadge = {
+    'ok':  '<span class="badge badge-green">✅ '+(p.stock||0)+' en stock</span>',
+    'low': '<span class="badge badge-orange">⚠️ Stock bas — '+(p.stock||0)+'</span>',
+    'out': '<span class="badge badge-red">❌ Rupture</span>'
+  }[stockState];
+  _hospView('💊 Fiche produit — '+_hospEsc(p.nom||''), [
+    { label: 'Produit',      value: p.nom },
+    { label: 'Catégorie',    value: p.categorie },
+    { label: 'Stock',        value: stockBadge, type: 'badge' },
+    { label: 'Seuil alerte', value: p.seuil, type: 'number' },
+    { label: 'Prix unité',   value: (p.prix||0) + ' ryōs', type: 'mono' },
+    { label: 'Notes',        value: p.notes, type: 'multiline' },
+    { label: 'Dernière MAJ', value: _hospFmtDateTime(p.modified||p.created), type: 'mono' },
+    { label: 'Saisi par',    value: p.auteurNom||'—' }
+  ]);
+}
+
+function hospViewPsy(id){
+  var c = (DB.hospital.psy||[]).find(function(x){ return x.id===id; });
+  if(!c){ showToast('Consultation introuvable.','error'); return; }
+  _hospView('🧠 Consultation psychologique', [
+    { label: 'Date',          value: _hospFmtDate(c.dateTs), type: 'mono' },
+    { label: 'Patient',       value: c.patient },
+    { label: 'Psychologue',   value: c.psychologue },
+    { label: 'Motif',         value: c.motif },
+    { label: 'Suivi prévu',   value: c.suiviPrevu ? _hospFmtDate(c.suiviPrevu) : null, type: 'mono' },
+    { label: 'Compte-rendu',  value: c.notes, type: 'multiline' },
+    { label: 'Saisi par',     value: c.auteurNom||'—' }
+  ]);
+}
+
+function hospViewDon(id){
+  var d = (DB.hospital.dons||[]).find(function(x){ return x.id===id; });
+  if(!d){ showToast('Don introuvable.','error'); return; }
+  var dispo = Math.max(0, (parseInt(d.poches,10)||0) - (parseInt(d.utilisees,10)||0));
+  _hospView('🩸 Fiche don du sang', [
+    { label: 'Date',         value: _hospFmtDate(d.dateTs), type: 'mono' },
+    { label: 'Donneur',      value: d.donneur },
+    { label: 'Groupe',       value: '<span class="badge badge-red">'+_hospEsc(d.groupe||'?')+'</span>', type: 'badge' },
+    { label: 'Récolté',      value: (d.poches||0) + ' poche(s)', type: 'mono' },
+    { label: 'Utilisé',      value: (d.utilisees||0) + ' poche(s)', type: 'mono' },
+    { label: 'Disponible',   value: dispo + ' poche(s)', type: 'mono' },
+    { label: 'Médecin',      value: d.medecin },
+    { label: 'Notes',        value: d.notes, type: 'multiline' },
+    { label: 'Saisi par',    value: d.auteurNom||'—' }
+  ]);
+}
+
+function hospViewSci(id){
+  var r = (DB.hospital.scientifique||[]).find(function(x){ return x.id===id; });
+  if(!r){ showToast('Rapport introuvable.','error'); return; }
+  var statutMap = {
+    'encours': '<span class="badge badge-cyan">⏳ En cours</span>',
+    'publie':  '<span class="badge badge-green">✅ Publié</span>',
+    'archive': '<span class="badge badge-gray">📦 Archivé</span>'
+  };
+  _hospView('🧪 Rapport scientifique', [
+    { label: 'Titre',           value: r.titre },
+    { label: 'Date',            value: _hospFmtDate(r.dateTs), type: 'mono' },
+    { label: 'Scientifique',    value: r.scientifique },
+    { label: "Type d'étude",    value: r.type },
+    { label: 'Statut',          value: statutMap[r.statut]||'—', type: 'badge' },
+    { label: 'Échantillons',    value: r.echantillons },
+    { label: 'Résultats',       value: r.resultats, type: 'multiline' },
+    { label: 'Saisi par',       value: r.auteurNom||'—' }
+  ]);
+}
+
+function hospViewMorgue(id){
+  var m = (DB.hospital.morgue||[]).find(function(x){ return x.id===id; });
+  if(!m){ showToast('Entrée introuvable.','error'); return; }
+  var statutMap = {
+    'autopsie': '<span class="badge badge-orange">🔬 En autopsie</span>',
+    'clos':     '<span class="badge badge-gray">📁 Clos</span>',
+    'restitue': '<span class="badge badge-purple">⚱️ Restitué</span>'
+  };
+  _hospView('⚰️ Fiche morgue — '+_hospEsc(m.nom||''), [
+    { label: 'Nom',             value: m.nom },
+    { label: 'Date du décès',   value: _hospFmtDate(m.dateDeces), type: 'mono' },
+    { label: 'Cause',           value: m.cause },
+    { label: 'Médecin légiste', value: m.legiste },
+    { label: 'Statut',          value: statutMap[m.statut]||'—', type: 'badge' },
+    { label: 'Constatations',   value: m.notes, type: 'multiline' },
+    { label: 'Saisi par',       value: m.auteurNom||'—' }
+  ]);
+}
+
+function hospViewPaiement(id){
+  var p = (DB.hospital.paiements||[]).find(function(x){ return x.id===id; });
+  if(!p){ showToast('Paiement introuvable.','error'); return; }
+  var statutMap = {
+    'paye':       '<span class="badge badge-green">✅ Payé</span>',
+    'attente':    '<span class="badge badge-orange">⏳ En attente</span>',
+    'impaye':     '<span class="badge badge-red">❌ Impayé</span>',
+    'rembourse':  '<span class="badge badge-purple">↩️ Remboursé</span>'
+  };
+  _hospView('💴 Fiche paiement', [
+    { label: 'Date',     value: _hospFmtDate(p.dateTs), type: 'mono' },
+    { label: 'Patient',  value: p.patient },
+    { label: 'Médecin',  value: p.medecin },
+    { label: 'Acte',     value: p.acte },
+    { label: 'Montant',  value: '<span style="font-weight:700;color:var(--gold2);font-size:16px">'+(parseInt(p.montant,10)||0).toLocaleString('fr-FR')+' ryōs</span>', type: 'badge' },
+    { label: 'Statut',   value: statutMap[p.statut]||'—', type: 'badge' },
+    { label: 'Notes',    value: p.notes, type: 'multiline' },
+    { label: 'Saisi par',value: p.auteurNom||'—' }
+  ]);
+}
+
 /* ─── DISPATCHER ─── (appelé par le sync Firebase) */
 function hospRenderPage(pageId){
   switch(pageId){
@@ -31078,9 +31282,10 @@ function renderHospPatients(){
       'critique':    '<span class="badge badge-red">⚠️ Critique</span>'
     }[p.statut] || '<span class="badge badge-gray">—</span>';
     var canEdit = hospCanEditEntry(p, 'medical');
+    var viewBtn = '<button class="btn btn-outline btn-sm" onclick="hospViewPatient('+p.id+')" title="Voir la fiche">👁</button>';
     var actions = canEdit
-      ? '<button class="btn btn-gold btn-sm" onclick="hospOpenPatient('+p.id+')" title="Modifier">✏️</button> <button class="btn btn-danger btn-sm" onclick="hospDeletePatient('+p.id+')" title="Supprimer">🗑</button>'
-      : '<span style="color:var(--muted);font-size:10px">—</span>';
+      ? viewBtn + ' <button class="btn btn-gold btn-sm" onclick="hospOpenPatient('+p.id+')" title="Modifier">✏️</button> <button class="btn btn-danger btn-sm" onclick="hospDeletePatient('+p.id+')" title="Supprimer">🗑</button>'
+      : viewBtn;
     return '<tr>'
       +'<td><strong>'+_hospEsc(p.nom)+'</strong></td>'
       +'<td>'+(p.age?_hospEsc(p.age)+' ans':'—')+'</td>'
@@ -31206,9 +31411,10 @@ function renderHospConsultations(){
       'annulee':  '<span class="badge badge-gray">❌ Annulée</span>'
     }[c.statut] || '<span class="badge badge-gray">—</span>';
     var canEdit = hospCanEditEntry(c,'medical');
+    var viewBtn = '<button class="btn btn-outline btn-sm" onclick="hospViewConsultation('+c.id+')" title="Voir la fiche">👁</button>';
     var actions = canEdit
-      ? '<button class="btn btn-gold btn-sm" onclick="hospOpenConsultation('+c.id+')">✏️</button> <button class="btn btn-danger btn-sm" onclick="hospDeleteConsultation('+c.id+')">🗑</button>'
-      : '<span style="color:var(--muted);font-size:10px">—</span>';
+      ? viewBtn + ' <button class="btn btn-gold btn-sm" onclick="hospOpenConsultation('+c.id+')" title="Modifier">✏️</button> <button class="btn btn-danger btn-sm" onclick="hospDeleteConsultation('+c.id+')" title="Supprimer">🗑</button>'
+      : viewBtn;
     var compteRendu = c.compteRendu ? '<div style="font-size:11px;color:var(--muted);margin-top:3px;max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+_hospEsc(c.compteRendu)+'</div>' : '';
     return '<tr>'
       +'<td class="mono" style="font-size:11px;white-space:nowrap">'+_hospFmtDateTime(c.dateTs)+'</td>'
@@ -31329,9 +31535,10 @@ function renderHospPharmacie(){
       'out': '<span class="badge badge-red">❌ Rupture</span>'
     }[stockState];
     var canEdit = hospCanEditEntry(p,'medical');
+    var viewBtn = '<button class="btn btn-outline btn-sm" onclick="hospViewPharmacie('+p.id+')" title="Voir la fiche">👁</button>';
     var actions = canEdit
-      ? '<button class="btn btn-gold btn-sm" onclick="hospOpenPharmacie('+p.id+')">✏️</button> <button class="btn btn-danger btn-sm" onclick="hospDeletePharmacie('+p.id+')">🗑</button>'
-      : '<span style="color:var(--muted);font-size:10px">—</span>';
+      ? viewBtn + ' <button class="btn btn-gold btn-sm" onclick="hospOpenPharmacie('+p.id+')" title="Modifier">✏️</button> <button class="btn btn-danger btn-sm" onclick="hospDeletePharmacie('+p.id+')" title="Supprimer">🗑</button>'
+      : viewBtn;
     return '<tr>'
       +'<td><strong>'+_hospEsc(p.nom)+'</strong></td>'
       +'<td>'+_hospEsc(p.categorie||'—')+'</td>'
@@ -31450,9 +31657,10 @@ function renderHospPsy(){
   }
   var rows = filtered.map(function(c){
     var canEdit = hospCanEditEntry(c,'medical');
+    var viewBtn = '<button class="btn btn-outline btn-sm" onclick="hospViewPsy('+c.id+')" title="Voir la fiche">👁</button>';
     var actions = canEdit
-      ? '<button class="btn btn-gold btn-sm" onclick="hospOpenPsy('+c.id+')">✏️</button> <button class="btn btn-danger btn-sm" onclick="hospDeletePsy('+c.id+')">🗑</button>'
-      : '<span style="color:var(--muted);font-size:10px">—</span>';
+      ? viewBtn + ' <button class="btn btn-gold btn-sm" onclick="hospOpenPsy('+c.id+')" title="Modifier">✏️</button> <button class="btn btn-danger btn-sm" onclick="hospDeletePsy('+c.id+')" title="Supprimer">🗑</button>'
+      : viewBtn;
     var notes = c.notes ? '<div style="font-size:11px;color:var(--muted);margin-top:3px;max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+_hospEsc(c.notes)+'</div>' : '';
     var suiviTxt = c.suiviPrevu ? _hospFmtDate(c.suiviPrevu) : '—';
     return '<tr>'
@@ -31579,9 +31787,10 @@ function renderHospDons(){
   var rows = filtered.map(function(d){
     var dispo = Math.max(0, (parseInt(d.poches,10)||0) - (parseInt(d.utilisees,10)||0));
     var canEdit = hospCanEditEntry(d,'medical');
+    var viewBtn = '<button class="btn btn-outline btn-sm" onclick="hospViewDon('+d.id+')" title="Voir la fiche">👁</button>';
     var actions = canEdit
-      ? '<button class="btn btn-gold btn-sm" onclick="hospOpenDon('+d.id+')">✏️</button> <button class="btn btn-danger btn-sm" onclick="hospDeleteDon('+d.id+')">🗑</button>'
-      : '<span style="color:var(--muted);font-size:10px">—</span>';
+      ? viewBtn + ' <button class="btn btn-gold btn-sm" onclick="hospOpenDon('+d.id+')" title="Modifier">✏️</button> <button class="btn btn-danger btn-sm" onclick="hospDeleteDon('+d.id+')" title="Supprimer">🗑</button>'
+      : viewBtn;
     return '<tr>'
       +'<td class="mono" style="font-size:11px;white-space:nowrap">'+_hospFmtDate(d.dateTs)+'</td>'
       +'<td><strong>'+_hospEsc(d.donneur)+'</strong></td>'
@@ -31696,9 +31905,10 @@ function renderHospSci(){
       'archive': '<span class="badge badge-gray">📦 Archivé</span>'
     }[r.statut] || '<span class="badge badge-gray">—</span>';
     var canEdit = hospCanEditEntry(r,'sci');
+    var viewBtn = '<button class="btn btn-outline btn-sm" onclick="hospViewSci('+r.id+')" title="Voir la fiche">👁</button>';
     var actions = canEdit
-      ? '<button class="btn btn-gold btn-sm" onclick="hospOpenSci('+r.id+')">✏️</button> <button class="btn btn-danger btn-sm" onclick="hospDeleteSci('+r.id+')">🗑</button>'
-      : '<span style="color:var(--muted);font-size:10px">—</span>';
+      ? viewBtn + ' <button class="btn btn-gold btn-sm" onclick="hospOpenSci('+r.id+')" title="Modifier">✏️</button> <button class="btn btn-danger btn-sm" onclick="hospDeleteSci('+r.id+')" title="Supprimer">🗑</button>'
+      : viewBtn;
     var resume = r.resultats ? '<div style="font-size:11px;color:var(--muted);margin-top:3px;max-width:340px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+_hospEsc(r.resultats)+'</div>' : '';
     return '<tr>'
       +'<td class="mono" style="font-size:11px;white-space:nowrap">'+_hospFmtDate(r.dateTs)+'</td>'
@@ -31822,9 +32032,10 @@ function renderHospMorgue(){
       'restitue': '<span class="badge badge-purple">⚱️ Restitué</span>'
     }[m.statut] || '<span class="badge badge-gray">—</span>';
     var canEdit = hospCanEditEntry(m,'sci');
+    var viewBtn = '<button class="btn btn-outline btn-sm" onclick="hospViewMorgue('+m.id+')" title="Voir la fiche">👁</button>';
     var actions = canEdit
-      ? '<button class="btn btn-gold btn-sm" onclick="hospOpenMorgue('+m.id+')">✏️</button> <button class="btn btn-danger btn-sm" onclick="hospDeleteMorgue('+m.id+')">🗑</button>'
-      : '<span style="color:var(--muted);font-size:10px">—</span>';
+      ? viewBtn + ' <button class="btn btn-gold btn-sm" onclick="hospOpenMorgue('+m.id+')" title="Modifier">✏️</button> <button class="btn btn-danger btn-sm" onclick="hospDeleteMorgue('+m.id+')" title="Supprimer">🗑</button>'
+      : viewBtn;
     var notes = m.notes ? '<div style="font-size:11px;color:var(--muted);margin-top:3px;max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+_hospEsc(m.notes)+'</div>' : '';
     return '<tr>'
       +'<td><strong>'+_hospEsc(m.nom)+'</strong></td>'
@@ -31938,9 +32149,10 @@ function renderHospPaiements(){
       'rembourse':  '<span class="badge badge-purple">↩️ Remboursé</span>'
     }[p.statut] || '<span class="badge badge-gray">—</span>';
     var canEdit = hospCanEditPaiement(p);
+    var viewBtn = '<button class="btn btn-outline btn-sm" onclick="hospViewPaiement('+p.id+')" title="Voir la fiche">👁</button>';
     var actions = canEdit
-      ? '<button class="btn btn-gold btn-sm" onclick="hospOpenPaiement('+p.id+')">✏️</button> <button class="btn btn-danger btn-sm" onclick="hospDeletePaiement('+p.id+')">🗑</button>'
-      : '<span style="color:var(--muted);font-size:10px">—</span>';
+      ? viewBtn + ' <button class="btn btn-gold btn-sm" onclick="hospOpenPaiement('+p.id+')" title="Modifier">✏️</button> <button class="btn btn-danger btn-sm" onclick="hospDeletePaiement('+p.id+')" title="Supprimer">🗑</button>'
+      : viewBtn;
     return '<tr>'
       +'<td class="mono" style="font-size:11px;white-space:nowrap">'+_hospFmtDate(p.dateTs)+'</td>'
       +'<td><strong>'+_hospEsc(p.patient)+'</strong></td>'
