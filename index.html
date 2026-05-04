@@ -18024,9 +18024,9 @@ function applyLogin(){
   // Pour les admins : afficher "ADMIN · ACCÈS GLOBAL" pour qu'ils sachent qu'ils ont tout
   // Pour les autres : "Rôle · Grade" comme avant
   if(currentUser.role === 'admin'){
-    el("user-rank-display").innerHTML = roleLabel(currentUser.role)+" · "+currentUser.grade+' <span style="display:inline-block;margin-left:4px;font-size:8px;padding:1px 5px;background:rgba(220,38,38,0.15);color:#dc2626;border:1px solid rgba(220,38,38,0.4);border-radius:3px;font-family:\'Share Tech Mono\',monospace;letter-spacing:1px;vertical-align:middle">🔓 ALL</span>';
+    el("user-rank-display").innerHTML = roleLabel(currentUser.role, currentUser.section)+" · "+currentUser.grade+' <span style="display:inline-block;margin-left:4px;font-size:8px;padding:1px 5px;background:rgba(220,38,38,0.15);color:#dc2626;border:1px solid rgba(220,38,38,0.4);border-radius:3px;font-family:\'Share Tech Mono\',monospace;letter-spacing:1px;vertical-align:middle">🔓 ALL</span>';
   } else {
-    el("user-rank-display").textContent=roleLabel(currentUser.role)+" · "+currentUser.grade;
+    el("user-rank-display").textContent=roleLabel(currentUser.role, currentUser.section)+" · "+currentUser.grade;
   }
   refreshSidebarAvatar();
   // Marquer le mode visiteur sur <body> pour masquer les contrôles d'édition via CSS
@@ -18236,8 +18236,11 @@ const PAGES={dashboard:"Tableau de bord",annonces:"Annonces",recensement:"Recens
   "avocat-clients":"Mes clients","avocat-affaires":"Affaires en cours","avocat-plaidoiries":"Plaidoiries",
   // Mission
   "mission-disponibles":"Missions disponibles","mission-actives":"Mes missions","mission-recompenses":"Récompenses",
-  // Médical
+  // Médical (Hôpital + Scientifique + Comptabilité)
   "medical-patients":"Patients","medical-consultations":"Consultations","medical-pharmacie":"Pharmacie",
+  "medical-psy":"Salon psychologique","medical-dons":"Dons du sang",
+  "sci-rapports":"Salon scientifique","sci-morgue":"Morgue",
+  "compta-paiements":"Paiements (Ryōs)",
   // Diplomatie
   "diplo-villages":"Villages alliés","diplo-traites":"Traités","diplo-communications":"Communications"
 };
@@ -18246,7 +18249,10 @@ const VISITOR_PAGES=["dashboard","annonces","recensement","recrutement","plainte
   "juge-audiences","juge-affaires","juge-jugements","juge-procedure","juge-archives",
   "avocat-clients","avocat-affaires","avocat-plaidoiries",
   "mission-disponibles","mission-actives","mission-recompenses",
-  "medical-patients","medical-consultations","medical-pharmacie",
+  // Pôle Médical : Hôpital + Scientifique + Comptabilité (toutes pages accessibles aux visiteurs/membres Médical)
+  "medical-patients","medical-consultations","medical-pharmacie","medical-psy","medical-dons",
+  "sci-rapports","sci-morgue",
+  "compta-paiements",
   "diplo-villages","diplo-traites","diplo-communications"
 ];
 
@@ -18399,7 +18405,7 @@ function renderPage(name){
       var _hName = document.getElementById('msg-header-name');
       var _hGrade = document.getElementById('msg-header-grade');
       if(_hName) _hName.textContent = _currentMsgContact.nom;
-      if(_hGrade) _hGrade.textContent = (_currentMsgContact.grade||'')+(_currentMsgContact.role?' · '+roleLabel(_currentMsgContact.role):'');
+      if(_hGrade) _hGrade.textContent = (_currentMsgContact.grade||'')+(_currentMsgContact.role?' · '+roleLabel(_currentMsgContact.role, _currentMsgContact.section):'');
       var _iRow = document.getElementById('msg-input-row');
       if(_iRow) _iRow.style.display='flex';
       renderMsgThread();
@@ -18613,7 +18619,7 @@ function _dbRenderWelcome(){
   var dateEl = document.getElementById('db-today-date');
   var loginEl = document.getElementById('db-last-login');
   if(nameEl) nameEl.textContent = currentUser.nom || '—';
-  if(gradeEl) gradeEl.textContent = (currentUser.grade || '—') + (currentUser.role ? ' · ' + (typeof roleLabel==='function'?roleLabel(currentUser.role):currentUser.role) : '');
+  if(gradeEl) gradeEl.textContent = (currentUser.grade || '—') + (currentUser.role ? ' · ' + (typeof roleLabel==='function'?roleLabel(currentUser.role, currentUser.section):currentUser.role) : '');
   if(dateEl){
     var today = new Date();
     dateEl.textContent = today.toLocaleDateString('fr-FR', {weekday:'long', day:'numeric', month:'long'});
@@ -21604,7 +21610,7 @@ function _renderEffectifsOrig(){
           </div>
           <div style="display:flex;justify-content:space-between;align-items:center">
             <span style="font-size:9px;letter-spacing:1.5px;color:var(--muted);font-family:'Share Tech Mono',monospace">RÔLE</span>
-            <span class="badge ${roleBadge(u.role)}">${roleLabel(u.role)}</span>
+            <span class="badge ${roleBadge(u.role)}">${roleLabel(u.role, u.section)}</span>
           </div>
           <div style="display:flex;justify-content:space-between;align-items:center">
             <span style="font-size:9px;letter-spacing:1.5px;color:var(--muted);font-family:'Share Tech Mono',monospace">STATUT</span>
@@ -21784,7 +21790,7 @@ function renderAdmin(){
       <td><b>${esc(u.nom)}</b></td>
       <td>${sectionBadge}</td>
       <td style="font-size:11.5px">${esc(u.grade)}</td>
-      <td><span class="badge ${roleBadge(u.role)}">${roleLabel(u.role)}</span></td>
+      <td><span class="badge ${roleBadge(u.role)}">${roleLabel(u.role, u.section)}</span></td>
       <td><span class="badge ${(u.statut||"Actif")==="Actif"?"badge-green":"badge-red"}">${esc(u.statut||"Actif")}</span></td>
       <td class="mono" style="font-size:10px;color:var(--muted)">${u.created?fmtDate(u.created):"—"}</td>
       <td style="white-space:nowrap">
@@ -21866,6 +21872,10 @@ function openEditUser(id){
     populateGradeSelectForSection(u.section || 'police');
   }
   el("eu-grade").value=u.grade;
+  // Repeupler eu-role avec les labels adaptés à la section (ex: Médical → "Médecin" au lieu de "Officier")
+  if(typeof populateRoleSelectForSection === 'function'){
+    populateRoleSelectForSection('eu-role', u.section || 'police');
+  }
   el("eu-role").value=u.role;
   // Hide admin option for non-admins
   const adminOpt=el("eu-role-admin-opt");
@@ -21933,6 +21943,11 @@ function onEuSectionChange(){
   var newSection = euSec.value;
   if(typeof populateGradeSelectForSection === 'function'){
     populateGradeSelectForSection(newSection);
+  }
+  // Mettre à jour aussi les LABELS du select Rôle selon la section
+  // (ex: "Officier" devient "🩺 Médecin" pour la section Médical)
+  if(typeof populateRoleSelectForSection === 'function'){
+    populateRoleSelectForSection('eu-role', newSection);
   }
   // Sélectionner le premier grade par défaut (l'ancien grade ne fait probablement plus partie de la nouvelle section)
   if(euGrade.options.length > 0) euGrade.selectedIndex = 0;
@@ -22034,7 +22049,7 @@ function saveEditUser(){
     // Appliquer la section UNIQUEMENT si l'utilisateur est admin
     if(isAdmin()){ u.section=newSection; }
     const c=DB.candidatures.find(x=>x.authorId===id||x.nom===oldNom);if(c)c.grade=u.grade;
-    if(currentUser.id===id){currentUser=u;el("user-name-display").textContent=u.nom;el("user-rank-display").textContent=roleLabel(u.role)+" · "+u.grade;refreshSidebarAvatar();}
+    if(currentUser.id===id){currentUser=u;el("user-name-display").textContent=u.nom;el("user-rank-display").textContent=roleLabel(u.role, u.section)+" · "+u.grade;refreshSidebarAvatar();}
     addTimeline(`Compte de ${u.nom} modifié par ${currentUser.nom}`);
     _lastFbArrays.users=DB.users.map(x=>JSON.parse(JSON.stringify(x)));
     saveData();
@@ -23653,7 +23668,64 @@ function fmtCand(s){return{en_attente:"En attente",acceptee:"Acceptée",refusee:
 function dangerBadge(d){return{Faible:"badge-green",Modéré:"badge-blue",Élevé:"badge-gold",Extrême:"badge-red"}[d]||"badge-gray"}
 function dossierStatutBadge(s){return{Recherché:"badge-red","En garde à vue":"badge-gold",Incarcéré:"badge-blue",Libéré:"badge-gray",Surveillé:"badge-gold"}[s]||"badge-gray"}
 function roleBadge(r){return{admin:"badge-red",gerant:"badge-gold",cogerant:"badge-cyan",sergent:"badge-orange",officier:"badge-blue",membre:"badge-green",stagiaire:"badge-gray",visiteur:"badge-gray"}[r]||"badge-gray"}
-function roleLabel(r){return{admin:"🔴 Admin",gerant:"🏛️ Gérant",cogerant:"🥈 Co-Gérant",sergent:"⚔️ Sergent",officier:"🔵 Officier",membre:"👥 Membre",stagiaire:"🌱 Stagiaire",visiteur:"👁 Visiteur"}[r]||r}
+// Labels de rôle par défaut (= Police). Mapping rôle interne → label affiché.
+var DEFAULT_ROLE_LABELS = {admin:"🔴 Admin",gerant:"🏛️ Gérant",cogerant:"🥈 Co-Gérant",sergent:"⚔️ Sergent",officier:"🔵 Officier",membre:"👥 Membre",stagiaire:"🌱 Stagiaire",visiteur:"👁 Visiteur"};
+// Mapping par section : permet de personnaliser l'affichage des rôles selon le département.
+// Le rôle technique reste le même (ex: "officier" pour les permissions), seul le LABEL change.
+// Pour les sections non listées, on utilise DEFAULT_ROLE_LABELS.
+var SECTION_ROLE_LABELS = {
+  medical: {
+    visiteur: "👁 Visiteur",
+    stagiaire: "🎓 Stagiaire",
+    // 'membre' exclu volontairement pour Médical (redondant avec Stagiaire qui peut déjà écrire)
+    officier:  "🩺 Médecin",
+    sergent:   "🏥 Médecin senior",
+    cogerant:  "⚕️ Médecin-chef",
+    gerant:    "🎖 Directeur d'hôpital",
+    admin:     "🔴 Administrateur"
+  }
+};
+// Rôles à EXCLURE des selects (par section). Le rôle reste valide techniquement
+// (legacy users) mais n'apparaît plus dans les listes déroulantes.
+var SECTION_ROLE_EXCLUDES = {
+  medical: ['membre']
+};
+// roleLabel(role, section?) — section optionnelle pour rétrocompatibilité.
+// Si la section a un mapping personnalisé qui couvre ce rôle, on l'utilise.
+// Sinon fallback sur DEFAULT_ROLE_LABELS.
+function roleLabel(r, section){
+  if(section && SECTION_ROLE_LABELS[section] && SECTION_ROLE_LABELS[section][r]){
+    return SECTION_ROLE_LABELS[section][r];
+  }
+  return DEFAULT_ROLE_LABELS[r] || r;
+}
+// Repeuple un <select> de rôle en fonction de la section choisie.
+// Préserve la valeur sélectionnée si elle existe encore dans la nouvelle liste.
+function populateRoleSelectForSection(selectId, section){
+  var sel = el(selectId);
+  if(!sel) return;
+  var prevValue = sel.value;
+  // Liste de référence : tous les rôles de DEFAULT_ROLE_LABELS dans l'ordre logique
+  var ALL_ROLES = ['visiteur','stagiaire','membre','officier','sergent','cogerant','gerant','admin'];
+  var excludes = (section && SECTION_ROLE_EXCLUDES[section]) || [];
+  var html = '';
+  ALL_ROLES.forEach(function(role){
+    if(excludes.indexOf(role) !== -1) return; // rôle exclu pour cette section
+    // Cacher 'admin' par défaut sauf si c'était déjà le rôle de l'option (compat avec eu-role-admin-opt)
+    if(role === 'admin' && selectId === 'u-role') return; // création : pas de choix admin
+    var label = roleLabel(role, section);
+    var idAttr = (role === 'admin' && selectId === 'eu-role') ? ' id="eu-role-admin-opt"' : '';
+    html += '<option value="'+role+'"'+idAttr+'>'+esc(label)+'</option>';
+  });
+  sel.innerHTML = html;
+  // Restaurer la sélection précédente si elle est toujours valide
+  if(prevValue && Array.from(sel.options).some(function(o){return o.value === prevValue;})){
+    sel.value = prevValue;
+  } else if(sel.options.length > 0){
+    // Sinon sélectionner le premier (souvent 'visiteur')
+    sel.selectedIndex = 0;
+  }
+}
 
 // PASTE GLOBAL : Ctrl+V pour photo dossier quand modale ouverte
 document.addEventListener("paste", function(e){
@@ -26553,7 +26625,7 @@ function _msgUpdateConvHeader(){
   var statusEl = document.getElementById('msg-conv-status');
   if(statusEl){
     var pres = _msgPresenceState(u.id);
-    var grade = (u.grade||'')+(u.role?' · '+roleLabel(u.role):'');
+    var grade = (u.grade||'')+(u.role?' · '+roleLabel(u.role, u.section):'');
     statusEl.className = 'msg-conv-status ' + pres.state;
     statusEl.innerHTML = '<span class="dot"></span><span>'+esc(pres.label)+(grade?' · '+esc(grade):'')+'</span>';
   }
@@ -26987,7 +27059,7 @@ function renderProfil(){
   var gr = document.getElementById('profil-grade'); if(gr) gr.textContent=(u.grade||'—')+' · '+(u.role||'').toUpperCase();
   var lg = document.getElementById('profil-login'); if(lg) lg.textContent='@'+u.login;
   var rb = document.getElementById('profil-role-badge');
-  if(rb){var roleColors={admin:'badge-red',gerant:'badge-gold',cogerant:'badge-gold',officier:'badge-blue',sergent:'badge-orange',membre:'badge-green',stagiaire:'badge-gray',visiteur:'badge-gray'};rb.innerHTML='<span class="badge '+(roleColors[u.role]||'badge-gray')+'">'+roleLabel(u.role)+'</span>';}
+  if(rb){var roleColors={admin:'badge-red',gerant:'badge-gold',cogerant:'badge-gold',officier:'badge-blue',sergent:'badge-orange',membre:'badge-green',stagiaire:'badge-gray',visiteur:'badge-gray'};rb.innerHTML='<span class="badge '+(roleColors[u.role]||'badge-gray')+'">'+roleLabel(u.role, u.section)+'</span>';}
   // Stats
   var myPlaintes=(DB.plaintes||[]).filter(function(p){return p.agent===u.nom||p.plaignant===u.nom;});
   var myDossiers=(DB.dossiers||[]).filter(function(d){return d.agent===u.nom;});
