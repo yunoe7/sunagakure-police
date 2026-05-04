@@ -12963,7 +12963,7 @@ document.addEventListener('error', function(e){
     <!-- Membres -->
     <div class="card" style="overflow:visible">
       <div class="card-header" style="flex-wrap:wrap;gap:10px">
-        <div style="display:flex;align-items:center;gap:10px"><span>👮</span><h3>Membres du département</h3></div>
+        <div style="display:flex;align-items:center;gap:10px"><span id="adm-mem-icon">👮</span><h3 id="adm-mem-title">Membres du département</h3></div>
         <div class="admin-filters-row" style="display:flex;gap:8px;align-items:center;margin-left:auto;flex-wrap:wrap">
           <!-- Filtre rôle -->
           <select id="admin-role-filter" class="form-control" style="max-width:140px;padding:6px 10px;font-size:11px;margin:0" onchange="renderAdmin()">
@@ -12976,6 +12976,16 @@ document.addEventListener('error', function(e){
             <option value="membre">Membre</option>
             <option value="stagiaire">Stagiaire</option>
             <option value="visiteur">👁 Visiteur</option>
+          </select>
+          <!-- Filtre section (NOUVEAU) -->
+          <select id="admin-section-filter" class="form-control" style="max-width:160px;padding:6px 10px;font-size:11px;margin:0" onchange="renderAdmin()">
+            <option value="">🌐 Toutes sections</option>
+            <option value="police">👮 Police</option>
+            <option value="juge">⚖️ Tribunal</option>
+            <option value="avocat">👨‍💼 Cabinet d'avocats</option>
+            <option value="mission">🎯 Missions</option>
+            <option value="medical">⚕️ Médical</option>
+            <option value="diplomatie">🤝 Diplomatie</option>
           </select>
           <!-- Filtre statut -->
           <select id="admin-statut-filter" class="form-control" style="max-width:130px;padding:6px 10px;font-size:11px;margin:0" onchange="renderAdmin()">
@@ -12991,6 +13001,7 @@ document.addEventListener('error', function(e){
           <thead><tr>
             <th>Identifiant</th>
             <th>Nom RP</th>
+            <th>Section</th>
             <th>Grade</th>
             <th>Rôle</th>
             <th>Statut</th>
@@ -21092,15 +21103,38 @@ function renderAdmin(){
   const q=(el("admin-search")?.value||"").toLowerCase();
   const roleF=(el("admin-role-filter")?.value||"").toLowerCase();
   const statutF=(el("admin-statut-filter")?.value||"");
+  const sectionF=(el("admin-section-filter")?.value||"");
   let users=DB.users;
-  if(q)users=users.filter(u=>(u.nom+u.login+u.grade+u.role).toLowerCase().includes(q));
+  if(q)users=users.filter(u=>(u.nom+u.login+u.grade+u.role+(u.section||'police')).toLowerCase().includes(q));
   if(roleF)users=users.filter(u=>u.role===roleF);
   if(statutF)users=users.filter(u=>(u.statut||"Actif")===statutF);
+  if(sectionF)users=users.filter(u=>(u.section||'police')===sectionF);
+  // Mettre à jour le titre dynamique selon le filtre section
+  const SECTION_INFO={
+    police:{icon:'👮',title:'Membres du département — Police',badge:'badge-blue',color:'#c9a227',label:'Police'},
+    juge:{icon:'⚖️',title:'Membres du département — Tribunal',badge:'badge-purple',color:'#7c3aed',label:'Tribunal'},
+    avocat:{icon:'👨‍💼',title:'Membres du département — Cabinet d\'avocats',badge:'badge-cyan',color:'#0ea5e9',label:'Avocat'},
+    mission:{icon:'🎯',title:'Membres du département — Missions',badge:'badge-orange',color:'#f59e0b',label:'Mission'},
+    medical:{icon:'⚕️',title:'Membres du département — Hôpital',badge:'badge-red',color:'#dc2626',label:'Médical'},
+    diplomatie:{icon:'🤝',title:'Membres du département — Diplomatie',badge:'badge-green',color:'#16a34a',label:'Diplomatie'}
+  };
+  if(el("adm-mem-title")){
+    if(sectionF && SECTION_INFO[sectionF]){
+      el("adm-mem-title").textContent = SECTION_INFO[sectionF].title;
+      var iconEl = el("adm-mem-icon"); if(iconEl) iconEl.textContent = SECTION_INFO[sectionF].icon;
+    } else {
+      el("adm-mem-title").textContent = "Membres du département — Toutes sections";
+      var iconEl2 = el("adm-mem-icon"); if(iconEl2) iconEl2.textContent = "🌐";
+    }
+  }
   el("admin-users-tbody").innerHTML=users.map(u=>{
     const isAdminAcc=u.role==="admin";
     const isSelf=u.id===currentUser.id;
     const canEdit=true; // Un admin peut modifier n'importe quel compte
     const initials=u.nom?u.nom.charAt(0).toUpperCase():"?";
+    const sec = u.section || 'police';
+    const secInfo = SECTION_INFO[sec] || SECTION_INFO.police;
+    const sectionBadge = '<span style="display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:4px;background:'+secInfo.color+'1f;color:'+secInfo.color+';border:1px solid '+secInfo.color+'4d;font-size:9.5px;font-family:\'Share Tech Mono\',monospace;letter-spacing:0.8px;font-weight:700;text-transform:uppercase">'+secInfo.icon+' '+secInfo.label+'</span>';
     return `<tr style="${isAdminAcc?"background:rgba(220,38,38,0.04)":""}">
       <td>
         <div style="display:flex;align-items:center;gap:8px">
@@ -21109,6 +21143,7 @@ function renderAdmin(){
         </div>
       </td>
       <td><b>${esc(u.nom)}</b></td>
+      <td>${sectionBadge}</td>
       <td style="font-size:11.5px">${esc(u.grade)}</td>
       <td><span class="badge ${roleBadge(u.role)}">${roleLabel(u.role)}</span></td>
       <td><span class="badge ${(u.statut||"Actif")==="Actif"?"badge-green":"badge-red"}">${esc(u.statut||"Actif")}</span></td>
@@ -21121,10 +21156,10 @@ function renderAdmin(){
         ${!isSelf?` <button class="btn btn-${(u.statut||"Actif")==="Actif"?"danger":"success"} btn-sm" onclick="toggleUser(${u.id})">${(u.statut||"Actif")==="Actif"?"Désactiver":"Réactiver"}</button>`:""}
       </td>
     </tr>`;
-  }).join("")||`<tr><td colspan="7" style="text-align:center;color:var(--muted);padding:18px">Aucun résultat</td></tr>`;
+  }).join("")||`<tr><td colspan="8" style="text-align:center;color:var(--muted);padding:18px">Aucun résultat</td></tr>`;
 }
 function exportAdminData(){
-  const rows=[["Identifiant","Nom RP","Grade","Rôle","Statut","Créé le"],...DB.users.map(u=>[u.login,u.nom,u.grade,u.role,u.statut||"Actif",u.created?fmtDate(u.created):""])];
+  const rows=[["Identifiant","Nom RP","Section","Grade","Rôle","Statut","Créé le"],...DB.users.map(u=>[u.login,u.nom,(u.section||'police'),u.grade,u.role,u.statut||"Actif",u.created?fmtDate(u.created):""])];
   const csv=rows.map(r=>r.map(c=>'"'+String(c).replace(/"/g,'""')+'"').join(",")).join("\n");
   const blob=new Blob(["\uFEFF"+csv],{type:"text/csv;charset=utf-8;"});
   const url=URL.createObjectURL(blob);
