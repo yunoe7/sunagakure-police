@@ -16617,6 +16617,16 @@ function initFirebaseSync(){
         if(!merged.hasOwnProperty(key))merged[key]=data[key];
       }
       DB=merged;
+      // ── BUG-FIX : DB.tribunal n'est pas dans defaultData mais utilisé dans plusieurs ──
+      //    pages (juge-*). Si Firebase ne renvoie pas data.tribunal, il devient undefined
+      //    après le merge → tribRender* crashe. On garantit ici qu'il est toujours initialisé.
+      //    Idem pour DB.hospital, DB.sectionData, DB.sectionGrades, DB.impots qui sont des
+      //    objets nested non listés dans defaultData.
+      if(typeof _tribInit === 'function') _tribInit();
+      if(!DB.hospital || typeof DB.hospital !== 'object') DB.hospital = {patients:[],consultations:[],pharmacie:[],psy:[],scientifique:[],morgue:[],paiements:[],dons:[]};
+      if(!DB.sectionData || typeof DB.sectionData !== 'object') DB.sectionData = {};
+      if(!DB.sectionGrades || typeof DB.sectionGrades !== 'object') DB.sectionGrades = {};
+      if(!DB.impots || typeof DB.impots !== 'object') DB.impots = {};
       // ── FIX : initialiser les listes __known dès le premier chargement ──
       // Sans ça, __known est vide et toute suppression échoue car l'item
       // est réinséré depuis Firebase (confondu avec un "nouvel élément distant").
@@ -32453,6 +32463,10 @@ function _tribVerdictInfo(v){
 
 /* ─── PAGES & DISPATCHER ─── */
 function tribRenderPage(name){
+  // BUG-FIX : DB.tribunal peut être undefined après le premier chargement Firebase
+  // (tribunal n'est pas dans defaultData, et le listener dédié n'a pas encore fiché).
+  // On garantit que DB.tribunal et ses sous-arrays existent avant de render.
+  if(typeof _tribInit === 'function') _tribInit();
   if(name === 'juge-audiences')   return tribRenderAudiences();
   if(name === 'juge-affaires')    return tribRenderAffaires();
   if(name === 'juge-jugements')   return tribRenderJugements();
@@ -32976,6 +32990,7 @@ function tribRenderProcedure(){
 
 function tribOpenProcedure(editId){
   if(!tribCanEdit()){ showToast('⛔ Action réservée aux modérateurs.','error'); return; }
+  if(typeof _tribInit === 'function') _tribInit();
   var ed = editId ? (DB.tribunal.procedure||[]).find(function(p){ return p.id===editId; }) : null;
   var nextNum = ed ? ed.numero : (Math.max(0, ...((DB.tribunal.procedure||[]).map(function(p){ return p.numero||0; })))+1);
   var existing = document.getElementById('trib-modal'); if(existing) existing.remove();
@@ -33025,6 +33040,7 @@ function tribDeleteProcedure(id){
 var _tribArchTab = 'affaires';
 
 function tribArchSwitch(tab){
+  if(typeof _tribInit === 'function') _tribInit();
   _tribArchTab = tab;
   if(el('trib-arch-tab-aff')) el('trib-arch-tab-aff').classList.toggle('active', tab==='affaires');
   if(el('trib-arch-tab-jur')) el('trib-arch-tab-jur').classList.toggle('active', tab==='jurisprudence');
