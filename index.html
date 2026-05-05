@@ -30248,9 +30248,9 @@ function bbRender() {
   if (!g) return;
   // Bouton ajouter
   var addBtn = document.getElementById('bb-add-btn');
-  if (addBtn) addBtn.style.display = (typeof canModify === 'function' && canModify()) ? 'inline-block' : 'none';
+  if (addBtn) addBtn.style.display = bbCanEdit() ? 'inline-block' : 'none';
   if (!list.length) { g.innerHTML='<div class="bb-empty">Aucune fiche dans le registre pour ces critères.</div>'; return; }
-  var isMod = typeof canModify === 'function' && canModify();
+  var isMod = bbCanEdit();
   g.innerHTML = list.map(function(n, i){
     var portrait = '<img src="'+n.portrait+'" alt="portrait" onerror="this.style.display=\'none\'">';
     var actionBtns = isMod
@@ -30300,7 +30300,7 @@ function bbOpenDossier(id) {
   var list = bbGetNinjas();
   var n = list.find(function(x){return x.id===id});
   if (!n) return;
-  var isMod = typeof canModify === 'function' && canModify();
+  var isMod = bbCanEdit();
   var portrait = n.portrait
     ? '<img src="'+n.portrait+'" alt="portrait">'
     : '<div style="font-family:\'Cinzel\',serif;font-size:22px;color:rgba(100,70,20,0.4);font-style:italic;text-align:center">'+bbInitials(n.nom,n.prenom)+'<br><span style="font-size:9px;display:block;margin-top:4px">PORTRAIT</span></div>';
@@ -30421,6 +30421,19 @@ function bbHandleImageUpload(event) {
   reader.readAsDataURL(file);
 }
 
+// Permissions Bingo Book : élargies aux diplomates en plus des admins/police
+// Les diplomates ont accès en lecture+écriture+modification+suppression au Bingo Book.
+function bbCanEdit(){
+  if(!currentUser) return false;
+  // Cas 1 : admin / gérant / cogerant — toujours autorisé
+  if(currentUser.role === 'admin' || currentUser.role === 'gerant' || currentUser.role === 'cogerant') return true;
+  // Cas 2 : police (sergent, officier) — comportement legacy préservé
+  if((currentUser.section === 'police' || !currentUser.section) && (currentUser.role === 'sergent' || currentUser.role === 'officier')) return true;
+  // Cas 3 : NOUVEAU — tout membre de la section diplomatie peut éditer le Bingo Book
+  if(currentUser.section === 'diplomatie' && currentUser.role !== 'visiteur') return true;
+  return false;
+}
+
 function bbToggleAddPanel() {
   bbEditingId = null;
   _bbPortraitData = '';
@@ -30470,6 +30483,8 @@ function bbOpenEdit(id) {
 }
 
 function bbSaveFiche() {
+  // Garde de sécurité : seuls admins/police modérateurs et diplomates peuvent éditer
+  if(!bbCanEdit()){ if(typeof showToast==='function') showToast("⛔ Action réservée aux administrateurs et diplomates.", "error"); return; }
   var nom = document.getElementById('bb-nom').value.trim();
   if (!nom) { if(typeof showToast==='function') showToast('Le nom est requis', 'error'); return; }
   var list = bbGetNinjas();
@@ -30515,6 +30530,8 @@ function bbDeleteFiche() {
   bbCancelForm();
 }
 function bbDeleteById(id) {
+  // Garde de sécurité
+  if(!bbCanEdit()){ if(typeof showToast==='function') showToast("⛔ Action réservée aux administrateurs et diplomates.", "error"); return; }
   askDelete('Supprimer cette fiche du Bingo Book ?', function() {
     var list = bbGetNinjas().filter(function(x){return x.id!==id});
     bbSaveNinjas(list);
