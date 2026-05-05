@@ -7141,6 +7141,7 @@ document.addEventListener('error', function(e){
     <!-- TRIBUNAL (Juge) -->
     <div class="nav-section" data-sec="juge">Tribunal</div>
     <div class="nav-item" role="button" tabindex="0" onclick="showPage('juge-audiences')" data-page="juge-audiences" data-sec="juge"><span class="icon">📅</span> Audiences</div>
+    <div class="nav-item" role="button" tabindex="0" onclick="showPage('juge-plaintes')" data-page="juge-plaintes" data-sec="juge"><span class="icon">📨</span> Plaintes reçues <span class="nav-badge" id="badge-juge-plaintes" style="background:var(--accent);display:none">0</span></div>
     <div class="nav-item" role="button" tabindex="0" onclick="showPage('juge-affaires')" data-page="juge-affaires" data-sec="juge"><span class="icon">📁</span> Affaires en cours <span class="nav-badge" id="badge-juge-affaires" style="background:var(--accent);display:none">0</span></div>
     <div class="nav-item" role="button" tabindex="0" onclick="showPage('juge-jugements')" data-page="juge-jugements" data-sec="juge"><span class="icon">⚖️</span> Jugements rendus</div>
     <div class="nav-item" role="button" tabindex="0" onclick="showPage('juge-procedure')" data-page="juge-procedure" data-sec="juge"><span class="icon">📜</span> Code de procédure</div>
@@ -10637,6 +10638,40 @@ document.addEventListener('error', function(e){
 
     <!-- Liste -->
     <div id="trib-aud-list"></div>
+  </div>
+
+  <!-- TRIBUNAL — Plaintes reçues (transmises par la Police) -->
+  <div class="page-content" id="page-juge-plaintes" data-sec-page="juge">
+    <div class="pgv2-hero" data-tone="profil">
+      <div class="pgv2-hero-inner">
+        <div class="pgv2-hero-icon">📨</div>
+        <div class="pgv2-hero-text">
+          <div class="pgv2-hero-tag">Tribunal de Sunagakure</div>
+          <div class="pgv2-hero-title">Plaintes reçues</div>
+          <div class="pgv2-hero-sub">Plaintes officielles transmises par la Police pour traitement judiciaire</div>
+        </div>
+        <div class="pgv2-hero-stats">
+          <div class="pgv2-hero-stat" data-tone="red"><div class="num" id="trib-stat-pl-attente">0</div><div class="lbl">À traiter</div></div>
+          <div class="pgv2-hero-stat" data-tone="green"><div class="num" id="trib-stat-pl-liees">0</div><div class="lbl">Affaires ouvertes</div></div>
+          <div class="pgv2-hero-stat"><div class="num" id="trib-stat-pl-total">0</div><div class="lbl">Total reçues</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Filtres -->
+    <div class="card" style="margin-bottom:14px;padding:14px 16px">
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        <input type="text" id="trib-pl-search" class="form-control" placeholder="🔍 Rechercher (plaignant, accusé, motif...)" style="flex:1;min-width:220px;margin:0" oninput="tribRenderPlaintes()">
+        <select id="trib-pl-filter" class="form-control" style="max-width:200px;margin:0" onchange="tribRenderPlaintes()">
+          <option value="all">📨 Toutes</option>
+          <option value="attente">⏳ En attente d'affaire</option>
+          <option value="liees">✓ Affaires ouvertes</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Liste -->
+    <div id="trib-pl-list"></div>
   </div>
 
   <!-- TRIBUNAL — Affaires en cours (système complet) -->
@@ -16520,7 +16555,8 @@ function initFirebaseSync(){
               'hierarchie':  { fn: 'renderHierarchie',  keys: ['users'] },
               'profil':      { fn: 'renderProfil',      keys: ['users'] },
               'bingobook':   { fn: 'bbRender',          keys: ['users'] },
-              'diplo-laissezpasse': { fn: 'renderLaissezPasse', keys: ['laissezPasse','recenses'] }
+              'diplo-laissezpasse': { fn: 'renderLaissezPasse', keys: ['laissezPasse','recenses'] },
+              'juge-plaintes': { fn: 'tribRenderPlaintes', keys: ['plaintes','tribunal'] }
               // 'histoire' et 'messagerie' : pas de sync auto (lecture seule ou listener Firebase dédié)
             };
             // Re-render uniquement la page active si une de ses collections a changé
@@ -18648,8 +18684,8 @@ function saveCommNameAdmin(){
 
 // NAV
 const PAGES={dashboard:"Tableau de bord",annonces:"Annonces",recensement:"Recensement",recrutement:"Recrutement",plaintes:"Plaintes",dossiers:"Dossiers criminels",codepenal:"Code Pénal",histoire:"Histoire",operations:"Opérations",effectifs:"Effectifs",hierarchie:"Hiérarchie",sanctions:"Sanctions & Promotions",impots:"Impôts",admin:"Panel Admin",messagerie:"Messagerie",profil:"Mon profil",bingobook:"Bingo Book",
-  // Tribunal (5 pages)
-  "juge-audiences":"Audiences","juge-affaires":"Affaires en cours","juge-jugements":"Jugements rendus","juge-procedure":"Code de procédure","juge-archives":"Archives & Jurisprudence",
+  // Tribunal (6 pages)
+  "juge-audiences":"Audiences","juge-plaintes":"Plaintes reçues","juge-affaires":"Affaires en cours","juge-jugements":"Jugements rendus","juge-procedure":"Code de procédure","juge-archives":"Archives & Jurisprudence",
   // Avocat
   "avocat-clients":"Mes clients","avocat-affaires":"Affaires en cours","avocat-plaidoiries":"Plaidoiries",
   // Mission
@@ -18664,7 +18700,7 @@ const PAGES={dashboard:"Tableau de bord",annonces:"Annonces",recensement:"Recens
 };
 const VISITOR_PAGES=["dashboard","annonces","recensement","recrutement","plaintes","codepenal","histoire","profil","bingobook",
   // Pages des sections : visibles par les visiteurs de leur section (les visiteurs des autres sections ne pourront pas y accéder via _applySectionUI)
-  "juge-audiences","juge-affaires","juge-jugements","juge-procedure","juge-archives",
+  "juge-audiences","juge-plaintes","juge-affaires","juge-jugements","juge-procedure","juge-archives",
   "avocat-clients","avocat-affaires","avocat-plaidoiries",
   "mission-disponibles","mission-actives","mission-recompenses",
   // Pôle Médical : Hôpital + Scientifique + Comptabilité (toutes pages accessibles aux visiteurs/membres Médical)
@@ -18987,6 +19023,14 @@ function updateBadges(){
       return s !== 'jugee' && s !== 'archivee';
     }).length;
     _setBadge("badge-juge-affaires", nAff, true);
+  }
+  // Badge Tribunal — Plaintes reçues (transmises par la Police, pas encore liées à une affaire)
+  if(DB.tribunal && Array.isArray(DB.tribunal.affaires) && Array.isArray(DB.plaintes)){
+    var affPlIds = new Set(DB.tribunal.affaires.map(function(a){ return a.plainteId; }).filter(Boolean));
+    var nPl = DB.plaintes.filter(function(p){
+      return p.statut === 'transmise_tribunal' && !affPlIds.has(p.id);
+    }).length;
+    _setBadge("badge-juge-plaintes", nPl, true);
   }
   // Drawer badges
   _setBadge("dbadge-recrutement",nRec,true);
@@ -32468,10 +32512,86 @@ function tribRenderPage(name){
   // On garantit que DB.tribunal et ses sous-arrays existent avant de render.
   if(typeof _tribInit === 'function') _tribInit();
   if(name === 'juge-audiences')   return tribRenderAudiences();
+  if(name === 'juge-plaintes')    return tribRenderPlaintes();
   if(name === 'juge-affaires')    return tribRenderAffaires();
   if(name === 'juge-jugements')   return tribRenderJugements();
   if(name === 'juge-procedure')   return tribRenderProcedure();
   if(name === 'juge-archives')    { tribArchSwitch(_tribArchTab||'affaires'); return; }
+}
+
+/* ─── PAGE PLAINTES REÇUES (transmises par la Police) ─── */
+function tribRenderPlaintes(){
+  if(!el('trib-pl-list')) return;
+  if(typeof _tribInit === 'function') _tribInit();
+  var allPlaintes = (DB.plaintes||[]).filter(function(p){ return p.statut==='transmise_tribunal'; });
+  var affaires = (DB.tribunal.affaires||[]);
+  // Helper : trouver l'affaire liée à une plainte (si elle existe)
+  function affLiee(plainte){
+    return affaires.find(function(a){ return a.plainteId === plainte.id; });
+  }
+  var attentes = allPlaintes.filter(function(p){ return !affLiee(p); });
+  var liees = allPlaintes.filter(function(p){ return !!affLiee(p); });
+  // Stats
+  if(el('trib-stat-pl-attente')) el('trib-stat-pl-attente').textContent = attentes.length;
+  if(el('trib-stat-pl-liees'))   el('trib-stat-pl-liees').textContent   = liees.length;
+  if(el('trib-stat-pl-total'))   el('trib-stat-pl-total').textContent   = allPlaintes.length;
+  // Filtres
+  var q = ((el('trib-pl-search')||{}).value || '').toLowerCase().trim();
+  var fil = (el('trib-pl-filter')||{}).value || 'all';
+  var list;
+  if(fil === 'attente') list = attentes.slice();
+  else if(fil === 'liees') list = liees.slice();
+  else list = allPlaintes.slice();
+  if(q) list = list.filter(function(p){
+    return ((p.plaignant||'')+' '+(p.accuse||'')+' '+(p.type||'')+' '+(p.desc||'')).toLowerCase().indexOf(q) !== -1;
+  });
+  // Tri : à traiter en premier (par date desc), puis liées (par date desc)
+  list.sort(function(a,b){
+    var aLiee = !!affLiee(a), bLiee = !!affLiee(b);
+    if(aLiee !== bLiee) return aLiee ? 1 : -1;
+    return new Date(b.date||0).getTime() - new Date(a.date||0).getTime();
+  });
+  if(list.length === 0){
+    var emptyMsg = fil==='attente' ? 'Aucune plainte en attente — toutes ont été traitées.'
+                 : fil==='liees'   ? 'Aucune affaire ouverte depuis les plaintes.'
+                 : 'Aucune plainte transmise par la Police.';
+    el('trib-pl-list').innerHTML = '<div class="card" style="padding:48px 20px;text-align:center"><div style="font-size:42px;opacity:0.35;margin-bottom:10px">📨</div><div style="color:var(--muted);font-family:\'Share Tech Mono\',monospace;letter-spacing:1px;font-size:11px">'+emptyMsg+'</div></div>';
+    return;
+  }
+  var canEdit = tribCanEdit();
+  el('trib-pl-list').innerHTML = list.map(function(p){
+    var aff = affLiee(p);
+    var dateFmt = _tribFmtDateOnly(new Date(p.date||0).getTime());
+    var statutBadge = aff
+      ? '<span style="display:inline-block;padding:2px 9px;border-radius:3px;background:rgba(22,163,74,0.13);color:#22c55e;border:1px solid rgba(22,163,74,0.4);font-family:\'Share Tech Mono\',monospace;font-size:9px;letter-spacing:1.2px;font-weight:700">✓ AFFAIRE '+_tribEsc(aff.numero||'')+'</span>'
+      : '<span style="display:inline-block;padding:2px 9px;border-radius:3px;background:rgba(239,68,68,0.13);color:#f87171;border:1px solid rgba(239,68,68,0.4);font-family:\'Share Tech Mono\',monospace;font-size:9px;letter-spacing:1.2px;font-weight:700">⏳ À TRAITER</span>';
+    var actions = aff
+      ? '<button class="btn btn-outline btn-sm" onclick="showPage(\'juge-affaires\');setTimeout(function(){ var s=el(\'trib-aff-search\'); if(s){ s.value=\''+_tribEsc(aff.numero||'')+'\'; tribRenderAffaires();}},120)" title="Voir l\'affaire liée">📁 Voir l\'affaire</button>'
+      : (canEdit
+          ? '<button class="btn btn-primary btn-sm" onclick="tribOpenAffaireFromPlainte('+p.id+')" title="Ouvrir une affaire à partir de cette plainte">⚖️ Ouvrir une affaire</button>'
+          : '<span style="font-size:10px;color:var(--muted);font-style:italic">En attente d\'un juge</span>');
+    var typeBadge = p.type
+      ? '<span style="display:inline-block;padding:1px 7px;border-radius:3px;background:rgba(192,65,14,0.12);color:#f97316;border:1px solid rgba(192,65,14,0.3);font-family:\'Share Tech Mono\',monospace;font-size:9.5px;letter-spacing:0.8px;text-transform:uppercase">'+_tribEsc(p.type)+'</span>'
+      : '';
+    var desc = p.desc ? '<div style="font-size:12.5px;color:rgba(240,232,208,0.78);line-height:1.6;margin-top:10px;padding-top:10px;border-top:1px solid rgba(180,140,20,0.1);white-space:pre-wrap">'+_tribEsc(p.desc.length>320?p.desc.slice(0,320)+'…':p.desc)+'</div>' : '';
+    var rowOpacity = aff ? 'opacity:0.72' : '';
+    return '<div class="card" style="margin-bottom:12px;padding:16px 18px;'+rowOpacity+'">'
+      + '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:14px;flex-wrap:wrap">'
+        + '<div style="flex:1;min-width:220px">'
+          + '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:5px">'
+            + statutBadge + typeBadge
+            + '<span style="font-family:\'Share Tech Mono\',monospace;font-size:10px;color:var(--muted);letter-spacing:0.8px">PLAINTE #'+p.id+' · '+dateFmt+'</span>'
+          + '</div>'
+          + '<div style="font-family:\'Cinzel\',serif;font-size:15px;font-weight:600;color:var(--text);margin-bottom:3px">'
+            + '⚠️ ' + _tribEsc(p.accuse||'(accusé inconnu)')
+          + '</div>'
+          + '<div style="font-size:11.5px;color:var(--muted);font-family:\'Share Tech Mono\',monospace;letter-spacing:0.4px">Plaignant : <span style="color:rgba(240,232,208,0.85)">'+_tribEsc(p.plaignant||'—')+'</span></div>'
+        + '</div>'
+        + '<div style="flex-shrink:0">' + actions + '</div>'
+      + '</div>'
+      + desc
+    + '</div>';
+  }).join('');
 }
 
 /* ─── PAGE AUDIENCES ─── */
@@ -32633,7 +32753,7 @@ function tribRenderAffaires(){
   if(banner){
     if(transmises.length > 0){
       banner.style.display = 'block';
-      banner.innerHTML = '<div class="card" style="padding:14px 18px;border-left:3px solid var(--accent);background:rgba(192,65,14,0.06)"><div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap"><div style="font-size:28px">📨</div><div style="flex:1;min-width:200px"><div style="font-family:\'Cinzel\',serif;font-size:14px;font-weight:600;color:var(--text);margin-bottom:2px">'+transmises.length+' plainte'+(transmises.length>1?'s':'')+' transmise'+(transmises.length>1?'s':'')+' par la Police</div><div style="font-size:11px;color:var(--muted);font-family:\'Share Tech Mono\',monospace;letter-spacing:0.5px">À traiter : ouvrir une affaire pour chaque plainte transmise</div></div><button class="btn btn-primary btn-sm" onclick="tribShowPlaintesTransmises()">📂 Consulter</button></div></div>';
+      banner.innerHTML = '<div class="card" style="padding:14px 18px;border-left:3px solid var(--accent);background:rgba(192,65,14,0.06)"><div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap"><div style="font-size:28px">📨</div><div style="flex:1;min-width:200px"><div style="font-family:\'Cinzel\',serif;font-size:14px;font-weight:600;color:var(--text);margin-bottom:2px">'+transmises.length+' plainte'+(transmises.length>1?'s':'')+' transmise'+(transmises.length>1?'s':'')+' par la Police</div><div style="font-size:11px;color:var(--muted);font-family:\'Share Tech Mono\',monospace;letter-spacing:0.5px">À traiter dans la section dédiée « Plaintes reçues »</div></div><button class="btn btn-primary btn-sm" onclick="showPage(\'juge-plaintes\')">📨 Consulter</button></div></div>';
     } else {
       banner.style.display = 'none';
     }
@@ -32772,11 +32892,18 @@ function tribSaveAffaire(editId){
     data.id = Date.now();
     data.created = Date.now();
     data.votes = {};
+    // Liaison plainte → affaire (set par tribOpenAffaireFromPlainte)
+    if(window._tribPendingPlainteId){
+      data.plainteId = window._tribPendingPlainteId;
+      window._tribPendingPlainteId = null;
+    }
     DB.tribunal.affaires.push(data);
   }
   _tribSave();
   document.getElementById('trib-modal').remove();
   tribRenderAffaires();
+  // Si on est sur la page Plaintes reçues, refresh aussi pour mettre à jour les compteurs
+  if(typeof tribRenderPlaintes === 'function' && el('trib-pl-list')) tribRenderPlaintes();
   showToast(editId?'✅ Affaire modifiée':'✅ Affaire ouverte ('+data.numero+')','success');
 }
 
@@ -32816,7 +32943,12 @@ function tribOpenAffaireFromPlainte(plainteId){
   if(!tribCanEdit()) return;
   var p = (DB.plaintes||[]).find(function(x){ return x.id===plainteId; });
   if(!p) return;
-  document.getElementById('trib-modal').remove();
+  // Le modal "trib-modal" n'existe que si on vient du modal "Plaintes transmises".
+  // Depuis la nouvelle page Plaintes reçues, il n'y a pas de modal à fermer.
+  var existingModal = document.getElementById('trib-modal');
+  if(existingModal) existingModal.remove();
+  // Mémoriser la liaison plainte → affaire pour que tribSaveAffaire la persiste
+  window._tribPendingPlainteId = plainteId;
   // Pré-remplir l'affaire avec les données de la plainte
   setTimeout(function(){
     tribOpenAffaire();
@@ -32828,7 +32960,6 @@ function tribOpenAffaireFromPlainte(plainteId){
       if(el('trib-aff-notes')) el('trib-aff-notes').value = 'Issue de la plainte Police #'+p.id+' du '+_tribFmtDateOnly(p.date);
     }, 100);
   }, 100);
-  // Marquer la plainte comme liée (sauvegarde après création de l'affaire — TODO)
 }
 
 /* ─── PAGE JUGEMENTS ─── */
