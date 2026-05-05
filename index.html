@@ -16218,6 +16218,16 @@ function initFirebaseSync(){
         if(data.grades) DB.grades=data.grades;
         // Sync des grades par section (Tribunal, Cabinet, Médical, etc.)
         if(data.sectionGrades && typeof data.sectionGrades === 'object'){
+          // Firebase RTDB peut renvoyer chaque sectionGrades[section] comme objet {0:..,1:..}
+          // au lieu d'un array → sans normalisation, getGradesForSection() les wipe aux defaults
+          try{
+            Object.keys(data.sectionGrades).forEach(function(section){
+              var arr = data.sectionGrades[section];
+              if(arr && !Array.isArray(arr) && typeof arr === 'object'){
+                data.sectionGrades[section] = Object.values(arr).filter(Boolean);
+              }
+            });
+          }catch(e){}
           DB.sectionGrades = data.sectionGrades;
         }
         if(data.adminNotes) DB.adminNotes=data.adminNotes;
@@ -16279,6 +16289,20 @@ function initFirebaseSync(){
         // Note : le listener dédié sur sunagakure/sectionData (plus bas dans le fichier)
         // gère aussi cette donnée. Ici on assure la cohérence dans le sync global.
         if(data.sectionData && typeof data.sectionData === 'object'){
+          // Firebase RTDB peut renvoyer les arrays comme objets {0:..,1:..}
+          // Normaliser : data.sectionData[section][page] doit être un array
+          try{
+            Object.keys(data.sectionData).forEach(function(section){
+              if(data.sectionData[section] && typeof data.sectionData[section] === 'object'){
+                Object.keys(data.sectionData[section]).forEach(function(page){
+                  var arr = data.sectionData[section][page];
+                  if(arr && !Array.isArray(arr) && typeof arr === 'object'){
+                    data.sectionData[section][page] = Object.values(arr).filter(Boolean);
+                  }
+                });
+              }
+            });
+          }catch(e){}
           var _secChanged = JSON.stringify(DB.sectionData||{}) !== JSON.stringify(data.sectionData);
           if(_secChanged){
             DB.sectionData = data.sectionData;
@@ -16291,8 +16315,15 @@ function initFirebaseSync(){
           if(_tribChanged){
             DB.tribunal = data.tribunal;
             // Garantir que les arrays existent toujours (sinon les .filter() crashent)
+            // Firebase RTDB peut renvoyer un objet {0:..,1:..} au lieu d'un array
             ['affaires','audiences','jugements','procedure','jurisprudence'].forEach(function(k){
-              if(!Array.isArray(DB.tribunal[k])) DB.tribunal[k] = [];
+              if(!Array.isArray(DB.tribunal[k])){
+                if(DB.tribunal[k] && typeof DB.tribunal[k] === 'object'){
+                  DB.tribunal[k] = Object.values(DB.tribunal[k]).filter(Boolean);
+                } else {
+                  DB.tribunal[k] = [];
+                }
+              }
             });
             _changedKeys.add('tribunal');
           }
@@ -19534,7 +19565,14 @@ function renderRecensement(){
   const fFac=el("filter-faction")?.value||"";
   const fNat=el("filter-nature")?.value||"";
   // bug-fix : DB.recenses peut être undefined si Firebase n'a rien encore (premier sync)
-  if(!Array.isArray(DB.recenses)) DB.recenses = [];
+  // Firebase RTDB peut aussi renvoyer {0:..,1:..} au lieu d'un array → convertir au lieu d'écraser
+  if(!Array.isArray(DB.recenses)){
+    if(DB.recenses && typeof DB.recenses === 'object'){
+      DB.recenses = Object.values(DB.recenses).filter(Boolean);
+    } else {
+      DB.recenses = [];
+    }
+  }
   const factions=[...new Set(DB.recenses.map(r=>r.faction).filter(Boolean))].sort();
   const selFac=el("filter-faction");
   if(selFac){const cur=selFac.value;selFac.innerHTML='<option value="">Toutes factions</option>'+factions.map(f=>`<option${cur===f?" selected":""}>${esc(f)}</option>`).join("")}
@@ -21698,7 +21736,13 @@ function getGradesForSection(section){
   if(!section || section === 'police') return getGrades();
   if(!DB.sectionGrades) DB.sectionGrades = {};
   if(!Array.isArray(DB.sectionGrades[section])){
-    DB.sectionGrades[section] = (DEFAULT_SECTION_GRADES[section] || ["Membre"]).slice();
+    // Firebase RTDB peut renvoyer un objet {0:..,1:..} au lieu d'un array
+    // → convertir au lieu d'écraser avec les defaults (sinon on perd les grades custom)
+    if(DB.sectionGrades[section] && typeof DB.sectionGrades[section] === 'object'){
+      DB.sectionGrades[section] = Object.values(DB.sectionGrades[section]).filter(Boolean);
+    } else {
+      DB.sectionGrades[section] = (DEFAULT_SECTION_GRADES[section] || ["Membre"]).slice();
+    }
   }
   return DB.sectionGrades[section];
 }
@@ -30208,7 +30252,14 @@ function lpCanEdit(){
 
 // Init la collection si pas présente (rétro-compatibilité avec anciennes DB)
 function _lpInitDB(){
-  if(!Array.isArray(DB.laissezPasse)) DB.laissezPasse = [];
+  if(!Array.isArray(DB.laissezPasse)){
+    // Firebase RTDB peut renvoyer {0:..,1:..} au lieu d'un array → convertir au lieu d'écraser
+    if(DB.laissezPasse && typeof DB.laissezPasse === 'object'){
+      DB.laissezPasse = Object.values(DB.laissezPasse).filter(Boolean);
+    } else {
+      DB.laissezPasse = [];
+    }
+  }
 }
 
 // Calcule le statut effectif d'un laissez-passer
@@ -32180,7 +32231,14 @@ function _tribInit(){
     }catch(e){ DB.tribunal = {}; }
   }
   ['affaires','audiences','jugements','procedure','jurisprudence'].forEach(function(k){
-    if(!Array.isArray(DB.tribunal[k])) DB.tribunal[k] = [];
+    if(!Array.isArray(DB.tribunal[k])){
+      // Firebase RTDB peut renvoyer un objet {0:..,1:..} au lieu d'un array
+      if(DB.tribunal[k] && typeof DB.tribunal[k] === 'object'){
+        DB.tribunal[k] = Object.values(DB.tribunal[k]).filter(Boolean);
+      } else {
+        DB.tribunal[k] = [];
+      }
+    }
   });
 }
 _tribInit();
@@ -32896,8 +32954,15 @@ document.addEventListener('DOMContentLoaded', function(){
             var modalOpen = !!document.getElementById('trib-modal');
             DB.tribunal = v;
             try{ localStorage.setItem('suna_tribunal', JSON.stringify(v)); }catch(e){}
+            // Firebase RTDB peut renvoyer un objet {0:..,1:..} au lieu d'un array
             ['affaires','audiences','jugements','procedure','jurisprudence'].forEach(function(k){
-              if(!Array.isArray(DB.tribunal[k])) DB.tribunal[k] = [];
+              if(!Array.isArray(DB.tribunal[k])){
+                if(DB.tribunal[k] && typeof DB.tribunal[k] === 'object'){
+                  DB.tribunal[k] = Object.values(DB.tribunal[k]).filter(Boolean);
+                } else {
+                  DB.tribunal[k] = [];
+                }
+              }
             });
             if(!modalOpen){
               try{
@@ -32923,7 +32988,15 @@ function _ensureSectionData(){
 function _secList(section, page){
   _ensureSectionData();
   if(!DB.sectionData[section]) DB.sectionData[section] = {};
-  if(!Array.isArray(DB.sectionData[section][page])) DB.sectionData[section][page] = [];
+  if(!Array.isArray(DB.sectionData[section][page])){
+    // Firebase RTDB peut renvoyer un objet {0:..,1:..} au lieu d'un array
+    // → convertir au lieu d'écraser (sinon les entrées disparaissent au refresh)
+    if(DB.sectionData[section][page] && typeof DB.sectionData[section][page] === 'object'){
+      DB.sectionData[section][page] = Object.values(DB.sectionData[section][page]).filter(Boolean);
+    } else {
+      DB.sectionData[section][page] = [];
+    }
+  }
   return DB.sectionData[section][page];
 }
 function _secSave(){
@@ -33097,6 +33170,20 @@ document.addEventListener('DOMContentLoaded', function(){
         window._fbOnValue(r, function(snap){
           var v = snap.val();
           if(v && typeof v === 'object'){
+            // Firebase RTDB peut renvoyer les arrays comme objets {0:..,1:..}
+            // Normaliser tous les niveaux nested : v[section][page] = []
+            try{
+              Object.keys(v).forEach(function(section){
+                if(v[section] && typeof v[section] === 'object'){
+                  Object.keys(v[section]).forEach(function(page){
+                    var arr = v[section][page];
+                    if(arr && !Array.isArray(arr) && typeof arr === 'object'){
+                      v[section][page] = Object.values(arr).filter(Boolean);
+                    }
+                  });
+                }
+              });
+            }catch(e){}
             // BUG-FIX : si l'utilisateur est en train d'éditer une entrée
             // (formulaire d'édition visible avec data-edit-id), on ne pousse pas
             // la mise à jour pour ne pas écraser sa saisie.
