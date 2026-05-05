@@ -7658,8 +7658,8 @@ document.addEventListener('error', function(e){
       </div>
     </div>
 
-    <!-- JOURNAL D'ACTIVITÉ -->
-    <div class="card mt-6">
+    <!-- JOURNAL D'ACTIVITÉ (admin uniquement) -->
+    <div class="card mt-6" id="dash-timeline-card">
       <div class="card-header">
         <span>📅</span><h3>Journal d'activité</h3>
         <div style="margin-left:auto;display:flex;gap:7px;align-items:center">
@@ -8215,7 +8215,6 @@ document.addEventListener('error', function(e){
           </div>
         </div>
         <div class="rcv2-hero-actions">
-          <button class="btn btn-export" onclick="exportCSV('recensement')" data-export-btn style="display:none">⬇️ Export CSV</button>
           <button class="btn btn-purple" id="btn-recenser" onclick="removeRecensePhoto();rcv2OpenForm()">+ Recenser un joueur</button>
         </div>
       </div>
@@ -8250,10 +8249,10 @@ document.addEventListener('error', function(e){
           <div class="pgv2-hero-stat"><div class="num" id="pgv2-cand-total">0</div><div class="lbl">Total</div></div>
           <div class="pgv2-hero-stat" data-tone="cyan"><div class="num" id="pgv2-cand-attente">0</div><div class="lbl">En attente</div></div>
           <div class="pgv2-hero-stat" data-tone="green"><div class="num" id="pgv2-cand-acceptees">0</div><div class="lbl">Acceptées</div></div>
+          <div class="pgv2-hero-stat" data-tone="red"><div class="num" id="pgv2-cand-refusees">0</div><div class="lbl">Refusées</div></div>
         </div>
         <div class="pgv2-hero-actions">
           <button class="btn btn-primary" onclick="clearForm(['c-nom','c-age','c-discord','c-motif','c-exp']);if(typeof _syncSectionLockUI==='function')_syncSectionLockUI();openModal('modal-candidature')">+ Déposer une candidature</button>
-          <button class="btn btn-export" onclick="exportCSV('candidatures')" id="btn-export-cand" style="display:none">⬇️ Export CSV</button>
         </div>
       </div>
     </div>
@@ -8307,7 +8306,6 @@ document.addEventListener('error', function(e){
           <div class="pgv2-hero-stat" data-tone="cyan"><div class="num" id="pgv2-pl-cours">0</div><div class="lbl">En cours</div></div>
         </div>
         <div class="pgv2-hero-actions">
-          <button class="btn btn-export" onclick="exportCSV('plaintes')" data-export-btn style="display:none">⬇️ Export CSV</button>
           <button class="btn btn-primary" onclick="clearForm(['p-plaignant','p-accuse','p-desc','p-date']);openModal('modal-plainte')">+ Déposer une plainte</button>
         </div>
       </div>
@@ -8578,6 +8576,95 @@ document.addEventListener('error', function(e){
       #page-dossiers .dc-filter-grp{flex-wrap:wrap;width:100%}
       #page-dossiers .dc-filter-grp .lbl{flex:1 0 100%;padding:4px 6px 6px}
     }
+
+    /* ═══ DOSSIER DÉFUNT — ligne grisée + tampon DÉFUNT ═══ */
+    #page-dossiers .data-table tbody tr.is-defunt{
+      background:rgba(140,20,30,0.04) !important;
+      opacity:0.7;
+      filter:grayscale(0.5);
+      transition:opacity 0.2s, filter 0.2s, background 0.2s;
+    }
+    #page-dossiers .data-table tbody tr.is-defunt:hover{
+      opacity:0.95;
+      filter:grayscale(0.15);
+      background:rgba(140,20,30,0.1) !important;
+    }
+    #page-dossiers .data-table tbody tr.is-defunt td:nth-child(2) b{
+      color:rgba(220,180,180,0.85);
+      text-decoration:line-through;
+      text-decoration-color:rgba(140,20,30,0.55);
+      text-decoration-thickness:1.5px;
+    }
+    /* Photo : effet sépia/désaturé pour un défunt */
+    #page-dossiers .data-table tbody tr.is-defunt td:nth-child(1) img{
+      filter:grayscale(1) brightness(0.85) contrast(0.95);
+      border-color:rgba(140,20,30,0.4) !important;
+    }
+    /* Tampon "DÉFUNT" à côté du nom — style officiel d'archive RP */
+    .dc-defunt-stamp{
+      display:inline-block;
+      margin-left:8px;
+      padding:2px 8px;
+      font-family:'Share Tech Mono','Courier New',monospace;
+      font-size:9px;
+      font-weight:700;
+      letter-spacing:1.5px;
+      color:rgba(225,90,100,0.95);
+      background:rgba(140,20,30,0.15);
+      border:1px solid rgba(220,80,90,0.55);
+      border-radius:3px;
+      vertical-align:middle;
+      text-transform:uppercase;
+      text-decoration:none !important;
+      white-space:nowrap;
+      box-shadow:inset 0 0 0 1px rgba(140,20,30,0.1);
+    }
+    .dc-defunt-stamp::before{content:'⚱ ';opacity:0.85}
+
+    /* Bloc "Marquer comme défunt" dans la modale d'édition — tonalité solennelle */
+    .dc-defunt-block{
+      background:rgba(140,20,30,0.06);
+      border:1px solid rgba(220,80,90,0.3);
+      border-radius:9px;
+      padding:13px 15px;
+      margin-bottom:13px;
+    }
+    .dc-defunt-block .dc-defunt-row{
+      display:flex;align-items:center;gap:11px;cursor:pointer;
+      user-select:none;
+    }
+    .dc-defunt-block input[type="checkbox"]{
+      width:17px;height:17px;cursor:pointer;
+      accent-color:rgba(190,40,55,0.9);
+    }
+    .dc-defunt-block .dc-defunt-icon{font-size:18px;line-height:1}
+    .dc-defunt-block .dc-defunt-lbl{
+      font-family:'Share Tech Mono',monospace;
+      font-size:11px;
+      letter-spacing:1.2px;
+      text-transform:uppercase;
+      color:rgba(225,90,100,0.95);
+      font-weight:700;
+    }
+    .dc-defunt-block .dc-defunt-help{
+      font-size:11px;color:var(--muted);margin-top:7px;line-height:1.5;
+      padding-left:28px;
+    }
+    /* Toggle "Masquer défunts" dans la barre de filtres */
+    #page-dossiers .dc-fbtn.dc-toggle-defunt{
+      border-color:rgba(180,140,20,0.25);
+      color:rgba(255,255,255,0.55);
+    }
+    #page-dossiers .dc-fbtn.dc-toggle-defunt:hover{
+      color:rgba(225,90,100,0.95);
+      border-color:rgba(220,80,90,0.5);
+      background:rgba(140,20,30,0.08);
+    }
+    #page-dossiers .dc-fbtn.dc-toggle-defunt.active{
+      background:linear-gradient(135deg,rgba(140,20,30,0.7),rgba(100,15,20,0.85)) !important;
+      color:#ffd1d4 !important;
+      border-color:rgba(220,80,90,0.5) !important;
+    }
     </style>
 
     <!-- HERO -->
@@ -8590,7 +8677,6 @@ document.addEventListener('error', function(e){
           <div class="dc-hero-quote">« Que nul individu fiché n'échappe à la mémoire du Désert. »</div>
         </div>
         <div class="dc-hero-actions">
-          <button class="btn btn-export" onclick="exportCSV('dossiers')" data-export-btn style="display:none">⬇️ Export CSV</button>
           <button class="btn btn-primary" id="btn-new-dossier" onclick="clearDossierPhoto();buildTagPicker('d',[]);openModal('modal-dossier')" style="display:none">+ Nouveau dossier</button>
         </div>
       </div>
@@ -8637,6 +8723,7 @@ document.addEventListener('error', function(e){
         <button class="dc-fbtn s-incarcere" data-filter="statut" data-val="Incarcéré"      onclick="dcSetFilter('statut','Incarcéré',this)">Incarcéré</button>
         <button class="dc-fbtn s-libere"    data-filter="statut" data-val="Libéré"         onclick="dcSetFilter('statut','Libéré',this)">Libéré</button>
         <button class="dc-fbtn s-surveille" data-filter="statut" data-val="Surveillé"      onclick="dcSetFilter('statut','Surveillé',this)">Surveillé</button>
+        <button class="dc-fbtn dc-toggle-defunt" id="dc-toggle-defunt" onclick="dcToggleDefunt(this)" title="Cacher / afficher les suspects défunts" style="margin-left:auto">⚱ Défunts visibles</button>
       </div>
     </div>
 
@@ -12075,7 +12162,6 @@ document.addEventListener('error', function(e){
         </div>
         <div class="pgv2-hero-actions">
           <button class="btn btn-primary" id="btn-new-sanction" onclick="clearForm(['s-cible','s-motif']);openModal('modal-sanction')" style="display:none">+ Ajouter</button>
-          <button class="btn btn-export" onclick="exportCSV('sanctions')" id="btn-export-sanctions" style="display:none">⬇️ Export CSV</button>
         </div>
       </div>
     </div>
@@ -15429,6 +15515,15 @@ function plv2SelectCible(el,val){
           <select id="d-statut" class="form-control"><option>Recherché</option><option>En garde à vue</option><option>Incarcéré</option><option>Libéré</option><option>Surveillé</option></select></div>
       </div>
       <div class="form-group"><label class="form-label">Notes</label><textarea id="d-notes" class="form-control"></textarea></div>
+      <!-- Marqueur défunt -->
+      <div class="dc-defunt-block">
+        <label class="dc-defunt-row">
+          <input type="checkbox" id="d-defunt">
+          <span class="dc-defunt-icon">⚱</span>
+          <span class="dc-defunt-lbl">Marquer comme défunt</span>
+        </label>
+        <div class="dc-defunt-help">Le suspect apparaîtra grisé avec un tampon « DÉFUNT » dans la liste. Utilisé quand le suspect est décédé (mort RP, exécution, etc.).</div>
+      </div>
       <!-- Amendes -->
       <div style="background:rgba(180,140,20,0.05);border:1px solid rgba(180,140,20,0.2);border-radius:9px;padding:13px 15px;margin-bottom:13px">
         <div style="font-size:9px;letter-spacing:2px;color:var(--gold2);font-family:'Share Tech Mono',monospace;text-transform:uppercase;margin-bottom:10px">💰 Amendes (Ryos)</div>
@@ -15505,6 +15600,15 @@ function plv2SelectCible(el,val){
           <select id="ed-statut" class="form-control"><option>Recherché</option><option>En garde à vue</option><option>Incarcéré</option><option>Libéré</option><option>Surveillé</option></select></div>
       </div>
       <div class="form-group"><label class="form-label">Notes</label><textarea id="ed-notes" class="form-control"></textarea></div>
+      <!-- Marqueur défunt -->
+      <div class="dc-defunt-block">
+        <label class="dc-defunt-row">
+          <input type="checkbox" id="ed-defunt">
+          <span class="dc-defunt-icon">⚱</span>
+          <span class="dc-defunt-lbl">Marquer comme défunt</span>
+        </label>
+        <div class="dc-defunt-help">Le suspect apparaîtra grisé avec un tampon « DÉFUNT » dans la liste. Utilisé quand le suspect est décédé (mort RP, exécution, etc.).</div>
+      </div>
       <!-- Amendes -->
       <div style="background:rgba(180,140,20,0.05);border:1px solid rgba(180,140,20,0.2);border-radius:9px;padding:13px 15px;margin-bottom:13px">
         <div style="font-size:9px;letter-spacing:2px;color:var(--gold2);font-family:'Share Tech Mono',monospace;text-transform:uppercase;margin-bottom:10px">💰 Amendes (Ryos)</div>
@@ -16168,9 +16272,21 @@ function initFirebaseSync(){
           // c'est probablement un bug réseau / Firebase vidé temporairement → on skip.
           var localCount = (DB[k]||[]).length;
           var remoteCount = data[k].length;
+          // Protection anti-flicker (renforcée) :
+          //  - Cas 1 (existant) : remote a perdu >50% des items (suppression massive suspecte)
+          //  - Cas 2 (NOUVEAU) : remote retourne 0 item alors qu'on en avait localement
+          //                      → glitch réseau ou réponse partielle Firebase. Sans cette garde,
+          //                      avec 1-2 items on les voyait disparaître pendant ~1s puis revenir.
+          //  Note : on ne bloque PAS les petites suppressions partielles (ex: 3→2) car ce sont
+          //  des suppressions légitimes par d'autres utilisateurs qu'il faut propager.
           var massiveLoss = (localCount >= 3 && remoteCount < Math.ceil(localCount / 2));
-          if(massiveLoss){
-            console.warn('[SYNC] ⚠️  Suppression massive distante détectée pour "'+k+'" ('+remoteCount+' restants vs '+localCount+' locaux). Ignorée par sécurité.');
+          var emptyRemoteSuspect = (localCount > 0 && remoteCount === 0);
+          if(massiveLoss || emptyRemoteSuspect){
+            if(emptyRemoteSuspect){
+              console.warn('[SYNC] ⏸ Réponse Firebase vide pour "'+k+'" alors que local a '+localCount+' item(s) — suppression ignorée (anti-flicker)');
+            } else {
+              console.warn('[SYNC] ⚠️  Suppression massive distante détectée pour "'+k+'" ('+remoteCount+' restants vs '+localCount+' locaux). Ignorée par sécurité.');
+            }
           } else {
             (DB[k]||[]).forEach(function(x){
               if(!x||x.id==null) return;
@@ -19084,6 +19200,11 @@ function _dbRenderMyActivity(){
 
 function renderTimeline(){
   const e=el("timeline");if(!e)return;
+  // Visibilité réservée aux administrateurs (le journal contient des infos sensibles
+  // sur les actions de tous les membres)
+  const cardWrap=el("dash-timeline-card");
+  if(cardWrap) cardWrap.style.display = (typeof isAdmin === 'function' && isAdmin()) ? "" : "none";
+  if(typeof isAdmin === 'function' && !isAdmin()) return;
   // Bouton Notifier visible pour les admins/gérants seulement
   const btnN=el("btn-notif-timeline");
   if(btnN)btnN.style.display=(canModify()&&!isVisiteur())?"":"none";
@@ -20051,6 +20172,7 @@ function renderCandidatures(){
   var sT=el("pgv2-cand-total");if(sT)sT.textContent=allCand.length;
   var sA=el("pgv2-cand-attente");if(sA)sA.textContent=allCand.filter(c=>c.statut==="en_attente").length;
   var sAc=el("pgv2-cand-acceptees");if(sAc)sAc.textContent=allCand.filter(c=>c.statut==="acceptee").length;
+  var sR=el("pgv2-cand-refusees");if(sR)sR.textContent=allCand.filter(c=>c.statut==="refusee").length;
 
   el("candidatures-tbody").innerHTML=list.map(c=>{
     const isOwn=currentUser&&c.authorId===currentUser.id;
@@ -20460,11 +20582,20 @@ function viewDossier(id){
 
 // État des filtres rapides Dossiers
 var _dcFilters = { danger: 'all', statut: 'all' };
+var _dcHideDefunt = false; // Toggle "Masquer défunts"
 function dcSetFilter(group, val, btn){
   _dcFilters[group] = val;
   // Toggle visuel : retirer .active de tous les boutons du même groupe
   document.querySelectorAll('#page-dossiers .dc-fbtn[data-filter="'+group+'"]').forEach(function(b){b.classList.remove('active')});
   if(btn) btn.classList.add('active');
+  renderDossiers();
+}
+function dcToggleDefunt(btn){
+  _dcHideDefunt = !_dcHideDefunt;
+  if(btn){
+    btn.classList.toggle('active', _dcHideDefunt);
+    btn.textContent = _dcHideDefunt ? '⚱ Défunts masqués' : '⚱ Défunts visibles';
+  }
   renderDossiers();
 }
 function _dcDangerWeight(d){
@@ -20497,6 +20628,7 @@ function renderDossiers(){
   });
   if(_dcFilters.danger !== 'all') list = list.filter(function(d){return d.danger === _dcFilters.danger});
   if(_dcFilters.statut !== 'all') list = list.filter(function(d){return d.statut === _dcFilters.statut});
+  if(_dcHideDefunt) list = list.filter(function(d){return !d.defunt});
 
   // ─── TRI ───
   var sortMode = (document.getElementById('dc-sort')||{}).value || 'recent';
@@ -20516,9 +20648,11 @@ function renderDossiers(){
     var photoCell = d.photo
       ? '<img alt="Photo" src="'+safeImgSrc(d.photo)+'" style="width:36px;height:44px;object-fit:cover;border-radius:5px;border:1px solid rgba(180,140,20,0.2);box-shadow:0 2px 6px rgba(0,0,0,0.12)">'
       : '<div style="width:36px;height:44px;border-radius:5px;border:1px dashed rgba(255,255,255,0.15);display:flex;align-items:center;justify-content:center;font-size:18px;opacity:0.35">👤</div>';
-    return '<tr>'
+    var defuntStamp = d.defunt ? '<span class="dc-defunt-stamp" title="Suspect décédé">Défunt</span>' : '';
+    var rowClass = d.defunt ? ' class="is-defunt"' : '';
+    return '<tr'+rowClass+'>'
       +'<td>'+photoCell+'</td>'
-      +'<td><b>'+esc(d.nom)+'</b></td>'
+      +'<td><b>'+esc(d.nom)+'</b>'+defuntStamp+'</td>'
       +'<td style="font-size:11.5px">'+esc(d.infractions)+'</td>'
       +'<td><span class="badge '+dangerBadge(d.danger)+'">'+esc(d.danger)+'</span></td>'
       +'<td><span class="badge '+dossierStatutBadge(d.statut)+'">'+esc(d.statut)+'</span></td>'
@@ -20676,10 +20810,12 @@ function saveDossier(force){
   const photo=el("d-photo-data")?el("d-photo-data").value:"";
   const amendePayee=parseInt(el("d-amende-payee").value)||0;
   const amendeImpayee=parseInt(el("d-amende-impayee").value)||0;
-  DB.dossiers.push({id:Date.now(),nom,infractions:v("d-infractions"),danger:v("d-danger"),statut:v("d-statut"),notes:v("d-notes"),amendePayee,amendeImpayee,photo,auteur:currentUser.nom,date:now(),tags:getAllTags('d')});
-  addTimeline(`Dossier ouvert sur ${nom}`);
+  const defunt=!!(el("d-defunt") && el("d-defunt").checked);
+  DB.dossiers.push({id:Date.now(),nom,infractions:v("d-infractions"),danger:v("d-danger"),statut:v("d-statut"),notes:v("d-notes"),amendePayee,amendeImpayee,photo,defunt,auteur:currentUser.nom,date:now(),tags:getAllTags('d')});
+  addTimeline(`Dossier ouvert sur ${nom}`+(defunt?' (⚱ défunt)':''));
   saveData(['dossiers','timeline']);closeModal("modal-dossier");renderDossiers();syncDashboard();
   clearForm(["d-nom","d-infractions","d-notes","d-amende-payee","d-amende-impayee"]);
+  if(el("d-defunt")) el("d-defunt").checked=false;
   buildTagPicker('d',[]);
   clearDossierPhoto();
   // Reset alerte doublon
@@ -20746,6 +20882,7 @@ function openEditDossier(id){
   el("ed-notes").value=d.notes||"";
   el("ed-amende-payee").value=d.amendePayee||0;
   el("ed-amende-impayee").value=d.amendeImpayee||0;
+  if(el("ed-defunt")) el("ed-defunt").checked = !!d.defunt;
   // Sélectionner les bonnes options
   const ds=el("ed-danger");for(let o of ds.options)o.selected=(o.value===d.danger||o.text===d.danger);
   const ss=el("ed-statut");for(let o of ss.options)o.selected=(o.value===d.statut||o.text===d.statut);
@@ -20778,7 +20915,15 @@ function updateDossier(){
   d.amendeImpayee=parseInt(el("ed-amende-impayee").value)||0;
   d.photo=el("ed-photo-data").value;
   d.tags=getAllTags('ed');
-  addTimeline(`Dossier de ${d.nom} modifié par ${currentUser.nom}`);
+  var prevDefunt = !!d.defunt;
+  d.defunt = !!(el("ed-defunt") && el("ed-defunt").checked);
+  if(d.defunt && !prevDefunt){
+    addTimeline(`Suspect marqué défunt : ${d.nom}`);
+  } else if(!d.defunt && prevDefunt){
+    addTimeline(`Suspect ${d.nom} : marqueur défunt retiré`);
+  } else {
+    addTimeline(`Dossier de ${d.nom} modifié par ${currentUser.nom}`);
+  }
   saveData();renderDossiers();syncDashboard();closeModal("modal-edit-dossier");
   showToast("Dossier mis à jour.","success");
 }
