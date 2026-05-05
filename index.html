@@ -15806,7 +15806,7 @@ let _fbFirstLoad=true;   // Flag : premier chargement Firebase pas encore trait�
 let _loginInProgress=false; // Anti double-submit
 
 // Dernières données reçues de Firebase — utilisées pour éviter d'écraser les données d'autres utilisateurs
-let _lastFbArrays={plaintes:[],dossiers:[],annonces:[],candidatures:[],operations:[],sanctions:[],recenses:[],infractions:[],timeline:[],users:[]};
+let _lastFbArrays={plaintes:[],dossiers:[],annonces:[],candidatures:[],operations:[],sanctions:[],recenses:[],infractions:[],timeline:[],users:[],laissezPasse:[]};
 
 // IDs supprimés récemment — bloque la réinsertion par race condition Firebase
 // Structure : { "plaintes": { "42": timestamp, ... }, ... }
@@ -16009,7 +16009,7 @@ async function _flushSaveQueue(){
     // LOCAL fait autorite : si supprime localement, reste supprime.
     // On ajoute depuis Firebase uniquement les items crees par d'autres users (absents en local ET inconnus).
     // 🚀 En mode partial, on ne fusionne que les clés concernées (les autres ne sont pas pushées).
-    const ARRAY_KEYS=['plaintes','dossiers','annonces','candidatures','operations','sanctions','recenses','infractions','timeline'];
+    const ARRAY_KEYS=['plaintes','dossiers','annonces','candidatures','operations','sanctions','recenses','infractions','timeline','laissezPasse'];
     var _partialKeysSet = _partialKeysForThisFlush ? new Set(_partialKeysForThisFlush) : null;
     ARRAY_KEYS.forEach(k=>{
       // Si on est en mode partial et que cette clé n'est pas dans la liste, on la saute
@@ -16122,12 +16122,12 @@ function initFirebaseSync(){
     if(data&&typeof data==="object"){
       // bug-fix : Firebase RTDB renvoie parfois des arrays sous forme d'objets
       // {0:{},1:{},2:{}} (cas des trous d'index). On normalise en arrays.
-      ['plaintes','dossiers','annonces','candidatures','operations','sanctions','recenses','infractions','timeline','users','loginHistory'].forEach(function(k){
+      ['plaintes','dossiers','annonces','candidatures','operations','sanctions','recenses','infractions','timeline','users','loginHistory','laissezPasse'].forEach(function(k){
         if(data[k] && !Array.isArray(data[k]) && typeof data[k] === 'object'){
           data[k] = Object.values(data[k]).filter(Boolean);
         }
       });
-      ['plaintes','dossiers','annonces','candidatures','operations','sanctions','recenses','infractions','timeline','users'].forEach(k=>{
+      ['plaintes','dossiers','annonces','candidatures','operations','sanctions','recenses','infractions','timeline','users','laissezPasse'].forEach(k=>{
         if(Array.isArray(data[k])&&data[k].length>0) _lastFbArrays[k]=data[k];
       });
       if((_fbSaveRunning || _fbSaveQueue) && !wasFirst){
@@ -16141,7 +16141,7 @@ function initFirebaseSync(){
       if(!wasFirst&&currentUser){
         // Mettre a jour seulement les tableaux avec les nouvelles donnees distantes
         // mais respecter les suppressions locales (ne pas restaurer les elements supprimes)
-        const SYNC_KEYS=['plaintes','dossiers','annonces','candidatures','operations','sanctions','recenses','infractions','timeline','users'];
+        const SYNC_KEYS=['plaintes','dossiers','annonces','candidatures','operations','sanctions','recenses','infractions','timeline','users','laissezPasse'];
         // bug-fix : tracker quelles collections ont changé pour re-render uniquement
         // les pages concernées (au lieu de re-render aveuglément ou de ne rien faire).
         var _changedKeys = new Set();
@@ -16446,7 +16446,7 @@ function initFirebaseSync(){
       // la valeur par défaut (annonce de Bienvenue) → l'annonce supprimée revenait à chaque reload.
       // Solution : si Firebase contient au moins UNE donnée non-vide (= instance live),
       // alors une clé absente sur un array signifie "supprimé totalement" et non "valeur par défaut".
-      var ARRAY_KEYS_ALL = ['plaintes','dossiers','annonces','candidatures','operations','sanctions','recenses','infractions','timeline','users','loginHistory'];
+      var ARRAY_KEYS_ALL = ['plaintes','dossiers','annonces','candidatures','operations','sanctions','recenses','infractions','timeline','users','loginHistory','laissezPasse'];
       var fbIsLiveInstance = false;
       // Détection : Firebase est "live" si au moins une de ces clés array contient des données
       // OU si la clé `commissaire` est présente avec une valeur custom (= déjà configuré)
@@ -16473,7 +16473,7 @@ function initFirebaseSync(){
       // ── FIX : initialiser les listes __known dès le premier chargement ──
       // Sans ça, __known est vide et toute suppression échoue car l'item
       // est réinséré depuis Firebase (confondu avec un "nouvel élément distant").
-      const _INIT_KEYS=['plaintes','dossiers','annonces','candidatures','operations','sanctions','recenses','infractions','timeline','users'];
+      const _INIT_KEYS=['plaintes','dossiers','annonces','candidatures','operations','sanctions','recenses','infractions','timeline','users','laissezPasse'];
       _INIT_KEYS.forEach(function(k){
         if(Array.isArray(data[k])&&data[k].length>0){
           _lastFbArrays[k]=JSON.parse(JSON.stringify(data[k]));
@@ -19122,7 +19122,7 @@ async function forceFbSync(){
     if(!data||typeof data!=="object"){showToast("❌ Aucune donnée Firebase trouvée.","error");return;}
     // bug-fix : Firebase RTDB peut renvoyer les arrays en format objet {0:..,1:..}
     // (cas des trous d'index). On normalise TOUTES les collections AVANT le merge.
-    const _ARR_KEYS=['users','plaintes','dossiers','annonces','candidatures','operations','sanctions','recenses','infractions','timeline','loginHistory'];
+    const _ARR_KEYS=['users','plaintes','dossiers','annonces','candidatures','operations','sanctions','recenses','infractions','timeline','loginHistory','laissezPasse'];
     _ARR_KEYS.forEach(function(k){
       if(data[k] && !Array.isArray(data[k]) && typeof data[k] === 'object'){
         data[k] = Object.values(data[k]).filter(Boolean);
@@ -19134,7 +19134,7 @@ async function forceFbSync(){
     fbUsers.forEach(u=>{if(u&&u.id&&!localUserById[u.id])localUserById[u.id]=u;});
     data.users=Object.values(localUserById);
     // Initialiser __known pour éviter les bugs de suppression
-    const _KEYS=['plaintes','dossiers','annonces','candidatures','operations','sanctions','recenses','infractions','timeline','users'];
+    const _KEYS=['plaintes','dossiers','annonces','candidatures','operations','sanctions','recenses','infractions','timeline','users','laissezPasse'];
     _KEYS.forEach(k=>{
       if(Array.isArray(data[k])){
         _lastFbArrays[k]=JSON.parse(JSON.stringify(data[k]));
