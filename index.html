@@ -3472,178 +3472,6 @@ html{-webkit-tap-highlight-color:transparent}
   border-top:1px solid rgba(201,162,39,0.08);
 }
 
-/* ─── BADGE NIVEAU DE MENACE (Recensements) — Refonte v2 ─── */
-.menace-badge{
-  margin:8px 14px 0;
-  padding:0;
-  background:linear-gradient(135deg, #1a120a 0%, #0f0a05 100%);
-  border:1px solid rgba(120,80,40,0.22);
-  border-radius:10px;
-  position:relative;
-  overflow:hidden;
-  transition:all 0.25s cubic-bezier(.4,0,.2,1);
-  box-shadow:
-    inset 0 1px 0 rgba(255,255,255,0.04),
-    0 2px 8px rgba(0,0,0,0.3);
-}
-/* Pattern décoratif diagonal subtil */
-.menace-badge::before{
-  content:'';position:absolute;inset:0;
-  background:repeating-linear-gradient(
-    45deg,
-    transparent 0,
-    transparent 10px,
-    rgba(255,255,255,0.012) 10px,
-    rgba(255,255,255,0.012) 20px
-  );
-  pointer-events:none;
-}
-/* Liseré coloré gauche */
-.menace-badge::after{
-  content:'';position:absolute;left:0;top:0;bottom:0;
-  width:3px;
-  background:currentColor;
-  opacity:0.85;
-}
-
-/* Contenu principal */
-.menace-badge-content{
-  display:flex;align-items:center;gap:11px;
-  padding:9px 12px 9px 14px;
-  position:relative;
-  z-index:1;
-}
-.menace-icon{
-  width:32px;height:32px;
-  border-radius:8px;
-  display:flex;align-items:center;justify-content:center;
-  font-size:17px;
-  background:rgba(255,255,255,0.04);
-  border:1px solid rgba(255,255,255,0.06);
-  flex-shrink:0;
-  filter:drop-shadow(0 0 4px currentColor);
-}
-.menace-info{
-  flex:1;min-width:0;
-  display:flex;flex-direction:column;gap:2px;
-}
-.menace-label{
-  font-family:'Share Tech Mono',monospace;
-  font-size:8px;letter-spacing:2.2px;
-  color:rgba(255,255,255,0.42);
-  text-transform:uppercase;font-weight:600;
-  line-height:1;
-}
-.menace-value{
-  font-family:'Cinzel',serif;
-  font-size:13.5px;font-weight:700;
-  letter-spacing:1.4px;
-  line-height:1;
-}
-.menace-score{
-  font-family:'Share Tech Mono',monospace;
-  font-size:11px;font-weight:700;
-  letter-spacing:0.5px;
-  padding:4px 9px;
-  border-radius:5px;
-  background:rgba(255,255,255,0.04);
-  border:1px solid rgba(255,255,255,0.08);
-  color:currentColor;
-  flex-shrink:0;
-  font-variant-numeric:tabular-nums;
-}
-
-/* Barre de progression - plus fine et propre */
-.menace-bar{
-  height:3px;
-  background:rgba(0,0,0,0.5);
-  position:relative;
-  overflow:hidden;
-}
-.menace-bar-fill{
-  height:100%;
-  transition:width 0.7s cubic-bezier(.4,0,.2,1);
-  position:relative;
-  box-shadow:0 0 8px currentColor;
-}
-.menace-bar-fill::after{
-  content:'';position:absolute;top:0;left:0;right:0;bottom:0;
-  background:linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
-  animation:menaceShimmer 2.8s linear infinite;
-}
-@keyframes menaceShimmer{
-  0%{transform:translateX(-100%)}
-  100%{transform:translateX(100%)}
-}
-
-/* Niveau FAIBLE — vert */
-.menace-badge.menace-low{color:#22c55e;border-color:rgba(34,197,94,0.22)}
-.menace-badge.menace-low .menace-icon{
-  background:rgba(34,197,94,0.08);
-  border-color:rgba(34,197,94,0.2);
-  color:#22c55e;
-}
-.menace-badge.menace-low .menace-value{color:#86efac}
-.menace-badge.menace-low .menace-bar-fill{background:linear-gradient(90deg, #16a34a, #22c55e)}
-
-/* Niveau MODÉRÉE — jaune ambre */
-.menace-badge.menace-moderate{color:#d97706;border-color:rgba(217,119,6,0.28)}
-.menace-badge.menace-moderate .menace-icon{
-  background:rgba(217,119,6,0.10);
-  border-color:rgba(217,119,6,0.22);
-  color:#d97706;
-}
-.menace-badge.menace-moderate .menace-value{color:#fbbf24}
-.menace-badge.menace-moderate .menace-bar-fill{background:linear-gradient(90deg, #d97706, #fbbf24)}
-
-/* Niveau ÉLEVÉE — orange */
-.menace-badge.menace-high{
-  color:#ea580c;
-  border-color:rgba(234,88,12,0.38);
-  background:linear-gradient(135deg, #1d0c05 0%, #100604 100%);
-}
-.menace-badge.menace-high .menace-icon{
-  background:rgba(234,88,12,0.12);
-  border-color:rgba(234,88,12,0.28);
-  color:#ea580c;
-  filter:drop-shadow(0 0 6px rgba(234,88,12,0.5));
-}
-.menace-badge.menace-high .menace-value{color:#fb923c;text-shadow:0 0 10px rgba(234,88,12,0.3)}
-.menace-badge.menace-high .menace-bar-fill{background:linear-gradient(90deg, #ea580c, #fb923c)}
-
-/* Niveau CRITIQUE — rouge avec halo pulsant */
-.menace-badge.menace-critical{
-  color:#dc2626;
-  border-color:rgba(220,38,38,0.5);
-  background:linear-gradient(135deg, #2a0808 0%, #150404 100%);
-  animation:menaceCriticalPulse 2.2s ease-in-out infinite;
-}
-.menace-badge.menace-critical .menace-icon{
-  background:rgba(220,38,38,0.15);
-  border-color:rgba(220,38,38,0.35);
-  color:#ef4444;
-  filter:drop-shadow(0 0 8px rgba(220,38,38,0.7));
-  animation:menaceIconBlink 1.4s ease-in-out infinite;
-}
-.menace-badge.menace-critical .menace-value{
-  color:#fca5a5;
-  text-shadow:0 0 10px rgba(220,38,38,0.5);
-}
-.menace-badge.menace-critical .menace-bar-fill{background:linear-gradient(90deg, #dc2626, #ef4444, #f87171)}
-
-@keyframes menaceCriticalPulse{
-  0%,100%{box-shadow:inset 0 1px 0 rgba(255,255,255,0.04), 0 2px 8px rgba(0,0,0,0.3), 0 0 0 0 rgba(220,38,38,0.25)}
-  50%    {box-shadow:inset 0 1px 0 rgba(255,255,255,0.04), 0 2px 8px rgba(0,0,0,0.3), 0 0 16px 0 rgba(220,38,38,0.4)}
-}
-@keyframes menaceIconBlink{
-  0%,100%{opacity:1}
-  50%{opacity:0.6}
-}
-
-.menace-badge.menace-unknown{opacity:0.5;color:#6b7280}
-.menace-badge.menace-unknown .menace-icon{color:#6b7280;background:rgba(107,114,128,0.08)}
-.menace-badge.menace-unknown .menace-value{color:#9ca3af}
-.menace-badge.menace-unknown .menace-bar-fill{background:#6b7280}
 .rcv2-card-btn{
   flex:1;
   padding:8px 10px;
@@ -14134,32 +13962,6 @@ document.addEventListener('error', function(e){
               </label>
             </div>
           </div>
-          <!-- Niveau de menace - avec toggle activable -->
-          <div id="feat-row-menace" style="display:flex;align-items:center;gap:14px;padding:14px 0;border-bottom:1px solid var(--border)">
-            <div style="width:44px;height:44px;border-radius:10px;background:rgba(192,65,14,0.12);border:1px solid rgba(192,65,14,0.3);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0">⚡</div>
-            <div style="flex:1;min-width:0">
-              <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:2px">Niveau de menace (Recensements)</div>
-              <div style="font-size:10px;color:var(--muted);font-family:'Share Tech Mono',monospace">Score de dangerosité calculé automatiquement (rang + statut + natures)</div>
-            </div>
-            <div style="display:flex;align-items:center;gap:10px;flex-shrink:0">
-              <span id="feat-menace-badge" style="font-size:9px;font-family:'Share Tech Mono',monospace;padding:2px 8px;border-radius:4px;background:rgba(192,65,14,0.15);color:#e05c1a;border:1px solid rgba(192,65,14,0.3);letter-spacing:1px">TEASING</span>
-              <label style="position:relative;display:inline-block;width:46px;height:26px;cursor:pointer">
-                <input type="checkbox" id="toggle-feat-menace" style="opacity:0;width:0;height:0;position:absolute" onchange="toggleFeatureMenace(this.checked)">
-                <span id="feat-menace-track" style="position:absolute;inset:0;border-radius:13px;background:rgba(0,0,0,0.2);border:1px solid rgba(0,0,0,0.12);transition:all 0.2s">
-                  <span id="feat-menace-thumb" style="position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:#6b7280;box-shadow:0 1px 4px rgba(0,0,0,0.3);transition:all 0.2s"></span>
-                </span>
-              </label>
-            </div>
-          </div>
-          <!-- Tags IA -->
-          <div style="display:flex;align-items:center;gap:14px;padding:14px 0;opacity:0.55" title="Pas encore disponible">
-            <div style="width:44px;height:44px;border-radius:10px;background:rgba(109,40,217,0.06);border:1px solid rgba(109,40,217,0.15);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;filter:grayscale(0.5)">🤖</div>
-            <div style="flex:1;min-width:0">
-              <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:2px">Analyse IA des dossiers</div>
-              <div style="font-size:10px;color:var(--muted);font-family:'Share Tech Mono',monospace">Suggestions automatiques de tags et niveau de risque</div>
-            </div>
-            <span style="font-size:9px;font-family:'Share Tech Mono',monospace;padding:2px 8px;border-radius:4px;background:rgba(109,40,217,0.1);color:#7c3aed;border:1px solid rgba(109,40,217,0.2);letter-spacing:1px;flex-shrink:0">BIENTÔT</span>
-          </div>
           <!-- Recrutement Tribunal -->
           <div id="feat-row-tribunal" style="display:flex;align-items:center;gap:14px;padding:14px 0;border-top:1px solid var(--border)">
             <div style="width:44px;height:44px;border-radius:10px;background:rgba(180,140,20,0.08);border:1px solid rgba(180,140,20,0.2);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0">⚖️</div>
@@ -19047,8 +18849,6 @@ function renderPage(name){
   if(name==="admin"){
     el("admin-comm-input").value=DB.commissaire||"";applyLogo();loadNotifPrefs();refreshNotifCounts();renderNotifHistory();
     var _fmSaved=(DB.features&&typeof DB.features.map_active!=='undefined')?!!DB.features.map_active:false;try{if(!DB.features||typeof DB.features.map_active==='undefined')_fmSaved=localStorage.getItem('feat_map_active')==='1';}catch(e){} _syncFeatureMapUI(_fmSaved);
-    // Init toggle Niveau de menace
-    if(typeof initFeatureMenace==='function') initFeatureMenace();
     // Init toggles Recrutement Tribunal/Avocats
     if(typeof initFeatureSections==='function') initFeatureSections();
     // Init toggles login sections
@@ -19964,98 +19764,6 @@ function buildNatureCheckboxes(){
   c.innerHTML=NATURES.map(n=>`<label class="nature-checkbox-label rcv2-nat"><input type="checkbox" value="${n}" name="nature"> <span>${n}</span></label>`).join("");
 }
 
-/* ════════════════════════════════════════════════════════════════
-   NIVEAU DE MENACE — Calcul automatique pour les recensements
-   ════════════════════════════════════════════════════════════════
-   Score de 0 à 100 basé sur les VRAIS grades du barème de Sunagakure :
-   - Genin (0)       → 5
-   - Genin Confirmé  → 12
-   - Tokubetsu Chunin → 22
-   - Chunin (3600₽)  → 28
-   - Kakunin (4800₽) → 38
-   - Tokubetsu Jonin (6000₽) → 48
-   - Jonin (7200₽)   → 58
-   - Commandant Jonin (7000₽) → 70
-   - Kazekage (8400₽)  → 85
-   Plus :
-   - Criminel recherché baseline → 55
-   - Statut "Criminel recherché" → +20 supplémentaire
-   - Polyvalence (natures multiples) → +5 par nature au-delà de la 1ère
-   - Faction hostile → +15
-
-   Catégories :
-   - 0-24    : FAIBLE     (vert)
-   - 25-49   : MODÉRÉE    (jaune)
-   - 50-74   : ÉLEVÉE     (orange)
-   - 75-100  : CRITIQUE   (rouge clignotant) */
-
-const _RANG_SCORES = {
-  // Hiérarchie officielle Sunagakure (alignée sur le barème des impôts)
-  'Genin':              5,
-  'Genin Confirmé':     12,
-  'Tokubetsu Chunin':   22,
-  'Chunin':             28,
-  'Chûnin':             28,
-  'Kakunin':            38,
-  'Tokubetsu Jonin':    48,
-  'Jonin':              58,
-  'Jônin':              58,
-  'Commandant Jonin':   70,
-  'Kazekage':             85,
-  // Hors hiérarchie standard
-  'Criminel recherché': 55,
-  // Civils / inconnus
-  'Civil':              2,
-  'Inconnu':            8
-};
-
-// Factions considérées comme hostiles ou à risque (bonus de menace)
-const _FACTIONS_HOSTILES = ['akatsuki', 'son', 'iwa', 'kumo', 'kiri', 'oto', 'orochimaru', 'taka', 'criminels'];
-
-function computeMenace(r){
-  if(!r || typeof r !== 'object') return { score:0, label:'INCONNUE', color:'#6b7280', cls:'unknown' };
-  let score = 0;
-  // 1. Rang (base)
-  const rang = (r.rang||'').trim();
-  if(_RANG_SCORES.hasOwnProperty(rang)) score += _RANG_SCORES[rang];
-  else if(rang) score += 10; // rang non standard = baseline
-  // 2. Statut criminel (cumule avec le rang)
-  if(rang === 'Criminel recherché') score += 20;
-  // 3. Polyvalence (natures multiples)
-  const nats = Array.isArray(r.natures) ? r.natures.length : 0;
-  if(nats >= 2) score += (nats - 1) * 5;
-  if(nats >= 5) score += 5; // bonus polyvalence extrême
-  // 4. Faction hostile
-  const fac = (r.faction||'').toLowerCase();
-  if(fac && _FACTIONS_HOSTILES.some(h => fac.includes(h))) score += 15;
-  // Clamp 0-100
-  score = Math.max(0, Math.min(100, score));
-  // Catégorisation
-  let label, color, cls;
-  if(score >= 75)      { label='CRITIQUE'; color='#dc2626'; cls='critical'; }
-  else if(score >= 50) { label='ÉLEVÉE';   color='#ea580c'; cls='high'; }
-  else if(score >= 25) { label='MODÉRÉE';  color='#d97706'; cls='moderate'; }
-  else                 { label='FAIBLE';   color='#16a34a'; cls='low'; }
-  return { score, label, color, cls };
-}
-
-function renderMenaceBadge(r){
-  // Si la feature est désactivée dans l'admin, ne rien afficher
-  if(typeof isMenaceFeatureActive === 'function' && !isMenaceFeatureActive()) return '';
-  const m = computeMenace(r);
-  return '<div class="menace-badge menace-'+m.cls+'" title="Score : '+m.score+'/100">'
-       +   '<div class="menace-badge-content">'
-       +     '<div class="menace-icon">⚡</div>'
-       +     '<div class="menace-info">'
-       +       '<div class="menace-label">Niveau de menace</div>'
-       +       '<div class="menace-value">'+m.label+'</div>'
-       +     '</div>'
-       +     '<div class="menace-score">'+m.score+'<span style="opacity:0.5">/100</span></div>'
-       +   '</div>'
-       +   '<div class="menace-bar"><div class="menace-bar-fill" style="width:'+m.score+'%"></div></div>'
-       + '</div>';
-}
-
 function renderRecensement(){
   // Chips filtres actifs
   var chips = [];
@@ -20174,7 +19882,6 @@ function renderRecensement(){
       ${metierClanHTML}
       ${compHTML}
       ${naturesHTML}
-      ${renderMenaceBadge(r)}
       <div class="rcv2-card-footer">
         <button class="rcv2-card-btn primary" onclick="viewRecense(${r.id})">👁 Consulter</button>
         ${canModify()?`<button class="rcv2-card-btn gold" onclick="openEditRecense(${r.id})" title="Modifier">✏️</button><button class="rcv2-card-btn danger" onclick="deleteRecense(${r.id})" title="Supprimer">🗑</button>`:""}
@@ -21773,50 +21480,6 @@ function toggleFeatureMap(enabled){
   // Mettre à jour le toggle dans l'admin
   _syncFeatureMapUI(enabled);
   showToast(enabled ? '\uD83D\uDDFA\uFE0F Carte tactique activ\u00e9e !' : '\uD83D\uDDFA\uFE0F Carte tactique \u2192 Teasing', enabled ? 'success' : 'info');
-}
-
-// ─── TOGGLE NIVEAU DE MENACE ───
-function toggleFeatureMenace(enabled){
-  if(typeof isAdmin === 'function' && !isAdmin()){ showToast('⛔ Action réservée aux administrateurs.','error'); _syncFeatureMenaceUI(!enabled); return; }
-  if(!DB.features) DB.features = {};
-  DB.features.menace_active = enabled;
-  saveData();
-  try{ localStorage.setItem('feat_menace_active', enabled ? '1' : '0'); }catch(e){}
-  _syncFeatureMenaceUI(enabled);
-  // Re-render la grille de recensement pour afficher/masquer les badges
-  if(typeof renderRecensement === 'function') renderRecensement();
-  showToast(enabled ? '⚡ Niveau de menace activé !' : '⚡ Niveau de menace désactivé', enabled ? 'success' : 'info');
-}
-
-function _syncFeatureMenaceUI(enabled){
-  var badge = document.getElementById('feat-menace-badge');
-  var track = document.getElementById('feat-menace-track');
-  var thumb = document.getElementById('feat-menace-thumb');
-  var chk   = document.getElementById('toggle-feat-menace');
-  if(chk)   chk.checked = enabled;
-  if(badge){
-    badge.textContent = enabled ? 'ACTIF' : 'TEASING';
-    badge.style.background  = enabled ? 'rgba(21,128,61,0.15)'  : 'rgba(192,65,14,0.15)';
-    badge.style.color       = enabled ? '#16a34a'                : '#e05c1a';
-    badge.style.borderColor = enabled ? 'rgba(21,128,61,0.35)'  : 'rgba(192,65,14,0.3)';
-  }
-  if(track) track.style.background = enabled ? 'rgba(21,128,61,0.35)' : 'rgba(0,0,0,0.2)';
-  if(thumb){
-    thumb.style.background = enabled ? '#16a34a' : '#6b7280';
-    thumb.style.transform  = enabled ? 'translateX(20px)' : 'translateX(0)';
-  }
-}
-
-function isMenaceFeatureActive(){
-  if(DB.features && typeof DB.features.menace_active !== 'undefined'){
-    return !!DB.features.menace_active;
-  }
-  try{ return localStorage.getItem('feat_menace_active') === '1'; }catch(e){ return false; }
-}
-
-function initFeatureMenace(){
-  var saved = isMenaceFeatureActive();
-  _syncFeatureMenaceUI(saved);
 }
 
 // ─── RECRUTEMENT — Sections Tribunal & Avocats ─────────────────────
@@ -30761,15 +30424,19 @@ function bbHandleImageUpload(event) {
   reader.readAsDataURL(file);
 }
 
-// Permissions Bingo Book : élargies aux diplomates en plus des admins/police
-// Les diplomates ont accès en lecture+écriture+modification+suppression au Bingo Book.
+// Permissions Bingo Book : admins du site + police (gérants/cogerants/sergents/officiers) + diplomates
+// Les médecins, juges, avocats, agents de mission n'ont PAS accès en écriture
+// (un "gérant médecin" est gérant DE SON SERVICE, pas admin du site)
 function bbCanEdit(){
   if(!currentUser) return false;
-  // Cas 1 : admin / gérant / cogerant — toujours autorisé
-  if(currentUser.role === 'admin' || currentUser.role === 'gerant' || currentUser.role === 'cogerant') return true;
-  // Cas 2 : police (sergent, officier) — comportement legacy préservé
-  if((currentUser.section === 'police' || !currentUser.section) && (currentUser.role === 'sergent' || currentUser.role === 'officier')) return true;
-  // Cas 3 : NOUVEAU — tout membre de la section diplomatie peut éditer le Bingo Book
+  // Cas 1 : admin du site (role 'admin') — toujours autorisé peu importe la section
+  if(currentUser.role === 'admin') return true;
+  // Cas 2 : Police uniquement — gérant, cogerant, sergent, officier de la POLICE
+  if(currentUser.section === 'police' || !currentUser.section){
+    if(currentUser.role === 'gerant' || currentUser.role === 'cogerant' ||
+       currentUser.role === 'sergent' || currentUser.role === 'officier') return true;
+  }
+  // Cas 3 : Diplomatie — tout membre non-visiteur (peu importe le grade)
   if(currentUser.section === 'diplomatie' && currentUser.role !== 'visiteur') return true;
   return false;
 }
@@ -30783,12 +30450,14 @@ let _lpFilter = 'all';        // filtre actuel : all, actif, expire, revoque
 let _lpEditId = null;          // null = création, sinon ID en édition
 
 // Permissions : qui peut créer/modifier/supprimer un laissez-passer ?
-// Tous voient (lecture publique), seuls les diplomates et admins peuvent écrire.
+// Tous voient (lecture publique), seuls les diplomates et admins du site peuvent écrire.
+// Note : un "gérant médecin" / "gérant juge" est gérant DE SON SERVICE, pas admin du site
+//        donc il n'a PAS accès en écriture aux laissez-passer.
 function lpCanEdit(){
   if(!currentUser) return false;
-  // Admin / gérant / cogérant : toujours OK
-  if(currentUser.role === 'admin' || currentUser.role === 'gerant' || currentUser.role === 'cogerant') return true;
-  // Tout membre de la section diplomatie (sauf visiteur)
+  // Admin du site : toujours OK
+  if(currentUser.role === 'admin') return true;
+  // Tout membre de la section diplomatie (sauf visiteur), peu importe le grade
   if(currentUser.section === 'diplomatie' && currentUser.role !== 'visiteur') return true;
   return false;
 }
