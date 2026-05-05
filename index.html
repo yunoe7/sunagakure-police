@@ -7536,6 +7536,7 @@ document.addEventListener('error', function(e){
     <div class="nav-item" role="button" tabindex="0" onclick="showPage('plaintes')" data-page="plaintes" data-sec="police"><span class="icon">📋</span> Plaintes <span class="nav-badge" id="badge-plaintes">0</span></div>
     <div class="nav-item" role="button" tabindex="0" onclick="showPage('dossiers')" data-page="dossiers" data-member-only="true" data-sec="police"><span class="icon">🗂️</span> Dossiers criminels <span class="nav-badge" id="badge-dossiers" style="background:var(--purple);display:none">0</span></div>
     <div class="nav-item" role="button" tabindex="0" onclick="showPage('bingobook')" data-page="bingobook" data-sec="all"><span class="icon">📕</span> Bingo Book</div>
+    <div class="nav-item" role="button" tabindex="0" onclick="showPage('diplo-laissezpasse')" data-page="diplo-laissezpasse" data-sec="all"><span class="icon">🪪</span> Laissez-passer</div>
     <div class="nav-item" role="button" tabindex="0" onclick="showPage('codepenal')" data-page="codepenal" data-sec="all"><span class="icon">📜</span> Code Pénal</div>
     <div class="nav-item" role="button" tabindex="0" onclick="showPage('histoire')" data-page="histoire" data-sec="all"><span class="icon">📖</span> Histoire</div>
     <div class="nav-item" role="button" tabindex="0" onclick="showPage('messagerie')" data-page="messagerie" data-member-only="true" data-sec="all"><span class="icon">💬</span> Messagerie <span class="nav-badge" id="badge-messagerie" style="background:var(--cyan);display:none">0</span></div>
@@ -7582,7 +7583,6 @@ document.addEventListener('error', function(e){
     <div class="nav-item" role="button" tabindex="0" onclick="showPage('diplo-villages')" data-page="diplo-villages" data-sec="diplomatie"><span class="icon">🏯</span> Villages alliés</div>
     <div class="nav-item" role="button" tabindex="0" onclick="showPage('diplo-traites')" data-page="diplo-traites" data-sec="diplomatie"><span class="icon">📜</span> Traités</div>
     <div class="nav-item" role="button" tabindex="0" onclick="showPage('diplo-communications')" data-page="diplo-communications" data-sec="diplomatie"><span class="icon">✉️</span> Communications</div>
-    <div class="nav-item" role="button" tabindex="0" onclick="showPage('diplo-laissezpasse')" data-page="diplo-laissezpasse" data-sec="all"><span class="icon">🪪</span> Laissez-passer</div>
 
     <div class="nav-section" data-member-only="true" data-sec="all">Administration</div>
     <div class="nav-item" role="button" tabindex="0" id="nav-admin" onclick="showPage('admin')" style="display:none" data-sec="all"><span class="icon">⚙️</span> Panel Admin</div>
@@ -18979,9 +18979,10 @@ function showPage(name){
   // BUG-FIX SECTIONS : empêcher l'accès aux pages d'autres sections
   // (un Juge ne peut pas accéder aux pages Police, Avocat, etc., et vice-versa)
   // Pages "all" (visibles partout) : dashboard, bingobook, codepenal, histoire, profil, admin, messagerie
+  // + diplo-laissezpasse (laissez-passer publics, visibles par tous, modifiables uniquement par diplomates)
   // BYPASS ADMIN : les admins ont accès à tout, peu importe leur section
   var isFullAccess = !!(currentUser && currentUser.role === 'admin');
-  var ALL_PAGES = ['dashboard','bingobook','codepenal','histoire','profil','admin','messagerie'];
+  var ALL_PAGES = ['dashboard','bingobook','codepenal','histoire','profil','admin','messagerie','diplo-laissezpasse'];
   var SECTION_PREFIXES = { juge:/^juge-/, avocat:/^avocat-/, mission:/^mission-/, medical:/^(medical|sci|compta)-/, diplomatie:/^diplo-/ };
   var POLICE_PAGES = ['annonces','recensement','recrutement','plaintes','dossiers','operations','effectifs','sanctions','impots','hierarchie'];
   var userSection = (currentUser && currentUser.section) || 'police';
