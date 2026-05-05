@@ -3115,6 +3115,37 @@ html{-webkit-tap-highlight-color:transparent}
     0 0 1px rgba(225,90,100,0.7),
     1px 1px 0 rgba(120,20,30,0.6);
 }
+/* === Variante EXÉCUTÉ : rouge sang vif (plus saturé, plus violent) === */
+.rcv2-card.is-defunt .rcv2-card-defunt-stamp.is-executed{
+  background:rgba(220,15,25,0.12);
+  color:rgba(255,55,55,1);
+  border-color:rgba(255,55,55,0.95);
+  box-shadow:
+    inset 0 0 0 1px rgba(255,55,55,0.4),
+    0 2px 8px rgba(180,0,0,0.5),
+    0 0 12px rgba(255,55,55,0.25);
+  text-shadow:
+    0 0 2px rgba(255,55,55,0.9),
+    1px 1px 0 rgba(140,0,5,0.7),
+    0 0 6px rgba(220,15,25,0.4);
+  /* Effet "tampon de sang qui éclabousse" — bordure double rouge intense */
+  border-style:double;
+  border-width:3px;
+  filter:contrast(1.15) saturate(1.2);
+}
+/* Bordure de carte plus rouge pour les exécutés */
+.rcv2-card.is-defunt.is-executed{
+  border-color:rgba(180,15,25,0.65) !important;
+  box-shadow:
+    0 4px 20px rgba(120,0,0,0.5),
+    inset 0 0 0 1px rgba(255,55,55,0.08) !important;
+}
+.rcv2-card.is-defunt.is-executed:hover{
+  border-color:rgba(220,30,40,0.8) !important;
+  box-shadow:
+    0 6px 28px rgba(180,0,0,0.55),
+    inset 0 0 0 1px rgba(255,55,55,0.12) !important;
+}
 .rcv2-card::before{
   content:'';position:absolute;inset:0;pointer-events:none;border-radius:inherit;
   background:linear-gradient(135deg,rgba(255,255,255,0.04) 0%,transparent 30%);
@@ -19777,11 +19808,14 @@ function renderRecensement(){
     const metierClanHTML = metierClanChips.length
       ? `<div class="rcv2-card-meta">${metierClanChips.join("")}</div>`
       : "";
-    // Statut défunt : tampon "DÉFUNT" rouge bordeaux en diagonale
+    // Statut défunt : tampon "DÉFUNT" rouge bordeaux ou "EXÉCUTÉ" rouge sang vif en diagonale
     const isDefunt = r.defuntStatut === "defunt-suna" || r.defuntStatut === "execution";
-    const defuntClass = isDefunt ? " is-defunt" : "";
+    const isExecuted = r.defuntStatut === "execution";
+    const defuntClass = isDefunt ? " is-defunt" + (isExecuted ? " is-executed" : "") : "";
+    const stampText = isExecuted ? "Exécuté" : "Défunt";
+    const stampClass = isExecuted ? "rcv2-card-defunt-stamp is-executed" : "rcv2-card-defunt-stamp";
     const defuntBadge = isDefunt
-      ? `<div class="rcv2-card-defunt-stamp">Défunt</div>`
+      ? `<div class="${stampClass}">${stampText}</div>`
       : "";
 
     return `<div class="rcv2-card${defuntClass}" data-rang="${rangSafe}">
