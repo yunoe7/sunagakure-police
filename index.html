@@ -12545,6 +12545,64 @@ document.addEventListener('error', function(e){
     }
     #page-impots .imp-row:hover{background:rgba(180,140,20,0.04)}
     #page-impots .imp-row:last-child{border-bottom:none}
+    /* === Phase 1 : ligne défunte === */
+    #page-impots .imp-row.is-defunt{
+      background:rgba(140,20,30,0.04) !important;
+      opacity:0.65;
+      filter:grayscale(0.5);
+    }
+    #page-impots .imp-row.is-defunt:hover{
+      opacity:0.9;
+      filter:grayscale(0.2);
+      background:rgba(140,20,30,0.08) !important;
+    }
+    #page-impots .imp-row.is-defunt .nom{
+      color:rgba(220,180,180,0.85);
+      text-decoration:line-through;
+      text-decoration-color:rgba(140,20,30,0.5);
+      text-decoration-thickness:1px;
+    }
+    /* Badge DÉFUNT à côté du nom */
+    .imp-defunt-badge{
+      display:inline-block;
+      margin-left:8px;
+      padding:2px 7px;
+      font-family:'Share Tech Mono',monospace;
+      font-size:9px;
+      font-weight:700;
+      letter-spacing:1px;
+      color:rgba(225,90,100,0.95);
+      background:rgba(140,20,30,0.15);
+      border:1px solid rgba(220,80,90,0.5);
+      border-radius:3px;
+      vertical-align:middle;
+      text-transform:uppercase;
+      no-text-decoration:none;
+    }
+    /* Statut select pour défunt */
+    #page-impots .imp-row .statut-cell select.defunt{
+      background:rgba(140,20,30,0.2) !important;
+      border-color:rgba(220,80,90,0.5) !important;
+      color:rgba(225,90,100,0.95) !important;
+      font-style:italic;
+      cursor:not-allowed;
+    }
+    /* Toggle "Masquer défunts" — design distinctif */
+    #page-impots .imp-fbtn.imp-toggle-defunt{
+      border-color:rgba(180,140,20,0.25);
+      color:rgba(255,255,255,0.55);
+      margin-left:6px;
+    }
+    #page-impots .imp-fbtn.imp-toggle-defunt:hover{
+      color:rgba(225,90,100,0.95);
+      border-color:rgba(220,80,90,0.5);
+      background:rgba(140,20,30,0.08);
+    }
+    #page-impots .imp-fbtn.imp-toggle-defunt.active{
+      background:linear-gradient(135deg,rgba(140,20,30,0.7),rgba(100,15,20,0.85)) !important;
+      color:#ffd1d4 !important;
+      border-color:rgba(220,80,90,0.5) !important;
+    }
     #page-impots .imp-row .nom{font-weight:600;color:var(--text);font-size:13px}
     #page-impots .imp-row .montant{
       font-family:'Cinzel',serif;font-weight:700;
@@ -13061,6 +13119,7 @@ document.addEventListener('error', function(e){
         <button class="imp-fbtn active all" data-f="all" onclick="impSetFilter('all',this)">Tous</button>
         <button class="imp-fbtn paid" data-f="paid" onclick="impSetFilter('paid',this)">✓ Payés</button>
         <button class="imp-fbtn unpaid" data-f="unpaid" onclick="impSetFilter('unpaid',this)">✗ Non payés</button>
+        <button class="imp-fbtn imp-toggle-defunt" id="imp-toggle-defunt" onclick="impToggleDefunt(this)" title="Cacher/afficher les défunts">⚱ Défunts visibles</button>
       </div>
     </div>
     <div class="imp-table">
@@ -23094,6 +23153,7 @@ function impInitDB(){
 }
 
 let _impFilter = 'all';
+let _impHideDefunt = false; // Phase 1 : toggle pour masquer les défunts
 
 function impGradeData(name){
   impInitDB();
@@ -23129,6 +23189,8 @@ function impSyncFromRecense(rec){
   // Le grade du recensé doit correspondre à un grade existant dans la liste
   // des grades d'impôts. Sinon (Civil, Inconnu, etc.), on n'ajoute pas.
   const gradeExists = (DB.impots.grades||[]).some(g => g.name === rec.rang);
+  // Détecter si défunt (mort naturelle ou exécution)
+  const isDefunt = rec.defuntStatut === 'defunt-suna' || rec.defuntStatut === 'execution';
   // Chercher si un ninja existe déjà au registre avec ce recenseId
   const existingIdx = DB.impots.ninjas.findIndex(n => n.recenseId === rec.id);
   if(!gradeExists){
@@ -23139,12 +23201,15 @@ function impSyncFromRecense(rec){
     return;
   }
   if(existingIdx !== -1){
-    // Mise à jour : nom et grade. On préserve le statut payé/collecteur si le grade
+    // Mise à jour : nom, grade, statut défunt. On préserve le statut payé/collecteur si le grade
     // n'a pas changé. S'il a changé, on remet à zéro pour cohérence des montants.
     const existing = DB.impots.ninjas[existingIdx];
     const gradeChanged = existing.grade !== rec.rang;
     existing.nom = fullName;
     existing.grade = rec.rang;
+    // Phase 1 : sync du statut défunt (préserve l'historique de paiement)
+    existing.defunt = isDefunt;
+    existing.defuntStatut = rec.defuntStatut || '';
     if(gradeChanged){
       existing.paid = false;
       existing.collecteur = '';
@@ -23160,6 +23225,9 @@ function impSyncFromRecense(rec){
       paid: false,
       collecteur: '',
       paidAt: null,
+      // Phase 1 : statut défunt
+      defunt: isDefunt,
+      defuntStatut: rec.defuntStatut || '',
     });
   }
 }
@@ -23218,17 +23286,21 @@ function renderImpots(){
 function renderImpotsStats(){
   impInitDB();
   const ninjas = DB.impots.ninjas;
-  const taxables = ninjas.filter(n => !impIsExempt(n.grade));
+  // Phase 1 : exclure les défunts des taxables (ils ne paient plus)
+  const taxables = ninjas.filter(n => !impIsExempt(n.grade) && !n.defunt);
   const paid = taxables.filter(n => n.paid).length;
   const unpaid = taxables.length - paid;
   const totalDue = taxables.reduce((s,n) => s + (n.paid ? 0 : impMontantFor(n.grade)), 0);
   const collected = taxables.reduce((s,n) => s + (n.paid ? impMontantFor(n.grade) : 0), 0);
   const pct = taxables.length ? Math.round(paid / taxables.length * 100) : 0;
+  // Pour le compteur total : on garde tous les ninjas (vivants + défunts) pour montrer le registre complet
+  const defuntCount = ninjas.filter(n => n.defunt).length;
 
   document.getElementById('imp-pct').innerHTML = pct + '<span style="font-size:22px;color:rgba(255,255,255,0.4);margin-left:4px">%</span>';
   document.getElementById('imp-bar').style.width = pct + '%';
   document.getElementById('imp-paid-count').textContent = paid + ' / ' + taxables.length;
-  document.getElementById('imp-s-total').textContent    = ninjas.length;
+  // Phase 1 : si défunts présents, afficher discrètement leur nombre dans le total
+  document.getElementById('imp-s-total').textContent    = ninjas.length + (defuntCount > 0 ? ' ('+defuntCount+'⚱)' : '');
   document.getElementById('imp-s-paid').textContent     = paid;
   document.getElementById('imp-s-unpaid').textContent   = unpaid;
   document.getElementById('imp-s-due').innerHTML        = impFmt(totalDue) + '<span class="ryos">RYOS</span>';
@@ -23249,8 +23321,25 @@ function renderImpotsStats(){
 
 function impSetFilter(f, btn){
   _impFilter = f;
-  document.querySelectorAll('#page-impots .imp-fbtn').forEach(b => b.classList.remove('active'));
+  // Ne retirer 'active' que sur les 3 filtres principaux (all/paid/unpaid),
+  // pas sur le toggle "Masquer défunts" qui a son propre état indépendant.
+  document.querySelectorAll('#page-impots .imp-fbtn[data-f]').forEach(b => b.classList.remove('active'));
   if(btn && btn.classList) btn.classList.add('active');
+  renderImpotsList();
+}
+
+// Phase 1 : toggle pour cacher/afficher les recensés défunts
+function impToggleDefunt(btn){
+  _impHideDefunt = !_impHideDefunt;
+  if(btn){
+    if(_impHideDefunt){
+      btn.classList.add('active');
+      btn.textContent = '⚱ Défunts cachés';
+    } else {
+      btn.classList.remove('active');
+      btn.textContent = '⚱ Défunts visibles';
+    }
+  }
   renderImpotsList();
 }
 
@@ -23262,7 +23351,9 @@ function renderImpotsList(){
   let list = DB.impots.ninjas.slice();
   if(q) list = list.filter(n => (n.nom||'').toLowerCase().includes(q));
   if(_impFilter === 'paid')   list = list.filter(n => n.paid);
-  if(_impFilter === 'unpaid') list = list.filter(n => !n.paid && !impIsExempt(n.grade));
+  if(_impFilter === 'unpaid') list = list.filter(n => !n.paid && !impIsExempt(n.grade) && !n.defunt);
+  // Phase 1 : filtre toggle "Masquer défunts"
+  if(_impHideDefunt) list = list.filter(n => !n.defunt);
 
   const rowsEl = document.getElementById('imp-rows');
   if(!list.length){
@@ -23271,31 +23362,54 @@ function renderImpotsList(){
   }
   rowsEl.innerHTML = list.map(n => {
     const exempt = impIsExempt(n.grade);
-    const montant = impMontantFor(n.grade);
-    const statutClass = exempt ? 'exempt' : (n.paid ? 'paid' : 'unpaid');
-    const statutOptions = exempt
-      ? '<option value="exempt" selected>— Exonéré —</option>'
-      : ('<option value="unpaid"' + (!n.paid?' selected':'') + '>✗ Non payé</option>'
-        +'<option value="paid"'  + ( n.paid?' selected':'') + '>✓ Payé</option>');
-    const collecteurDisplay = exempt
-      ? '<span style="color:rgba(255,255,255,0.3);font-style:italic">— Aucun —</span>'
-      : (n.paid && n.collecteur
-          ? esc(n.collecteur)
-          : '<span style="color:rgba(255,255,255,0.3);font-style:italic">— En attente —</span>');
+    const isDefunt = !!n.defunt;
+    const montant = isDefunt ? 0 : impMontantFor(n.grade);
+    // Statut spécial pour défunts
+    const statutClass = isDefunt ? 'defunt' : (exempt ? 'exempt' : (n.paid ? 'paid' : 'unpaid'));
+    let statutOptions;
+    if(isDefunt){
+      statutOptions = '<option value="defunt" selected>⚱ Défunt</option>';
+    } else if(exempt){
+      statutOptions = '<option value="exempt" selected>— Exonéré —</option>';
+    } else {
+      statutOptions = '<option value="unpaid"' + (!n.paid?' selected':'') + '>✗ Non payé</option>'
+        +'<option value="paid"'  + ( n.paid?' selected':'') + '>✓ Payé</option>';
+    }
+    const collecteurDisplay = isDefunt
+      ? '<span style="color:rgba(220,80,90,0.6);font-style:italic">— Aucun (défunt) —</span>'
+      : (exempt
+          ? '<span style="color:rgba(255,255,255,0.3);font-style:italic">— Aucun —</span>'
+          : (n.paid && n.collecteur
+              ? esc(n.collecteur)
+              : '<span style="color:rgba(255,255,255,0.3);font-style:italic">— En attente —</span>'));
     const grades = DB.impots.grades.map(g =>
       '<option value="'+esc(g.name)+'"'+(g.name===n.grade?' selected':'')+'>'+esc(g.name)+'</option>'
     ).join('');
 
-    return '<div class="imp-row" data-id="'+n.id+'">'
-      + '<div class="nom">'+esc(n.nom||'—')+'</div>'
+    // Badge DÉFUNT discret à côté du nom
+    const defuntBadge = isDefunt
+      ? ' <span class="imp-defunt-badge" title="Recensé comme défunt — la mort empêche tout paiement">⚱ DÉFUNT</span>'
+      : '';
+    // Montant : 0両 si défunt, mais en gardant le style cohérent
+    const montantHTML = isDefunt
+      ? '<span style="color:rgba(220,80,90,0.7);font-style:italic;font-size:11px">0両 — Défunt</span>'
+      : (exempt
+          ? '<span style="color:rgba(255,255,255,0.3);font-style:italic;font-size:11px">Exonéré</span>'
+          : (impFmt(montant)+'<span class="ryos-lbl">Ryos</span>'));
+
+    // Classe pour griser la ligne
+    const rowClass = 'imp-row' + (isDefunt ? ' is-defunt' : '');
+
+    return '<div class="'+rowClass+'" data-id="'+n.id+'">'
+      + '<div class="nom">'+esc(n.nom||'—')+defuntBadge+'</div>'
       + '<div class="grade-cell">'
-      +   (isAdmin
+      +   (isAdmin && !isDefunt
             ? '<select onchange="impChangeGrade('+n.id+',this.value)">'+grades+'</select>'
             : '<span style="color:rgba(255,255,255,0.7);font-size:12px">'+esc(n.grade||'—')+'</span>')
       + '</div>'
-      + '<div class="montant" style="text-align:right">'+(exempt ? '<span style="color:rgba(255,255,255,0.3);font-style:italic;font-size:11px">Exonéré</span>' : (impFmt(montant)+'<span class="ryos-lbl">Ryos</span>'))+'</div>'
+      + '<div class="montant" style="text-align:right">'+montantHTML+'</div>'
       + '<div class="statut-cell">'
-      +   (isMember && !exempt
+      +   (isMember && !exempt && !isDefunt
             ? '<select class="'+statutClass+'" onchange="impChangeStatut('+n.id+',this.value)">'+statutOptions+'</select>'
             : '<select class="'+statutClass+'" disabled>'+statutOptions+'</select>')
       + '</div>'
