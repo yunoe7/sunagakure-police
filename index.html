@@ -1886,6 +1886,182 @@ body.dark .react-btn:hover{background:rgba(180,140,20,0.12)}
   0%   { transform:translateX(-150%); }
   100% { transform:translateX(250%); }
 }
+
+/* ═══ DIPLOMATIE — LAISSEZ-PASSER ═══ */
+#page-diplo-laissezpasse .lp-fbtn{
+  padding:6px 12px;border-radius:5px;border:1px solid rgba(180,140,20,0.25);
+  background:rgba(0,0,0,0.3);color:rgba(255,255,255,0.7);
+  font-family:'Share Tech Mono',monospace;font-size:10.5px;letter-spacing:1px;
+  cursor:pointer;transition:all 0.18s;text-transform:uppercase;
+}
+#page-diplo-laissezpasse .lp-fbtn:hover{background:rgba(180,140,20,0.08);color:#fff;border-color:rgba(180,140,20,0.5)}
+#page-diplo-laissezpasse .lp-fbtn.active{
+  background:linear-gradient(135deg,rgba(180,140,20,0.85),rgba(150,110,15,0.95));
+  color:#1a1410;border-color:rgba(180,140,20,0.9);font-weight:700;
+}
+#page-diplo-laissezpasse .lp-add-btn{
+  padding:8px 16px;background:linear-gradient(135deg,#3b82f6,#2563eb);
+  color:#fff;border:1px solid rgba(59,130,246,0.5);border-radius:6px;
+  font-family:'Share Tech Mono',monospace;font-size:11px;letter-spacing:1.2px;
+  cursor:pointer;transition:all 0.18s;text-transform:uppercase;font-weight:700;
+}
+#page-diplo-laissezpasse .lp-add-btn:hover{background:linear-gradient(135deg,#60a5fa,#3b82f6);transform:translateY(-1px)}
+
+/* Carte de laissez-passer (style "vrai document officiel") */
+.lp-card{
+  position:relative;
+  background:linear-gradient(180deg,rgba(36,28,18,0.96),rgba(24,18,11,0.99));
+  border:1px solid rgba(180,140,20,0.25);
+  border-radius:10px;
+  padding:18px 20px;
+  display:grid;
+  grid-template-columns:auto 1fr auto;
+  gap:18px;
+  align-items:center;
+  transition:all 0.22s;
+  overflow:hidden;
+}
+.lp-card::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:3px;
+  background:linear-gradient(90deg,transparent,rgba(180,140,20,0.6),transparent);
+}
+.lp-card:hover{border-color:rgba(180,140,20,0.55);transform:translateY(-2px);box-shadow:0 10px 28px rgba(0,0,0,0.45)}
+.lp-card.s-expire{opacity:0.8;filter:saturate(0.7)}
+.lp-card.s-expire::before{background:linear-gradient(90deg,transparent,rgba(251,146,60,0.6),transparent)}
+.lp-card.s-revoque{opacity:0.65;filter:grayscale(0.4)}
+.lp-card.s-revoque::before{background:linear-gradient(90deg,transparent,rgba(248,113,113,0.6),transparent)}
+
+/* Bloc gauche : numéro + sceau */
+.lp-card-num{
+  font-family:'Cinzel',serif;font-size:13px;font-weight:700;
+  color:var(--gold);letter-spacing:2px;
+  border:2px solid rgba(180,140,20,0.4);border-radius:6px;
+  padding:10px 14px;text-align:center;
+  background:rgba(180,140,20,0.05);
+  min-width:120px;
+}
+.lp-card-num-sub{
+  font-family:'Share Tech Mono',monospace;
+  font-size:8.5px;color:rgba(255,255,255,0.4);
+  letter-spacing:1.5px;margin-top:3px;text-transform:uppercase;
+}
+
+/* Bloc central : infos */
+.lp-card-info{display:flex;flex-direction:column;gap:6px;min-width:0}
+.lp-card-porteur{
+  font-family:'Cinzel',serif;font-size:18px;font-weight:700;
+  color:#f5e8c8;line-height:1.2;letter-spacing:0.5px;
+}
+.lp-card-meta{display:flex;flex-wrap:wrap;gap:6px;margin-top:2px}
+.lp-card-chip{
+  display:inline-flex;align-items:center;gap:4px;
+  padding:3px 9px;border-radius:99px;
+  background:rgba(255,255,255,0.04);border:1px solid rgba(180,140,20,0.18);
+  font-size:11px;color:rgba(255,255,255,0.7);font-weight:500;
+}
+.lp-card-chip.village{background:rgba(59,130,246,0.1);border-color:rgba(59,130,246,0.35);color:#93c5fd}
+.lp-card-chip.motif{background:rgba(168,85,247,0.1);border-color:rgba(168,85,247,0.35);color:#c084fc;font-style:italic}
+.lp-card-dates{
+  font-family:'Share Tech Mono',monospace;font-size:10.5px;
+  color:rgba(255,255,255,0.5);letter-spacing:1px;
+}
+.lp-card-emetteur{
+  font-size:11px;color:rgba(255,255,255,0.55);font-style:italic;
+}
+
+/* Bloc droit : statut + actions */
+.lp-card-right{display:flex;flex-direction:column;align-items:flex-end;gap:10px}
+.lp-statut-badge{
+  font-family:'Share Tech Mono',monospace;font-size:10.5px;font-weight:700;
+  letter-spacing:1.5px;padding:5px 11px;border-radius:5px;
+  text-transform:uppercase;border:1px solid;
+}
+.lp-statut-badge.actif{
+  background:rgba(74,222,128,0.12);color:#4ade80;border-color:rgba(74,222,128,0.4);
+}
+.lp-statut-badge.expire{
+  background:rgba(251,146,60,0.12);color:#fb923c;border-color:rgba(251,146,60,0.4);
+}
+.lp-statut-badge.revoque{
+  background:rgba(248,113,113,0.12);color:#f87171;border-color:rgba(248,113,113,0.4);
+}
+.lp-card-actions{display:flex;gap:5px}
+.lp-card-actions button{
+  padding:6px 10px;border-radius:5px;cursor:pointer;
+  font-size:11px;border:1px solid;background:rgba(0,0,0,0.3);
+  transition:all 0.15s;
+}
+.lp-card-actions button.view{border-color:rgba(180,140,20,0.4);color:rgba(255,235,180,0.85)}
+.lp-card-actions button.view:hover{background:rgba(180,140,20,0.1)}
+.lp-card-actions button.edit{border-color:rgba(59,130,246,0.4);color:#93c5fd}
+.lp-card-actions button.edit:hover{background:rgba(59,130,246,0.12)}
+.lp-card-actions button.revoke{border-color:rgba(248,113,113,0.4);color:#f87171}
+.lp-card-actions button.revoke:hover{background:rgba(248,113,113,0.12)}
+.lp-card-actions button.del{border-color:rgba(220,38,38,0.4);color:#fca5a5}
+.lp-card-actions button.del:hover{background:rgba(220,38,38,0.12)}
+
+/* Indicateur défunt */
+.lp-card.porteur-defunt{
+  border-color:rgba(140,20,30,0.4) !important;
+  filter:grayscale(0.45) brightness(0.9);
+}
+.lp-defunt-warn{
+  display:inline-flex;align-items:center;gap:4px;
+  padding:2px 8px;background:rgba(140,20,30,0.18);
+  border:1px solid rgba(220,80,90,0.5);border-radius:3px;
+  font-family:'Share Tech Mono',monospace;font-size:9px;font-weight:700;
+  color:rgba(225,90,100,0.95);letter-spacing:1.2px;text-transform:uppercase;
+  margin-left:8px;vertical-align:middle;
+}
+
+/* État vide */
+.lp-empty{
+  text-align:center;padding:40px 20px;
+  font-family:'Share Tech Mono',monospace;font-size:12px;
+  color:rgba(255,255,255,0.45);letter-spacing:1px;
+}
+
+/* Responsive */
+@media (max-width:768px){
+  .lp-card{grid-template-columns:1fr;gap:12px;padding:14px}
+  .lp-card-right{flex-direction:row;justify-content:space-between;align-items:center}
+}
+
+/* Modale Laissez-passer */
+#modal-lp .modal{max-width:680px}
+#modal-lp .lp-form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+#modal-lp .lp-form-grid.cols-1{grid-template-columns:1fr}
+#modal-lp .lp-fld{display:flex;flex-direction:column;gap:5px}
+#modal-lp .lp-fld-label{
+  font-family:'Share Tech Mono',monospace;font-size:10px;letter-spacing:1.3px;
+  color:rgba(255,255,255,0.55);text-transform:uppercase;font-weight:600;
+}
+#modal-lp .lp-fld-label .req{color:var(--accent);margin-left:3px}
+#modal-lp .lp-input{
+  padding:9px 12px;background:rgba(0,0,0,0.4);
+  border:1px solid rgba(180,140,20,0.25);border-radius:6px;
+  color:var(--text);font-size:13px;
+}
+#modal-lp .lp-input:focus{border-color:rgba(180,140,20,0.6);outline:none}
+#modal-lp textarea.lp-input{resize:vertical;min-height:60px;font-family:inherit}
+#modal-lp .lp-villages-grid{
+  display:grid;grid-template-columns:repeat(3,1fr);gap:8px;
+  padding:10px;background:rgba(0,0,0,0.3);border-radius:6px;
+  border:1px solid rgba(180,140,20,0.18);
+}
+#modal-lp .lp-vchk{display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;color:rgba(255,255,255,0.8)}
+#modal-lp .lp-vchk:hover{color:#fff}
+#modal-lp .lp-vchk input{accent-color:var(--gold);cursor:pointer}
+#modal-lp .lp-perm-toggle{
+  display:flex;align-items:center;gap:8px;padding:8px 12px;
+  background:rgba(180,140,20,0.06);border:1px solid rgba(180,140,20,0.2);
+  border-radius:6px;cursor:pointer;font-size:12px;color:rgba(255,255,255,0.85);
+}
+#modal-lp .lp-perm-toggle input{accent-color:var(--gold)}
+@media (max-width:768px){
+  #modal-lp .lp-form-grid{grid-template-columns:1fr}
+  #modal-lp .lp-villages-grid{grid-template-columns:1fr 1fr}
+}
 .skeleton{border-radius:8px;background:linear-gradient(90deg,rgba(180,140,20,0.07) 25%,rgba(180,140,20,0.13) 50%,rgba(180,140,20,0.07) 75%);background-size:200% 100%;animation:shimmer 1.4s ease infinite}
 .skeleton-line{height:12px;margin-bottom:7px}
 .skeleton-line.lg{height:20px}
@@ -7406,6 +7582,7 @@ document.addEventListener('error', function(e){
     <div class="nav-item" role="button" tabindex="0" onclick="showPage('diplo-villages')" data-page="diplo-villages" data-sec="diplomatie"><span class="icon">🏯</span> Villages alliés</div>
     <div class="nav-item" role="button" tabindex="0" onclick="showPage('diplo-traites')" data-page="diplo-traites" data-sec="diplomatie"><span class="icon">📜</span> Traités</div>
     <div class="nav-item" role="button" tabindex="0" onclick="showPage('diplo-communications')" data-page="diplo-communications" data-sec="diplomatie"><span class="icon">✉️</span> Communications</div>
+    <div class="nav-item" role="button" tabindex="0" onclick="showPage('diplo-laissezpasse')" data-page="diplo-laissezpasse" data-sec="all"><span class="icon">🪪</span> Laissez-passer</div>
 
     <div class="nav-section" data-member-only="true" data-sec="all">Administration</div>
     <div class="nav-item" role="button" tabindex="0" id="nav-admin" onclick="showPage('admin')" style="display:none" data-sec="all"><span class="icon">⚙️</span> Panel Admin</div>
@@ -11359,6 +11536,49 @@ document.addEventListener('error', function(e){
     <div class="card" data-sec-card="diplomatie:communications"></div>
   </div>
 
+  <!-- DIPLOMATIE — Laissez-passer (visible par TOUS, modifiable par diplomates+admin) -->
+  <div class="page-content" id="page-diplo-laissezpasse">
+    <div class="pgv2-hero" data-tone="profil">
+      <div class="pgv2-hero-inner">
+        <div class="pgv2-hero-icon">🪪</div>
+        <div class="pgv2-hero-text">
+          <div class="pgv2-hero-tag">Service diplomatique</div>
+          <div class="pgv2-hero-title">Laissez-passer</div>
+          <div class="pgv2-hero-sub">Registre officiel des autorisations de circulation entre villages</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Stats récap -->
+    <div class="card" id="lp-stats" style="display:flex;gap:14px;flex-wrap:wrap;align-items:center;justify-content:space-between;padding:14px 18px;margin-bottom:14px">
+      <div style="display:flex;gap:24px;flex-wrap:wrap">
+        <div><span style="font-family:'Share Tech Mono',monospace;font-size:10px;letter-spacing:1.5px;color:rgba(255,255,255,0.45);text-transform:uppercase">Total</span><div style="font-family:'Cinzel',serif;font-size:22px;font-weight:700;color:var(--gold);line-height:1" id="lp-stat-total">0</div></div>
+        <div><span style="font-family:'Share Tech Mono',monospace;font-size:10px;letter-spacing:1.5px;color:rgba(255,255,255,0.45);text-transform:uppercase">Actifs</span><div style="font-family:'Cinzel',serif;font-size:22px;font-weight:700;color:#4ade80;line-height:1" id="lp-stat-actif">0</div></div>
+        <div><span style="font-family:'Share Tech Mono',monospace;font-size:10px;letter-spacing:1.5px;color:rgba(255,255,255,0.45);text-transform:uppercase">Expirés</span><div style="font-family:'Cinzel',serif;font-size:22px;font-weight:700;color:#fb923c;line-height:1" id="lp-stat-expire">0</div></div>
+        <div><span style="font-family:'Share Tech Mono',monospace;font-size:10px;letter-spacing:1.5px;color:rgba(255,255,255,0.45);text-transform:uppercase">Révoqués</span><div style="font-family:'Cinzel',serif;font-size:22px;font-weight:700;color:#f87171;line-height:1" id="lp-stat-revoque">0</div></div>
+      </div>
+      <div id="lp-add-btn-wrap"></div>
+    </div>
+
+    <!-- Filtres et recherche -->
+    <div class="card" style="padding:12px 16px;margin-bottom:14px">
+      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+        <input type="text" id="lp-search" placeholder="🔎 Rechercher par porteur, numéro, motif…" oninput="renderLaissezPasse()" style="flex:1;min-width:220px;padding:8px 12px;background:rgba(0,0,0,0.4);border:1px solid rgba(180,140,20,0.25);border-radius:6px;color:var(--text);font-size:13px">
+        <div style="display:flex;gap:6px">
+          <button class="lp-fbtn active" data-f="all" onclick="lpSetFilter('all',this)">Tous</button>
+          <button class="lp-fbtn" data-f="actif" onclick="lpSetFilter('actif',this)">✓ Actifs</button>
+          <button class="lp-fbtn" data-f="expire" onclick="lpSetFilter('expire',this)">⏱ Expirés</button>
+          <button class="lp-fbtn" data-f="revoque" onclick="lpSetFilter('revoque',this)">🚫 Révoqués</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Liste des laissez-passer -->
+    <div class="card" style="padding:0;overflow:hidden">
+      <div id="lp-grid" style="display:grid;gap:14px;padding:14px"></div>
+    </div>
+  </div>
+
   <!-- OPÉRATIONS -->
   <div class="page-content" id="page-operations">
 
@@ -14257,6 +14477,114 @@ document.addEventListener('error', function(e){
   </div>
 </div>
 
+<!-- Modale création/édition Laissez-passer -->
+<div class="modal-overlay" role="dialog" aria-modal="true" id="modal-lp">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="lp-modal-title">🪪 Nouveau laissez-passer</h3>
+      <span class="modal-close" aria-label="Fermer" onclick="closeModal('modal-lp')">✕</span>
+    </div>
+    <div class="modal-body">
+      <!-- Identité du porteur -->
+      <div class="lp-form-grid cols-1" style="margin-bottom:16px">
+        <div class="lp-fld">
+          <label class="lp-fld-label">Porteur du laissez-passer <span class="req">*</span></label>
+          <input list="lp-recenses-list" type="text" id="lp-porteur" class="lp-input" placeholder="Nom du recensé (autocomplete)…" oninput="lpOnPorteurInput()">
+          <datalist id="lp-recenses-list"></datalist>
+          <span id="lp-porteur-info" style="font-size:11px;color:rgba(255,255,255,0.5);margin-top:3px"></span>
+        </div>
+      </div>
+
+      <!-- Dates -->
+      <div class="lp-form-grid">
+        <div class="lp-fld">
+          <label class="lp-fld-label">Date d'émission <span class="req">*</span></label>
+          <input type="date" id="lp-date-emission" class="lp-input">
+        </div>
+        <div class="lp-fld">
+          <label class="lp-fld-label">Date d'expiration</label>
+          <input type="date" id="lp-date-expiration" class="lp-input">
+        </div>
+      </div>
+
+      <div class="lp-form-grid cols-1" style="margin-top:10px">
+        <label class="lp-perm-toggle">
+          <input type="checkbox" id="lp-permanent" onchange="lpTogglePermanent(this)">
+          <span>📜 Laissez-passer <strong>permanent</strong> (sans date d'expiration)</span>
+        </label>
+      </div>
+
+      <!-- Villages autorisés -->
+      <div class="lp-form-grid cols-1" style="margin-top:16px">
+        <div class="lp-fld">
+          <label class="lp-fld-label">Villages autorisés <span class="req">*</span></label>
+          <div class="lp-villages-grid">
+            <label class="lp-vchk"><input type="checkbox" name="lp-village" value="Sunagakure"> 🏜 Sunagakure</label>
+            <label class="lp-vchk"><input type="checkbox" name="lp-village" value="Konohagakure"> 🌳 Konohagakure</label>
+            <label class="lp-vchk"><input type="checkbox" name="lp-village" value="Kirigakure"> 🌊 Kirigakure</label>
+            <label class="lp-vchk"><input type="checkbox" name="lp-village" value="Iwagakure"> ⛰ Iwagakure</label>
+            <label class="lp-vchk"><input type="checkbox" name="lp-village" value="Kumogakure"> ☁ Kumogakure</label>
+            <label class="lp-vchk"><input type="checkbox" name="lp-village" value="Tous villages"> 🌍 Tous villages</label>
+          </div>
+          <input type="text" id="lp-village-autre" class="lp-input" placeholder="Autres villages (séparés par des virgules)…" style="margin-top:6px;font-size:12px">
+        </div>
+      </div>
+
+      <!-- Motif -->
+      <div class="lp-form-grid cols-1" style="margin-top:16px">
+        <div class="lp-fld">
+          <label class="lp-fld-label">Motif du laissez-passer <span class="req">*</span></label>
+          <input type="text" id="lp-motif" class="lp-input" placeholder="Ex: Mission diplomatique, échange culturel, marchand officiel…">
+        </div>
+      </div>
+
+      <!-- Notes -->
+      <div class="lp-form-grid cols-1" style="margin-top:16px">
+        <div class="lp-fld">
+          <label class="lp-fld-label">Notes & observations</label>
+          <textarea id="lp-notes" class="lp-input" rows="3" placeholder="Conditions particulières, restrictions, autres détails…"></textarea>
+        </div>
+      </div>
+
+      <!-- Statut -->
+      <div class="lp-form-grid" style="margin-top:16px">
+        <div class="lp-fld">
+          <label class="lp-fld-label">Statut</label>
+          <select id="lp-statut" class="lp-input">
+            <option value="actif">✓ Actif</option>
+            <option value="expire">⏱ Expiré</option>
+            <option value="revoque">🚫 Révoqué</option>
+          </select>
+        </div>
+        <div class="lp-fld">
+          <label class="lp-fld-label">Numéro officiel</label>
+          <input type="text" id="lp-numero" class="lp-input" readonly placeholder="LP-2026-001 (auto-généré)" style="opacity:0.7">
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('modal-lp')">Annuler</button>
+      <button class="btn btn-purple" onclick="saveLaissezPasse()">✓ Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modale détail Laissez-passer (vue lecture) -->
+<div class="modal-overlay" role="dialog" aria-modal="true" id="modal-lp-view">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="lp-view-title">🪪 Laissez-passer</h3>
+      <span class="modal-close" aria-label="Fermer" onclick="closeModal('modal-lp-view')">✕</span>
+    </div>
+    <div class="modal-body" id="lp-view-body">
+      <!-- contenu généré dynamiquement -->
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('modal-lp-view')">Fermer</button>
+    </div>
+  </div>
+</div>
+
 <!-- Recensement -->
 <div class="modal-overlay" role="dialog" aria-modal="true" id="modal-recense">
   <div class="modal">
@@ -16495,7 +16823,8 @@ function initFirebaseSync(){
               'dashboard':   { fn: 'syncDashboard',     keys: ['plaintes','dossiers','annonces','operations','users','recenses','sanctions'] },
               'hierarchie':  { fn: 'renderHierarchie',  keys: ['users'] },
               'profil':      { fn: 'renderProfil',      keys: ['users'] },
-              'bingobook':   { fn: 'bbRender',          keys: ['users'] }
+              'bingobook':   { fn: 'bbRender',          keys: ['users'] },
+              'diplo-laissezpasse': { fn: 'renderLaissezPasse', keys: ['laissezPasse','recenses'] }
               // 'histoire' et 'messagerie' : pas de sync auto (lecture seule ou listener Firebase dédié)
             };
             // Re-render uniquement la page active si une de ses collections a changé
@@ -16843,7 +17172,13 @@ function defaultData(){
     // ═══ HÔPITAL & SCIENTIFIQUE ═══
     // Stockage centralisé : DB.hospital = { patients, consultations, pharmacie, psy, scientifique, morgue, paiements, dons }
     // Chaque tableau contient des entrées { id, ...champs propres à la collection, auteurId, auteurNom, created, modified }
-    hospital:{patients:[],consultations:[],pharmacie:[],psy:[],scientifique:[],morgue:[],paiements:[],dons:[]}
+    hospital:{patients:[],consultations:[],pharmacie:[],psy:[],scientifique:[],morgue:[],paiements:[],dons:[]},
+    // ═══ DIPLOMATIE — LAISSEZ-PASSER ═══
+    // Visible par tous, modifiable uniquement par les Diplomates et admins
+    // Format : { id, numero, porteur, recenseId, dateEmission, dateExpiration, permanent,
+    //            villages: [], motif, emetteur, statut: 'actif'|'expire'|'revoque',
+    //            notes, sceau, created, modified, modifiedBy }
+    laissezPasse:[]
   }
 }
 let DB=loadData();
@@ -18619,7 +18954,7 @@ const PAGES={dashboard:"Tableau de bord",annonces:"Annonces",recensement:"Recens
   "sci-rapports":"Salon scientifique","sci-morgue":"Morgue",
   "compta-paiements":"Paiements (Ryōs)",
   // Diplomatie
-  "diplo-villages":"Villages alliés","diplo-traites":"Traités","diplo-communications":"Communications"
+  "diplo-villages":"Villages alliés","diplo-traites":"Traités","diplo-communications":"Communications","diplo-laissezpasse":"Laissez-passer"
 };
 const VISITOR_PAGES=["dashboard","annonces","recensement","recrutement","plaintes","codepenal","histoire","profil","bingobook",
   // Pages des sections : visibles par les visiteurs de leur section (les visiteurs des autres sections ne pourront pas y accéder via _applySectionUI)
@@ -18630,7 +18965,7 @@ const VISITOR_PAGES=["dashboard","annonces","recensement","recrutement","plainte
   "medical-patients","medical-consultations","medical-pharmacie","medical-psy","medical-dons",
   "sci-rapports","sci-morgue",
   "compta-paiements",
-  "diplo-villages","diplo-traites","diplo-communications"
+  "diplo-villages","diplo-traites","diplo-communications","diplo-laissezpasse"
 ];
 
 // Mapping page → bnav-item id (pour les 4 onglets directs de la barre)
@@ -18766,12 +19101,16 @@ function renderPage(name){
     }
   }
   if(name==="bingobook")bbRender();
+  // Diplomatie — Laissez-passer : page custom (pas le système générique)
+  if(name === 'diplo-laissezpasse'){
+    if(typeof renderLaissezPasse === 'function') renderLaissezPasse();
+  }
   // Pages du Tribunal : système dédié riche (affaires, audiences, jugements, procédure, jurisprudence)
   if(typeof tribRenderPage === 'function' && /^juge-/.test(name)){
     tribRenderPage(name);
   }
   // Pages des AUTRES sections (avocat, mission, médical, diplomatie) : système générique
-  else if(typeof renderSectionPage === 'function' && /^(avocat|mission|medical|diplo)-/.test(name)){
+  else if(typeof renderSectionPage === 'function' && /^(avocat|mission|medical|diplo)-/.test(name) && name !== 'diplo-laissezpasse'){
     renderSectionPage(name);
   }
   if(name==="messagerie"){
@@ -30432,6 +30771,486 @@ function bbCanEdit(){
   // Cas 3 : NOUVEAU — tout membre de la section diplomatie peut éditer le Bingo Book
   if(currentUser.section === 'diplomatie' && currentUser.role !== 'visiteur') return true;
   return false;
+}
+
+// ═══════════════════════════════════════════════════════════════════
+//                   🪪  LAISSEZ-PASSER (Diplomatie)
+// ═══════════════════════════════════════════════════════════════════
+
+// Variables d'état pour la page Laissez-passer
+let _lpFilter = 'all';        // filtre actuel : all, actif, expire, revoque
+let _lpEditId = null;          // null = création, sinon ID en édition
+
+// Permissions : qui peut créer/modifier/supprimer un laissez-passer ?
+// Tous voient (lecture publique), seuls les diplomates et admins peuvent écrire.
+function lpCanEdit(){
+  if(!currentUser) return false;
+  // Admin / gérant / cogérant : toujours OK
+  if(currentUser.role === 'admin' || currentUser.role === 'gerant' || currentUser.role === 'cogerant') return true;
+  // Tout membre de la section diplomatie (sauf visiteur)
+  if(currentUser.section === 'diplomatie' && currentUser.role !== 'visiteur') return true;
+  return false;
+}
+
+// Init la collection si pas présente (rétro-compatibilité avec anciennes DB)
+function _lpInitDB(){
+  if(!Array.isArray(DB.laissezPasse)) DB.laissezPasse = [];
+}
+
+// Calcule le statut effectif d'un laissez-passer
+// (peut être 'expire' automatiquement même si stocké comme 'actif')
+function lpComputeStatut(lp){
+  if(!lp) return 'actif';
+  // Si le porteur est défunt → révoqué automatiquement (logique RP)
+  if(lp.recenseId){
+    const rec = (DB.recenses||[]).find(r => r.id === lp.recenseId);
+    if(rec && (rec.defuntStatut === 'defunt-suna' || rec.defuntStatut === 'execution')){
+      return 'revoque';
+    }
+  }
+  // Statut explicite "révoqué" : reste révoqué
+  if(lp.statut === 'revoque') return 'revoque';
+  // Permanent : toujours actif
+  if(lp.permanent) return 'actif';
+  // Vérifier la date d'expiration
+  if(lp.dateExpiration){
+    const exp = new Date(lp.dateExpiration);
+    const now = new Date();
+    now.setHours(0,0,0,0);
+    if(!isNaN(exp.getTime()) && exp < now) return 'expire';
+  }
+  return lp.statut || 'actif';
+}
+
+// Vérifie si le porteur d'un laissez-passer est défunt
+function lpPorteurDefunt(lp){
+  if(!lp || !lp.recenseId) return false;
+  const rec = (DB.recenses||[]).find(r => r.id === lp.recenseId);
+  return !!(rec && (rec.defuntStatut === 'defunt-suna' || rec.defuntStatut === 'execution'));
+}
+
+// Génère le prochain numéro de laissez-passer (LP-2026-001, LP-2026-002, …)
+function _lpNextNumero(){
+  _lpInitDB();
+  const year = new Date().getFullYear();
+  const prefix = 'LP-' + year + '-';
+  // Trouver le plus grand numéro existant cette année
+  let maxNum = 0;
+  DB.laissezPasse.forEach(lp => {
+    if(lp.numero && lp.numero.startsWith(prefix)){
+      const n = parseInt(lp.numero.slice(prefix.length), 10);
+      if(!isNaN(n) && n > maxNum) maxNum = n;
+    }
+  });
+  return prefix + String(maxNum + 1).padStart(3, '0');
+}
+
+// Liste les villages d'un laissez-passer
+function _lpGetVillages(lp){
+  if(!lp || !Array.isArray(lp.villages)) return [];
+  return lp.villages;
+}
+
+// Format date FR (DD/MM/YYYY)
+function _lpFmtDate(iso){
+  if(!iso) return '—';
+  const d = new Date(iso);
+  if(isNaN(d.getTime())) return iso;
+  return d.toLocaleDateString('fr-FR');
+}
+
+// Échappe le HTML
+function _lpEsc(s){ return (typeof esc === 'function') ? esc(s) : String(s||'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]); }
+
+// Rendu principal de la page
+function renderLaissezPasse(){
+  _lpInitDB();
+  
+  // Bouton "Nouveau laissez-passer" — visible uniquement aux diplomates+admin
+  const btnWrap = document.getElementById('lp-add-btn-wrap');
+  if(btnWrap){
+    btnWrap.innerHTML = lpCanEdit()
+      ? '<button class="lp-add-btn" onclick="openLaissezPasseForm()">+ Nouveau laissez-passer</button>'
+      : '';
+  }
+  
+  // Stats
+  const all = DB.laissezPasse.slice();
+  const stats = { total: all.length, actif: 0, expire: 0, revoque: 0 };
+  all.forEach(lp => {
+    const s = lpComputeStatut(lp);
+    if(stats[s] !== undefined) stats[s]++;
+  });
+  ['total','actif','expire','revoque'].forEach(k => {
+    const el = document.getElementById('lp-stat-' + k);
+    if(el) el.textContent = stats[k];
+  });
+  
+  // Filtre + recherche
+  const q = (document.getElementById('lp-search')?.value || '').toLowerCase().trim();
+  let list = all.slice();
+  if(q){
+    list = list.filter(lp => {
+      const s = (lp.porteur||'').toLowerCase()
+        + ' ' + (lp.numero||'').toLowerCase()
+        + ' ' + (lp.motif||'').toLowerCase()
+        + ' ' + ((lp.villages||[]).join(' ').toLowerCase());
+      return s.includes(q);
+    });
+  }
+  if(_lpFilter !== 'all'){
+    list = list.filter(lp => lpComputeStatut(lp) === _lpFilter);
+  }
+  
+  // Tri : actifs d'abord, puis par date d'émission décroissante
+  list.sort((a,b) => {
+    const sa = lpComputeStatut(a), sb = lpComputeStatut(b);
+    const order = { actif: 0, expire: 1, revoque: 2 };
+    if(order[sa] !== order[sb]) return order[sa] - order[sb];
+    return (b.dateEmission||'').localeCompare(a.dateEmission||'');
+  });
+  
+  const grid = document.getElementById('lp-grid');
+  if(!grid) return;
+  
+  if(!list.length){
+    grid.innerHTML = '<div class="lp-empty">— Aucun laissez-passer dans ce filtre —</div>';
+    return;
+  }
+  
+  grid.innerHTML = list.map(lp => {
+    const statut = lpComputeStatut(lp);
+    const porteurDefunt = lpPorteurDefunt(lp);
+    const villages = _lpGetVillages(lp);
+    const villagesHTML = villages.length
+      ? villages.slice(0, 4).map(v => `<span class="lp-card-chip village">${_lpEsc(v)}</span>`).join('')
+        + (villages.length > 4 ? `<span class="lp-card-chip">+${villages.length - 4}</span>` : '')
+      : '<span class="lp-card-chip" style="color:rgba(255,255,255,0.3);font-style:italic">— Aucun village —</span>';
+    
+    const datesHTML = lp.permanent
+      ? `📅 Émis le ${_lpFmtDate(lp.dateEmission)} · ♾ Permanent`
+      : `📅 ${_lpFmtDate(lp.dateEmission)} → ${_lpFmtDate(lp.dateExpiration)}`;
+    
+    const statutLabel = { actif: '✓ Actif', expire: '⏱ Expiré', revoque: '🚫 Révoqué' }[statut] || statut;
+    
+    const canEdit = lpCanEdit();
+    const actionsHTML = canEdit
+      ? `<div class="lp-card-actions">
+           <button class="view" onclick="viewLaissezPasse(${lp.id})" title="Consulter">👁</button>
+           <button class="edit" onclick="openLaissezPasseForm(${lp.id})" title="Modifier">✏️</button>
+           ${statut === 'actif' ? `<button class="revoke" onclick="revokeLaissezPasse(${lp.id})" title="Révoquer">🚫</button>` : ''}
+           <button class="del" onclick="deleteLaissezPasse(${lp.id})" title="Supprimer">🗑</button>
+         </div>`
+      : `<div class="lp-card-actions"><button class="view" onclick="viewLaissezPasse(${lp.id})" title="Consulter">👁</button></div>`;
+    
+    return `<div class="lp-card s-${statut}${porteurDefunt ? ' porteur-defunt' : ''}">
+      <div>
+        <div class="lp-card-num">${_lpEsc(lp.numero || '—')}</div>
+        <div class="lp-card-num-sub">№ Officiel</div>
+      </div>
+      <div class="lp-card-info">
+        <div class="lp-card-porteur">${_lpEsc(lp.porteur || 'Porteur inconnu')}${porteurDefunt ? '<span class="lp-defunt-warn">⚱ Porteur défunt</span>' : ''}</div>
+        <div class="lp-card-dates">${datesHTML}</div>
+        <div class="lp-card-meta">${villagesHTML}</div>
+        ${lp.motif ? `<div class="lp-card-meta"><span class="lp-card-chip motif">🎯 ${_lpEsc(lp.motif)}</span></div>` : ''}
+        <div class="lp-card-emetteur">Émis par ${_lpEsc(lp.emetteur || '—')}</div>
+      </div>
+      <div class="lp-card-right">
+        <div class="lp-statut-badge ${statut}">${statutLabel}</div>
+        ${actionsHTML}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// Filtre des laissez-passer
+function lpSetFilter(f, btn){
+  _lpFilter = f;
+  document.querySelectorAll('#page-diplo-laissezpasse .lp-fbtn').forEach(b => b.classList.remove('active'));
+  if(btn) btn.classList.add('active');
+  renderLaissezPasse();
+}
+
+// Toggle "Permanent" : désactive la date d'expiration
+function lpTogglePermanent(checkbox){
+  const expEl = document.getElementById('lp-date-expiration');
+  if(!expEl) return;
+  if(checkbox.checked){
+    expEl.value = '';
+    expEl.disabled = true;
+    expEl.style.opacity = '0.4';
+  } else {
+    expEl.disabled = false;
+    expEl.style.opacity = '1';
+  }
+}
+
+// Quand l'utilisateur tape dans le champ "Porteur" → vérifier si c'est un recensé connu
+function lpOnPorteurInput(){
+  const input = document.getElementById('lp-porteur');
+  const info = document.getElementById('lp-porteur-info');
+  if(!input || !info) return;
+  const val = input.value.trim();
+  if(!val){ info.textContent = ''; return; }
+  // Chercher dans les recensés
+  const rec = (DB.recenses||[]).find(r => {
+    const fullName = ((r.prenom||'') + ' ' + (r.nom||'')).trim();
+    return fullName.toLowerCase() === val.toLowerCase();
+  });
+  if(rec){
+    const rang = rec.rang ? ' · ' + rec.rang : '';
+    const isDefunt = rec.defuntStatut === 'defunt-suna' || rec.defuntStatut === 'execution';
+    info.innerHTML = '✓ Recensé trouvé' + rang + (isDefunt ? ' <span style="color:#f87171;font-weight:600">⚱ DÉFUNT (le LP sera auto-révoqué)</span>' : '');
+    info.style.color = isDefunt ? 'rgba(248,113,113,0.9)' : 'rgba(74,222,128,0.85)';
+  } else {
+    info.textContent = '⚠ Porteur non recensé (saisie libre acceptée)';
+    info.style.color = 'rgba(251,191,36,0.7)';
+  }
+}
+
+// Construit la datalist d'autocomplete des recensés
+function _lpBuildRecensesList(){
+  const dl = document.getElementById('lp-recenses-list');
+  if(!dl) return;
+  const recenses = (DB.recenses||[]).filter(r => r && r.prenom && r.nom);
+  // Tri alphabétique
+  recenses.sort((a,b) => ((a.prenom||'') + ' ' + (a.nom||'')).localeCompare((b.prenom||'') + ' ' + (b.nom||'')));
+  dl.innerHTML = recenses.map(r => {
+    const fullName = (r.prenom + ' ' + r.nom).trim();
+    return `<option value="${_lpEsc(fullName)}">${_lpEsc(r.rang || '—')}</option>`;
+  }).join('');
+}
+
+// Ouvrir le formulaire de création/édition
+function openLaissezPasseForm(id){
+  if(!lpCanEdit()){ if(typeof showToast==='function') showToast('⛔ Action réservée aux diplomates et administrateurs.', 'error'); return; }
+  _lpInitDB();
+  _lpBuildRecensesList();
+  
+  // Reset formulaire
+  document.getElementById('lp-porteur').value = '';
+  document.getElementById('lp-porteur-info').textContent = '';
+  document.getElementById('lp-date-emission').value = new Date().toISOString().split('T')[0];
+  document.getElementById('lp-date-expiration').value = '';
+  document.getElementById('lp-date-expiration').disabled = false;
+  document.getElementById('lp-date-expiration').style.opacity = '1';
+  document.getElementById('lp-permanent').checked = false;
+  document.getElementById('lp-village-autre').value = '';
+  document.getElementById('lp-motif').value = '';
+  document.getElementById('lp-notes').value = '';
+  document.getElementById('lp-statut').value = 'actif';
+  document.getElementById('lp-numero').value = '';
+  document.querySelectorAll('input[name="lp-village"]').forEach(c => c.checked = false);
+  
+  if(id){
+    // Mode édition
+    _lpEditId = id;
+    const lp = DB.laissezPasse.find(x => x.id === id);
+    if(!lp){ if(typeof showToast==='function') showToast('Laissez-passer introuvable', 'error'); return; }
+    const titleEl = document.querySelector('#modal-lp .modal-header h3');
+    if(titleEl) titleEl.textContent = '🪪 Modifier le laissez-passer';
+    document.getElementById('lp-porteur').value = lp.porteur || '';
+    document.getElementById('lp-date-emission').value = lp.dateEmission || '';
+    document.getElementById('lp-date-expiration').value = lp.dateExpiration || '';
+    document.getElementById('lp-permanent').checked = !!lp.permanent;
+    if(lp.permanent){
+      document.getElementById('lp-date-expiration').disabled = true;
+      document.getElementById('lp-date-expiration').style.opacity = '0.4';
+    }
+    document.getElementById('lp-motif').value = lp.motif || '';
+    document.getElementById('lp-notes').value = lp.notes || '';
+    document.getElementById('lp-statut').value = lp.statut || 'actif';
+    document.getElementById('lp-numero').value = lp.numero || '';
+    
+    // Cocher les villages connus
+    const villagesPresets = ['Sunagakure','Konohagakure','Kirigakure','Iwagakure','Kumogakure','Tous villages'];
+    const villages = lp.villages || [];
+    const autres = [];
+    villages.forEach(v => {
+      if(villagesPresets.includes(v)){
+        const cb = document.querySelector(`input[name="lp-village"][value="${v}"]`);
+        if(cb) cb.checked = true;
+      } else {
+        autres.push(v);
+      }
+    });
+    if(autres.length) document.getElementById('lp-village-autre').value = autres.join(', ');
+    
+    lpOnPorteurInput();
+  } else {
+    // Mode création
+    _lpEditId = null;
+    const titleEl = document.querySelector('#modal-lp .modal-header h3');
+    if(titleEl) titleEl.textContent = '🪪 Nouveau laissez-passer';
+    document.getElementById('lp-numero').value = _lpNextNumero();
+  }
+  
+  openModal('modal-lp');
+}
+
+// Sauvegarder le laissez-passer
+function saveLaissezPasse(){
+  if(!lpCanEdit()){ if(typeof showToast==='function') showToast('⛔ Action réservée aux diplomates et administrateurs.', 'error'); return; }
+  _lpInitDB();
+  
+  const porteur = document.getElementById('lp-porteur').value.trim();
+  const dateEmission = document.getElementById('lp-date-emission').value;
+  const dateExpiration = document.getElementById('lp-date-expiration').value;
+  const permanent = document.getElementById('lp-permanent').checked;
+  const motif = document.getElementById('lp-motif').value.trim();
+  const notes = document.getElementById('lp-notes').value.trim();
+  const statut = document.getElementById('lp-statut').value;
+  
+  // Villages cochés + champ libre
+  const villagesPreset = Array.from(document.querySelectorAll('input[name="lp-village"]:checked')).map(c => c.value);
+  const villageAutre = document.getElementById('lp-village-autre').value.trim();
+  const villagesAutres = villageAutre ? villageAutre.split(',').map(s => s.trim()).filter(Boolean) : [];
+  const villages = [...villagesPreset, ...villagesAutres];
+  
+  // Validations
+  if(!porteur){ if(typeof showToast==='function') showToast('Le nom du porteur est requis', 'error'); return; }
+  if(!dateEmission){ if(typeof showToast==='function') showToast('La date d\'émission est requise', 'error'); return; }
+  if(!permanent && !dateExpiration){ if(typeof showToast==='function') showToast('Renseigne une date d\'expiration ou coche "Permanent"', 'error'); return; }
+  if(!villages.length){ if(typeof showToast==='function') showToast('Sélectionne au moins un village autorisé', 'error'); return; }
+  if(!motif){ if(typeof showToast==='function') showToast('Le motif est requis', 'error'); return; }
+  
+  // Chercher si le porteur correspond à un recensé
+  const rec = (DB.recenses||[]).find(r => {
+    const fullName = ((r.prenom||'') + ' ' + (r.nom||'')).trim();
+    return fullName.toLowerCase() === porteur.toLowerCase();
+  });
+  const recenseId = rec ? rec.id : null;
+  
+  const emetteur = (currentUser && (currentUser.nom || currentUser.login)) || 'Inconnu';
+  const nowIso = new Date().toISOString();
+  
+  if(_lpEditId){
+    // Édition
+    const idx = DB.laissezPasse.findIndex(x => x.id === _lpEditId);
+    if(idx === -1){ if(typeof showToast==='function') showToast('Laissez-passer introuvable', 'error'); return; }
+    const old = DB.laissezPasse[idx];
+    DB.laissezPasse[idx] = Object.assign({}, old, {
+      porteur, recenseId,
+      dateEmission, dateExpiration: permanent ? '' : dateExpiration, permanent,
+      villages, motif, notes, statut,
+      modified: nowIso, modifiedBy: emetteur
+    });
+    if(typeof showToast==='function') showToast('✓ Laissez-passer mis à jour', 'success');
+  } else {
+    // Création
+    const numero = document.getElementById('lp-numero').value || _lpNextNumero();
+    DB.laissezPasse.push({
+      id: Date.now() + Math.floor(Math.random()*1000),
+      numero, porteur, recenseId,
+      dateEmission, dateExpiration: permanent ? '' : dateExpiration, permanent,
+      villages, motif, notes, statut,
+      emetteur,
+      created: nowIso, modified: nowIso, modifiedBy: emetteur
+    });
+    if(typeof showToast==='function') showToast('✓ Laissez-passer délivré', 'success');
+  }
+  
+  // Sauver
+  if(typeof addTimeline === 'function') addTimeline(`Laissez-passer ${_lpEditId ? 'modifié' : 'délivré'} : ${porteur}`);
+  if(typeof saveData === 'function') saveData(['laissezPasse','timeline']);
+  
+  closeModal('modal-lp');
+  _lpEditId = null;
+  renderLaissezPasse();
+}
+
+// Voir les détails d'un laissez-passer (modale lecture)
+function viewLaissezPasse(id){
+  _lpInitDB();
+  const lp = DB.laissezPasse.find(x => x.id === id);
+  if(!lp){ if(typeof showToast==='function') showToast('Laissez-passer introuvable', 'error'); return; }
+  
+  const statut = lpComputeStatut(lp);
+  const porteurDefunt = lpPorteurDefunt(lp);
+  const villages = _lpGetVillages(lp);
+  const statutLabel = { actif: '✓ Actif', expire: '⏱ Expiré', revoque: '🚫 Révoqué' }[statut] || statut;
+  
+  const titleEl = document.querySelector('#modal-lp-view .modal-header h3');
+  const bodyEl = document.getElementById('lp-view-body');
+  if(titleEl) titleEl.textContent = '🪪 ' + (lp.numero || 'Laissez-passer');
+  
+  bodyEl.innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;flex-wrap:wrap;gap:10px">
+      <div>
+        <div style="font-family:'Cinzel',serif;font-size:22px;font-weight:700;color:#f5e8c8">${_lpEsc(lp.porteur || '—')}</div>
+        ${porteurDefunt ? '<div class="lp-defunt-warn" style="margin-top:6px;display:inline-block">⚱ Porteur défunt — laissez-passer révoqué</div>' : ''}
+      </div>
+      <div class="lp-statut-badge ${statut}" style="font-size:12px">${statutLabel}</div>
+    </div>
+    
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:18px">
+      <div style="padding:10px;background:rgba(0,0,0,0.3);border-radius:6px;border:1px solid rgba(180,140,20,0.18)">
+        <div style="font-family:'Share Tech Mono',monospace;font-size:9.5px;letter-spacing:1.3px;color:rgba(255,255,255,0.45);text-transform:uppercase;margin-bottom:4px">Date d'émission</div>
+        <div style="font-size:13px;color:#f5e8c8">${_lpFmtDate(lp.dateEmission)}</div>
+      </div>
+      <div style="padding:10px;background:rgba(0,0,0,0.3);border-radius:6px;border:1px solid rgba(180,140,20,0.18)">
+        <div style="font-family:'Share Tech Mono',monospace;font-size:9.5px;letter-spacing:1.3px;color:rgba(255,255,255,0.45);text-transform:uppercase;margin-bottom:4px">Date d'expiration</div>
+        <div style="font-size:13px;color:#f5e8c8">${lp.permanent ? '♾ Permanent' : _lpFmtDate(lp.dateExpiration)}</div>
+      </div>
+    </div>
+    
+    <div style="margin-bottom:14px">
+      <div style="font-family:'Share Tech Mono',monospace;font-size:10px;letter-spacing:1.3px;color:rgba(255,255,255,0.45);text-transform:uppercase;margin-bottom:6px">🌍 Villages autorisés</div>
+      <div style="display:flex;flex-wrap:wrap;gap:5px">
+        ${villages.length ? villages.map(v => `<span class="lp-card-chip village">${_lpEsc(v)}</span>`).join('') : '<span style="font-style:italic;color:rgba(255,255,255,0.4)">Aucun</span>'}
+      </div>
+    </div>
+    
+    <div style="margin-bottom:14px;padding:12px;background:rgba(168,85,247,0.06);border:1px solid rgba(168,85,247,0.25);border-radius:6px">
+      <div style="font-family:'Share Tech Mono',monospace;font-size:10px;letter-spacing:1.3px;color:rgba(192,132,252,0.7);text-transform:uppercase;margin-bottom:5px">🎯 Motif</div>
+      <div style="font-size:13px;color:#e8c8ff;font-style:italic">${_lpEsc(lp.motif || '—')}</div>
+    </div>
+    
+    ${lp.notes ? `<div style="margin-bottom:14px">
+      <div style="font-family:'Share Tech Mono',monospace;font-size:10px;letter-spacing:1.3px;color:rgba(255,255,255,0.45);text-transform:uppercase;margin-bottom:5px">📝 Notes & observations</div>
+      <div style="padding:10px;background:rgba(0,0,0,0.3);border-radius:6px;border:1px solid rgba(180,140,20,0.18);font-size:12.5px;color:rgba(255,255,255,0.85);white-space:pre-wrap;line-height:1.5">${_lpEsc(lp.notes)}</div>
+    </div>` : ''}
+    
+    <div style="padding:10px;border-top:1px dashed rgba(180,140,20,0.2);margin-top:12px;display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;font-size:11px;color:rgba(255,255,255,0.55);font-family:'Share Tech Mono',monospace">
+      <span>Émis par <strong style="color:var(--gold)">${_lpEsc(lp.emetteur || '—')}</strong></span>
+      ${lp.modified ? `<span>Dernière modif : ${_lpFmtDate(lp.modified)} par ${_lpEsc(lp.modifiedBy || '—')}</span>` : ''}
+    </div>
+  `;
+  
+  openModal('modal-lp-view');
+}
+
+// Révoquer un laissez-passer (passe le statut à "revoque")
+function revokeLaissezPasse(id){
+  if(!lpCanEdit()){ if(typeof showToast==='function') showToast('⛔ Action réservée aux diplomates et administrateurs.', 'error'); return; }
+  _lpInitDB();
+  if(typeof askDelete !== 'function'){ console.warn('askDelete missing'); return; }
+  askDelete('Révoquer ce laissez-passer ? Le porteur n\'aura plus l\'autorisation de circuler.', () => {
+    const idx = DB.laissezPasse.findIndex(x => x.id === id);
+    if(idx === -1) return;
+    DB.laissezPasse[idx].statut = 'revoque';
+    DB.laissezPasse[idx].modified = new Date().toISOString();
+    DB.laissezPasse[idx].modifiedBy = (currentUser && (currentUser.nom || currentUser.login)) || '?';
+    if(typeof addTimeline === 'function') addTimeline(`Laissez-passer révoqué : ${DB.laissezPasse[idx].porteur || '?'}`);
+    if(typeof saveData === 'function') saveData(['laissezPasse','timeline']);
+    if(typeof showToast==='function') showToast('Laissez-passer révoqué', 'info');
+    renderLaissezPasse();
+  });
+}
+
+// Supprimer un laissez-passer (admin uniquement)
+function deleteLaissezPasse(id){
+  if(!lpCanEdit()){ if(typeof showToast==='function') showToast('⛔ Action réservée aux diplomates et administrateurs.', 'error'); return; }
+  _lpInitDB();
+  if(typeof askDelete !== 'function'){ console.warn('askDelete missing'); return; }
+  askDelete('Supprimer définitivement ce laissez-passer ?', () => {
+    const lp = DB.laissezPasse.find(x => x.id === id);
+    DB.laissezPasse = DB.laissezPasse.filter(x => x.id !== id);
+    if(typeof addTimeline === 'function') addTimeline(`Laissez-passer supprimé : ${lp ? lp.porteur : '?'}`);
+    if(typeof saveData === 'function') saveData(['laissezPasse','timeline']);
+    if(typeof showToast==='function') showToast('Laissez-passer supprimé', 'info');
+    renderLaissezPasse();
+  });
 }
 
 function bbToggleAddPanel() {
