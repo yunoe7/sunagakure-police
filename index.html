@@ -16403,6 +16403,18 @@ function initFirebaseSync(){
           });
           _lastFbArrays[k+'__known']=data[k].map(x=>x&&String(x.id)).filter(Boolean);
         });
+        // ═══ BACKFILL REF PLAINTES POST-SYNC ═══
+        // Si la sync a apporté des plaintes sans champ `ref` (anciennes données ou autre client
+        // tournant une version antérieure), on leur en génère un. La numérotation reste cohérente
+        // entre clients car elle est déterministe (tri chronologique → POL-YYYY-NNN par année).
+        if(_changedKeys.has('plaintes') && typeof _backfillPlaintesRef === 'function'){
+          try {
+            if(_backfillPlaintesRef()){
+              // Pousser le résultat pour que les autres clients voient les refs
+              if(typeof saveData === 'function') saveData('plaintes');
+            }
+          } catch(e){ console.warn('[plaintes] backfill ref post-sync échoué:', e); }
+        }
         // Mettre a jour les champs non-tableau (commissaire, logo, etc.)
         if(data.commissaire && data.commissaire !== DB.commissaire){
           DB.commissaire=data.commissaire;
@@ -30636,6 +30648,8 @@ function bbCanEdit(){
   if(!currentUser) return false;
   // Cas 1 : admin du site (role 'admin') — toujours autorisé peu importe la section
   if(currentUser.role === 'admin') return true;
+  // Cas 1bis : haut commandement — oversight transverse, droits d'édition partout (sauf panel admin)
+  if(currentUser.role === 'hautcommandement') return true;
   // Cas 2 : Police uniquement — gérant, cogerant, sergent, officier de la POLICE
   if(currentUser.section === 'police' || !currentUser.section){
     if(currentUser.role === 'gerant' || currentUser.role === 'cogerant' ||
@@ -30662,6 +30676,8 @@ function lpCanEdit(){
   if(!currentUser) return false;
   // Admin du site : toujours OK
   if(currentUser.role === 'admin') return true;
+  // Haut commandement : oversight transverse, droits d'édition partout (sauf panel admin)
+  if(currentUser.role === 'hautcommandement') return true;
   // Tout membre de la section diplomatie (sauf visiteur), peu importe le grade
   if(currentUser.section === 'diplomatie' && currentUser.role !== 'visiteur') return true;
   return false;
@@ -31333,7 +31349,7 @@ function _hospUserGrade(){
 function _hospIsAdmin(){
   if(!currentUser) return false;
   var r = currentUser.role || '';
-  return r === 'admin' || r === 'gerant' || r === 'cogerant';
+  return r === 'admin' || r === 'hautcommandement' || r === 'gerant' || r === 'cogerant';
 }
 // Récupère la liste des grades du pôle Médical (utilise getGradesForSection si dispo, sinon fallback)
 function _hospMedicalGrades(){
