@@ -3064,45 +3064,56 @@ html{-webkit-tap-highlight-color:transparent}
 /* Tampon "DÉFUNT" en diagonale — style officiel RP, effet rétro encrage */
 .rcv2-card-defunt-stamp{
   position:absolute;
-  top:50%;
+  /* Placé sur la zone avatar/identity (haut de la carte) plutôt qu'au centre.
+     Comme ça les infos importantes (compétences, natures, boutons) restent lisibles. */
+  top:30%;
   left:50%;
   z-index:10;
-  transform:translate(-50%,-50%) rotate(-18deg);
+  transform:translate(-50%,-50%) rotate(-14deg);
   pointer-events:none;
   font-family:'Cinzel','Times New Roman',serif;
   font-weight:900;
-  font-size:36px;
-  letter-spacing:6px;
-  color:rgba(140,20,30,0.92);
+  font-size:22px;
+  letter-spacing:5px;
+  color:rgba(220,80,90,0.95);
   text-transform:uppercase;
-  padding:8px 22px;
-  border:4px solid rgba(140,20,30,0.85);
-  border-radius:6px;
-  /* Légère opacité pour effet "tampon encreur" qui transpire */
-  opacity:0.88;
-  /* Texture grain pour effet encre imparfaite */
-  text-shadow:1px 1px 0 rgba(140,20,30,0.4), -1px -1px 0 rgba(140,20,30,0.3);
+  padding:5px 16px;
+  /* Double bordure pour effet tampon authentique */
+  border:3px double rgba(220,80,90,0.85);
+  border-radius:4px;
+  /* Effet "tampon usé" : l'encre n'est pas appliquée uniformément */
+  opacity:0.85;
+  /* Effet d'encre légèrement bavée */
+  text-shadow:
+    0 0 1px rgba(220,80,90,0.6),
+    1px 1px 0 rgba(120,20,30,0.5);
   box-shadow:
-    inset 0 0 0 2px rgba(140,20,30,0.4),
-    0 0 0 1px rgba(0,0,0,0.1);
-  /* Effet "tamponné inégalement" — transparence partielle */
-  background:rgba(140,20,30,0.04);
-  /* Mix-blend-mode pour que le tampon réagisse à l'arrière-plan comme une vraie encre */
-  mix-blend-mode:multiply;
+    inset 0 0 0 1px rgba(220,80,90,0.3),
+    0 1px 4px rgba(0,0,0,0.2);
+  background:rgba(140,20,30,0.05);
+  /* Filtre pour effet rétro-imparfait */
   filter:contrast(1.1);
   white-space:nowrap;
   user-select:none;
+  /* Animation subtile à l'apparition (au render) */
+  animation:rcv2-stamp-apply 0.5s cubic-bezier(0.34,1.56,0.64,1);
 }
-/* Sur fond sombre, multiply ne marche pas → on inverse avec une variante */
+@keyframes rcv2-stamp-apply{
+  0%   { opacity:0; transform:translate(-50%,-50%) rotate(-30deg) scale(2.5); }
+  50%  { opacity:1; transform:translate(-50%,-50%) rotate(-10deg) scale(0.95); }
+  100% { opacity:0.85; transform:translate(-50%,-50%) rotate(-14deg) scale(1); }
+}
+/* Sur fond sombre on garde le rouge bordeaux clair pour bonne lisibilité */
 .rcv2-card.is-defunt .rcv2-card-defunt-stamp{
-  mix-blend-mode:normal;
-  background:rgba(140,20,30,0.06);
-  color:rgba(220,80,90,0.95);
-  border-color:rgba(220,80,90,0.85);
+  background:rgba(140,20,30,0.08);
+  color:rgba(225,90,100,0.95);
+  border-color:rgba(225,90,100,0.85);
   box-shadow:
-    inset 0 0 0 2px rgba(220,80,90,0.4),
-    0 2px 8px rgba(0,0,0,0.3);
-  text-shadow:1px 1px 0 rgba(120,15,25,0.6), -1px -1px 0 rgba(220,80,90,0.3);
+    inset 0 0 0 1px rgba(225,90,100,0.3),
+    0 2px 6px rgba(0,0,0,0.4);
+  text-shadow:
+    0 0 1px rgba(225,90,100,0.7),
+    1px 1px 0 rgba(120,20,30,0.6);
 }
 .rcv2-card::before{
   content:'';position:absolute;inset:0;pointer-events:none;border-radius:inherit;
