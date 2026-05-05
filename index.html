@@ -16925,6 +16925,14 @@ function defaultData(){
 }
 let DB=loadData();
 
+// Backfill : attribuer des références propres (POL-YYYY-NNN) aux plaintes existantes
+// qui n'ont qu'un id timestamp. Sauvegarde uniquement si des changements ont eu lieu.
+try {
+  if(typeof _backfillPlaintesRef === 'function' && _backfillPlaintesRef()){
+    if(typeof saveData === 'function') saveData('plaintes');
+  }
+} catch(e){ console.warn('[plaintes] backfill ref échoué:', e); }
+
 // ═══════════════════════════════════════════════════════════════════
 //                    🛡️  YUNO — CONSOLE LOG SYSTEM
 // ═══════════════════════════════════════════════════════════════════
@@ -18982,13 +18990,19 @@ function _countNew(arr,section){
   return arr.filter(x=>{
     const d=x.date||x.created||"";
     if(!d)return false;
-    // date peut être "DD/MM/YYYY HH:mm" ou ISO
     let ts;
-    if(d.includes("/")){
+    // bug-fix : x.created peut être un timestamp numérique (Date.now()) ou une string ISO
+    // Sans cette protection, `d.includes("/")` crashait sur un nombre → updateBadges mourait.
+    if(typeof d === 'number'){
+      ts = d;
+    } else if(typeof d === 'string' && d.includes("/")){
+      // date peut être "DD/MM/YYYY HH:mm"
       const [dt,tm]=(d+" ").split(" ");
       const [dd,mm,yyyy]=dt.split("/");
       ts=new Date(yyyy+"-"+mm+"-"+dd+(tm?" "+tm:"")).getTime();
-    } else { ts=new Date(d).getTime(); }
+    } else {
+      ts=new Date(d).getTime();
+    }
     return !isNaN(ts)&&ts>t;
   }).length;
 }
@@ -19002,7 +19016,10 @@ function updateBadges(){
   const nA=_countNew(DB.annonces||[],"annonces");
   const nP=(DB.plaintes||[]).filter(p=>p.statut==="ouverte"||p.statut==="en_cours").length;
   const nR=_countNew(DB.recenses||[],"recenses");
-  const nRec=(DB.candidatures||[]).filter(c=>c.statut==="en_attente").length;
+  // Recrutement : nouvelles candidatures EN ATTENTE depuis la dernière visite.
+  // Combine "encore à traiter" + "non vue" → le badge disparaît si tu visites OU si tu traites tout.
+  const candEnAttente=(DB.candidatures||[]).filter(c=>c.statut==="en_attente");
+  const nRec=_countNew(candEnAttente,"candidatures");
   const nOp=(DB.operations||[]).filter(o=>o.statut==="Active").length;
   const nD=(DB.dossiers||[]).filter(d=>(d.statut||"").toLowerCase()==="recherché"||(d.statut||"")==="En garde à vue").length;
 
@@ -19016,20 +19033,22 @@ function updateBadges(){
   _setBadge("badge-recrutement",nRec,true);
   _setBadge("badge-operations",nOp,true);
   _setBadge("badge-dossiers",nD,true);
-  // Badge Tribunal — Affaires en cours (toutes les affaires non jugées et non archivées)
+  // Badge Tribunal — Affaires en cours : nouvelles affaires NON-CLÔTURÉES depuis dernière visite
   if(DB.tribunal && Array.isArray(DB.tribunal.affaires)){
-    var nAff = DB.tribunal.affaires.filter(function(a){
-      var s = a.statut || 'ouverte';
-      return s !== 'jugee' && s !== 'archivee';
-    }).length;
+    var affEnCours = DB.tribunal.affaires.filter(function(a){
+      var s = a.statut || 'instruction';
+      return s !== 'cloturee' && s !== 'jugee' && s !== 'archivee';
+    });
+    var nAff = _countNew(affEnCours, "juge-affaires");
     _setBadge("badge-juge-affaires", nAff, true);
   }
-  // Badge Tribunal — Plaintes reçues (transmises par la Police, pas encore liées à une affaire)
-  if(DB.tribunal && Array.isArray(DB.tribunal.affaires) && Array.isArray(DB.plaintes)){
-    var affPlIds = new Set(DB.tribunal.affaires.map(function(a){ return a.plainteId; }).filter(Boolean));
-    var nPl = DB.plaintes.filter(function(p){
+  // Badge Tribunal — Plaintes reçues : nouvelles plaintes NON-LIÉES À UNE AFFAIRE depuis dernière visite
+  if(Array.isArray(DB.plaintes)){
+    var affPlIds = new Set(((DB.tribunal&&DB.tribunal.affaires)||[]).map(function(a){ return a.plainteId; }).filter(Boolean));
+    var plAttente = DB.plaintes.filter(function(p){
       return p.statut === 'transmise_tribunal' && !affPlIds.has(p.id);
-    }).length;
+    });
+    var nPl = _countNew(plAttente, "juge-plaintes");
     _setBadge("badge-juge-plaintes", nPl, true);
   }
   // Drawer badges
@@ -19054,7 +19073,13 @@ function markAllNotifsRead(){
 }
 // Marquer comme lu quand on ouvre la page
 function markPageRead(page){
-  const map={annonces:"annonces",recensement:"recenses"};
+  const map={
+    annonces:"annonces",
+    recensement:"recenses",
+    recrutement:"candidatures",
+    "juge-affaires":"juge-affaires",
+    "juge-plaintes":"juge-plaintes"
+  };
   if(map[page])_setRead(map[page]);
 }
 function renderDashboard(){
@@ -20220,6 +20245,9 @@ function deleteRecense(id){
 function filterCandidatures(f,e){candFilter=f;document.querySelectorAll("#page-recrutement .tab-btn").forEach(b=>b.classList.remove("active"));e.classList.add("active");renderCandidatures()}
 function candNumero(id){const sorted=[...DB.candidatures].sort((a,b)=>a.id-b.id);const idx=sorted.findIndex(c=>c.id===id);return idx>=0?idx+1:'?';}
 function renderCandidatures(){
+  // Marquer comme "vu" : tant que l'utilisateur est sur la page, le badge sidebar reste à 0
+  // (même si une nouvelle candidature arrive en live depuis un autre appareil)
+  if(typeof _setRead === 'function') _setRead("candidatures");
   let list=DB.candidatures;if(candFilter!=="all")list=list.filter(c=>c.statut===candFilter);
   // Stats hero V2
   var allCand=DB.candidatures||[];
@@ -20424,7 +20452,7 @@ function renderPlaintes(){
   var sO=el("pgv2-pl-ouvertes");if(sO)sO.textContent=allP.filter(p=>p.statut==="ouverte").length;
   var sC=el("pgv2-pl-cours");if(sC)sC.textContent=allP.filter(p=>p.statut==="en_cours").length;
 
-  el("plaintes-tbody").innerHTML=list.map(p=>`<tr><td class="mono">#${p.id}</td><td>${esc(p.plaignant)}</td><td>${esc(p.accuse)}</td><td>${esc(p.type)}</td><td><span class="badge ${statutPlainte(p.statut)}">${fmtStatut(p.statut)}</span></td><td class="mono">${fmtDate(p.date)}</td><td><button class="btn btn-outline btn-sm" onclick="viewPlainte(${p.id})">👁</button>${canModify()?` <button class="btn btn-gold btn-sm" onclick="openEditPlainte(${p.id})" title="Modifier">✏️</button> <button class="btn btn-danger btn-sm" onclick="deletePlainte(${p.id})">🗑</button>`:""}</td></tr>`).join("")||`<tr><td colspan="7" style="text-align:center;color:var(--muted);padding:18px">Aucune plainte</td></tr>`;
+  el("plaintes-tbody").innerHTML=list.map(p=>`<tr><td class="mono">${esc(p.ref||('#'+p.id))}</td><td>${esc(p.plaignant)}</td><td>${esc(p.accuse)}</td><td>${esc(p.type)}</td><td><span class="badge ${statutPlainte(p.statut)}">${fmtStatut(p.statut)}</span></td><td class="mono">${fmtDate(p.date)}</td><td><button class="btn btn-outline btn-sm" onclick="viewPlainte(${p.id})">👁</button>${canModify()?` <button class="btn btn-gold btn-sm" onclick="openEditPlainte(${p.id})" title="Modifier">✏️</button> <button class="btn btn-danger btn-sm" onclick="deletePlainte(${p.id})">🗑</button>`:""}</td></tr>`).join("")||`<tr><td colspan="7" style="text-align:center;color:var(--muted);padding:18px">Aucune plainte</td></tr>`;
 }
 let _plaintePhoto="";
 function loadPlaintePhoto(input){
@@ -20540,7 +20568,7 @@ function savePlainte(){
     const idx=DB.plaintes.findIndex(x=>String(x.id)===String(_plainteEditId));
     if(idx!==-1){
       DB.plaintes[idx]=Object.assign({},DB.plaintes[idx],{plaignant:pl,accuse:ac,type:v("p-type"),desc,dateFaits:v("p-date"),cible:cible,photoAccuse:_plaintePhoto||DB.plaintes[idx].photoAccuse||""});
-      addTimeline(`Plainte #${_plainteEditId} modifiée par ${currentUser.nom}`);
+      addTimeline(`Plainte ${DB.plaintes[idx].ref||('#'+_plainteEditId)} modifiée par ${currentUser.nom}`);
       saveData(['plaintes','timeline']);closeModal("modal-plainte");renderPlaintes();syncDashboard();
       showToast("Plainte mise à jour.","success");
       clearForm(["p-plaignant","p-accuse","p-desc","p-date"]);removePlaintePhoto();
@@ -20548,7 +20576,8 @@ function savePlainte(){
     _resetPlainteModal();
     return;
   }
-  DB.plaintes.push({id:Date.now(),plaignant:pl,accuse:ac,type:v("p-type"),desc,dateFaits:v("p-date"),cible:cible,statut:"ouverte",auteur:currentUser?currentUser.nom:"Anonyme",agent:null,date:now(),photoAccuse:_plaintePhoto||""});
+  var _newPlId = Date.now();
+  DB.plaintes.push({id:_newPlId,ref:_plainteNextRef(_newPlId),plaignant:pl,accuse:ac,type:v("p-type"),desc,dateFaits:v("p-date"),cible:cible,statut:"ouverte",auteur:currentUser?currentUser.nom:"Anonyme",agent:null,date:now(),photoAccuse:_plaintePhoto||""});
   addTimeline(`Plainte déposée par ${pl} contre ${ac}`);
   _plaintePhoto="";
   flashSubmitSuccess(document.querySelector('#modal-plainte .modal-footer .btn-primary'), 'Plainte enregistrée');
@@ -20570,7 +20599,7 @@ function viewPlainte(id){
   const vpBody=document.getElementById("vp-body");
   const vpFooter=document.getElementById("vp-footer");
   if(!vpRef||!vpBody||!vpFooter){console.error("viewPlainte: modal manquant même après recréation");return;}
-  vpRef.textContent=`Plainte #${p.id}`;
+  vpRef.textContent=p.ref ? `Plainte ${p.ref}` : `Plainte #${p.id}`;
   // Chercher dossier & recensé correspondant à l'accusé
   const dossierAcc=(DB.dossiers||[]).find(d=>(d.nom||"").toLowerCase().includes((p.accuse||"").toLowerCase())&&p.accuse&&p.accuse.length>2);
   const recenseAcc=(DB.recenses||[]).find(r=>((r.prenom||"")+" "+(r.nom||"")).toLowerCase().includes((p.accuse||"").toLowerCase())&&p.accuse&&p.accuse.length>2);
@@ -20595,7 +20624,7 @@ function setPlainteStatut(id,statut){
   const p=DB.plaintes.find(x=>String(x.id)===String(id));if(!p)return;p.statut=statut;
   if(statut==="en_cours"&&!p.agent)p.agent=currentUser.nom;
   if(statut==="fermee")p.agentCloture=currentUser.nom;
-  addTimeline(`Plainte #${id} → ${fmtStatut(statut)} par ${currentUser.nom}`);
+  addTimeline(`Plainte ${p.ref||('#'+id)} → ${fmtStatut(statut)} par ${currentUser.nom}`);
   saveData();renderPlaintes();syncDashboard();closeModal("modal-view-plainte");
 }
 function deletePlainte(id){
@@ -27307,7 +27336,7 @@ function exportCSV(type){
     filename='plaintes_'+new Date().toISOString().slice(0,10)+'.csv';
     rows.push(['Réf.','Plaignant','Accusé','Type','Statut','Description','Date','Agent']);
     (DB.plaintes||[]).forEach(function(p){
-      rows.push([p.id,p.plaignant||'',p.accuse||'',p.type||'',p.statut||'',
+      rows.push([p.ref||('#'+p.id),p.plaignant||'',p.accuse||'',p.type||'',p.statut||'',
         (p.desc||'').replace(/"/g,'""'),p.date||'',p.agent||'']);
     });
   } else if(type==='recensement'){
@@ -32466,6 +32495,53 @@ function _tribNextDossierNum(){
   return prefix + String(maxN+1).padStart(3,'0');
 }
 
+// Helper : référence plainte auto (POL-2026-001)
+// Format propre et lisible, comme TRIB-2026-NNN. Basée sur l'année de la plainte
+// pour que les anciennes gardent leur année d'origine.
+function _plainteNextRef(forDate){
+  var year = new Date(forDate || Date.now()).getFullYear();
+  var prefix = 'POL-'+year+'-';
+  var maxN = 0;
+  (DB.plaintes||[]).forEach(function(p){
+    if(p.ref && p.ref.indexOf(prefix)===0){
+      var n = parseInt(p.ref.replace(prefix,''),10) || 0;
+      if(n > maxN) maxN = n;
+    }
+  });
+  return prefix + String(maxN+1).padStart(3,'0');
+}
+
+// Backfill : attribue une `ref` propre à toutes les plaintes existantes qui n'en ont pas.
+// Trie par date croissante pour que la numérotation suive l'ordre chronologique.
+// Renvoie true si au moins une plainte a été modifiée (pour déclencher saveData).
+function _backfillPlaintesRef(){
+  var arr = DB.plaintes||[];
+  var missing = arr.filter(function(p){ return !p.ref; });
+  if(missing.length === 0) return false;
+  missing.sort(function(a,b){
+    var ta = new Date(a.date||a.id||0).getTime();
+    var tb = new Date(b.date||b.id||0).getTime();
+    return ta - tb;
+  });
+  // Compteur par année basé sur les refs déjà existantes
+  var counters = {};
+  arr.forEach(function(p){
+    if(p.ref){
+      var m = /^POL-(\d{4})-(\d+)$/.exec(p.ref);
+      if(m){
+        var y = m[1], n = parseInt(m[2],10)||0;
+        if(!counters[y] || n > counters[y]) counters[y] = n;
+      }
+    }
+  });
+  missing.forEach(function(p){
+    var year = new Date(p.date||p.id||Date.now()).getFullYear();
+    counters[year] = (counters[year]||0) + 1;
+    p.ref = 'POL-'+year+'-'+String(counters[year]).padStart(3,'0');
+  });
+  return true;
+}
+
 function _tribEsc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 
 function _tribFmtDate(ts){
@@ -32523,6 +32599,8 @@ function tribRenderPage(name){
 function tribRenderPlaintes(){
   if(!el('trib-pl-list')) return;
   if(typeof _tribInit === 'function') _tribInit();
+  // Marquer comme "vu" : badge sidebar reste à 0 tant qu'on est sur la page
+  if(typeof _setRead === 'function') _setRead("juge-plaintes");
   var allPlaintes = (DB.plaintes||[]).filter(function(p){ return p.statut==='transmise_tribunal'; });
   var affaires = (DB.tribunal.affaires||[]);
   // Helper : trouver l'affaire liée à une plainte (si elle existe)
@@ -32543,7 +32621,7 @@ function tribRenderPlaintes(){
   else if(fil === 'liees') list = liees.slice();
   else list = allPlaintes.slice();
   if(q) list = list.filter(function(p){
-    return ((p.plaignant||'')+' '+(p.accuse||'')+' '+(p.type||'')+' '+(p.desc||'')).toLowerCase().indexOf(q) !== -1;
+    return ((p.ref||'')+' '+(p.plaignant||'')+' '+(p.accuse||'')+' '+(p.type||'')+' '+(p.desc||'')).toLowerCase().indexOf(q) !== -1;
   });
   // Tri : à traiter en premier (par date desc), puis liées (par date desc)
   list.sort(function(a,b){
@@ -32580,7 +32658,7 @@ function tribRenderPlaintes(){
         + '<div style="flex:1;min-width:220px">'
           + '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:5px">'
             + statutBadge + typeBadge
-            + '<span style="font-family:\'Share Tech Mono\',monospace;font-size:10px;color:var(--muted);letter-spacing:0.8px">PLAINTE #'+p.id+' · '+dateFmt+'</span>'
+            + '<span style="font-family:\'Share Tech Mono\',monospace;font-size:10px;color:var(--muted);letter-spacing:0.8px">PLAINTE '+_tribEsc(p.ref||('#'+p.id))+' · '+dateFmt+'</span>'
           + '</div>'
           + '<div style="font-family:\'Cinzel\',serif;font-size:15px;font-weight:600;color:var(--text);margin-bottom:3px">'
             + '⚠️ ' + _tribEsc(p.accuse||'(accusé inconnu)')
@@ -32742,6 +32820,8 @@ function tribDeleteAudience(id){
 /* ─── PAGE AFFAIRES ─── */
 function tribRenderAffaires(){
   if(!el('trib-aff-list')) return;
+  // Marquer comme "vu" : tant que le juge est sur la page, le badge sidebar reste à 0
+  if(typeof _setRead === 'function') _setRead("juge-affaires");
   var all = (DB.tribunal.affaires||[]).filter(function(a){ return a.statut!=='cloturee'; });
   // Stats
   if(el('trib-stat-aff-instr'))  el('trib-stat-aff-instr').textContent = all.filter(function(a){ return a.statut==='instruction'; }).length;
@@ -32931,7 +33011,7 @@ function tribShowPlaintesTransmises(){
   } else {
     html += '<div style="font-size:11px;color:var(--muted);margin-bottom:14px;font-family:\'Share Tech Mono\',monospace;letter-spacing:0.5px">'+transmises.length+' plainte'+(transmises.length>1?'s':'')+' transmise'+(transmises.length>1?'s':'')+' à traiter. Cliquez pour ouvrir une affaire à partir d\'une plainte.</div>';
     html += transmises.map(function(p){
-      return '<div style="background:rgba(20,16,9,0.6);border:1px solid rgba(180,140,20,0.15);border-radius:8px;padding:14px 16px;margin-bottom:10px;cursor:pointer;transition:all 0.2s" onclick="tribOpenAffaireFromPlainte('+p.id+')" onmouseover="this.style.borderColor=\'var(--gold2)\'" onmouseout="this.style.borderColor=\'rgba(180,140,20,0.15)\'"><div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:6px"><div style="flex:1;min-width:0"><div style="font-family:\'Cinzel\',serif;font-size:14px;font-weight:600;color:var(--text)">⚠️ '+_tribEsc(p.accuse||'(accusé inconnu)')+'</div><div style="font-size:11px;color:var(--muted);font-family:\'Share Tech Mono\',monospace;margin-top:3px">Plainte #'+p.id+' · '+_tribFmtDateOnly(p.date)+' · Plaignant : '+_tribEsc(p.plaignant||'—')+'</div></div><div style="color:var(--gold2);font-size:18px">→</div></div>'+(p.desc?'<div style="font-size:12px;color:rgba(240,232,208,0.7);line-height:1.5;margin-top:6px">'+_tribEsc(p.desc.slice(0,200))+(p.desc.length>200?'...':'')+'</div>':'')+(p.type?'<div style="margin-top:6px;font-size:10px"><span style="display:inline-block;padding:1px 7px;border-radius:3px;background:rgba(192,65,14,0.12);color:#f97316;border:1px solid rgba(192,65,14,0.3);font-family:\'Share Tech Mono\',monospace;letter-spacing:0.8px">'+_tribEsc(p.type)+'</span></div>':'')+'</div>';
+      return '<div style="background:rgba(20,16,9,0.6);border:1px solid rgba(180,140,20,0.15);border-radius:8px;padding:14px 16px;margin-bottom:10px;cursor:pointer;transition:all 0.2s" onclick="tribOpenAffaireFromPlainte('+p.id+')" onmouseover="this.style.borderColor=\'var(--gold2)\'" onmouseout="this.style.borderColor=\'rgba(180,140,20,0.15)\'"><div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:6px"><div style="flex:1;min-width:0"><div style="font-family:\'Cinzel\',serif;font-size:14px;font-weight:600;color:var(--text)">⚠️ '+_tribEsc(p.accuse||'(accusé inconnu)')+'</div><div style="font-size:11px;color:var(--muted);font-family:\'Share Tech Mono\',monospace;margin-top:3px">Plainte '+_tribEsc(p.ref||('#'+p.id))+' · '+_tribFmtDateOnly(p.date)+' · Plaignant : '+_tribEsc(p.plaignant||'—')+'</div></div><div style="color:var(--gold2);font-size:18px">→</div></div>'+(p.desc?'<div style="font-size:12px;color:rgba(240,232,208,0.7);line-height:1.5;margin-top:6px">'+_tribEsc(p.desc.slice(0,200))+(p.desc.length>200?'...':'')+'</div>':'')+(p.type?'<div style="margin-top:6px;font-size:10px"><span style="display:inline-block;padding:1px 7px;border-radius:3px;background:rgba(192,65,14,0.12);color:#f97316;border:1px solid rgba(192,65,14,0.3);font-family:\'Share Tech Mono\',monospace;letter-spacing:0.8px">'+_tribEsc(p.type)+'</span></div>':'')+'</div>';
     }).join('');
   }
   html += '</div><div class="modal-footer"><button class="btn btn-outline" onclick="document.getElementById(\'trib-modal\').remove()">Fermer</button></div></div>';
@@ -32957,7 +33037,7 @@ function tribOpenAffaireFromPlainte(plainteId){
       if(el('trib-aff-accuse')) el('trib-aff-accuse').value = p.accuse||'';
       if(el('trib-aff-parties')) el('trib-aff-parties').value = 'Plaignant : '+(p.plaignant||'—');
       if(el('trib-aff-charges')) el('trib-aff-charges').value = (p.type?p.type+'\n\n':'') + (p.desc||'');
-      if(el('trib-aff-notes')) el('trib-aff-notes').value = 'Issue de la plainte Police #'+p.id+' du '+_tribFmtDateOnly(p.date);
+      if(el('trib-aff-notes')) el('trib-aff-notes').value = 'Issue de la plainte Police '+(p.ref||('#'+p.id))+' du '+_tribFmtDateOnly(p.date);
     }, 100);
   }, 100);
 }
@@ -32988,7 +33068,7 @@ function tribRenderJugements(){
     var vi = _tribVerdictInfo(j.verdict);
     var aff = (DB.tribunal.affaires||[]).find(function(a){ return a.id===j.affaireId; });
     var actions = canEdit
-      ? '<div style="display:flex;gap:5px"><button class="btn btn-outline btn-sm" onclick="tribOpenJugement('+j.id+')">✏️</button>'+(j.verdict==='coupable'||j.verdict==='reduit'?'<button class="btn btn-gold btn-sm" onclick="tribCreateJurisprudence('+j.id+')" title="Créer un précédent">📜+</button>':'')+'<button class="btn btn-danger btn-sm" onclick="tribDeleteJugement('+j.id+')">🗑</button></div>'
+      ? '<div style="display:flex;gap:5px"><button class="btn btn-outline btn-sm" onclick="tribOpenJugement('+j.id+')">✏️</button>'+(j.verdict==='coupable'||j.verdict==='reduit'||j.verdict==='acquitte'?'<button class="btn btn-gold btn-sm" onclick="tribCreateJurisprudence('+j.id+')" title="Créer un précédent">📜+</button>':'')+'<button class="btn btn-danger btn-sm" onclick="tribDeleteJugement('+j.id+')">🗑</button></div>'
       : '';
     return '<div class="card" style="margin-bottom:12px;padding:0;overflow:hidden;border-left:3px solid '+vi.color+'">'+
       '<div style="padding:14px 18px;background:linear-gradient(90deg,'+vi.bg+',transparent);display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">'+
@@ -33023,7 +33103,29 @@ function tribOpenJugement(editId, affaireIdHint){
   var defAccuse = ed?ed.accuse:(hintAff?hintAff.accuse:'');
   var defCharges = ed?ed.charges:(hintAff?hintAff.charges:'');
   var defJuge = ed?ed.juge:(hintAff?hintAff.juge:'');
-  modal.innerHTML = '<div class="modal" style="max-width:620px"><div class="modal-header"><h3>'+(ed?'✏️ Modifier le jugement':'⚖️ Rendre un jugement')+'</h3><span class="modal-close" onclick="document.getElementById(\'trib-modal\').remove()">✕</span></div><div class="modal-body"><div class="form-group"><label class="form-label">Affaire associée</label><select id="trib-jug-affaire" class="form-control">'+affOpts+'</select></div><div class="grid grid-2" style="gap:12px"><div class="form-group"><label class="form-label">Accusé</label><input type="text" id="trib-jug-accuse" class="form-control" value="'+_tribEsc(defAccuse)+'"></div><div class="form-group"><label class="form-label">Juge</label><input type="text" id="trib-jug-juge" class="form-control" value="'+_tribEsc(defJuge)+'"></div></div><div class="form-group"><label class="form-label">Verdict</label><select id="trib-jug-verdict-input" class="form-control"><option value="acquitte"'+(ed&&ed.verdict==='acquitte'?' selected':'')+'>✓ Acquitté</option><option value="coupable"'+(ed&&ed.verdict==='coupable'?' selected':'')+'>⚠ Coupable</option><option value="reduit"'+(ed&&ed.verdict==='reduit'?' selected':'')+'>◆ Charges réduites</option><option value="renvoi"'+(ed&&ed.verdict==='renvoi'?' selected':'')+'>↻ Renvoyé pour complément d\'enquête</option></select></div><div class="form-group"><label class="form-label">Charges retenues</label><textarea id="trib-jug-charges" class="form-control" rows="3">'+_tribEsc(defCharges)+'</textarea></div><div class="form-group"><label class="form-label">Motifs du jugement</label><textarea id="trib-jug-motifs" class="form-control" rows="4" placeholder="Considérants juridiques, raisonnement du tribunal...">'+_tribEsc(ed?ed.motifs||'':'')+'</textarea></div><div class="form-group"><label class="form-label">Sanction prononcée</label><textarea id="trib-jug-sanction" class="form-control" rows="2" placeholder="Ex: 3 mois de suspension de mission, amende de 50 000 ryos...">'+_tribEsc(ed?ed.sanction||'':'')+'</textarea></div></div><div class="modal-footer"><button class="btn btn-outline" onclick="document.getElementById(\'trib-modal\').remove()">Annuler</button>'+(ed?'<button class="btn btn-danger" onclick="tribDeleteJugement('+ed.id+');document.getElementById(\'trib-modal\').remove()">🗑 Supprimer</button>':'')+'<button class="btn btn-primary" onclick="tribSaveJugement('+(ed?ed.id:'null')+')">⚖️ Rendre le jugement</button></div></div>';
+  // Verdict par défaut : si on conclut un délibéré, utiliser le verdict majoritaire issu du vote collégial.
+  // Sinon (pas de vote ou édition d'un jugement existant), garder le comportement original.
+  var defVerdict = ed ? ed.verdict : null;
+  if(!ed && hintAff && hintAff.votes){
+    var counts = { acquitte:0, coupable:0, reduit:0 };
+    Object.keys(hintAff.votes).forEach(function(uid){
+      var v = hintAff.votes[uid];
+      if(v && counts[v.vote]!==undefined) counts[v.vote]++;
+    });
+    var totalV = counts.acquitte+counts.coupable+counts.reduit;
+    if(totalV > 0){
+      // Verdict majoritaire ; en cas d'égalité, priorité à l'option la plus favorable à l'accusé
+      // (présomption d'innocence) : acquitte > reduit > coupable.
+      var ordered = ['acquitte','reduit','coupable'];
+      var winner = ordered[0], maxN = -1;
+      ordered.forEach(function(v){
+        if(counts[v] > maxN){ maxN = counts[v]; winner = v; }
+      });
+      defVerdict = winner;
+    }
+  }
+  function _selIfV(v){ return defVerdict===v ? ' selected' : ''; }
+  modal.innerHTML = '<div class="modal" style="max-width:620px"><div class="modal-header"><h3>'+(ed?'✏️ Modifier le jugement':'⚖️ Rendre un jugement')+'</h3><span class="modal-close" onclick="document.getElementById(\'trib-modal\').remove()">✕</span></div><div class="modal-body"><div class="form-group"><label class="form-label">Affaire associée</label><select id="trib-jug-affaire" class="form-control">'+affOpts+'</select></div><div class="grid grid-2" style="gap:12px"><div class="form-group"><label class="form-label">Accusé</label><input type="text" id="trib-jug-accuse" class="form-control" value="'+_tribEsc(defAccuse)+'"></div><div class="form-group"><label class="form-label">Juge</label><input type="text" id="trib-jug-juge" class="form-control" value="'+_tribEsc(defJuge)+'"></div></div><div class="form-group"><label class="form-label">Verdict</label><select id="trib-jug-verdict-input" class="form-control"><option value="acquitte"'+_selIfV('acquitte')+'>✓ Acquitté</option><option value="coupable"'+_selIfV('coupable')+'>⚠ Coupable</option><option value="reduit"'+_selIfV('reduit')+'>◆ Charges réduites</option><option value="renvoi"'+_selIfV('renvoi')+'>↻ Renvoyé pour complément d\'enquête</option></select></div><div class="form-group"><label class="form-label">Charges retenues</label><textarea id="trib-jug-charges" class="form-control" rows="3">'+_tribEsc(defCharges)+'</textarea></div><div class="form-group"><label class="form-label">Motifs du jugement</label><textarea id="trib-jug-motifs" class="form-control" rows="4" placeholder="Considérants juridiques, raisonnement du tribunal...">'+_tribEsc(ed?ed.motifs||'':'')+'</textarea></div><div class="form-group"><label class="form-label">Sanction prononcée</label><textarea id="trib-jug-sanction" class="form-control" rows="2" placeholder="Ex: 3 mois de suspension de mission, amende de 50 000 ryos...">'+_tribEsc(ed?ed.sanction||'':'')+'</textarea></div></div><div class="modal-footer"><button class="btn btn-outline" onclick="document.getElementById(\'trib-modal\').remove()">Annuler</button>'+(ed?'<button class="btn btn-danger" onclick="tribDeleteJugement('+ed.id+');document.getElementById(\'trib-modal\').remove()">🗑 Supprimer</button>':'')+'<button class="btn btn-primary" onclick="tribSaveJugement('+(ed?ed.id:'null')+')">⚖️ Rendre le jugement</button></div></div>';
   document.body.appendChild(modal);
 }
 
@@ -33078,10 +33180,57 @@ function tribCreateJurisprudence(jugementId){
   // Vérifier si déjà créé
   var existing = (DB.tribunal.jurisprudence||[]).find(function(jr){ return jr.jugementId===jugementId; });
   if(existing){ showToast('Un précédent existe déjà pour ce jugement.','info'); return; }
-  var titre = prompt('Titre du précédent (ex: "Affaire de la falsification des grades 2026") :', j.accuse+' — '+_tribFmtDateOnly(j.date));
-  if(!titre) return;
-  var resume = prompt('Résumé du principe juridique établi par ce jugement :', j.motifs ? j.motifs.slice(0,200) : '');
-  if(resume === null) return;
+  // Modale propre avec titre + résumé en un seul écran
+  var oldModal = document.getElementById('trib-modal'); if(oldModal) oldModal.remove();
+  var modal = document.createElement('div');
+  modal.id = 'trib-modal';
+  modal.className = 'modal-overlay open';
+  var defaultTitre = _tribEsc(j.accuse + ' — ' + _tribFmtDateOnly(j.date));
+  var defaultResume = _tribEsc(j.motifs ? j.motifs.slice(0,500) : '');
+  modal.innerHTML =
+    '<div class="modal" style="max-width:600px">'
+      + '<div class="modal-header">'
+        + '<h3>📜 Créer un précédent juridique</h3>'
+        + '<span class="modal-close" onclick="document.getElementById(\'trib-modal\').remove()">✕</span>'
+      + '</div>'
+      + '<div class="modal-body">'
+        + '<div style="background:rgba(124,58,237,0.06);border-left:3px solid rgba(124,58,237,0.55);padding:11px 14px;margin-bottom:14px;border-radius:6px">'
+          + '<div style="font-family:\'Share Tech Mono\',monospace;font-size:10px;letter-spacing:1.2px;color:rgba(180,140,220,0.95);margin-bottom:4px">JUGEMENT SOURCE</div>'
+          + '<div style="font-size:13px;color:var(--text)"><strong>'+_tribEsc(j.accuse||'?')+'</strong> · '+_tribEsc(j.charges||'')+'</div>'
+        + '</div>'
+        + '<div class="form-group">'
+          + '<label class="form-label">Titre du précédent <span style="color:var(--accent)">*</span></label>'
+          + '<input type="text" id="trib-jur-titre-input" class="form-control" value="'+defaultTitre+'" placeholder="Ex : Affaire de la falsification des grades 2026">'
+          + '<div style="font-size:10.5px;color:var(--muted);margin-top:5px;font-family:\'Share Tech Mono\',monospace;letter-spacing:0.4px">Le titre sous lequel ce précédent sera référencé dans la jurisprudence.</div>'
+        + '</div>'
+        + '<div class="form-group" style="margin-bottom:0">'
+          + '<label class="form-label">Résumé du principe juridique établi <span style="color:var(--accent)">*</span></label>'
+          + '<textarea id="trib-jur-resume-input" class="form-control" rows="6" placeholder="Quel principe ce jugement établit-il ? Quelle interprétation de la loi pour les juges futurs ?">'+defaultResume+'</textarea>'
+          + '<div style="font-size:10.5px;color:var(--muted);margin-top:5px;font-family:\'Share Tech Mono\',monospace;letter-spacing:0.4px">Décris le principe que les futurs juges pourront citer en appui d\'une décision similaire.</div>'
+        + '</div>'
+      + '</div>'
+      + '<div class="modal-footer">'
+        + '<button class="btn btn-outline" onclick="document.getElementById(\'trib-modal\').remove()">Annuler</button>'
+        + '<button class="btn btn-primary" onclick="_tribSaveJurisprudence('+jugementId+')">📜 Créer le précédent</button>'
+      + '</div>'
+    + '</div>';
+  document.body.appendChild(modal);
+  // Focus auto sur le titre
+  setTimeout(function(){ var inp = el('trib-jur-titre-input'); if(inp) inp.focus(); inp && inp.select(); }, 80);
+}
+
+// Helper interne : appelé depuis le bouton "Créer" de la modale
+function _tribSaveJurisprudence(jugementId){
+  if(!tribCanEdit()) return;
+  var j = (DB.tribunal.jugements||[]).find(function(x){ return x.id===jugementId; });
+  if(!j) return;
+  var titre = (el('trib-jur-titre-input')||{}).value || '';
+  var resume = (el('trib-jur-resume-input')||{}).value || '';
+  titre = titre.trim();
+  resume = resume.trim();
+  if(!titre){ showToast('Le titre du précédent est obligatoire.','error'); var t = el('trib-jur-titre-input'); if(t) t.focus(); return; }
+  if(!resume){ showToast('Le résumé du principe juridique est obligatoire.','error'); var r = el('trib-jur-resume-input'); if(r) r.focus(); return; }
+  DB.tribunal.jurisprudence = DB.tribunal.jurisprudence || [];
   DB.tribunal.jurisprudence.push({
     id: Date.now(),
     jugementId: jugementId,
@@ -33095,8 +33244,11 @@ function tribCreateJurisprudence(jugementId){
     auteur: (currentUser&&(currentUser.nom||currentUser.login))||'?'
   });
   _tribSave();
+  var modal = document.getElementById('trib-modal'); if(modal) modal.remove();
   showToast('📜 Précédent juridique créé !','success');
   tribRenderJugements();
+  // Si on est sur la page Archives → onglet Jurisprudence, refresh aussi
+  if(typeof tribRenderJurisprudence === 'function' && el('trib-jur-list')) tribRenderJurisprudence();
 }
 
 /* ─── PAGE PROCÉDURE ─── */
@@ -33207,7 +33359,7 @@ function tribRenderJurisprudence(){
   var list = q ? all.filter(function(j){ return ((j.titre||'')+' '+(j.resume||'')+' '+(j.accuse||'')+' '+(j.charges||'')).toLowerCase().indexOf(q) !== -1; }) : all.slice();
   list.sort(function(a,b){ return (b.date||0) - (a.date||0); });
   if(list.length === 0){
-    el('trib-jur-list').innerHTML = '<div class="card" style="padding:48px 20px;text-align:center"><div style="font-size:42px;opacity:0.35;margin-bottom:10px">📜</div><div style="color:var(--muted);font-family:\'Share Tech Mono\',monospace;letter-spacing:1px;font-size:11px">Aucun précédent juridique enregistré</div><div style="font-size:11px;color:var(--muted);margin-top:6px">Créez un précédent depuis un jugement (icône 📜+ sur les jugements coupables)</div></div>';
+    el('trib-jur-list').innerHTML = '<div class="card" style="padding:48px 20px;text-align:center"><div style="font-size:42px;opacity:0.35;margin-bottom:10px">📜</div><div style="color:var(--muted);font-family:\'Share Tech Mono\',monospace;letter-spacing:1px;font-size:11px">Aucun précédent juridique enregistré</div><div style="font-size:11px;color:var(--muted);margin-top:6px">Créez un précédent depuis un jugement rendu (icône 📜+ à côté du jugement)</div></div>';
     return;
   }
   var canEdit = tribCanEdit();
