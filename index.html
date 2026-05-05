@@ -28639,7 +28639,7 @@ function sendNotifTimeline(){
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', function() {
     var swContent = `
-const CACHE='suna-v1';
+const CACHE='suna-v2-csp-fix';
 const STATIC=['./','/index.html'];
 self.addEventListener('install',e=>{
   e.waitUntil(caches.open(CACHE).then(c=>c.addAll(STATIC)).catch(()=>{}));
@@ -28651,6 +28651,9 @@ self.addEventListener('activate',e=>{
 });
 self.addEventListener('fetch',e=>{
   if(e.request.method!=='GET')return;
+  // Bug-fix CSP : ignorer les data: URLs (images base64 des recensés/dossiers/etc).
+  // Sans ça, le SW déclenche un fetch() sur ces URLs ce qui viole connect-src.
+  if(e.request.url.startsWith('data:')||e.request.url.startsWith('blob:'))return;
   if(e.request.url.includes('firebaseio')||e.request.url.includes('googleapis')||e.request.url.includes('gstatic'))return;
   e.respondWith(fetch(e.request).catch(()=>caches.match(e.request)));
 });
