@@ -20071,7 +20071,7 @@ function viewRecense(id){
     ? `<div class="rcv2-fiche-block"><div class="rcv2-fiche-block-title">🏛 Affiliation civile</div><div class="rcv2-fiche-natures-bar">${r.metier?`<span class="badge" style="background:rgba(168,85,247,0.18);border-color:rgba(168,85,247,0.4);color:#c084fc">💼 ${esc(r.metier)}</span>`:""}${r.clan?`<span class="badge" style="background:rgba(34,197,94,0.18);border-color:rgba(34,197,94,0.4);color:#86efac">🏛 Clan ${esc(r.clan)}</span>`:""}</div></div>`
     : "";
   const defuntHTML = (r.defuntStatut === "defunt-suna" || r.defuntStatut === "execution")
-    ? `<div class="rcv2-fiche-block" style="border-color:rgba(0,0,0,0.6);background:rgba(0,0,0,0.25)"><div class="rcv2-fiche-block-title" style="color:#aaa">⚱ Statut</div><div class="rcv2-fiche-text" style="color:${r.defuntStatut==='execution'?'#ef4444':'#94a3b8'};font-weight:600;letter-spacing:1px">${r.defuntStatut === "execution" ? "⚔️ DÉFUNT — EXÉCUTÉ" : "⚱️ DÉFUNT DE SUNA"}</div></div>`
+    ? `<div class="rcv2-fiche-block" style="border-color:rgba(0,0,0,0.6);background:rgba(0,0,0,0.25)"><div class="rcv2-fiche-block-title" style="color:#aaa">⚱ Statut</div><div class="rcv2-fiche-text" style="color:${r.defuntStatut==='execution'?'#ff3737':'#94a3b8'};font-weight:600;letter-spacing:1px">${r.defuntStatut === "execution" ? "⚔️ MORT PAR EXÉCUTION" : "⚱️ DÉFUNT DE SUNA"}</div></div>`
     : "";
 
   vrBody.innerHTML=`
