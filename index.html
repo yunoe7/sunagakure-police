@@ -13469,6 +13469,7 @@ document.addEventListener('error', function(e){
           <select id="admin-role-filter" class="form-control" style="max-width:140px;padding:6px 10px;font-size:11px;margin:0" onchange="renderAdmin()">
             <option value="">Tous les rôles</option>
             <option value="admin">🔴 Admin</option>
+            <option value="hautcommandement">🎖️ Haut Commandement</option>
             <option value="officier">Officier</option>
             <option value="gerant">Gérant</option>
             <option value="cogerant">Co-Gérant</option>
@@ -15838,6 +15839,7 @@ function plv2SelectCible(el,val){
             <option value="sergent">⚔️ Sergent</option>
             <option value="cogerant">🥈 Co-Gérant</option>
             <option value="gerant">🏛️ Gérant</option>
+            <option value="hautcommandement" id="eu-role-hc-opt">🎖️ Haut Commandement</option>
             <option value="admin" id="eu-role-admin-opt">🔴 Administrateur</option>
           </select></div>
       </div>
@@ -18530,9 +18532,12 @@ function applyLogin(){
   el("login-screen").style.display="none";
   el("user-name-display").textContent=currentUser.nom;
   // Pour les admins : afficher "ADMIN · ACCÈS GLOBAL" pour qu'ils sachent qu'ils ont tout
+  // Pour le haut commandement : badge OVERSIGHT (toutes sections sauf panel admin)
   // Pour les autres : "Rôle · Grade" comme avant
   if(currentUser.role === 'admin'){
     el("user-rank-display").innerHTML = roleLabel(currentUser.role, currentUser.section)+" · "+currentUser.grade+' <span style="display:inline-block;margin-left:4px;font-size:8px;padding:1px 5px;background:rgba(220,38,38,0.15);color:#dc2626;border:1px solid rgba(220,38,38,0.4);border-radius:3px;font-family:\'Share Tech Mono\',monospace;letter-spacing:1px;vertical-align:middle">🔓 ALL</span>';
+  } else if(currentUser.role === 'hautcommandement'){
+    el("user-rank-display").innerHTML = roleLabel(currentUser.role, currentUser.section)+" · "+currentUser.grade+' <span style="display:inline-block;margin-left:4px;font-size:8px;padding:1px 5px;background:rgba(139,92,246,0.15);color:#a78bfa;border:1px solid rgba(139,92,246,0.4);border-radius:3px;font-family:\'Share Tech Mono\',monospace;letter-spacing:1px;vertical-align:middle">👁 OVERSIGHT</span>';
   } else {
     el("user-rank-display").textContent=roleLabel(currentUser.role, currentUser.section)+" · "+currentUser.grade;
   }
@@ -18547,8 +18552,10 @@ function applyLogin(){
     item.style.display=isVisiteur()?'none':'';
   });
   if(canModify()){
-    el("nav-admin").style.display="flex";
-    const ditAdmin=el("ditem-admin");if(ditAdmin)ditAdmin.style.display="flex";
+    // Le bouton "Panel Admin" est strictement réservé au rôle admin (pas même au haut commandement)
+    if(isAdmin()) el("nav-admin").style.display="flex";
+    else el("nav-admin").style.display="none";
+    const ditAdmin=el("ditem-admin");if(ditAdmin)ditAdmin.style.display=isAdmin()?"flex":"none";
     ["btn-new-annonce","btn-new-dossier","btn-new-operation","btn-new-sanction"].forEach(id=>{const e=el(id);if(e)e.style.display="inline-flex"});
     // Boutons export visibles uniquement pour les admins
     if(isAdmin()){document.querySelectorAll('[data-export-btn]').forEach(b=>b.style.display="inline-flex");["btn-export-cand","btn-export-sanctions"].forEach(id=>{const e=el(id);if(e)e.style.display="inline-flex";});}
@@ -18575,9 +18582,13 @@ function applyLogin(){
     const lp=sessionStorage.getItem("suna_active_page");
     if(lp&&PAGES[lp]){
       // BYPASS ADMIN : les admins peuvent revenir sur n'importe quelle page
-      var isFullAccessLogin = !!(currentUser && currentUser.role === 'admin');
+      // BYPASS HAUT COMMANDEMENT : idem, sauf le panel admin (filtré ci-dessous via ALL_OK)
+      var isFullAccessLogin = !!(currentUser && (currentUser.role === 'admin' || currentUser.role === 'hautcommandement'));
       if(isFullAccessLogin){
-        if(!isVisiteur()||VISITOR_PAGES.includes(lp)) lastPage=lp;
+        // Le haut commandement ne peut PAS restaurer la page admin
+        if(lp === 'admin' && currentUser.role !== 'admin'){
+          // ignore, on retombera sur dashboard
+        } else if(!isVisiteur()||VISITOR_PAGES.includes(lp)) lastPage=lp;
       } else {
         // Vérifier que la page est accessible depuis la section du user
         var ALL_OK = ['dashboard','bingobook','codepenal','histoire','profil','admin','messagerie'].includes(lp);
@@ -18608,7 +18619,8 @@ function showLoginErr(msg){const e=el("login-alert");e.textContent=msg;e.style.d
 function _applySectionUI(){
   var section = (currentUser && currentUser.section) || 'police';
   // BYPASS ADMIN : un compte admin a accès à TOUTES les sections, peu importe sa section d'origine
-  var isFullAccess = !!(currentUser && currentUser.role === 'admin');
+  // BYPASS HAUT COMMANDEMENT : idem, oversight transverse sur toutes les sections (sauf le panel admin, géré ailleurs)
+  var isFullAccess = !!(currentUser && (currentUser.role === 'admin' || currentUser.role === 'hautcommandement'));
   document.querySelectorAll('[data-sec]').forEach(function(el){
     var sec = el.getAttribute('data-sec');
     if(isFullAccess || sec === 'all' || sec === section){
@@ -18777,7 +18789,8 @@ function showPage(name){
   // Pages "all" (visibles partout) : dashboard, bingobook, codepenal, histoire, profil, admin, messagerie
   // + diplo-laissezpasse (laissez-passer publics, visibles par tous, modifiables uniquement par diplomates)
   // BYPASS ADMIN : les admins ont accès à tout, peu importe leur section
-  var isFullAccess = !!(currentUser && currentUser.role === 'admin');
+  // BYPASS HAUT COMMANDEMENT : oversight transverse sur toutes les pages, sauf le panel admin (bloqué plus bas)
+  var isFullAccess = !!(currentUser && (currentUser.role === 'admin' || currentUser.role === 'hautcommandement'));
   var ALL_PAGES = ['dashboard','bingobook','codepenal','histoire','profil','admin','messagerie','diplo-laissezpasse'];
   var SECTION_PREFIXES = { juge:/^juge-/, avocat:/^avocat-/, mission:/^mission-/, medical:/^(medical|sci|compta)-/, diplomatie:/^diplo-/ };
   var POLICE_PAGES = ['annonces','recensement','recrutement','plaintes','dossiers','operations','effectifs','sanctions','impots','hierarchie'];
@@ -22653,13 +22666,14 @@ function _renderEffectifsOrig(){
   let users=actifs;
   if(q)users=users.filter(u=>(u.nom+u.login+u.grade+u.role).toLowerCase().includes(q));
   // Ordre : admins en premier, puis par rôle
-  const roleOrder={admin:0,gerant:1,cogerant:2,sergent:3,officier:4,membre:5,stagiaire:6,visiteur:7};
+  const roleOrder={admin:0,hautcommandement:1,gerant:2,cogerant:3,sergent:4,officier:5,membre:6,stagiaire:7,visiteur:8};
   users=[...users].sort((a,b)=>(roleOrder[a.role]??9)-(roleOrder[b.role]??9));
 
   const _effGrid=el("effectifs-grid");if(!_effGrid)return;
   _effGrid.innerHTML=users.map(u=>{
     const initiale=u.nom?u.nom.charAt(0).toUpperCase():"?";
     const avatarBg=u.role==="admin"?"linear-gradient(135deg,#dc2626,#7f1d1d)":
+                   u.role==="hautcommandement"?"linear-gradient(135deg,#a78bfa,#6d28d9)":
                    ["gerant","cogerant"].includes(u.role)?"linear-gradient(135deg,#b8860b,#78590a)":
                    u.role==="officier"?"linear-gradient(135deg,#1d4ed8,#1e3a8a)":
                    "linear-gradient(135deg,var(--accent),#a03408)";
@@ -22976,6 +22990,9 @@ function openEditUser(id){
   // Hide admin option for non-admins
   const adminOpt=el("eu-role-admin-opt");
   if(adminOpt)adminOpt.style.display=isAdmin()?"":"none";
+  // Idem pour Haut Commandement : seul un admin peut promouvoir à ce rôle (oversight transverse)
+  const hcOpt=el("eu-role-hc-opt");
+  if(hcOpt)hcOpt.style.display=isAdmin()?"":"none";
   // PERMISSION GRADE/RÔLE/SECTION : seuls Admin et Gérant peuvent les modifier
   const canEdit = canEditGrade();
   const gradeSelect = el("eu-grade");
@@ -23109,6 +23126,15 @@ function saveEditUser(){
   const canEdit = canEditGrade();
   if(!canEdit && (newGrade !== u.grade || newRole !== u.role)){
     showToast("⛔ Seuls les Administrateurs et Gérants peuvent modifier le grade et le rôle.","error");return;
+  }
+  // SÉCURITÉ HAUT COMMANDEMENT : seul un Admin peut promouvoir au rôle Haut Commandement
+  // (le Gérant peut éditer les autres rôles mais pas celui-ci, qui donne accès à toutes les sections).
+  if(newRole === 'hautcommandement' && u.role !== 'hautcommandement' && !isAdmin()){
+    showToast("⛔ Seul un Administrateur peut attribuer le rôle Haut Commandement.","error");return;
+  }
+  // Symétrique : seul un Admin peut RETIRER le rôle Haut Commandement
+  if(u.role === 'hautcommandement' && newRole !== 'hautcommandement' && !isAdmin()){
+    showToast("⛔ Seul un Administrateur peut retirer le rôle Haut Commandement.","error");return;
   }
   // SÉCURITÉ NOM / MOT DE PASSE : seuls les Admins peuvent les modifier
   // (double check : même si le bypass via console désactive readOnly, on refuse côté JS)
@@ -24611,7 +24637,7 @@ function renderEffectifsCharts(){
     var roleMap = {};
     users.forEach(function(u){
       var r = u.role||"stagiaire";
-      var lb = {admin:"Admin",gerant:"Gérant",cogerant:"Co-Gérant",sergent:"Sergent",officier:"Officier",stagiaire:"Stagiaire",visiteur:"Visiteur"}[r]||r;
+      var lb = {admin:"Admin",hautcommandement:"Haut Commandement",gerant:"Gérant",cogerant:"Co-Gérant",sergent:"Sergent",officier:"Officier",stagiaire:"Stagiaire",visiteur:"Visiteur"}[r]||r;
       roleMap[lb]=(roleMap[lb]||0)+1;
     });
     var rl = Object.keys(roleMap), rd = rl.map(function(k){return roleMap[k];});
@@ -24632,19 +24658,20 @@ function renderEffectifsCharts(){
 }
 
 // ─── RÔLES / HIÉRARCHIE ──────────────────────────────────────────
-function rolePriority(r){return{admin:0,gerant:1,cogerant:2,sergent:3,officier:4,membre:5,stagiaire:6,visiteur:9}[r]||7}
-function roleColor(r){return{admin:"#dc2626",gerant:"#b8860b",cogerant:"#0e7490",sergent:"#c0410e",officier:"#1d4ed8",stagiaire:"#6b7280",visiteur:"#9ca3af"}[r]||"#9ca3af"}
-function roleIcon(r){return{admin:"🔴",gerant:"🏛️",cogerant:"🥈",sergent:"⚔️",officier:"🔵",stagiaire:"🌱",visiteur:"👁"}[r]||"👤"}
+function rolePriority(r){return{admin:0,hautcommandement:1,gerant:2,cogerant:3,sergent:4,officier:5,membre:6,stagiaire:7,visiteur:9}[r]||8}
+function roleColor(r){return{admin:"#dc2626",hautcommandement:"#a78bfa",gerant:"#b8860b",cogerant:"#0e7490",sergent:"#c0410e",officier:"#1d4ed8",stagiaire:"#6b7280",visiteur:"#9ca3af"}[r]||"#9ca3af"}
+function roleIcon(r){return{admin:"🔴",hautcommandement:"🎖️",gerant:"🏛️",cogerant:"🥈",sergent:"⚔️",officier:"🔵",stagiaire:"🌱",visiteur:"👁"}[r]||"👤"}
 
 function renderHierarchie(){
   var container = el("hierarchy-container"); if(!container) return;
   var users = (DB.users||[]).filter(function(u){return u.statut!=="Désactivé";});
   
   // Grouper par rôle dans l'ordre
-  var ROLE_ORDER = ["admin","gerant","cogerant","sergent","officier","stagiaire"];
-  var ROLE_LABELS = {admin:"Administrateur",gerant:"Gérant",cogerant:"Co-Gérant",sergent:"Sergent",officier:"Officier",stagiaire:"Stagiaire"};
+  var ROLE_ORDER = ["admin","hautcommandement","gerant","cogerant","sergent","officier","stagiaire"];
+  var ROLE_LABELS = {admin:"Administrateur",hautcommandement:"Haut Commandement",gerant:"Gérant",cogerant:"Co-Gérant",sergent:"Sergent",officier:"Officier",stagiaire:"Stagiaire"};
   var ROLE_DESC = {
     admin:"Accès total — gestion technique du système",
+    hautcommandement:"Oversight transverse — supervision de toutes les sections (sauf panel admin)",
     gerant:"Direction suprême de la Police de Sunagakure",
     cogerant:"Bras droit du Gérant — administration générale",
     sergent:"Commandement de terrain — supervision des opérations",
@@ -24719,7 +24746,7 @@ function renderHierarchie(){
   container.innerHTML = html;
 }
 
-function canModify(){return currentUser&&(currentUser.role==="admin"||currentUser.role==="gerant"||currentUser.role==="cogerant"||currentUser.role==="sergent"||currentUser.role==="officier")}
+function canModify(){return currentUser&&(currentUser.role==="admin"||currentUser.role==="hautcommandement"||currentUser.role==="gerant"||currentUser.role==="cogerant"||currentUser.role==="sergent"||currentUser.role==="officier")}
 function isAdmin(){return currentUser&&currentUser.role==="admin"}
 // Permission renforcée : seuls Admin et Gérant peuvent modifier le grade/rôle d'un compte
 function canEditGrade(){return currentUser&&(currentUser.role==="admin"||currentUser.role==="gerant")}
@@ -24823,9 +24850,9 @@ function statutCand(s){return{en_attente:"badge-blue",acceptee:"badge-green",ref
 function fmtCand(s){return{en_attente:"En attente",acceptee:"Acceptée",refusee:"Refusée"}[s]||s}
 function dangerBadge(d){return{Faible:"badge-green",Modéré:"badge-blue",Élevé:"badge-gold",Extrême:"badge-red"}[d]||"badge-gray"}
 function dossierStatutBadge(s){return{Recherché:"badge-red","En garde à vue":"badge-gold",Incarcéré:"badge-blue",Libéré:"badge-gray",Surveillé:"badge-gold"}[s]||"badge-gray"}
-function roleBadge(r){return{admin:"badge-red",gerant:"badge-gold",cogerant:"badge-cyan",sergent:"badge-orange",officier:"badge-blue",membre:"badge-green",stagiaire:"badge-gray",visiteur:"badge-gray"}[r]||"badge-gray"}
+function roleBadge(r){return{admin:"badge-red",hautcommandement:"badge-purple",gerant:"badge-gold",cogerant:"badge-cyan",sergent:"badge-orange",officier:"badge-blue",membre:"badge-green",stagiaire:"badge-gray",visiteur:"badge-gray"}[r]||"badge-gray"}
 // Labels de rôle par défaut (= Police). Mapping rôle interne → label affiché.
-var DEFAULT_ROLE_LABELS = {admin:"🔴 Admin",gerant:"🏛️ Gérant",cogerant:"🥈 Co-Gérant",sergent:"⚔️ Sergent",officier:"🔵 Officier",membre:"👥 Membre",stagiaire:"🌱 Stagiaire",visiteur:"👁 Visiteur"};
+var DEFAULT_ROLE_LABELS = {admin:"🔴 Admin",hautcommandement:"🎖️ Haut Commandement",gerant:"🏛️ Gérant",cogerant:"🥈 Co-Gérant",sergent:"⚔️ Sergent",officier:"🔵 Officier",membre:"👥 Membre",stagiaire:"🌱 Stagiaire",visiteur:"👁 Visiteur"};
 // Mapping par section : permet de personnaliser l'affichage des rôles selon le département.
 // Le rôle technique reste le même (ex: "officier" pour les permissions), seul le LABEL change.
 // Pour les sections non listées, on utilise DEFAULT_ROLE_LABELS.
@@ -24902,15 +24929,19 @@ function populateRoleSelectForSection(selectId, section){
   if(!sel) return;
   var prevValue = sel.value;
   // Liste de référence : tous les rôles de DEFAULT_ROLE_LABELS dans l'ordre logique
-  var ALL_ROLES = ['visiteur','stagiaire','membre','officier','sergent','cogerant','gerant','admin'];
+  var ALL_ROLES = ['visiteur','stagiaire','membre','officier','sergent','cogerant','gerant','hautcommandement','admin'];
   var excludes = (section && SECTION_ROLE_EXCLUDES[section]) || [];
   var html = '';
   ALL_ROLES.forEach(function(role){
     if(excludes.indexOf(role) !== -1) return; // rôle exclu pour cette section
     // Cacher 'admin' par défaut sauf si c'était déjà le rôle de l'option (compat avec eu-role-admin-opt)
     if(role === 'admin' && selectId === 'u-role') return; // création : pas de choix admin
+    // Idem pour hautcommandement : ne pas l'exposer à la création (rôle sensible cross-section), seulement à l'édition par un admin
+    if(role === 'hautcommandement' && selectId === 'u-role') return;
     var label = roleLabel(role, section);
-    var idAttr = (role === 'admin' && selectId === 'eu-role') ? ' id="eu-role-admin-opt"' : '';
+    var idAttr = '';
+    if(role === 'admin' && selectId === 'eu-role') idAttr = ' id="eu-role-admin-opt"';
+    else if(role === 'hautcommandement' && selectId === 'eu-role') idAttr = ' id="eu-role-hc-opt"';
     html += '<option value="'+role+'"'+idAttr+'>'+esc(label)+'</option>';
   });
   sel.innerHTML = html;
@@ -28254,7 +28285,7 @@ function renderProfil(){
   var gr = document.getElementById('profil-grade'); if(gr) gr.textContent=(u.grade||'—')+' · '+(u.role||'').toUpperCase();
   var lg = document.getElementById('profil-login'); if(lg) lg.textContent='@'+u.login;
   var rb = document.getElementById('profil-role-badge');
-  if(rb){var roleColors={admin:'badge-red',gerant:'badge-gold',cogerant:'badge-gold',officier:'badge-blue',sergent:'badge-orange',membre:'badge-green',stagiaire:'badge-gray',visiteur:'badge-gray'};rb.innerHTML='<span class="badge '+(roleColors[u.role]||'badge-gray')+'">'+roleLabel(u.role, u.section)+'</span>';}
+  if(rb){var roleColors={admin:'badge-red',hautcommandement:'badge-purple',gerant:'badge-gold',cogerant:'badge-gold',officier:'badge-blue',sergent:'badge-orange',membre:'badge-green',stagiaire:'badge-gray',visiteur:'badge-gray'};rb.innerHTML='<span class="badge '+(roleColors[u.role]||'badge-gray')+'">'+roleLabel(u.role, u.section)+'</span>';}
   // Stats
   var myPlaintes=(DB.plaintes||[]).filter(function(p){return p.agent===u.nom||p.plaignant===u.nom;});
   var myDossiers=(DB.dossiers||[]).filter(function(d){return d.agent===u.nom;});
