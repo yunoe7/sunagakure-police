@@ -1880,6 +1880,12 @@ body.dark .react-btn:hover{background:rgba(180,140,20,0.12)}
 
 /* ── SKELETON LOADING ── */
 @keyframes shimmer{0%{background-position:-200% 0}100%{background-position:200% 0}}
+/* Bug-fix : animation de la barre de scan du teaser carte tactique (page Opérations).
+   L'animation @keyframes était manquante, ce qui rendait la barre dorée immobile. */
+@keyframes opsTeaserScan{
+  0%   { transform:translateX(-150%); }
+  100% { transform:translateX(250%); }
+}
 .skeleton{border-radius:8px;background:linear-gradient(90deg,rgba(180,140,20,0.07) 25%,rgba(180,140,20,0.13) 50%,rgba(180,140,20,0.07) 75%);background-size:200% 100%;animation:shimmer 1.4s ease infinite}
 .skeleton-line{height:12px;margin-bottom:7px}
 .skeleton-line.lg{height:20px}
@@ -3045,7 +3051,7 @@ html{-webkit-tap-highlight-color:transparent}
   box-shadow:0 4px 20px rgba(0,0,0,0.35);
   display:flex;flex-direction:column;
 }
-/* === Phase 1 : Défunt — bordure noire + overlay === */
+/* === Phase 1 : Défunt — bordure noire + tampon diagonal "DÉFUNT" === */
 .rcv2-card.is-defunt{
   border-color:rgba(0,0,0,0.85) !important;
   box-shadow:0 4px 20px rgba(0,0,0,0.6),inset 0 0 0 1px rgba(255,255,255,0.04);
@@ -3055,20 +3061,48 @@ html{-webkit-tap-highlight-color:transparent}
   filter:grayscale(0.15) brightness(0.95);
   border-color:rgba(0,0,0,0.95) !important;
 }
-.rcv2-card-defunt-overlay{
+/* Tampon "DÉFUNT" en diagonale — style officiel RP, effet rétro encrage */
+.rcv2-card-defunt-stamp{
   position:absolute;
-  top:8px;right:8px;
-  z-index:5;
-  background:linear-gradient(135deg,#1a0000,#000);
-  color:#fff;
-  font-size:9.5px;
-  font-weight:700;
-  letter-spacing:1.5px;
-  padding:4px 8px;
-  border-radius:4px;
-  border:1px solid rgba(255,255,255,0.15);
-  box-shadow:0 2px 8px rgba(0,0,0,0.5);
+  top:50%;
+  left:50%;
+  z-index:10;
+  transform:translate(-50%,-50%) rotate(-18deg);
+  pointer-events:none;
+  font-family:'Cinzel','Times New Roman',serif;
+  font-weight:900;
+  font-size:36px;
+  letter-spacing:6px;
+  color:rgba(140,20,30,0.92);
   text-transform:uppercase;
+  padding:8px 22px;
+  border:4px solid rgba(140,20,30,0.85);
+  border-radius:6px;
+  /* Légère opacité pour effet "tampon encreur" qui transpire */
+  opacity:0.88;
+  /* Texture grain pour effet encre imparfaite */
+  text-shadow:1px 1px 0 rgba(140,20,30,0.4), -1px -1px 0 rgba(140,20,30,0.3);
+  box-shadow:
+    inset 0 0 0 2px rgba(140,20,30,0.4),
+    0 0 0 1px rgba(0,0,0,0.1);
+  /* Effet "tamponné inégalement" — transparence partielle */
+  background:rgba(140,20,30,0.04);
+  /* Mix-blend-mode pour que le tampon réagisse à l'arrière-plan comme une vraie encre */
+  mix-blend-mode:multiply;
+  filter:contrast(1.1);
+  white-space:nowrap;
+  user-select:none;
+}
+/* Sur fond sombre, multiply ne marche pas → on inverse avec une variante */
+.rcv2-card.is-defunt .rcv2-card-defunt-stamp{
+  mix-blend-mode:normal;
+  background:rgba(140,20,30,0.06);
+  color:rgba(220,80,90,0.95);
+  border-color:rgba(220,80,90,0.85);
+  box-shadow:
+    inset 0 0 0 2px rgba(220,80,90,0.4),
+    0 2px 8px rgba(0,0,0,0.3);
+  text-shadow:1px 1px 0 rgba(120,15,25,0.6), -1px -1px 0 rgba(220,80,90,0.3);
 }
 .rcv2-card::before{
   content:'';position:absolute;inset:0;pointer-events:none;border-radius:inherit;
@@ -11378,7 +11412,7 @@ document.addEventListener('error', function(e){
         </div>
         <div style="font-size:10px;color:rgba(255,255,255,0.45);font-family:'Share Tech Mono',monospace;letter-spacing:0.8px;text-align:center">Visualisez et placez vos opérations sur une carte interactive de Sunagakure</div>
         <div style="width:220px;height:3px;background:rgba(255,255,255,0.06);border-radius:2px;overflow:hidden;margin-top:4px">
-          <div style="height:100%;width:40%;background:linear-gradient(90deg,transparent,#d4b44a,transparent);border-radius:2px;animation:yunoTeaserScan 2.5s ease-in-out infinite"></div>
+          <div style="height:100%;width:40%;background:linear-gradient(90deg,transparent,#d4b44a,transparent);border-radius:2px;animation:opsTeaserScan 2.5s ease-in-out infinite"></div>
         </div>
       </div>
       <div style="position:absolute;top:10px;left:10px;width:14px;height:14px;border-top:2px solid rgba(180,140,20,0.5);border-left:2px solid rgba(180,140,20,0.5);border-radius:2px 0 0 0"></div>
@@ -11438,6 +11472,7 @@ document.addEventListener('error', function(e){
         <div id="ops-map-header">
           <span style="font-size:16px">🗺️</span>
           <span class="title">Carte tactique des opérations</span>
+          <span style="font-family:'Share Tech Mono',monospace;font-size:9.5px;letter-spacing:1.2px;color:rgba(212,180,74,0.55);margin-left:auto;padding-left:10px;text-transform:uppercase;flex-shrink:0">by boutchiko &amp; Flow_Flop</span>
         </div>
         <div id="ops-map-pins">
         </div>
@@ -19672,11 +19707,11 @@ function renderRecensement(){
     const metierClanHTML = metierClanChips.length
       ? `<div class="rcv2-card-meta">${metierClanChips.join("")}</div>`
       : "";
-    // Statut défunt : overlay + bordure
+    // Statut défunt : tampon "DÉFUNT" rouge bordeaux en diagonale
     const isDefunt = r.defuntStatut === "defunt-suna" || r.defuntStatut === "execution";
     const defuntClass = isDefunt ? " is-defunt" : "";
     const defuntBadge = isDefunt
-      ? `<div class="rcv2-card-defunt-overlay">${r.defuntStatut === "execution" ? "⚔️ EXÉCUTÉ" : "⚱️ DÉFUNT"}</div>`
+      ? `<div class="rcv2-card-defunt-stamp">Défunt</div>`
       : "";
 
     return `<div class="rcv2-card${defuntClass}" data-rang="${rangSafe}">
@@ -32081,7 +32116,7 @@ function tribOpenAffaire(editId){
   modal.id = 'trib-modal';
   modal.className = 'modal-overlay open';
   var nextNum = ed ? ed.numero : _tribNextDossierNum();
-  modal.innerHTML = '<div class="modal" style="max-width:620px"><div class="modal-header"><h3>'+(ed?'✏️ Modifier l\'affaire':'📁 Ouvrir une nouvelle affaire')+'</h3><span class="modal-close" onclick="document.getElementById(\'trib-modal\').remove()">✕</span></div><div class="modal-body"><div class="grid grid-2" style="gap:12px"><div class="form-group"><label class="form-label">N° dossier</label><input type="text" id="trib-aff-numero" class="form-control" value="'+_tribEsc(nextNum)+'" '+(ed?'':'readonly')+'></div><div class="form-group"><label class="form-label">Statut</label><select id="trib-aff-statut-input" class="form-control"><option value="instruction"'+(ed&&ed.statut==='instruction'?' selected':'')+'>📂 Instruction</option><option value="audience"'+(ed&&ed.statut==='audience'?' selected':'')+'>🎤 En audience</option><option value="delibere"'+(ed&&ed.statut==='delibere'?' selected':'')+'>⏸ Délibéré</option><option value="cloturee"'+(ed&&ed.statut==='cloturee'?' selected':'')+'>✓ Clôturée</option></select></div></div><div class="form-group"><label class="form-label">Accusé</label><input type="text" id="trib-aff-accuse" class="form-control" value="'+_tribEsc(ed?ed.accuse||'':'')+'" placeholder="Nom RP de l\'accusé"></div><div class="form-group"><label class="form-label">Parties (plaignant, témoins...)</label><input type="text" id="trib-aff-parties" class="form-control" value="'+_tribEsc(ed?ed.parties||'':'')+'" placeholder="Ex: Plainte de Yuno, témoins : Aoi, Riku"></div><div class="grid grid-2" style="gap:12px"><div class="form-group"><label class="form-label">Gravité</label><select id="trib-aff-gravite-input" class="form-control"><option value="legere"'+(ed&&ed.gravite==='legere'?' selected':'')+'>▸ Légère</option><option value="moyenne"'+((!ed||ed.gravite==='moyenne')?' selected':'')+'>◆ Moyenne</option><option value="grave"'+(ed&&ed.gravite==='grave'?' selected':'')+'>⚠ Grave</option><option value="critique"'+(ed&&ed.gravite==='critique'?' selected':'')+'>🔥 Critique</option></select></div><div class="form-group"><label class="form-label">Juge instructeur</label><input type="text" id="trib-aff-juge" class="form-control" value="'+_tribEsc(ed?ed.juge||'':'')+'" placeholder="Nom du juge en charge"></div></div><div class="form-group"><label class="form-label">Charges retenues</label><textarea id="trib-aff-charges" class="form-control" rows="3" placeholder="Liste des charges et infractions reprochées...">'+_tribEsc(ed?ed.charges||'':'')+'</textarea></div><div class="form-group"><label class="form-label">Notes / Éléments du dossier</label><textarea id="trib-aff-notes" class="form-control" rows="4" placeholder="Faits, preuves, témoignages, contexte...">'+_tribEsc(ed?ed.notes||'':'')+'</textarea></div></div><div class="modal-footer"><button class="btn btn-outline" onclick="document.getElementById(\'trib-modal\').remove()">Annuler</button>'+(ed?'<button class="btn btn-danger" onclick="tribDeleteAffaire('+ed.id+');document.getElementById(\'trib-modal\').remove()">🗑 Supprimer</button>':'')+'<button class="btn btn-primary" onclick="tribSaveAffaire('+(ed?ed.id:'null')+')">💾 Enregistrer</button></div></div>';
+  modal.innerHTML = '<div class="modal" style="max-width:620px"><div class="modal-header"><h3>'+(ed?'✏️ Modifier l\'affaire':'📁 Ouvrir une nouvelle affaire')+'</h3><span class="modal-close" onclick="document.getElementById(\'trib-modal\').remove()">✕</span></div><div class="modal-body"><div class="grid grid-2" style="gap:12px"><div class="form-group"><label class="form-label">N° dossier</label><input type="text" id="trib-aff-numero" class="form-control" value="'+_tribEsc(nextNum)+'" '+(ed?'':'readonly')+'></div><div class="form-group"><label class="form-label">Statut</label><select id="trib-aff-statut-input" class="form-control"><option value="instruction"'+(ed&&ed.statut==='instruction'?' selected':'')+'>📂 Instruction</option><option value="audience"'+(ed&&ed.statut==='audience'?' selected':'')+'>🎤 En audience</option><option value="delibere"'+(ed&&ed.statut==='delibere'?' selected':'')+'>⏸ Délibéré</option><option value="cloturee"'+(ed&&ed.statut==='cloturee'?' selected':'')+'>✓ Clôturée</option></select></div></div><div class="form-group"><label class="form-label">Accusé</label><input type="text" id="trib-aff-accuse" class="form-control" value="'+_tribEsc(ed?ed.accuse||'':'')+'" placeholder="Nom RP de l\'accusé"></div><div class="form-group"><label class="form-label">Parties (plaignant, témoins...)</label><input type="text" id="trib-aff-parties" class="form-control" value="'+_tribEsc(ed?ed.parties||'':'')+'" placeholder="Ex: Plainte de Hatake, témoins : Aoi, Riku"></div><div class="grid grid-2" style="gap:12px"><div class="form-group"><label class="form-label">Gravité</label><select id="trib-aff-gravite-input" class="form-control"><option value="legere"'+(ed&&ed.gravite==='legere'?' selected':'')+'>▸ Légère</option><option value="moyenne"'+((!ed||ed.gravite==='moyenne')?' selected':'')+'>◆ Moyenne</option><option value="grave"'+(ed&&ed.gravite==='grave'?' selected':'')+'>⚠ Grave</option><option value="critique"'+(ed&&ed.gravite==='critique'?' selected':'')+'>🔥 Critique</option></select></div><div class="form-group"><label class="form-label">Juge instructeur</label><input type="text" id="trib-aff-juge" class="form-control" value="'+_tribEsc(ed?ed.juge||'':'')+'" placeholder="Nom du juge en charge"></div></div><div class="form-group"><label class="form-label">Charges retenues</label><textarea id="trib-aff-charges" class="form-control" rows="3" placeholder="Liste des charges et infractions reprochées...">'+_tribEsc(ed?ed.charges||'':'')+'</textarea></div><div class="form-group"><label class="form-label">Notes / Éléments du dossier</label><textarea id="trib-aff-notes" class="form-control" rows="4" placeholder="Faits, preuves, témoignages, contexte...">'+_tribEsc(ed?ed.notes||'':'')+'</textarea></div></div><div class="modal-footer"><button class="btn btn-outline" onclick="document.getElementById(\'trib-modal\').remove()">Annuler</button>'+(ed?'<button class="btn btn-danger" onclick="tribDeleteAffaire('+ed.id+');document.getElementById(\'trib-modal\').remove()">🗑 Supprimer</button>':'')+'<button class="btn btn-primary" onclick="tribSaveAffaire('+(ed?ed.id:'null')+')">💾 Enregistrer</button></div></div>';
   document.body.appendChild(modal);
 }
 
