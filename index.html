@@ -3331,6 +3331,40 @@ html{-webkit-tap-highlight-color:transparent}
 .rcv2-card[data-rang="Kazekage"] .rcv2-card-rang,
 .rcv2-card[data-rang="Kage"] .rcv2-card-rang{color:var(--gold2);border-color:rgba(201,162,39,0.5)}
 
+/* Couleur distinctive par grade sur les cartes recensement */
+.rcv2-card[data-rang="Genin"] .rcv2-card-rang{color:#cbd5e1;border-color:rgba(148,163,184,0.4)}
+.rcv2-card[data-rang="Genin Confirmé"] .rcv2-card-rang{color:#4ade80;border-color:rgba(34,197,94,0.4)}
+.rcv2-card[data-rang="Chunin"] .rcv2-card-rang{color:#22d3ee;border-color:rgba(6,182,212,0.4)}
+.rcv2-card[data-rang="Tokubetsu Chunin"] .rcv2-card-rang{color:#2dd4bf;border-color:rgba(20,184,166,0.4)}
+.rcv2-card[data-rang="Kakunin"] .rcv2-card-rang{color:#a3e635;border-color:rgba(132,204,22,0.4)}
+.rcv2-card[data-rang="Tokubetsu Jonin"] .rcv2-card-rang{color:#818cf8;border-color:rgba(99,102,241,0.4)}
+.rcv2-card[data-rang="Jonin"] .rcv2-card-rang{color:#c084fc;border-color:rgba(168,85,247,0.4)}
+.rcv2-card[data-rang="Sairin"] .rcv2-card-rang{color:#fb7185;border-color:rgba(244,63,94,0.4)}
+.rcv2-card[data-rang="Commandant Jonin"] .rcv2-card-rang{color:#ef4444;border-color:rgba(220,38,38,0.4)}
+
+/* ── Autocomplétion nom suspect (dossiers) ─────────────────────────── */
+.dossier-ac-wrap{position:relative}
+.dossier-ac-dropdown{
+  position:absolute;top:100%;left:0;right:0;z-index:100;
+  max-height:240px;overflow-y:auto;
+  background:rgba(20,16,9,0.97);
+  border:1px solid rgba(201,162,39,0.35);
+  border-radius:6px;
+  box-shadow:0 10px 28px rgba(0,0,0,0.55);
+  margin-top:3px;
+}
+.dossier-ac-item{
+  padding:8px 12px;cursor:pointer;
+  border-bottom:1px solid rgba(180,140,20,0.08);
+  font-size:13px;color:var(--text);
+  transition:background 0.15s;
+  display:flex;align-items:center;gap:6px;flex-wrap:wrap;
+}
+.dossier-ac-item:last-child{border-bottom:none}
+.dossier-ac-item:hover,.dossier-ac-item.is-highlighted{background:rgba(201,162,39,0.12)}
+.dossier-ac-item .ac-meta{color:var(--muted);font-size:11px;font-family:'Share Tech Mono',monospace}
+.dossier-ac-empty{padding:10px 12px;font-size:12px;color:var(--muted);font-style:italic;text-align:center}
+
 .rcv2-card-id{
   position:absolute;top:10px;left:10px;
   font-family:'Share Tech Mono',monospace;
@@ -4029,6 +4063,16 @@ html{-webkit-tap-highlight-color:transparent}
   background:linear-gradient(135deg,#d4b44a,#c9a227);
   box-shadow:0 2px 12px rgba(201,162,39,0.4);
 }
+/* Couleur distinctive par grade sur la fiche détaillée */
+.rcv2-fiche-hero[data-rang="Genin"] .rcv2-fiche-rang-badge{border-color:rgba(148,163,184,0.5);color:#cbd5e1;background:rgba(148,163,184,0.12)}
+.rcv2-fiche-hero[data-rang="Genin Confirmé"] .rcv2-fiche-rang-badge{border-color:rgba(34,197,94,0.5);color:#4ade80;background:rgba(34,197,94,0.12)}
+.rcv2-fiche-hero[data-rang="Chunin"] .rcv2-fiche-rang-badge{border-color:rgba(6,182,212,0.5);color:#22d3ee;background:rgba(6,182,212,0.12)}
+.rcv2-fiche-hero[data-rang="Tokubetsu Chunin"] .rcv2-fiche-rang-badge{border-color:rgba(20,184,166,0.5);color:#2dd4bf;background:rgba(20,184,166,0.12)}
+.rcv2-fiche-hero[data-rang="Kakunin"] .rcv2-fiche-rang-badge{border-color:rgba(132,204,22,0.5);color:#a3e635;background:rgba(132,204,22,0.12)}
+.rcv2-fiche-hero[data-rang="Tokubetsu Jonin"] .rcv2-fiche-rang-badge{border-color:rgba(99,102,241,0.5);color:#818cf8;background:rgba(99,102,241,0.12)}
+.rcv2-fiche-hero[data-rang="Jonin"] .rcv2-fiche-rang-badge{border-color:rgba(168,85,247,0.5);color:#c084fc;background:rgba(168,85,247,0.12)}
+.rcv2-fiche-hero[data-rang="Sairin"] .rcv2-fiche-rang-badge{border-color:rgba(244,63,94,0.5);color:#fb7185;background:rgba(244,63,94,0.12)}
+.rcv2-fiche-hero[data-rang="Commandant Jonin"] .rcv2-fiche-rang-badge{border-color:rgba(220,38,38,0.5);color:#ef4444;background:rgba(220,38,38,0.12)}
 .rcv2-fiche-rang-badge::before{
   content:'';width:6px;height:6px;border-radius:50%;background:currentColor;
   box-shadow:0 0 8px currentColor;
@@ -8224,10 +8268,8 @@ document.addEventListener('error', function(e){
     <!-- Filtres -->
     <div class="rcv2-filters">
       <div class="rcv2-filter-search">
-        <input type="text" id="search-recense" placeholder="Nom, faction, nature, compétence..." oninput="renderRecensement()">
+        <input type="text" id="search-recense" placeholder="Recherche : nom, prénom, faction, nature, métier, compétence, rang..." oninput="renderRecensement()">
       </div>
-      <select id="filter-faction" class="rcv2-filter-select" onchange="renderRecensement()"><option value="">Toutes factions</option></select>
-      <select id="filter-nature" class="rcv2-filter-select" onchange="renderRecensement()"><option value="">Toutes natures</option></select>
       <span class="rcv2-filter-count" id="recense-count">0 résultat</span>
     </div>
 
@@ -10551,7 +10593,7 @@ document.addEventListener('error', function(e){
         </div>
         <div class="grid grid-3" style="gap:12px;margin-bottom:14px">
           <div class="form-group" style="margin-bottom:0"><label class="form-label">Grade</label>
-            <select id="bb-grade" class="form-control"><option>Genin</option><option>Genin Confirmé</option><option>Chunin</option><option>Tokubetsu Chunin</option><option>Kakunin</option><option>Tokubetsu Jonin</option><option>Jonin</option><option>Commandant Jonin</option><option>Kazekage</option><option>Criminel recherché</option><option>Civil</option><option>Inconnu</option></select>
+            <select id="bb-grade" class="form-control"><option>Genin</option><option>Genin Confirmé</option><option>Chunin</option><option>Tokubetsu Chunin</option><option>Kakunin</option><option>Tokubetsu Jonin</option><option>Jonin</option><option>Sairin</option><option>Commandant Jonin</option><option>Kazekage</option><option>Criminel recherché</option><option>Civil</option><option>Inconnu</option></select>
           </div>
           <div class="form-group" style="margin-bottom:0"><label class="form-label">Niveau de danger</label>
             <select id="bb-danger" class="form-control"><option value="eleve">⚠ Danger élevé</option><option value="moyen">◆ Danger moyen</option><option value="faible">▸ Danger faible</option></select>
@@ -14363,6 +14405,7 @@ document.addEventListener('error', function(e){
             <option>Kakunin</option>
             <option>Tokubetsu Jonin</option>
             <option>Jonin</option>
+            <option>Sairin</option>
             <option>Commandant Jonin</option>
             <option>Kazekage</option>
             <option>Criminel recherché</option>
@@ -14787,6 +14830,7 @@ document.addEventListener('error', function(e){
           <option>Kakunin</option>
           <option>Tokubetsu Jonin</option>
           <option>Jonin</option>
+          <option>Sairin</option>
           <option>Commandant Jonin</option>
           <option>Civil</option>
           <option>Autre</option>
@@ -15541,7 +15585,7 @@ function plv2SelectCible(el,val){
         <div id="d-doublon-body" style="font-size:12px;color:#6b4c00;margin-bottom:10px;line-height:1.6"></div>
         <div id="d-doublon-btns" style="display:flex;flex-wrap:wrap;gap:7px"></div>
       </div>
-      <div class="form-group"><label class="form-label">Nom RP du suspect</label><input type="text" id="d-nom" class="form-control" placeholder="Prénom Nom" oninput="checkDoublonSuspect()"></div>
+      <div class="form-group"><label class="form-label">Nom RP du suspect</label><div class="dossier-ac-wrap"><input type="text" id="d-nom" class="form-control" placeholder="Prénom Nom (autocomplétion depuis le recensement)" autocomplete="off" oninput="checkDoublonSuspect();_dossierNomAutocomplete('d-nom','d-nom-ac')" onfocus="_dossierNomAutocomplete('d-nom','d-nom-ac')" onblur="_dossierNomAutocompleteHide('d-nom-ac')" onkeydown="_dossierNomAutocompleteKey(event,'d-nom','d-nom-ac')"><div id="d-nom-ac" class="dossier-ac-dropdown" style="display:none"></div></div></div>
       <div class="form-group"><label class="form-label">Infractions reprochées</label><input type="text" id="d-infractions" class="form-control" placeholder="Vol, agression..."></div>
       <div class="grid grid-2">
         <div class="form-group"><label class="form-label">Dangerosité</label>
@@ -15626,7 +15670,7 @@ function plv2SelectCible(el,val){
     <div class="modal-header"><h3>✏️ Modifier le dossier</h3><span class="modal-close" aria-label="Fermer" onclick="closeModal('modal-edit-dossier')">✕</span></div>
     <div class="modal-body">
       <input type="hidden" id="ed-id">
-      <div class="form-group"><label class="form-label">Nom RP du suspect</label><input type="text" id="ed-nom" class="form-control" placeholder="Prénom Nom"></div>
+      <div class="form-group"><label class="form-label">Nom RP du suspect</label><div class="dossier-ac-wrap"><input type="text" id="ed-nom" class="form-control" placeholder="Prénom Nom (autocomplétion depuis le recensement)" autocomplete="off" oninput="_dossierNomAutocomplete('ed-nom','ed-nom-ac')" onfocus="_dossierNomAutocomplete('ed-nom','ed-nom-ac')" onblur="_dossierNomAutocompleteHide('ed-nom-ac')" onkeydown="_dossierNomAutocompleteKey(event,'ed-nom','ed-nom-ac')"><div id="ed-nom-ac" class="dossier-ac-dropdown" style="display:none"></div></div></div>
       <div class="form-group"><label class="form-label">Infractions reprochées</label><input type="text" id="ed-infractions" class="form-control" placeholder="Vol, agression..."></div>
       <div class="grid grid-2">
         <div class="form-group"><label class="form-label">Dangerosité</label>
@@ -17299,6 +17343,7 @@ function lgRenderTaxBareme(){
       grades = [
         { name:'Kazekage',           amount:8400, exempt:false },
         { name:'Commandant Jonin', amount:7000, exempt:false },
+        { name:'Sairin',           amount:7100, exempt:false },
         { name:'Jonin',            amount:7200, exempt:false },
         { name:'Tokubetsu Jonin',  amount:6000, exempt:false },
         { name:'Kakunin',          amount:4800, exempt:false },
@@ -17309,7 +17354,7 @@ function lgRenderTaxBareme(){
       ];
     }
     // Tri du plus haut grade au plus bas (ordre logique du barème)
-    var rankOrder = { 'Kazekage':9, 'Commandant Jonin':8, 'Jonin':7, 'Tokubetsu Jonin':6,
+    var rankOrder = { 'Kazekage':10, 'Commandant Jonin':9, 'Sairin':8, 'Jonin':7, 'Tokubetsu Jonin':6,
                       'Kakunin':5, 'Chunin':4, 'Tokubetsu Chunin':3, 'Genin Confirmé':2, 'Genin':1 };
     var sorted = grades.slice().sort(function(a,b){
       var ra = rankOrder[a.name] || 0, rb = rankOrder[b.name] || 0;
@@ -17320,6 +17365,7 @@ function lgRenderTaxBareme(){
     var styleFor = {
       'Kazekage':           { icon:'👑', accent:'#fbbf24', bg:'rgba(217,119,6,0.12)',  border:'rgba(217,119,6,0.35)' },
       'Commandant Jonin': { icon:'⚔',  accent:'#ef4444', bg:'rgba(220,38,38,0.12)',  border:'rgba(220,38,38,0.32)' },
+      'Sairin':           { icon:'🔥', accent:'#fb7185', bg:'rgba(244,63,94,0.12)',  border:'rgba(244,63,94,0.32)' },
       'Jonin':            { icon:'◆',  accent:'#a855f7', bg:'rgba(168,85,247,0.12)', border:'rgba(168,85,247,0.32)' },
       'Tokubetsu Jonin':  { icon:'◆',  accent:'#3b82f6', bg:'rgba(59,130,246,0.12)', border:'rgba(59,130,246,0.32)' },
       'Kakunin':          { icon:'🌿', accent:'#84cc16', bg:'rgba(132,204,22,0.12)', border:'rgba(132,204,22,0.32)' },
@@ -19746,11 +19792,7 @@ function renderRecensement(){
   // Chips filtres actifs
   var chips = [];
   var qVal = (el("search-recense")||{}).value||"";
-  var fVal = (el("filter-faction")||{}).value||"";
-  var nVal = (el("filter-nature")||{}).value||"";
   if(qVal) chips.push({label:"Recherche : "+qVal, clear:function(){var e=el("search-recense");if(e){e.value="";renderRecensement();}}});
-  if(fVal) chips.push({label:"Faction : "+fVal, clear:function(){var e=el("filter-faction");if(e){e.value="";renderRecensement();}}});
-  if(nVal) chips.push({label:"Nature : "+nVal, clear:function(){var e=el("filter-nature");if(e){e.value="";renderRecensement();}}});
   var chipBar = el("recense-filter-chips");
   if(chipBar){
     chipBar.innerHTML = chips.length ? chips.map(function(c,i){
@@ -19761,9 +19803,7 @@ function renderRecensement(){
     });
   }
 
-  const q=(el("search-recense")?.value||"").toLowerCase();
-  const fFac=el("filter-faction")?.value||"";
-  const fNat=el("filter-nature")?.value||"";
+  const q=(el("search-recense")?.value||"").toLowerCase().trim();
   // bug-fix : DB.recenses peut être undefined si Firebase n'a rien encore (premier sync)
   // Firebase RTDB peut aussi renvoyer {0:..,1:..} au lieu d'un array → convertir au lieu d'écraser
   if(!Array.isArray(DB.recenses)){
@@ -19773,16 +19813,19 @@ function renderRecensement(){
       DB.recenses = [];
     }
   }
-  const factions=[...new Set(DB.recenses.map(r=>r.faction).filter(Boolean))].sort();
-  const selFac=el("filter-faction");
-  if(selFac){const cur=selFac.value;selFac.innerHTML='<option value="">Toutes factions</option>'+factions.map(f=>`<option${cur===f?" selected":""}>${esc(f)}</option>`).join("")}
-  const allNats=[...new Set(DB.recenses.flatMap(r=>r.natures||[]))].sort();
-  const selNat=el("filter-nature");
-  if(selNat){const cur=selNat.value;selNat.innerHTML='<option value="">Toutes natures</option>'+allNats.map(n=>`<option${cur===n?" selected":""}>${esc(n)}</option>`).join("")}
   let list=DB.recenses||[];
-  if(q)list=list.filter(r=>((r.prenom||"")+" "+(r.nom||"")+" "+(r.faction||"")+" "+((r.natures||[]).join(" "))+" "+(r.rang||"")+" "+(r.competences||"")).toLowerCase().includes(q));
-  if(fFac)list=list.filter(r=>r.faction===fFac);
-  if(fNat)list=list.filter(r=>(r.natures||[]).includes(fNat));
+  if(q){
+    // Recherche unifiée : nom, prénom, faction, natures, rang, compétences, métier, clan, notes, âge, sexe
+    // Support multi-mots : tous les mots doivent matcher (ET logique).
+    var terms = q.split(/\s+/).filter(Boolean);
+    list = list.filter(function(r){
+      var hay = ((r.prenom||"")+" "+(r.nom||"")+" "+(r.faction||"")+" "
+              +((r.natures||[]).join(" "))+" "+(r.rang||"")+" "+(r.competences||"")+" "
+              +(r.metier||"")+" "+(r.clan||"")+" "+(r.notes||"")+" "
+              +(r.age||"")+" "+(r.sexe||"")).toLowerCase();
+      return terms.every(function(t){ return hay.indexOf(t) !== -1; });
+    });
+  }
   const cnt=el("recense-count");if(cnt)cnt.textContent=list.length+" résultat"+(list.length>1?"s":"");
 
   // Stats hero
@@ -20798,6 +20841,116 @@ function checkDoublonSuspect(){
     btnsEl.appendChild(btn);
   });
 }
+
+/* ════════════════════════════════════════════════════════
+   AUTOCOMPLÉTION NOM SUSPECT — depuis le recensement
+   ════════════════════════════════════════════════════════ */
+// État de surbrillance clavier (par dropdown)
+var _dossierAcState = {};
+
+function _dossierNomAutocomplete(inputId, dropdownId){
+  var input = document.getElementById(inputId);
+  var dd = document.getElementById(dropdownId);
+  if(!input || !dd) return;
+  var q = (input.value||'').toLowerCase().trim();
+  var arr = Array.isArray(DB.recenses) ? DB.recenses : [];
+  // Recherche fuzzy : nom, prénom, ou "prénom nom" combinés
+  var matches;
+  if(q.length === 0){
+    // Au focus sans saisie : montrer les 6 plus récents (ou rien si vide)
+    matches = arr.slice().sort(function(a,b){
+      return (b.date||b.id||0) - (a.date||a.id||0);
+    }).slice(0, 6);
+  } else {
+    matches = arr.filter(function(r){
+      if(!r) return false;
+      var hay = ((r.prenom||'')+' '+(r.nom||'')).toLowerCase();
+      return hay.indexOf(q) !== -1;
+    }).slice(0, 8);
+  }
+  if(matches.length === 0){
+    dd.innerHTML = '<div class="dossier-ac-empty">Aucun recensé correspondant</div>';
+    dd.style.display = 'block';
+    _dossierAcState[dropdownId] = { matches: [], idx: -1 };
+    return;
+  }
+  _dossierAcState[dropdownId] = { matches: matches, idx: -1 };
+  dd.innerHTML = matches.map(function(r, i){
+    var fullName = ((r.prenom||'')+' '+(r.nom||'')).trim() || '—';
+    var meta = [];
+    if(r.rang) meta.push(r.rang);
+    if(r.faction) meta.push(r.faction);
+    var metaHtml = meta.length ? '<span class="ac-meta">· '+esc(meta.join(' · '))+'</span>' : '';
+    return '<div class="dossier-ac-item" data-idx="'+i+'" data-name="'+esc(fullName).replace(/"/g,'&quot;')+'"'
+      + ' onmousedown="event.preventDefault();_dossierNomAutocompleteSelect(\''+inputId+'\',\''+dropdownId+'\','+i+')"'
+      + ' onmouseover="_dossierNomAutocompleteHighlight(\''+dropdownId+'\','+i+')">'
+      + '<strong>'+esc(fullName)+'</strong>'+metaHtml+'</div>';
+  }).join('');
+  dd.style.display = 'block';
+}
+
+function _dossierNomAutocompleteHide(dropdownId){
+  // Petit délai pour laisser passer le mousedown sur un item
+  setTimeout(function(){
+    var dd = document.getElementById(dropdownId);
+    if(dd){ dd.style.display='none'; }
+  }, 150);
+}
+
+function _dossierNomAutocompleteHighlight(dropdownId, idx){
+  var dd = document.getElementById(dropdownId);
+  if(!dd) return;
+  dd.querySelectorAll('.dossier-ac-item').forEach(function(it){ it.classList.remove('is-highlighted'); });
+  var t = dd.querySelector('.dossier-ac-item[data-idx="'+idx+'"]');
+  if(t){ t.classList.add('is-highlighted'); }
+  if(_dossierAcState[dropdownId]) _dossierAcState[dropdownId].idx = idx;
+}
+
+function _dossierNomAutocompleteSelect(inputId, dropdownId, idx){
+  var st = _dossierAcState[dropdownId];
+  if(!st || !st.matches[idx]) return;
+  var r = st.matches[idx];
+  var fullName = ((r.prenom||'')+' '+(r.nom||'')).trim();
+  var input = document.getElementById(inputId);
+  if(input){
+    input.value = fullName;
+    // Garde le focus
+    input.focus();
+  }
+  var dd = document.getElementById(dropdownId);
+  if(dd){ dd.style.display='none'; dd.innerHTML=''; }
+  _dossierAcState[dropdownId] = { matches: [], idx: -1 };
+  // Déclenche la vérification de doublon si on est sur le formulaire de création
+  if(inputId === 'd-nom' && typeof checkDoublonSuspect === 'function') checkDoublonSuspect();
+}
+
+function _dossierNomAutocompleteKey(ev, inputId, dropdownId){
+  var st = _dossierAcState[dropdownId];
+  var dd = document.getElementById(dropdownId);
+  if(!dd || dd.style.display === 'none' || !st || !st.matches.length){
+    if(ev.key === 'ArrowDown'){
+      // Ouvrir la liste si elle est cachée
+      _dossierNomAutocomplete(inputId, dropdownId);
+      ev.preventDefault();
+    }
+    return;
+  }
+  if(ev.key === 'ArrowDown'){
+    ev.preventDefault();
+    var n = (st.idx + 1) % st.matches.length;
+    _dossierNomAutocompleteHighlight(dropdownId, n);
+  } else if(ev.key === 'ArrowUp'){
+    ev.preventDefault();
+    var p = st.idx <= 0 ? st.matches.length - 1 : st.idx - 1;
+    _dossierNomAutocompleteHighlight(dropdownId, p);
+  } else if(ev.key === 'Enter' && st.idx >= 0){
+    ev.preventDefault();
+    _dossierNomAutocompleteSelect(inputId, dropdownId, st.idx);
+  } else if(ev.key === 'Escape'){
+    dd.style.display = 'none';
+  }
+}
+
 /* ════════════════════════════════════════════════════════
    TAGS DOSSIERS — palette, picker, sauvegarde
    ════════════════════════════════════════════════════════ */
@@ -23179,6 +23332,7 @@ function impDefaultGrades(){
     { name: 'Kakunin',               amount: 4800, exempt: false },
     { name: 'Tokubetsu Jonin',       amount: 6000, exempt: false },
     { name: 'Jonin',                 amount: 7200, exempt: false },
+    { name: 'Sairin',                amount: 7100, exempt: false },
     { name: 'Commandant Jonin',      amount: 7000, exempt: false },
     { name: 'Kazekage',                amount: 8400, exempt: false },
   ];
@@ -23665,17 +23819,21 @@ function impDeleteRecup(id){
 
 // Couleurs des pilules de grade dans l'historique
 function impGradeColorFor(grade){
-  // Nuancier par rang : du vert (junior) au rouge/or (senior)
+  // Palette ordonnée junior → senior, chaque grade ayant sa propre teinte distincte.
+  // Genin (gris) → Genin Confirmé (vert) → Chunin (cyan) → Tok. Chunin (teal) →
+  // Kakunin (lime) → Tok. Jonin (indigo) → Jonin (violet) → Sairin (rose) →
+  // Commandant Jonin (rouge) → Kazekage (or).
   const map = {
-    'Genin':                { bg:'rgba(34,197,94,0.15)',  fg:'#22c55e', border:'rgba(34,197,94,0.35)' },
-    'Genin Confirmé':       { bg:'rgba(34,197,94,0.18)',  fg:'#4ade80', border:'rgba(34,197,94,0.4)'  },
-    'Chunin':               { bg:'rgba(168,85,247,0.15)', fg:'#a855f7', border:'rgba(168,85,247,0.35)' },
-    'Tokubetsu Chunin':     { bg:'rgba(96,165,250,0.16)', fg:'#60a5fa', border:'rgba(96,165,250,0.35)' },
-    'Kakunin':              { bg:'rgba(132,204,22,0.16)', fg:'#84cc16', border:'rgba(132,204,22,0.36)' },
-    'Tokubetsu Jonin':      { bg:'rgba(59,130,246,0.15)', fg:'#3b82f6', border:'rgba(59,130,246,0.35)' },
-    'Jonin':                { bg:'rgba(244,114,182,0.16)',fg:'#f472b6', border:'rgba(244,114,182,0.35)' },
-    'Commandant Jonin':     { bg:'rgba(220,38,38,0.16)',  fg:'#ef4444', border:'rgba(220,38,38,0.36)' },
-    'Kazekage':               { bg:'rgba(217,119,6,0.20)',  fg:'#fbbf24', border:'rgba(217,119,6,0.45)' },
+    'Genin':                { bg:'rgba(148,163,184,0.16)', fg:'#cbd5e1', border:'rgba(148,163,184,0.4)'  },
+    'Genin Confirmé':       { bg:'rgba(34,197,94,0.18)',   fg:'#4ade80', border:'rgba(34,197,94,0.4)'    },
+    'Chunin':               { bg:'rgba(6,182,212,0.18)',   fg:'#22d3ee', border:'rgba(6,182,212,0.4)'    },
+    'Tokubetsu Chunin':     { bg:'rgba(20,184,166,0.18)',  fg:'#2dd4bf', border:'rgba(20,184,166,0.4)'   },
+    'Kakunin':              { bg:'rgba(132,204,22,0.18)',  fg:'#a3e635', border:'rgba(132,204,22,0.4)'   },
+    'Tokubetsu Jonin':      { bg:'rgba(99,102,241,0.18)',  fg:'#818cf8', border:'rgba(99,102,241,0.4)'   },
+    'Jonin':                { bg:'rgba(168,85,247,0.18)',  fg:'#c084fc', border:'rgba(168,85,247,0.4)'   },
+    'Sairin':               { bg:'rgba(244,63,94,0.18)',   fg:'#fb7185', border:'rgba(244,63,94,0.4)'    },
+    'Commandant Jonin':     { bg:'rgba(220,38,38,0.18)',   fg:'#ef4444', border:'rgba(220,38,38,0.4)'    },
+    'Kazekage':             { bg:'rgba(217,119,6,0.22)',   fg:'#fbbf24', border:'rgba(217,119,6,0.5)'    },
   };
   return map[grade] || { bg:'rgba(180,140,20,0.12)', fg:'#d4b44a', border:'rgba(180,140,20,0.3)' };
 }
@@ -25634,7 +25792,7 @@ body.dark .dash-quick-chip{background:rgba(180,140,20,0.08);border-color:rgba(18
     align-items:stretch !important;
     gap:10px;
   }
-  #search-recense,#filter-faction,#filter-nature{
+  #search-recense{
     max-width:100% !important;
     width:100% !important;
     margin:0 !important;
