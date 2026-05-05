@@ -3045,6 +3045,31 @@ html{-webkit-tap-highlight-color:transparent}
   box-shadow:0 4px 20px rgba(0,0,0,0.35);
   display:flex;flex-direction:column;
 }
+/* === Phase 1 : Défunt — bordure noire + overlay === */
+.rcv2-card.is-defunt{
+  border-color:rgba(0,0,0,0.85) !important;
+  box-shadow:0 4px 20px rgba(0,0,0,0.6),inset 0 0 0 1px rgba(255,255,255,0.04);
+  filter:grayscale(0.35) brightness(0.85);
+}
+.rcv2-card.is-defunt:hover{
+  filter:grayscale(0.15) brightness(0.95);
+  border-color:rgba(0,0,0,0.95) !important;
+}
+.rcv2-card-defunt-overlay{
+  position:absolute;
+  top:8px;right:8px;
+  z-index:5;
+  background:linear-gradient(135deg,#1a0000,#000);
+  color:#fff;
+  font-size:9.5px;
+  font-weight:700;
+  letter-spacing:1.5px;
+  padding:4px 8px;
+  border-radius:4px;
+  border:1px solid rgba(255,255,255,0.15);
+  box-shadow:0 2px 8px rgba(0,0,0,0.5);
+  text-transform:uppercase;
+}
 .rcv2-card::before{
   content:'';position:absolute;inset:0;pointer-events:none;border-radius:inherit;
   background:linear-gradient(135deg,rgba(255,255,255,0.04) 0%,transparent 30%);
@@ -14126,6 +14151,10 @@ document.addEventListener('error', function(e){
             <input type="text" id="r-nom" class="rcv2-input" placeholder="Ex: Sabaku">
           </div>
         </div>
+        <div class="rcv2-fld" style="margin-top:16px">
+          <label class="rcv2-fld-label">Titre RP <span class="hint">surnom, alias, distinction</span></label>
+          <input type="text" id="r-titre" class="rcv2-input" placeholder="Ex: Le Démon des Sables, Premier de sa génération...">
+        </div>
         <div class="rcv2-form-grid cols-2" style="margin-top:16px">
           <div class="rcv2-fld">
             <label class="rcv2-fld-label">Âge RP</label>
@@ -14146,10 +14175,49 @@ document.addEventListener('error', function(e){
       <!-- ÉTAPE 2 : Statut -->
       <div class="rcv2-form-section" data-section="2">
         <div class="rcv2-section-title">🏯 Statut & Affiliation</div>
-        <div class="rcv2-section-sub">— Faction et rang officiel —</div>
+        <div class="rcv2-section-sub">— Faction, métier, clan et rang —</div>
         <div class="rcv2-fld">
           <label class="rcv2-fld-label">Faction / Village</label>
           <input type="text" id="r-faction" class="rcv2-input" placeholder="Ex: Sunagakure, Akatsuki, déserteur, civil...">
+        </div>
+        <div class="rcv2-form-grid cols-2" style="margin-top:16px">
+          <div class="rcv2-fld">
+            <label class="rcv2-fld-label">Métier <span class="hint">profession RP</span></label>
+            <select id="r-metier" class="rcv2-input">
+              <option value="">— Aucun —</option>
+              <optgroup label="Forces officielles">
+                <option value="Officier de police">👮 Officier de police</option>
+                <option value="Juge">👨‍⚖️ Juge</option>
+                <option value="Avocat">👨‍💼 Avocat</option>
+                <option value="Agent de mission">🎯 Agent de mission</option>
+                <option value="Médecin">⚕️ Médecin</option>
+                <option value="Diplomate">🤝 Diplomate</option>
+              </optgroup>
+              <optgroup label="Civils">
+                <option value="Marchand">🛒 Marchand</option>
+                <option value="Forgeron">🔨 Forgeron</option>
+                <option value="Cuisinier">🍳 Cuisinier</option>
+                <option value="Artisan">🎨 Artisan</option>
+                <option value="Paysan">🌾 Paysan</option>
+                <option value="Érudit">📚 Érudit / Sage</option>
+                <option value="Fonctionnaire">🏛️ Fonctionnaire</option>
+                <option value="Sans emploi">🏚️ Sans emploi</option>
+              </optgroup>
+              <option value="Autre">❓ Autre…</option>
+            </select>
+            <input type="text" id="r-metier-autre" class="rcv2-input" placeholder="Précisez le métier..." style="display:none;margin-top:6px">
+          </div>
+          <div class="rcv2-fld">
+            <label class="rcv2-fld-label">Clan <span class="hint">appartenance familiale</span></label>
+            <select id="r-clan" class="rcv2-input">
+              <option value="">— Aucun —</option>
+              <option value="Sabaku">Sabaku</option>
+              <option value="Shomu">Shomu</option>
+              <option value="Kugutsu">Kugutsu</option>
+              <option value="Autre">Autre…</option>
+            </select>
+            <input type="text" id="r-clan-autre" class="rcv2-input" placeholder="Nom du clan..." style="display:none;margin-top:6px">
+          </div>
         </div>
         <div class="rcv2-fld" style="margin-top:16px">
           <label class="rcv2-fld-label">Rang / Statut</label>
@@ -14166,6 +14234,14 @@ document.addEventListener('error', function(e){
             <option>Criminel recherché</option>
             <option>Civil</option>
             <option>Inconnu</option>
+          </select>
+        </div>
+        <div class="rcv2-fld" style="margin-top:16px">
+          <label class="rcv2-fld-label">Statut de vie</label>
+          <select id="r-defunt-statut" class="rcv2-input">
+            <option value="">🟢 Vivant</option>
+            <option value="defunt-suna">⚱️ Défunt de Suna (mort naturelle ou en mission)</option>
+            <option value="execution">⚔️ Défunt par exécution</option>
           </select>
         </div>
       </div>
@@ -15700,8 +15776,8 @@ function plv2SelectCible(el,val){
 </script>
 
 <script>
-const NATURES=["Ninjutsu","Genjutsu","Taijutsu","Fuinjutsu","Kenjutsu","Médecine ninja","Doton","Suiton","Katon","Raiton","Fûton","Hyoton","Jinchuriki","Kekkei Genkai","Autre"];
-const NATURE_BADGE={Ninjutsu:"badge-blue",Genjutsu:"badge-purple",Taijutsu:"badge-red",Fuinjutsu:"badge-gold",Kenjutsu:"badge-gray","Médecine ninja":"badge-green",Doton:"badge-gold",Suiton:"badge-cyan",Katon:"badge-red",Raiton:"badge-gold","Fûton":"badge-blue",Hyoton:"badge-cyan",Jinchuriki:"badge-purple","Kekkei Genkai":"badge-purple",Autre:"badge-gray"};
+const NATURES=["Ninjutsu","Genjutsu","Taijutsu Man","Fuinjutsu","Kenjutsu","Médecine ninja","Doton","Suiton","Katon","Raiton","Fûton","Hyoton","Jinchuriki","Kekkei Genkai","Autre"];
+const NATURE_BADGE={Ninjutsu:"badge-blue",Genjutsu:"badge-purple","Taijutsu Man":"badge-red",Fuinjutsu:"badge-gold",Kenjutsu:"badge-gray","Médecine ninja":"badge-green",Doton:"badge-gold",Suiton:"badge-cyan",Katon:"badge-red",Raiton:"badge-gold","Fûton":"badge-blue",Hyoton:"badge-cyan",Jinchuriki:"badge-purple","Kekkei Genkai":"badge-purple",Autre:"badge-gray"};
 const STORE="suna_v4";
 // bug-fix sécurité : la constante DEFAULT_PASS hardcodée a été RETIRÉE.
 // - Au premier setup, un mot de passe admin aléatoire est généré et affiché UNE FOIS
@@ -16003,7 +16079,23 @@ async function _flushSaveQueue(){
   }
 }
 
-function loadData(){try{const raw=localStorage.getItem(STORE);if(!raw)return defaultData();const saved=JSON.parse(raw);if(!saved||typeof saved!=="object")return defaultData();const def=defaultData();const merged={};for(const key of Object.keys(def)){merged[key]=saved.hasOwnProperty(key)?saved[key]:def[key];}for(const key of Object.keys(saved)){if(!merged.hasOwnProperty(key))merged[key]=saved[key];}return merged;}catch(e){return defaultData()}}
+function loadData(){try{const raw=localStorage.getItem(STORE);if(!raw)return defaultData();const saved=JSON.parse(raw);if(!saved||typeof saved!=="object")return defaultData();const def=defaultData();const merged={};for(const key of Object.keys(def)){merged[key]=saved.hasOwnProperty(key)?saved[key]:def[key];}for(const key of Object.keys(saved)){if(!merged.hasOwnProperty(key))merged[key]=saved[key];}_migrateTaijutsu(merged);return merged;}catch(e){return defaultData()}}
+
+// Migration douce : "Taijutsu" → "Taijutsu Man" sur les recensés existants
+// Idempotente (peut être appelée plusieurs fois sans problème)
+function _migrateTaijutsu(data){
+  try {
+    if(data && Array.isArray(data.recenses)){
+      data.recenses.forEach(function(r){
+        if(r && Array.isArray(r.natures)){
+          r.natures = r.natures.map(function(n){
+            return (n === "Taijutsu") ? "Taijutsu Man" : n;
+          });
+        }
+      });
+    }
+  } catch(e){ /* ignore */ }
+}
 
 function initFirebaseSync(){
   if(!window._fbDB||!window._fbRef||!window._fbOnValue)return;
@@ -19568,7 +19660,27 @@ function renderRecensement(){
     if(r.sexe)ageSexe.push(esc(r.sexe));
     const metaHTML=ageSexe.length?`<div class="rcv2-card-meta">${ageSexe.map(m=>`<span class="rcv2-card-chip">${m}</span>`).join("")}</div>`:"";
 
-    return `<div class="rcv2-card" data-rang="${rangSafe}">
+    // === Phase 1 : nouveaux champs ===
+    // Titre RP (sous le nom, en italique)
+    const titreHTML = r.titre
+      ? `<div class="rcv2-card-titre" style="font-style:italic;font-size:11px;color:var(--gold);opacity:0.85;margin-top:2px">« ${esc(r.titre)} »</div>`
+      : "";
+    // Métier + Clan (chips dans la zone meta)
+    const metierClanChips = [];
+    if(r.metier) metierClanChips.push(`<span class="rcv2-card-chip" style="background:rgba(168,85,247,0.12);border-color:rgba(168,85,247,0.35);color:#c084fc">💼 ${esc(r.metier)}</span>`);
+    if(r.clan) metierClanChips.push(`<span class="rcv2-card-chip" style="background:rgba(34,197,94,0.12);border-color:rgba(34,197,94,0.35);color:#86efac">🏛 Clan ${esc(r.clan)}</span>`);
+    const metierClanHTML = metierClanChips.length
+      ? `<div class="rcv2-card-meta">${metierClanChips.join("")}</div>`
+      : "";
+    // Statut défunt : overlay + bordure
+    const isDefunt = r.defuntStatut === "defunt-suna" || r.defuntStatut === "execution";
+    const defuntClass = isDefunt ? " is-defunt" : "";
+    const defuntBadge = isDefunt
+      ? `<div class="rcv2-card-defunt-overlay">${r.defuntStatut === "execution" ? "⚔️ EXÉCUTÉ" : "⚱️ DÉFUNT"}</div>`
+      : "";
+
+    return `<div class="rcv2-card${defuntClass}" data-rang="${rangSafe}">
+      ${defuntBadge}
       <div class="rcv2-card-banner">
         <div class="rcv2-card-id">${idStr}</div>
         <div class="rcv2-card-rang">${rangSafe}</div>
@@ -19576,9 +19688,11 @@ function renderRecensement(){
       <div class="rcv2-card-avatar-wrap"><div class="rcv2-card-avatar">${photoHTML}</div></div>
       <div class="rcv2-card-identity">
         <div class="rcv2-card-name">${esc(r.prenom||"")} ${esc(r.nom||"")}</div>
+        ${titreHTML}
         <div class="rcv2-card-faction">${esc(r.faction)||"— Affiliation inconnue —"}</div>
       </div>
       ${metaHTML}
+      ${metierClanHTML}
       ${compHTML}
       ${naturesHTML}
       ${renderMenaceBadge(r)}
@@ -19605,6 +19719,39 @@ function openEditRecense(id){
   const rangSel = el("r-rang"); if(rangSel) rangSel.value = r.rang||"Genin";
   el("r-competences").value = r.competences||"";
   el("r-notes").value = r.notes||"";
+  // Nouveaux champs (Phase 1)
+  const titreEl = el("r-titre"); if(titreEl) titreEl.value = r.titre||"";
+  // Métier : si la valeur n'est pas dans la liste prédéfinie, c'est un "Autre" custom
+  const metierSel = el("r-metier");
+  const metierAutreEl = el("r-metier-autre");
+  if(metierSel){
+    const metierVal = r.metier||"";
+    const knownMetiers = ["Officier de police","Juge","Avocat","Agent de mission","Médecin","Diplomate",
+                          "Marchand","Forgeron","Cuisinier","Artisan","Paysan","Érudit","Fonctionnaire","Sans emploi"];
+    if(metierVal && !knownMetiers.includes(metierVal)){
+      // Valeur custom → on sélectionne "Autre" et on remplit le champ texte
+      metierSel.value = "Autre";
+      if(metierAutreEl){ metierAutreEl.value = metierVal; metierAutreEl.style.display = "block"; }
+    } else {
+      metierSel.value = metierVal;
+      if(metierAutreEl){ metierAutreEl.value = ""; metierAutreEl.style.display = "none"; }
+    }
+  }
+  // Clan : pareil
+  const clanSel = el("r-clan");
+  const clanAutreEl = el("r-clan-autre");
+  if(clanSel){
+    const clanVal = r.clan||"";
+    const knownClans = ["Sabaku","Shomu","Kugutsu"];
+    if(clanVal && !knownClans.includes(clanVal)){
+      clanSel.value = "Autre";
+      if(clanAutreEl){ clanAutreEl.value = clanVal; clanAutreEl.style.display = "block"; }
+    } else {
+      clanSel.value = clanVal;
+      if(clanAutreEl){ clanAutreEl.value = ""; clanAutreEl.style.display = "none"; }
+    }
+  }
+  const defuntEl = el("r-defunt-statut"); if(defuntEl) defuntEl.value = r.defuntStatut||"";
   // Natures
   buildNatureCheckboxes();
   document.querySelectorAll("#nature-checkboxes input").forEach(c=>{c.checked=(r.natures||[]).includes(c.value);});
@@ -19622,6 +19769,7 @@ function openEditRecense(id){
   // V2 : navigation par étapes + sync pills sexe
   if(typeof rcv2GotoStep === 'function') rcv2GotoStep(1);
   if(typeof rcv2SyncSexePill === 'function') rcv2SyncSexePill();
+  if(typeof _rcv2InitAutreSelects === 'function') _rcv2InitAutreSelects();
   openModal("modal-recense");
 }
 
@@ -19631,12 +19779,28 @@ function saveRecense(){
   const natures=[...document.querySelectorAll("#nature-checkboxes input:checked")].map(c=>c.value);
   const photo=_recensePhoto||"";
 
+  // Nouveaux champs (Phase 1)
+  const titre = v("r-titre") || "";
+  // Métier : si "Autre" est sélectionné, utiliser le champ texte custom
+  const metierSel = v("r-metier") || "";
+  const metier = (metierSel === "Autre") ? (v("r-metier-autre") || "Autre") : metierSel;
+  // Clan : pareil
+  const clanSel = v("r-clan") || "";
+  const clan = (clanSel === "Autre") ? (v("r-clan-autre") || "Autre") : clanSel;
+  // Statut défunt : "" = vivant, "defunt-suna" = mort naturelle, "execution" = exécuté
+  const defuntStatut = v("r-defunt-statut") || "";
+
   if(_recenseEditId){
     // ── Mode édition ──
     const idx = DB.recenses.findIndex(x=>String(x.id)===String(_recenseEditId));
     if(idx!==-1){
       const old = DB.recenses[idx];
-      DB.recenses[idx] = Object.assign({},old,{prenom,nom,age:v("r-age"),sexe:v("r-sexe"),faction:v("r-faction"),rang:v("r-rang"),competences:v("r-competences"),natures,notes:v("r-notes"),photo});
+      DB.recenses[idx] = Object.assign({},old,{
+        prenom,nom,age:v("r-age"),sexe:v("r-sexe"),faction:v("r-faction"),rang:v("r-rang"),
+        competences:v("r-competences"),natures,notes:v("r-notes"),photo,
+        // Nouveaux champs
+        titre, metier, clan, defuntStatut
+      });
       // Sync auto vers le registre des impôts
       if(typeof impSyncFromRecense === 'function') impSyncFromRecense(DB.recenses[idx]);
       addTimeline(`Fiche modifiée : ${prenom} ${nom}`);
@@ -19648,20 +19812,36 @@ function saveRecense(){
     // Remettre le titre original
     const header=document.querySelector("#modal-recense .modal-header h3"); if(header) header.textContent="📝 Recenser un joueur";
     const saveBtn=document.querySelector("#modal-recense .modal-footer .btn-purple"); if(saveBtn) saveBtn.textContent="✓ Enregistrer";
-    clearForm(["r-prenom","r-nom","r-age","r-faction","r-competences","r-notes"]);
+    clearForm(["r-prenom","r-nom","r-age","r-faction","r-competences","r-notes","r-titre","r-metier-autre","r-clan-autre"]);
     document.querySelectorAll("#nature-checkboxes input").forEach(c=>c.checked=false);
+    // Reset selects
+    if(el("r-metier")) el("r-metier").value = "";
+    if(el("r-clan")) el("r-clan").value = "";
+    if(el("r-defunt-statut")) el("r-defunt-statut").value = "";
+    if(el("r-metier-autre")) el("r-metier-autre").style.display = "none";
+    if(el("r-clan-autre")) el("r-clan-autre").style.display = "none";
     removeRecensePhoto(); return;
   }
 
-  const newRec = {id:Date.now(),prenom,nom,age:v("r-age"),sexe:v("r-sexe"),faction:v("r-faction"),rang:v("r-rang"),competences:v("r-competences"),natures,notes:v("r-notes"),photo,auteur:currentUser.nom,date:now()};
+  const newRec = {
+    id:Date.now(),prenom,nom,age:v("r-age"),sexe:v("r-sexe"),faction:v("r-faction"),rang:v("r-rang"),
+    competences:v("r-competences"),natures,notes:v("r-notes"),photo,auteur:currentUser.nom,date:now(),
+    // Nouveaux champs
+    titre, metier, clan, defuntStatut
+  };
   DB.recenses.push(newRec);
   // Sync auto vers le registre des impôts (le ninja apparaît directement dans Impôts)
   if(typeof impSyncFromRecense === 'function') impSyncFromRecense(newRec);
   addTimeline(`Joueur recensé : ${prenom} ${nom}`);
   saveData(['recenses','impots','timeline']);closeModal("modal-recense");renderRecensement();syncDashboard();
   if(typeof renderImpots === 'function') renderImpots();
-  clearForm(["r-prenom","r-nom","r-age","r-faction","r-competences","r-notes"]);
+  clearForm(["r-prenom","r-nom","r-age","r-faction","r-competences","r-notes","r-titre","r-metier-autre","r-clan-autre"]);
   document.querySelectorAll("#nature-checkboxes input").forEach(c=>c.checked=false);
+  if(el("r-metier")) el("r-metier").value = "";
+  if(el("r-clan")) el("r-clan").value = "";
+  if(el("r-defunt-statut")) el("r-defunt-statut").value = "";
+  if(el("r-metier-autre")) el("r-metier-autre").style.display = "none";
+  if(el("r-clan-autre")) el("r-clan-autre").style.display = "none";
   removeRecensePhoto();
 }
 
@@ -19744,6 +19924,16 @@ function viewRecense(id){
   const notesHTML=r.notes
     ?`<div class="rcv2-fiche-block"><div class="rcv2-fiche-block-title">📋 Notes & Observations</div><div class="rcv2-fiche-text">${esc(r.notes)}</div></div>`
     :"";
+  // Phase 1 : nouveaux blocs
+  const titreHTML = r.titre
+    ? `<div class="rcv2-fiche-block"><div class="rcv2-fiche-block-title">🏆 Titre RP</div><div class="rcv2-fiche-text" style="font-style:italic;color:var(--gold)">« ${esc(r.titre)} »</div></div>`
+    : "";
+  const affilHTML = (r.metier || r.clan)
+    ? `<div class="rcv2-fiche-block"><div class="rcv2-fiche-block-title">🏛 Affiliation civile</div><div class="rcv2-fiche-natures-bar">${r.metier?`<span class="badge" style="background:rgba(168,85,247,0.18);border-color:rgba(168,85,247,0.4);color:#c084fc">💼 ${esc(r.metier)}</span>`:""}${r.clan?`<span class="badge" style="background:rgba(34,197,94,0.18);border-color:rgba(34,197,94,0.4);color:#86efac">🏛 Clan ${esc(r.clan)}</span>`:""}</div></div>`
+    : "";
+  const defuntHTML = (r.defuntStatut === "defunt-suna" || r.defuntStatut === "execution")
+    ? `<div class="rcv2-fiche-block" style="border-color:rgba(0,0,0,0.6);background:rgba(0,0,0,0.25)"><div class="rcv2-fiche-block-title" style="color:#aaa">⚱ Statut</div><div class="rcv2-fiche-text" style="color:${r.defuntStatut==='execution'?'#ef4444':'#94a3b8'};font-weight:600;letter-spacing:1px">${r.defuntStatut === "execution" ? "⚔️ DÉFUNT — EXÉCUTÉ" : "⚱️ DÉFUNT DE SUNA"}</div></div>`
+    : "";
 
   vrBody.innerHTML=`
     <div class="rcv2-fiche-hero" data-rang="${rangSafe}">
@@ -19763,6 +19953,9 @@ function viewRecense(id){
       <div class="rcv2-fiche-stat"><div class="rcv2-fiche-stat-lbl">Maîtrises</div><div class="rcv2-fiche-stat-val">${natCount}</div></div>
     </div>
     <div class="rcv2-fiche-content">
+      ${defuntHTML}
+      ${titreHTML}
+      ${affilHTML}
       ${compHTML}
       ${naturesHTML}
       ${notesHTML}
@@ -19788,7 +19981,30 @@ function rcv2OpenForm(){
   _rcv2CurrentStep=1;
   rcv2GotoStep(1);
   rcv2SyncSexePill();
+  _rcv2InitAutreSelects();
   openModal("modal-recense");
+}
+
+// Brancher les selects "Autre" pour afficher/cacher les champs texte custom
+// Idempotent (peut être appelé plusieurs fois sans dupliquer les listeners)
+function _rcv2InitAutreSelects(){
+  ['r-metier', 'r-clan'].forEach(function(id){
+    const sel = document.getElementById(id);
+    if(!sel || sel.dataset.autreBound === '1') return;
+    sel.dataset.autreBound = '1';
+    const customId = id + '-autre';
+    sel.addEventListener('change', function(){
+      const custom = document.getElementById(customId);
+      if(!custom) return;
+      if(sel.value === 'Autre'){
+        custom.style.display = 'block';
+        custom.focus();
+      } else {
+        custom.style.display = 'none';
+        custom.value = '';
+      }
+    });
+  });
 }
 
 function rcv2CloseForm(){
@@ -21735,6 +21951,25 @@ function _adminCollectPhotoEntries(){
       }
     });
   }
+  // Logo du département (DB.logo, scalaire)
+  if(typeof DB.logo === 'string' && DB.logo.startsWith('data:image/')){
+    entries.push({ collection: '__logo', idx: 0, key: 'logo', dataURL: DB.logo, name: 'Logo' });
+  }
+  // Bingo Book (stocké dans localStorage 'bb_ninjas', pas dans DB)
+  // On lit depuis localStorage et on note pour update spécial à la fin
+  try {
+    var bbRaw = localStorage.getItem('bb_ninjas');
+    if(bbRaw){
+      var bbList = JSON.parse(bbRaw);
+      if(Array.isArray(bbList)){
+        bbList.forEach(function(n, idx){
+          if(n && n.portrait && typeof n.portrait === 'string' && n.portrait.startsWith('data:image/')){
+            entries.push({ collection: '__bb_ninjas', idx: idx, key: 'portrait', dataURL: n.portrait, name: 'Fiche '+(n.prenom||'')+' '+(n.nom||'') });
+          }
+        });
+      }
+    }
+  } catch(e){ /* ignore */ }
   return entries;
 }
 
@@ -21786,9 +22021,21 @@ function adminAnalyzePhotos(){
     html += '<div style="color:#22c55e;margin-bottom:8px">✓ Toutes les photos sont déjà optimisées</div>';
   }
   html += '<div style="font-size:10px;color:var(--muted);text-transform:uppercase;margin:8px 0 4px">Détail par section :</div>';
+  // Labels lisibles pour les sections
+  var collLabels = {
+    'recenses': 'Recensés',
+    'dossiers': 'Dossiers criminels',
+    'annonces': 'Annonces',
+    'plaintes': 'Plaintes',
+    'users': 'Membres',
+    'candidatures': 'Candidatures',
+    '__logo': 'Logo',
+    '__bb_ninjas': 'Bingo Book'
+  };
   Object.keys(byColl).forEach(function(c){
+    var label = collLabels[c] || c;
     html += '<div style="display:flex;justify-content:space-between;padding:2px 0">';
-    html += '<span>• '+c+' :</span>';
+    html += '<span>• '+label+' :</span>';
     html += '<span>'+byColl[c].count+' photos · '+_adminFormatBytes(byColl[c].size)+'</span>';
     html += '</div>';
   });
@@ -21860,15 +22107,29 @@ async function adminCompressAllPhotos(){
       var opts;
       if(e.collection === 'annonces') opts = {maxSize:900, quality:0.78, maxBytes:150000};
       else if(e.collection === 'users' || e.collection === 'candidatures') opts = {maxSize:300, quality:0.78, maxBytes:50000};
+      else if(e.collection === '__logo') opts = {maxSize:300, quality:0.85, maxBytes:50000};
+      else if(e.collection === '__bb_ninjas') opts = {maxSize:480, quality:0.78, maxBytes:80000};
       else opts = {maxSize:480, quality:0.72, maxBytes:80000};
 
       var compressed = await compressAsync(e.dataURL, opts);
 
       if(compressed && compressed.length < sizeBefore){
-        // Mettre à jour la donnée en place dans DB
-        DB[e.collection][e.idx][e.key] = compressed;
+        // Mettre à jour la donnée selon le type de collection
+        if(e.collection === '__logo'){
+          // Cas spécial : logo est un scalaire DB.logo
+          DB.logo = compressed;
+          changedCollections.add('logo');
+        } else if(e.collection === '__bb_ninjas'){
+          // Cas spécial : bingo book est dans localStorage, pas dans DB
+          // On accumule les changements et on push tout à la fin (hors de la boucle)
+          if(!window.__bbPendingChanges) window.__bbPendingChanges = {};
+          window.__bbPendingChanges[e.idx] = compressed;
+        } else {
+          // Cas normal : DB[collection][idx][key]
+          DB[e.collection][e.idx][e.key] = compressed;
+          changedCollections.add(e.collection);
+        }
         totalSavedBytes += (sizeBefore - compressed.length);
-        changedCollections.add(e.collection);
       }
     } catch(err){
       console.warn('Compression échouée pour:', e, err);
@@ -21883,6 +22144,25 @@ async function adminCompressAllPhotos(){
 
   if(bar) bar.style.width = '100%';
   if(label) label.textContent = '✅ Terminé. Sauvegarde sur Firebase...';
+
+  // Cas spécial : appliquer les changements du Bingo Book à localStorage
+  if(window.__bbPendingChanges){
+    try {
+      var bbRaw = localStorage.getItem('bb_ninjas');
+      if(bbRaw){
+        var bbList = JSON.parse(bbRaw);
+        if(Array.isArray(bbList)){
+          Object.keys(window.__bbPendingChanges).forEach(function(idx){
+            if(bbList[idx]) bbList[idx].portrait = window.__bbPendingChanges[idx];
+          });
+          localStorage.setItem('bb_ninjas', JSON.stringify(bbList));
+        }
+      }
+    } catch(err){
+      console.warn('Bingo Book localStorage update failed:', err);
+    }
+    window.__bbPendingChanges = null;
+  }
 
   // Push partial de toutes les collections modifiées en une seule requête
   if(changedCollections.size > 0 && typeof saveData === 'function'){
@@ -29890,10 +30170,19 @@ function bbHandleImageUpload(event) {
   if (lbl) lbl.textContent = '⏳ Compression de l\'image...';
   var reader = new FileReader();
   reader.onload = function(e) {
-    // On charge l'image dans un canvas pour la redimensionner / compresser.
-    // Cible : max 512px de côté, JPEG qualité 0.82 → typiquement < 100 Ko base64.
-    // Nécessaire car Firebase Realtime DB a une limite ~256 Ko par valeur,
-    // et localStorage ~5 Mo total partagés avec toute l'app.
+    // 🗜 Utilise le helper WebP unifié (cohérent avec les autres uploads de l'app)
+    // Profil "fiche ninja" : compromise entre qualité (visage de ninja) et poids
+    if (typeof window.compressImageDataURL === 'function') {
+      window.compressImageDataURL(e.target.result, {maxSize:480, quality:0.78, maxBytes:80000}, function(compressed) {
+        _bbPortraitData = compressed;
+        var prev = document.getElementById('bb-portrait-preview');
+        if(prev){ prev.src = _bbPortraitData; prev.style.display='block'; }
+        var sizeKb = Math.round(_bbPortraitData.length / 1024);
+        if(lbl){ lbl.textContent = '✅ Image chargée (' + sizeKb + ' Ko) — cliquer pour changer'; }
+      });
+      return;
+    }
+    // Fallback (si helper indisponible) — ne devrait jamais arriver
     var img = new Image();
     img.onload = function() {
       try {
@@ -29906,18 +30195,12 @@ function bbHandleImageUpload(event) {
         var canvas = document.createElement('canvas');
         canvas.width = w; canvas.height = h;
         var ctx = canvas.getContext('2d');
-        // Fond blanc pour éviter le noir si le PNG source a de la transparence
         ctx.fillStyle = '#ffffff';
         ctx.fillRect(0, 0, w, h);
         ctx.drawImage(img, 0, 0, w, h);
         var compressed = canvas.toDataURL('image/jpeg', 0.82);
-        // Sécurité : si malgré la compression on dépasse 200 Ko, on baisse la qualité
-        if (compressed.length > 200000) {
-          compressed = canvas.toDataURL('image/jpeg', 0.6);
-        }
-        if (compressed.length > 200000) {
-          compressed = canvas.toDataURL('image/jpeg', 0.4);
-        }
+        if (compressed.length > 200000) compressed = canvas.toDataURL('image/jpeg', 0.6);
+        if (compressed.length > 200000) compressed = canvas.toDataURL('image/jpeg', 0.4);
         _bbPortraitData = compressed;
         var prev = document.getElementById('bb-portrait-preview');
         if(prev){ prev.src = _bbPortraitData; prev.style.display='block'; }
