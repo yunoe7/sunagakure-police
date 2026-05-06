@@ -35310,6 +35310,25 @@ function bbDeleteById(id) {
     var list = bbGetNinjas().filter(function(x){return x.id!==id});
     bbSaveNinjas(list);
     bbRender();
+    // ─── Nettoyer les références dans les dossiers criminels ───
+    // Si un dossier criminel pointait vers cette fiche, on retire le lien pour
+    // que le bouton "Ajouter au Bingo Book" revienne à son état initial (rouge)
+    // au lieu de rester sur "↻ Recréer" (orange).
+    try {
+      var cleanedDossiers = 0;
+      if(Array.isArray(DB.dossiers)){
+        DB.dossiers.forEach(function(d){
+          if(d && d.bbFicheId === id){
+            delete d.bbFicheId;
+            delete d.bbLinkedAt;
+            cleanedDossiers++;
+          }
+        });
+        if(cleanedDossiers > 0 && typeof saveData === 'function'){
+          saveData();
+        }
+      }
+    } catch(e){ /* nettoyage non critique */ }
     if(typeof showToast==='function') showToast('Fiche supprimée du registre', 'info');
   });
 }
