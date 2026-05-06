@@ -8423,6 +8423,342 @@ document.addEventListener('error', function(e){
 
   <!-- RECRUTEMENT -->
   <div class="page-content" id="page-recrutement">
+    <style>
+    /* ═══════════════════════════════════════════════════════════════
+       RECRUTEMENT — VUE CARTES (fiches officielles de candidature)
+       Esthétique cohérente avec les cartes Dossiers Criminels :
+       sceau ID gauche, contenu central, actions à droite.
+       Variations de couleur selon le statut de la candidature.
+       ═══════════════════════════════════════════════════════════════ */
+    #page-recrutement .rec-cards{
+      display:flex;flex-direction:column;
+      gap:11px;
+    }
+    #page-recrutement .rec-cards:empty{display:none}
+
+    #page-recrutement .rec-card{
+      position:relative;
+      display:grid;
+      grid-template-columns:130px 1fr auto;
+      gap:18px;
+      align-items:stretch;
+      padding:16px 20px;
+      background:linear-gradient(135deg, rgba(26,20,16,0.92) 0%, rgba(34,28,19,0.88) 100%);
+      border:1px solid rgba(180,140,20,0.22);
+      border-radius:12px;
+      box-shadow:0 4px 18px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.04);
+      transition:transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
+      overflow:hidden;
+    }
+    /* Filet décoratif en haut, couleur selon statut */
+    #page-recrutement .rec-card::before{
+      content:'';
+      position:absolute;top:0;left:0;right:0;height:1px;
+      background:linear-gradient(90deg,
+        transparent 0%,
+        rgba(212,180,74,0.45) 20%,
+        rgba(212,180,74,0.55) 50%,
+        rgba(212,180,74,0.45) 80%,
+        transparent 100%);
+    }
+    #page-recrutement .rec-card:hover{
+      transform:translateY(-2px);
+      border-color:rgba(212,180,74,0.45);
+      box-shadow:0 8px 28px rgba(0,0,0,0.45), 0 0 0 1px rgba(212,180,74,0.15), inset 0 1px 0 rgba(255,255,255,0.06);
+    }
+
+    /* ─── Variantes par statut (couleur d'accent) ─── */
+    #page-recrutement .rec-card[data-statut="en_attente"]{
+      border-color:rgba(59,130,246,0.32);
+    }
+    #page-recrutement .rec-card[data-statut="en_attente"]::before{
+      background:linear-gradient(90deg, transparent 0%, rgba(59,130,246,0.6) 50%, transparent 100%);
+    }
+    #page-recrutement .rec-card[data-statut="en_attente"]:hover{
+      border-color:rgba(59,130,246,0.55);
+      box-shadow:0 8px 28px rgba(0,0,0,0.45), 0 0 0 1px rgba(59,130,246,0.22), inset 0 1px 0 rgba(255,255,255,0.06);
+    }
+    #page-recrutement .rec-card[data-statut="acceptee"]{
+      border-color:rgba(34,197,94,0.32);
+    }
+    #page-recrutement .rec-card[data-statut="acceptee"]::before{
+      background:linear-gradient(90deg, transparent 0%, rgba(34,197,94,0.6) 50%, transparent 100%);
+    }
+    #page-recrutement .rec-card[data-statut="acceptee"]:hover{
+      border-color:rgba(34,197,94,0.55);
+      box-shadow:0 8px 28px rgba(0,0,0,0.45), 0 0 0 1px rgba(34,197,94,0.22), inset 0 1px 0 rgba(255,255,255,0.06);
+    }
+    #page-recrutement .rec-card[data-statut="refusee"]{
+      border-color:rgba(239,68,68,0.32);
+      opacity:0.78;
+    }
+    #page-recrutement .rec-card[data-statut="refusee"]::before{
+      background:linear-gradient(90deg, transparent 0%, rgba(239,68,68,0.6) 50%, transparent 100%);
+    }
+    #page-recrutement .rec-card[data-statut="refusee"]:hover{
+      border-color:rgba(239,68,68,0.55);
+      opacity:0.92;
+    }
+
+    /* ─── BANDEAU IDENTIFICATION (gauche) ─── */
+    #page-recrutement .rec-card-id{
+      display:flex;flex-direction:column;align-items:center;justify-content:center;
+      padding:8px 6px;
+      background:linear-gradient(180deg, rgba(212,180,74,0.10), rgba(212,180,74,0.04));
+      border:1px solid rgba(212,180,74,0.30);
+      border-radius:8px;
+      gap:6px;
+    }
+    #page-recrutement .rec-card-id-num{
+      font-family:'Share Tech Mono',monospace;
+      font-size:13px;font-weight:700;
+      letter-spacing:1.2px;
+      color:#f0d060;
+      text-shadow:0 0 8px rgba(212,180,74,0.4);
+    }
+    #page-recrutement .rec-card-id-avatar{
+      width:64px;height:80px;
+      border-radius:6px;
+      overflow:hidden;
+      border:1px solid rgba(212,180,74,0.35);
+      background:linear-gradient(135deg, rgba(192,65,14,0.18), rgba(180,140,20,0.12));
+      display:flex;align-items:center;justify-content:center;
+      flex-shrink:0;
+      font-family:'Cinzel',serif;
+      font-size:30px;font-weight:700;
+      color:rgba(240,232,208,0.85);
+      text-shadow:0 1px 2px rgba(0,0,0,0.5);
+    }
+    #page-recrutement .rec-card-id-tag{
+      font-family:'Share Tech Mono',monospace;
+      font-size:8px;letter-spacing:1.5px;
+      color:rgba(212,180,74,0.65);
+      text-transform:uppercase;
+      margin-top:2px;
+    }
+
+    /* ─── CONTENU CENTRAL ─── */
+    #page-recrutement .rec-card-body{
+      display:flex;flex-direction:column;
+      gap:7px;
+      min-width:0;
+      padding:2px 0;
+    }
+    #page-recrutement .rec-card-name{
+      display:flex;align-items:baseline;gap:10px;
+      flex-wrap:wrap;
+      margin-bottom:2px;
+    }
+    #page-recrutement .rec-card-name h3{
+      font-family:'Cinzel',serif;
+      font-size:18px;font-weight:700;
+      letter-spacing:1.5px;
+      color:#f0e8d0;
+      margin:0;
+      text-transform:uppercase;
+    }
+    #page-recrutement .rec-card-meta{
+      display:flex;flex-wrap:wrap;align-items:center;
+      gap:7px 14px;
+      font-family:'Share Tech Mono',monospace;
+      font-size:10.5px;
+      color:rgba(255,255,255,0.55);
+      letter-spacing:0.5px;
+    }
+    #page-recrutement .rec-card-meta .rec-meta-item{
+      display:inline-flex;align-items:center;gap:5px;
+    }
+    #page-recrutement .rec-card-meta .ico{opacity:0.6}
+
+    /* Ligne badges : statut + âge + discord */
+    #page-recrutement .rec-card-badges{
+      display:flex;flex-wrap:wrap;align-items:center;
+      gap:6px;
+      margin-top:1px;
+    }
+    #page-recrutement .rec-card-badges .badge{
+      font-size:10.5px;letter-spacing:0.8px;
+      padding:3px 9px;border-radius:4px;
+      font-family:'Barlow Condensed',sans-serif;
+      font-weight:700;text-transform:uppercase;
+    }
+    #page-recrutement .rec-card-info-pill{
+      display:inline-flex;align-items:center;gap:6px;
+      padding:3px 10px;
+      background:rgba(0,0,0,0.35);
+      border:1px solid rgba(180,140,20,0.18);
+      border-radius:5px;
+      font-family:'Share Tech Mono',monospace;
+      font-size:10.5px;
+      color:var(--text2);
+    }
+    #page-recrutement .rec-card-info-pill .lbl{
+      color:rgba(212,180,74,0.7);
+      font-weight:700;
+      letter-spacing:1px;
+    }
+
+    /* Aperçu de la motivation */
+    #page-recrutement .rec-card-motivation{
+      font-family:'EB Garamond',Georgia,serif;
+      font-style:italic;
+      font-size:12.5px;
+      color:rgba(240,232,208,0.72);
+      line-height:1.5;
+      max-width:100%;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      display:-webkit-box;
+      -webkit-line-clamp:2;
+      -webkit-box-orient:vertical;
+      padding:6px 12px;
+      background:rgba(0,0,0,0.18);
+      border-left:2px solid rgba(212,180,74,0.3);
+      border-radius:0 4px 4px 0;
+    }
+    #page-recrutement .rec-card-motivation::before{
+      content:'« ';
+      color:rgba(212,180,74,0.5);
+      font-size:14px;
+      margin-right:1px;
+    }
+    #page-recrutement .rec-card-motivation::after{
+      content:' »';
+      color:rgba(212,180,74,0.5);
+      font-size:14px;
+    }
+    #page-recrutement .rec-card-motivation-empty{
+      font-family:'Share Tech Mono',monospace;
+      font-size:10.5px;
+      color:var(--muted);
+      font-style:italic;
+      padding:4px 0;
+    }
+
+    /* Pied : auteur + drapeau "ma candidature" */
+    #page-recrutement .rec-card-footer{
+      display:flex;align-items:center;
+      gap:14px;flex-wrap:wrap;
+      font-family:'Share Tech Mono',monospace;
+      font-size:9.5px;letter-spacing:1px;
+      color:rgba(255,255,255,0.4);
+      text-transform:uppercase;
+      margin-top:3px;
+      padding-top:7px;
+      border-top:1px dashed rgba(180,140,20,0.18);
+    }
+    #page-recrutement .rec-card-footer .rec-foot-item{
+      display:inline-flex;align-items:center;gap:5px;
+    }
+    #page-recrutement .rec-card-own-flag{
+      display:inline-flex;align-items:center;gap:5px;
+      padding:2px 8px;
+      background:linear-gradient(135deg, rgba(212,180,74,0.20), rgba(180,140,20,0.12));
+      border:1px solid rgba(212,180,74,0.4);
+      border-radius:4px;
+      color:#f0d060;
+      font-weight:700;
+      letter-spacing:1.2px;
+    }
+
+    /* ─── ACTIONS (droite) ─── */
+    #page-recrutement .rec-card-actions{
+      display:flex;flex-direction:column;
+      gap:6px;
+      align-items:flex-end;
+      justify-content:center;
+    }
+    #page-recrutement .rec-card-actions-btns{
+      display:flex;gap:5px;
+      flex-wrap:nowrap;
+    }
+    #page-recrutement .rec-card-actions .rec-act-btn{
+      width:32px;height:32px;
+      display:inline-flex;align-items:center;justify-content:center;
+      border-radius:6px;
+      border:1px solid rgba(180,140,20,0.25);
+      background:rgba(20,16,9,0.6);
+      color:#d4b44a;
+      font-size:14px;
+      cursor:pointer;
+      transition:all 0.15s ease;
+    }
+    #page-recrutement .rec-card-actions .rec-act-btn:hover{
+      transform:translateY(-1px);
+      border-color:rgba(212,180,74,0.55);
+      background:rgba(212,180,74,0.10);
+      box-shadow:0 4px 10px rgba(0,0,0,0.3);
+    }
+    #page-recrutement .rec-card-actions .rec-act-btn.is-edit{color:#facc15}
+    #page-recrutement .rec-card-actions .rec-act-btn.is-accept{
+      color:#22c55e;border-color:rgba(34,197,94,0.30);
+    }
+    #page-recrutement .rec-card-actions .rec-act-btn.is-accept:hover{
+      border-color:rgba(34,197,94,0.6);
+      background:rgba(34,197,94,0.10);
+    }
+    #page-recrutement .rec-card-actions .rec-act-btn.is-reject{
+      color:#f87171;border-color:rgba(239,68,68,0.30);
+    }
+    #page-recrutement .rec-card-actions .rec-act-btn.is-reject:hover{
+      border-color:rgba(239,68,68,0.6);
+      background:rgba(239,68,68,0.10);
+    }
+    #page-recrutement .rec-card-actions .rec-act-btn.is-delete{
+      color:#f87171;border-color:rgba(220,38,38,0.30);
+    }
+    #page-recrutement .rec-card-actions .rec-act-btn.is-delete:hover{
+      border-color:rgba(220,38,38,0.6);
+      background:rgba(220,38,38,0.10);
+    }
+
+    /* État vide */
+    #page-recrutement .rec-cards-empty{
+      padding:60px 30px;
+      text-align:center;
+      background:rgba(20,16,9,0.5);
+      border:1px dashed rgba(180,140,20,0.25);
+      border-radius:12px;
+      color:var(--muted);
+    }
+    #page-recrutement .rec-cards-empty-ico{
+      font-size:42px;opacity:0.35;margin-bottom:10px;
+    }
+    #page-recrutement .rec-cards-empty-msg{
+      font-family:'Share Tech Mono',monospace;
+      font-size:11.5px;letter-spacing:2px;
+      text-transform:uppercase;
+    }
+
+    /* ─── RESPONSIVE ─── */
+    @media(max-width:900px){
+      #page-recrutement .rec-card{
+        grid-template-columns:96px 1fr;
+        grid-template-rows:auto auto;
+        gap:14px;
+      }
+      #page-recrutement .rec-card-actions{
+        grid-column:1 / -1;
+        flex-direction:row;
+        align-items:center;justify-content:flex-end;
+        padding-top:10px;
+        border-top:1px dashed rgba(180,140,20,0.15);
+      }
+      #page-recrutement .rec-card-id{padding:6px 4px;gap:4px}
+      #page-recrutement .rec-card-id-avatar{width:54px;height:68px;font-size:24px}
+      #page-recrutement .rec-card-id-num{font-size:11px}
+    }
+    @media(max-width:560px){
+      #page-recrutement .rec-card{padding:13px 14px;gap:11px}
+      #page-recrutement .rec-card-name h3{font-size:15px;letter-spacing:1px}
+      #page-recrutement .rec-card-meta{font-size:9.5px}
+      #page-recrutement .rec-card-id{padding:5px 3px}
+      #page-recrutement .rec-card-id-avatar{width:48px;height:60px;font-size:22px}
+      #page-recrutement .rec-card-id-num{font-size:10px;letter-spacing:1px}
+      #page-recrutement .rec-card-id-tag{font-size:7px}
+      #page-recrutement .rec-card-motivation{font-size:11.5px}
+    }
+    </style>
     <!-- Hero premium -->
     <div class="pgv2-hero" data-tone="recrutement">
       <div class="pgv2-hero-inner">
@@ -8451,22 +8787,8 @@ document.addEventListener('error', function(e){
       <div class="tab-btn" onclick="filterCandidatures('acceptee',this)">Acceptées</div>
       <div class="tab-btn" onclick="filterCandidatures('refusee',this)">Refusées</div>
     </div>
-    <div class="card" style="overflow:visible">
-      <div class="table-scroll-wrapper">
-        <table class="data-table">
-          <thead><tr>
-            <th class="sortable-th" onclick="sortTable('candidatures','id',this)" aria-sort="none">ID <span class="sort-icon">⇅</span></th>
-            <th class="sortable-th" onclick="sortTable('candidatures','nom',this)" aria-sort="none">Nom RP <span class="sort-icon">⇅</span></th>
-            <th class="sortable-th" onclick="sortTable('candidatures','age',this)" aria-sort="none">Âge <span class="sort-icon">⇅</span></th>
-            <th>Motivation</th>
-            <th class="sortable-th" onclick="sortTable('candidatures','statut',this)" aria-sort="none">Statut <span class="sort-icon">⇅</span></th>
-            <th class="sortable-th" onclick="sortTable('candidatures','date',this)" aria-sort="none">Date <span class="sort-icon">⇅</span></th>
-            <th>Actions</th>
-          </tr></thead>
-          <tbody id="candidatures-tbody"></tbody>
-        </table>
-      </div>
-    </div>
+    <!-- VUE CARTES — fiches d'identité candidatures -->
+    <div id="candidatures-cards" class="rec-cards"></div>
     <!-- Membres recrutés (membres seulement) -->
     <div id="section-recrues" style="display:none">
     <div class="section-header mt-6">
@@ -21362,27 +21684,105 @@ function renderCandidatures(){
   var sAc=el("pgv2-cand-acceptees");if(sAc)sAc.textContent=allCand.filter(c=>c.statut==="acceptee").length;
   var sR=el("pgv2-cand-refusees");if(sR)sR.textContent=allCand.filter(c=>c.statut==="refusee").length;
 
-  // Tri par en-tête de colonne (clic sur ID, Nom, Âge, etc.)
-  if(_sortState && _sortState['candidatures'] && _sortState['candidatures'].field){
-    list = applySortToArray(list, 'candidatures');
+  // Tri par défaut : récents en premier
+  list = list.slice().sort(function(a,b){ return (b.id||0) - (a.id||0); });
+
+  var box = document.getElementById('candidatures-cards');
+  if(!box) return;
+  if(!list.length){
+    box.innerHTML = '<div class="rec-cards-empty">'
+                  +   '<div class="rec-cards-empty-ico">📋</div>'
+                  +   '<div class="rec-cards-empty-msg">— Aucune candidature ne correspond à ce filtre —</div>'
+                  + '</div>';
+    return;
   }
 
-  el("candidatures-tbody").innerHTML=list.map(c=>{
-    const isOwn=currentUser&&c.authorId===currentUser.id;
-    let actions='—';
-    if(canModify()&&c.statut==="en_attente"){
-      actions=`<button class="btn btn-success btn-sm" onclick="setCandidature(${c.id},'acceptee')">✓</button> <button class="btn btn-danger btn-sm" onclick="setCandidature(${c.id},'refusee')">✕</button> `;
+  // Format ID candidature : LP-CAND-NNN (3 chiffres, ordre stable de création)
+  var allSorted = (DB.candidatures||[]).slice().sort(function(a,b){ return (a.id||0) - (b.id||0); });
+  var indexById = {};
+  allSorted.forEach(function(c, i){ indexById[c.id] = i + 1; });
+
+  // Mapping statut → libellé/badge/icône
+  var statutCfg = {
+    'en_attente': { label:'En attente',    badgeCls:'badge-blue',  ico:'⏳' },
+    'acceptee':   { label:'Acceptée',      badgeCls:'badge-green', ico:'✅' },
+    'refusee':    { label:'Refusée',       badgeCls:'badge-red',   ico:'❌' }
+  };
+
+  box.innerHTML = list.map(function(c){
+    var isOwn = currentUser && c.authorId === currentUser.id;
+    var canMod = canModify();
+    var st = statutCfg[c.statut] || { label:c.statut||'—', badgeCls:'badge-gray', ico:'•' };
+
+    // Numéro de fiche LP-CAND-NNN
+    var idxStr = String(indexById[c.id] || 1).padStart(3, '0');
+    var fileNum = 'LP-CAND-' + idxStr;
+
+    // Initiale pour l'avatar (1ère lettre du nom RP)
+    var initial = (c.nom || '?').trim().charAt(0).toUpperCase();
+
+    // Motivation : aperçu sur 2 lignes (CSS clamp)
+    var motivation = (c.motif || '').trim();
+
+    // Discord (optionnel)
+    var discordPart = c.discord
+      ? '<span class="rec-card-info-pill"><span class="lbl">Discord</span> ' + esc(c.discord) + '</span>'
+      : '';
+
+    // Construction des actions
+    var actionsBtns = '';
+    // Voir : toujours visible
+    actionsBtns += '<button class="rec-act-btn" onclick="viewCandidature(' + c.id + ')" title="Voir les détails">👁</button>';
+    // Accepter / Refuser : modos uniquement, et seulement si en attente
+    if(canMod && c.statut === 'en_attente'){
+      actionsBtns += '<button class="rec-act-btn is-accept" onclick="setCandidature(' + c.id + ',\'acceptee\')" title="Accepter">✓</button>';
+      actionsBtns += '<button class="rec-act-btn is-reject" onclick="setCandidature(' + c.id + ',\'refusee\')" title="Refuser">✕</button>';
     }
-    if(canModify()){
-      actions=(actions==='—'?'':actions) + `<button class="btn btn-danger btn-sm" onclick="deleteCandidature(${c.id})" title="Supprimer">🗑</button>`;
+    // Modifier : owner OU modo
+    if(isOwn || canMod){
+      actionsBtns += '<button class="rec-act-btn is-edit" onclick="openEditCandidature(' + c.id + ')" title="Modifier">✏️</button>';
     }
-    if(isOwn){
-      const modifyBtn=`<button class="btn btn-gold btn-sm" onclick="openEditCandidature(${c.id})" title="Modifier">✏️ Modifier</button>`;
-      actions=canModify()?actions+' '+modifyBtn:modifyBtn;
+    // Supprimer : modo uniquement
+    if(canMod){
+      actionsBtns += '<button class="rec-act-btn is-delete" onclick="deleteCandidature(' + c.id + ')" title="Supprimer">🗑</button>';
     }
-    return `<tr><td class="mono">#${candNumero(c.id)}</td><td><b>${esc(c.nom)}</b></td><td>${esc(c.age)} ans</td><td style="font-size:11px;max-width:150px">${esc((c.motif||"").substring(0,50))}…</td><td><span class="badge ${statutCand(c.statut)}">${fmtCand(c.statut)}</span></td><td class="mono">${fmtDate(c.date)}</td><td style="white-space:nowrap"><button class="btn btn-outline btn-sm" onclick="viewCandidature(${c.id})" title="Voir les détails">👁</button> ${actions}</td></tr>`;
-  }).join("")||`<tr><td colspan="7" style="text-align:center;color:var(--muted);padding:18px">Aucune candidature</td></tr>`;
-  if(typeof restoreSortUI === 'function') restoreSortUI('candidatures');
+
+    // Footer
+    var footerHTML = '<div class="rec-card-footer">'
+                   +   '<span class="rec-foot-item">📅 Déposée le ' + esc(fmtDate(c.date)) + '</span>'
+                   +   (c.modifiedAt ? '<span class="rec-foot-item">✏️ Modifiée le ' + esc(fmtDate(c.modifiedAt)) + '</span>' : '')
+                   +   (isOwn ? '<span class="rec-card-own-flag">⭐ Ma candidature</span>' : '')
+                   + '</div>';
+
+    return '<div class="rec-card" data-statut="' + esc(c.statut || '') + '">'
+      // ─── Sceau ID ───
+      + '<div class="rec-card-id">'
+      +   '<div class="rec-card-id-num">' + fileNum + '</div>'
+      +   '<div class="rec-card-id-avatar">' + esc(initial) + '</div>'
+      +   '<div class="rec-card-id-tag">№ Dossier</div>'
+      + '</div>'
+      // ─── Corps ───
+      + '<div class="rec-card-body">'
+      +   '<div class="rec-card-name"><h3>' + esc(c.nom || '—') + '</h3></div>'
+      +   '<div class="rec-card-meta">'
+      +     '<span class="rec-meta-item"><span class="ico">🎂</span> ' + esc(c.age || '?') + ' ans</span>'
+      +     '<span class="rec-meta-item"><span class="ico">' + st.ico + '</span> ' + esc(st.label) + '</span>'
+      +   '</div>'
+      +   '<div class="rec-card-badges">'
+      +     '<span class="badge ' + st.badgeCls + '">' + esc(st.label) + '</span>'
+      +     discordPart
+      +   '</div>'
+      +   (motivation
+            ? '<div class="rec-card-motivation" title="' + esc(motivation) + '">' + esc(motivation) + '</div>'
+            : '<div class="rec-card-motivation-empty">— Aucune motivation renseignée —</div>')
+      +   footerHTML
+      + '</div>'
+      // ─── Actions ───
+      + '<div class="rec-card-actions">'
+      +   '<div class="rec-card-actions-btns">' + actionsBtns + '</div>'
+      + '</div>'
+      + '</div>';
+  }).join('');
 }
 
 function openEditCandidature(id){
@@ -30806,27 +31206,8 @@ document.addEventListener('keydown', function(e) {
       rows.forEach(function(r) { tbody.appendChild(r); });
     };
 
-    // ── Patch renderCandidatures ──
-    var _origRC = window.renderCandidatures;
-    window.renderCandidatures = function() {
-      _origRC();
-      var st = _sortState['candidatures']; if (!st) return;
-      var tbody = document.getElementById('candidatures-tbody'); if (!tbody) return;
-      var rows = Array.from(tbody.querySelectorAll('tr'));
-      if (rows.length <= 1) return;
-      rows.sort(function(a, b) {
-        var cells = {id:[0],nom:[1],age:[2],statut:[4],date:[5]};
-        var colIdx = (cells[st.field] || [0])[0];
-        var va = (a.cells[colIdx]||{}).textContent||'';
-        var vb = (b.cells[colIdx]||{}).textContent||'';
-        if (st.field === 'id' || st.field === 'age') { va = parseInt(va)||0; vb = parseInt(vb)||0; return st.dir==='asc'?va-vb:vb-va; }
-        va = va.toLowerCase(); vb = vb.toLowerCase();
-        if (va < vb) return st.dir==='asc'?-1:1;
-        if (va > vb) return st.dir==='asc'?1:-1;
-        return 0;
-      });
-      rows.forEach(function(r) { tbody.appendChild(r); });
-    };
+    // (Patch renderCandidatures retiré : la vue recrutement utilise désormais
+    //  uniquement les cartes, le tri par défaut est géré dans renderCandidatures)
 
     // (Patch renderDossiers retiré : la vue dossiers utilise désormais
     //  uniquement les cartes, le tri est géré par dc-sort + renderDossiers)
@@ -31297,12 +31678,10 @@ document.addEventListener('keydown', function(e) {
   function rePaginate(key) {
     var tbodyIds = {
       plaintes: 'plaintes-tbody',
-      candidatures: 'candidatures-tbody',
       sanctions: 'sanctions-tbody'
     };
     var cardIds = {
       plaintes: 'page-plaintes',
-      candidatures: 'page-recrutement',
       sanctions: 'page-sanctions'
     };
     var tbody = document.getElementById(tbodyIds[key]);
@@ -31323,12 +31702,12 @@ document.addEventListener('keydown', function(e) {
   // Patch les render functions pour ajouter la pagination après chaque rendu
   if (typeof renderPlaintes !== 'function' || typeof renderDossiers !== 'function') return;
 
-    // Note : 'dossiers' a été retiré de la pagination tableau car la vue
-    // dossiers utilise maintenant les cartes (#dossiers-cards) sans tbody.
-    var keys = ['plaintes', 'candidatures', 'sanctions'];
-    var fns  = ['renderPlaintes', 'renderCandidatures', 'renderSanctions'];
-    var tbodyIds = { plaintes:'plaintes-tbody', candidatures:'candidatures-tbody', sanctions:'sanctions-tbody' };
-    var cardIds  = { plaintes:'page-plaintes',  candidatures:'page-recrutement',   sanctions:'page-sanctions' };
+    // Note : 'dossiers' et 'candidatures' ont été retirés de la pagination tableau
+    // car ces vues utilisent maintenant des cartes (sans tbody).
+    var keys = ['plaintes', 'sanctions'];
+    var fns  = ['renderPlaintes', 'renderSanctions'];
+    var tbodyIds = { plaintes:'plaintes-tbody', sanctions:'sanctions-tbody' };
+    var cardIds  = { plaintes:'page-plaintes',  sanctions:'page-sanctions' };
 
     keys.forEach(function(key, i) {
       var fnName = fns[i];
@@ -31348,7 +31727,7 @@ document.addEventListener('keydown', function(e) {
     });
 
     // Réinitialiser la page à 1 quand on change de filtre ou de recherche
-    ['filterPlaintes','filterCandidatures'].forEach(function(fnName) {
+    ['filterPlaintes'].forEach(function(fnName) {
       if (typeof window[fnName] !== 'function') return;
       var _orig = window[fnName];
       window[fnName] = function() {
