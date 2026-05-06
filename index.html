@@ -8148,30 +8148,57 @@ document.addEventListener('error', function(e){
     #page-annonces .ann-search::placeholder{color:rgba(255,255,255,0.3) !important}
     #page-annonces .ann-filters{display:flex;gap:4px;flex-wrap:wrap;align-items:center}
     #page-annonces .ann-fbtn{
-      padding:7px 11px;border-radius:6px;
-      background:rgba(255,255,255,0.04);
-      border:1px solid rgba(180,140,20,0.18);
+      padding:7px 12px;border-radius:6px;
+      background:rgba(255,255,255,0.03);
+      border:1px solid rgba(180,140,20,0.20);
       cursor:pointer;
       font-family:'Share Tech Mono',monospace;
-      font-size:10px;letter-spacing:1.2px;
-      color:rgba(255,255,255,0.55);
-      text-transform:uppercase;font-weight:600;
-      transition:all .15s ease;
-      display:inline-flex;align-items:center;gap:5px;
+      font-size:10px;letter-spacing:1.3px;
+      color:rgba(232,208,140,0.55);
+      text-transform:uppercase;font-weight:700;
+      transition:all .2s ease;
+      display:inline-flex;align-items:center;gap:6px;
     }
-    #page-annonces .ann-fbtn:hover{color:#fff;background:rgba(255,255,255,0.07)}
+    #page-annonces .ann-fbtn:hover{
+      color:#f0d060;
+      background:rgba(212,180,74,0.07);
+      border-color:rgba(212,180,74,0.35);
+    }
     #page-annonces .ann-fbtn.active{
-      background:linear-gradient(135deg,rgba(201,162,39,0.26),rgba(201,162,39,0.1));
-      color:#fff;border-color:rgba(201,162,39,0.5);
-      box-shadow:inset 0 -2px 0 #c9a227;
+      background:linear-gradient(135deg, rgba(212,180,74,0.22), rgba(180,140,20,0.12));
+      border-color:rgba(212,180,74,0.55);
+      color:#f0d060;
+      box-shadow:inset 0 1px 0 rgba(255,255,255,0.08), 0 1px 4px rgba(0,0,0,0.3);
+      text-shadow:0 0 8px rgba(212,180,74,0.4);
     }
-    #page-annonces .ann-fbtn.f-info.active   {background:linear-gradient(135deg,rgba(59,130,246,0.3),rgba(59,130,246,0.12));border-color:rgba(59,130,246,0.5);box-shadow:inset 0 -2px 0 #3b82f6}
-    #page-annonces .ann-fbtn.f-opera.active  {background:linear-gradient(135deg,rgba(217,119,6,0.3),rgba(217,119,6,0.12));border-color:rgba(217,119,6,0.5);box-shadow:inset 0 -2px 0 #f59e0b}
-    #page-annonces .ann-fbtn.f-alert.active  {background:linear-gradient(135deg,rgba(220,38,38,0.3),rgba(220,38,38,0.12));border-color:rgba(220,38,38,0.5);box-shadow:inset 0 -2px 0 #ef4444}
-    #page-annonces .ann-fbtn.f-disci.active  {background:linear-gradient(135deg,rgba(168,85,247,0.3),rgba(168,85,247,0.12));border-color:rgba(168,85,247,0.5);box-shadow:inset 0 -2px 0 #a855f7}
+    #page-annonces .ann-fbtn.f-info.active{
+      background:linear-gradient(135deg, rgba(59,130,246,0.30), rgba(37,99,235,0.15));
+      border-color:rgba(59,130,246,0.55);
+      color:#93c5fd;
+      text-shadow:0 0 8px rgba(59,130,246,0.4);
+    }
+    #page-annonces .ann-fbtn.f-opera.active{
+      background:linear-gradient(135deg, rgba(251,146,60,0.30), rgba(217,119,6,0.15));
+      border-color:rgba(251,146,60,0.55);
+      color:#fdba74;
+      text-shadow:0 0 8px rgba(251,146,60,0.4);
+    }
+    #page-annonces .ann-fbtn.f-alert.active{
+      background:linear-gradient(135deg, rgba(239,68,68,0.30), rgba(185,28,28,0.15));
+      border-color:rgba(239,68,68,0.55);
+      color:#fca5a5;
+      text-shadow:0 0 10px rgba(239,68,68,0.5);
+      animation:dc-extreme-pulse 2.5s ease-in-out infinite;
+    }
+    #page-annonces .ann-fbtn.f-disci.active{
+      background:linear-gradient(135deg, rgba(168,85,247,0.30), rgba(124,58,237,0.15));
+      border-color:rgba(168,85,247,0.55);
+      color:#c4b5fd;
+      text-shadow:0 0 8px rgba(168,85,247,0.4);
+    }
     #page-annonces .ann-fbtn .dot{
       width:7px;height:7px;border-radius:50%;
-      box-shadow:0 0 0 2px rgba(255,255,255,0.05);
+      box-shadow:0 0 0 2px rgba(0,0,0,0.3);
     }
     #page-annonces .ann-fbtn .dot.b{background:#3b82f6}
     #page-annonces .ann-fbtn .dot.o{background:#f59e0b}
@@ -9497,46 +9524,112 @@ document.addEventListener('error', function(e){
       align-items:center;
     }
     #page-dossiers .dc-filter-grp{
-      display:flex;gap:4px;align-items:center;
-      background:rgba(20,16,9,0.7);
-      border:1px solid rgba(180,140,20,0.15);
-      border-radius:8px;
-      padding:4px;
+      display:flex;gap:3px;align-items:center;
+      background:linear-gradient(135deg, rgba(26,20,16,0.95) 0%, rgba(34,28,19,0.92) 100%);
+      border:1px solid rgba(180,140,20,0.30);
+      border-radius:9px;
+      padding:5px;
+      box-shadow:0 2px 8px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.04);
+      position:relative;
+    }
+    #page-dossiers .dc-filter-grp::before{
+      content:'';position:absolute;top:0;left:8px;right:8px;height:1px;
+      background:linear-gradient(90deg, transparent, rgba(212,180,74,0.45), transparent);
     }
     #page-dossiers .dc-filter-grp .lbl{
       font-family:'Share Tech Mono',monospace;
-      font-size:8.5px;letter-spacing:1.5px;
-      color:rgba(255,255,255,0.4);
+      font-size:9px;letter-spacing:1.8px;
+      color:rgba(212,180,74,0.65);
       text-transform:uppercase;
-      padding:0 8px 0 6px;font-weight:700;
+      padding:0 10px 0 8px;font-weight:700;
+      border-right:1px solid rgba(180,140,20,0.18);
+      margin-right:3px;
     }
     #page-dossiers .dc-fbtn{
-      padding:6px 11px;border-radius:5px;
-      background:transparent;border:none;
+      padding:7px 13px;border-radius:6px;
+      background:transparent;border:1px solid transparent;
       cursor:pointer;
       font-family:'Share Tech Mono',monospace;
-      font-size:9.5px;letter-spacing:1.2px;
-      color:rgba(255,255,255,0.55);
-      text-transform:uppercase;font-weight:600;
-      transition:all .15s ease;
+      font-size:10px;letter-spacing:1.3px;
+      color:rgba(232,208,140,0.50);
+      text-transform:uppercase;font-weight:700;
+      transition:all .2s ease;
+      position:relative;
     }
-    #page-dossiers .dc-fbtn:hover{color:#fff;background:rgba(255,255,255,0.05)}
+    #page-dossiers .dc-fbtn:hover{
+      color:#f0d060;
+      background:rgba(212,180,74,0.06);
+      border-color:rgba(212,180,74,0.20);
+    }
+    /* Actif par défaut (Tous) : doré */
     #page-dossiers .dc-fbtn.active{
-      background:linear-gradient(135deg,rgba(192,65,14,0.3),rgba(192,65,14,0.15));
-      color:#fff;
-      box-shadow:inset 0 -2px 0 #e05c1a;
+      background:linear-gradient(135deg, rgba(212,180,74,0.22), rgba(180,140,20,0.12));
+      border-color:rgba(212,180,74,0.55);
+      color:#f0d060;
+      box-shadow:inset 0 1px 0 rgba(255,255,255,0.08), 0 1px 4px rgba(0,0,0,0.3);
+      text-shadow:0 0 8px rgba(212,180,74,0.4);
     }
-    /* Variantes danger */
-    #page-dossiers .dc-fbtn.f-faible.active   {background:linear-gradient(135deg,rgba(22,163,74,0.3),rgba(22,163,74,0.12));box-shadow:inset 0 -2px 0 #22c55e}
-    #page-dossiers .dc-fbtn.f-modere.active   {background:linear-gradient(135deg,rgba(37,99,235,0.3),rgba(37,99,235,0.12));box-shadow:inset 0 -2px 0 #3b82f6}
-    #page-dossiers .dc-fbtn.f-eleve.active    {background:linear-gradient(135deg,rgba(217,119,6,0.3),rgba(217,119,6,0.12));box-shadow:inset 0 -2px 0 #f59e0b}
-    #page-dossiers .dc-fbtn.f-extreme.active  {background:linear-gradient(135deg,rgba(220,38,38,0.3),rgba(220,38,38,0.12));box-shadow:inset 0 -2px 0 #ef4444}
+    /* Variantes danger : couleur vive + glow quand actif */
+    #page-dossiers .dc-fbtn.f-faible.active{
+      background:linear-gradient(135deg, rgba(34,197,94,0.30), rgba(22,163,74,0.15));
+      border-color:rgba(34,197,94,0.55);
+      color:#86efac;
+      text-shadow:0 0 8px rgba(34,197,94,0.4);
+    }
+    #page-dossiers .dc-fbtn.f-modere.active{
+      background:linear-gradient(135deg, rgba(59,130,246,0.30), rgba(37,99,235,0.15));
+      border-color:rgba(59,130,246,0.55);
+      color:#93c5fd;
+      text-shadow:0 0 8px rgba(59,130,246,0.4);
+    }
+    #page-dossiers .dc-fbtn.f-eleve.active{
+      background:linear-gradient(135deg, rgba(251,146,60,0.30), rgba(217,119,6,0.15));
+      border-color:rgba(251,146,60,0.60);
+      color:#fdba74;
+      text-shadow:0 0 8px rgba(251,146,60,0.4);
+    }
+    #page-dossiers .dc-fbtn.f-extreme.active{
+      background:linear-gradient(135deg, rgba(239,68,68,0.30), rgba(185,28,28,0.15));
+      border-color:rgba(239,68,68,0.60);
+      color:#fca5a5;
+      text-shadow:0 0 10px rgba(239,68,68,0.5);
+      animation:dc-extreme-pulse 2.5s ease-in-out infinite;
+    }
+    @keyframes dc-extreme-pulse{
+      0%,100%{box-shadow:inset 0 1px 0 rgba(255,255,255,0.08), 0 0 0 0 rgba(239,68,68,0.3)}
+      50%{box-shadow:inset 0 1px 0 rgba(255,255,255,0.08), 0 0 0 4px rgba(239,68,68,0)}
+    }
     /* Variantes statut */
-    #page-dossiers .dc-fbtn.s-recherche.active{background:linear-gradient(135deg,rgba(220,38,38,0.3),rgba(220,38,38,0.12));box-shadow:inset 0 -2px 0 #ef4444}
-    #page-dossiers .dc-fbtn.s-gav.active      {background:linear-gradient(135deg,rgba(217,119,6,0.3),rgba(217,119,6,0.12));box-shadow:inset 0 -2px 0 #f59e0b}
-    #page-dossiers .dc-fbtn.s-incarcere.active{background:linear-gradient(135deg,rgba(124,58,237,0.3),rgba(124,58,237,0.12));box-shadow:inset 0 -2px 0 #a855f7}
-    #page-dossiers .dc-fbtn.s-libere.active   {background:linear-gradient(135deg,rgba(22,163,74,0.3),rgba(22,163,74,0.12));box-shadow:inset 0 -2px 0 #22c55e}
-    #page-dossiers .dc-fbtn.s-surveille.active{background:linear-gradient(135deg,rgba(234,88,12,0.3),rgba(234,88,12,0.12));box-shadow:inset 0 -2px 0 #fb923c}
+    #page-dossiers .dc-fbtn.s-recherche.active{
+      background:linear-gradient(135deg, rgba(239,68,68,0.30), rgba(185,28,28,0.15));
+      border-color:rgba(239,68,68,0.55);
+      color:#fca5a5;
+      text-shadow:0 0 8px rgba(239,68,68,0.4);
+    }
+    #page-dossiers .dc-fbtn.s-gav.active{
+      background:linear-gradient(135deg, rgba(251,146,60,0.30), rgba(217,119,6,0.15));
+      border-color:rgba(251,146,60,0.55);
+      color:#fdba74;
+      text-shadow:0 0 8px rgba(251,146,60,0.4);
+    }
+    #page-dossiers .dc-fbtn.s-incarcere.active{
+      background:linear-gradient(135deg, rgba(168,85,247,0.30), rgba(124,58,237,0.15));
+      border-color:rgba(168,85,247,0.55);
+      color:#c4b5fd;
+      text-shadow:0 0 8px rgba(168,85,247,0.4);
+    }
+    #page-dossiers .dc-fbtn.s-libere.active{
+      background:linear-gradient(135deg, rgba(34,197,94,0.30), rgba(22,163,74,0.15));
+      border-color:rgba(34,197,94,0.55);
+      color:#86efac;
+      text-shadow:0 0 8px rgba(34,197,94,0.4);
+    }
+    #page-dossiers .dc-fbtn.s-surveille.active{
+      background:linear-gradient(135deg, rgba(234,179,8,0.30), rgba(202,138,4,0.15));
+      border-color:rgba(234,179,8,0.55);
+      color:#fde047;
+      text-shadow:0 0 8px rgba(234,179,8,0.4);
+    }
 
     /* Mobile */
     @media(max-width:768px){
@@ -11282,25 +11375,31 @@ document.addEventListener('error', function(e){
       .bb-search-wrap input::placeholder { color: rgba(232,216,176,0.25); }
       .bb-filters { display: flex; gap: 5px; flex-wrap: wrap; }
       .bb-fbtn {
-        background: transparent;
-        border: 1px solid rgba(90,58,16,0.35);
-        color: rgba(232,208,140,0.45);
+        background: rgba(20,16,9,0.5);
+        border: 1px solid rgba(180,140,20,0.25);
+        color: rgba(232,208,140,0.55);
         font-family: 'Share Tech Mono', monospace;
-        font-size: 9px;
-        padding: 6px 13px;
-        border-radius: 3px;
+        font-size: 10px;
+        padding: 7px 14px;
+        border-radius: 5px;
         cursor: pointer;
         letter-spacing: 1.5px;
-        transition: all 0.18s;
+        transition: all 0.2s ease;
         white-space: nowrap;
         text-transform: uppercase;
+        font-weight: 700;
       }
-      .bb-fbtn:hover { background: rgba(180,140,20,0.08); border-color: rgba(180,140,20,0.4); color: #d4a820; }
+      .bb-fbtn:hover {
+        color: #f0d060;
+        background: rgba(212,180,74,0.08);
+        border-color: rgba(212,180,74,0.45);
+      }
       .bb-fbtn.on {
-        background: rgba(180,140,20,0.14);
-        border-color: rgba(180,140,20,0.55);
-        color: #d4a820;
-        box-shadow: inset 0 1px 0 rgba(255,255,255,0.04);
+        background: linear-gradient(135deg, rgba(212,180,74,0.22), rgba(180,140,20,0.12));
+        border-color: rgba(212,180,74,0.55);
+        color: #f0d060;
+        box-shadow: inset 0 1px 0 rgba(255,255,255,0.08), 0 1px 4px rgba(0,0,0,0.3);
+        text-shadow: 0 0 8px rgba(212,180,74,0.4);
       }
       .bb-add-btn {
         background: linear-gradient(135deg, rgba(192,65,14,0.15), rgba(180,140,20,0.1));
@@ -15092,18 +15191,39 @@ document.addEventListener('error', function(e){
     #page-impots .imp-toolbar .imp-filters{display:flex;gap:6px;flex-wrap:wrap}
     #page-impots .imp-fbtn{
       padding:7px 14px;cursor:pointer;
-      background:rgba(255,255,255,0.04);
-      border:1px solid rgba(180,140,20,0.2);
+      background:rgba(20,16,9,0.5);
+      border:1px solid rgba(180,140,20,0.25);
       border-radius:6px;
       font-family:'Share Tech Mono',monospace;
-      font-size:10px;letter-spacing:1.5px;
-      color:rgba(255,255,255,0.55);text-transform:uppercase;
-      transition:all .15s;
+      font-size:10px;letter-spacing:1.3px;
+      color:rgba(232,208,140,0.55);text-transform:uppercase;
+      font-weight:700;
+      transition:all .2s ease;
     }
-    #page-impots .imp-fbtn:hover{color:#fff;border-color:rgba(180,140,20,0.4)}
-    #page-impots .imp-fbtn.active.all   {background:linear-gradient(135deg,#a16207,#854d0e);color:#fff;border-color:#a16207}
-    #page-impots .imp-fbtn.active.paid  {background:linear-gradient(135deg,#16a34a,#166534);color:#fff;border-color:#16a34a}
-    #page-impots .imp-fbtn.active.unpaid{background:linear-gradient(135deg,#dc2626,#991b1b);color:#fff;border-color:#dc2626}
+    #page-impots .imp-fbtn:hover{
+      color:#f0d060;
+      background:rgba(212,180,74,0.08);
+      border-color:rgba(212,180,74,0.45);
+    }
+    #page-impots .imp-fbtn.active.all{
+      background:linear-gradient(135deg, rgba(212,180,74,0.22), rgba(180,140,20,0.12));
+      border-color:rgba(212,180,74,0.55);
+      color:#f0d060;
+      box-shadow:inset 0 1px 0 rgba(255,255,255,0.08), 0 1px 4px rgba(0,0,0,0.3);
+      text-shadow:0 0 8px rgba(212,180,74,0.4);
+    }
+    #page-impots .imp-fbtn.active.paid{
+      background:linear-gradient(135deg, rgba(34,197,94,0.30), rgba(22,163,74,0.15));
+      border-color:rgba(34,197,94,0.55);
+      color:#86efac;
+      text-shadow:0 0 8px rgba(34,197,94,0.4);
+    }
+    #page-impots .imp-fbtn.active.unpaid{
+      background:linear-gradient(135deg, rgba(239,68,68,0.30), rgba(185,28,28,0.15));
+      border-color:rgba(239,68,68,0.55);
+      color:#fca5a5;
+      text-shadow:0 0 8px rgba(239,68,68,0.4);
+    }
 
     #page-impots .imp-table{
       background:rgba(20,16,9,0.96);
@@ -19745,7 +19865,7 @@ function initFirebaseSync(){
               'codepenal':   { fn: 'renderCodePenal',   keys: ['infractions'] },
               'admin':       { fn: 'renderAdmin',       keys: ['users','timeline','loginHistory','features'] },
               'impots':      { fn: 'renderImpots',      keys: ['impots','users'] },
-              'dashboard':   { fn: 'syncDashboard',     keys: ['plaintes','dossiers','annonces','operations','users','recenses','sanctions'] },
+              'dashboard':   { fn: 'syncDashboard',     keys: ['plaintes','dossiers','annonces','operations','users','recenses','sanctions','missions'] },
               'hierarchie':  { fn: 'renderHierarchie',  keys: ['users'] },
               'profil':      { fn: 'renderProfil',      keys: ['users'] },
               // 'bingobook' retiré du pageRenderers : il ne dépend pas de la collection 'users'
@@ -19810,7 +19930,7 @@ function initFirebaseSync(){
             // Avant : syncDashboard() était appelé à CHAQUE notif Firebase, même si on est sur une autre page
             // Maintenant : seulement si une donnée du dashboard a effectivement changé.
             if(activePage !== 'dashboard' && typeof syncDashboard === 'function'){
-              var DASHBOARD_KEYS = ['plaintes','dossiers','annonces','operations','users','recenses','sanctions','timeline'];
+              var DASHBOARD_KEYS = ['plaintes','dossiers','annonces','operations','users','recenses','sanctions','timeline','missions'];
               var dashNeedsUpdate = DASHBOARD_KEYS.some(function(k){ return pendingKeys.has(k); });
               if(dashNeedsUpdate){
                 try{ syncDashboard(); }catch(e){}
@@ -20111,7 +20231,7 @@ function defaultData(){
     grades:["Gérant","Co-Gérant","Sergent","Officier","Stagiaire"],
     users:[{id:1,login:"admin",pass:"__PENDING_HASH__",nom:"Développeur",grade:"Gérant",role:"admin",statut:"Actif",photo:"",created:now()}],
     annonces:[{id:1,titre:"Bienvenue sur le portail Police de Sunagakure",cat:"Information",contenu:"Ce portail est le centre névralgique des communications internes.\n\nToutes les informations officielles y seront publiées.",auteur:"Administration",pin:true,date:now()}],
-    recenses:[],candidatures:[],plaintes:[],dossiers:[],operations:[],sanctions:[],infractions:[],timeline:[],adminNotes:{},messages:{},loginHistory:[],features:{map_active:false},
+    recenses:[],candidatures:[],plaintes:[],dossiers:[],operations:[],sanctions:[],infractions:[],timeline:[],adminNotes:{},messages:{},loginHistory:[],missions:[],features:{map_active:false},
     // ═══ HÔPITAL & SCIENTIFIQUE ═══
     // Stockage centralisé : DB.hospital = { patients, consultations, pharmacie, psy, scientifique, morgue, paiements, dons }
     // Chaque tableau contient des entrées { id, ...champs propres à la collection, auteurId, auteurNom, created, modified }
