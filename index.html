@@ -11978,6 +11978,17 @@ document.addEventListener('error', function(e){
       border-top:1px solid rgba(180,140,20,0.14);
       background:rgba(15,12,7,0.95);
       flex-shrink:0;
+      min-height:74px;
+      /* Garde la barre toujours visible dans le flux flex */
+      box-sizing:border-box;
+      width:100%;
+    }
+    /* BUG-FIX : forcer l'affichage de la barre quand une conversation est ouverte.
+       Sans ce !important, certains états résiduels (display:none inline laissé,
+       conflit avec d'autres règles) pouvaient masquer la barre de saisie. */
+    #msg-conv-wrap[style*="display: flex"] #msg-input-row,
+    #msg-conv-wrap[style*="display:flex"] #msg-input-row{
+      display:flex !important;
     }
     #page-messagerie .msg-input-box{
       display:flex;gap:10px;align-items:flex-end;
@@ -12089,7 +12100,7 @@ document.addEventListener('error', function(e){
             </div>
           </div>
           <div class="msg-thread-wrap" id="msg-thread"></div>
-          <div class="msg-input-row" id="msg-input-row" style="display:none">
+          <div class="msg-input-row" id="msg-input-row">
             <div class="msg-input-box">
               <textarea id="msg-text" class="msg-input-text" placeholder="Écrire un message..." rows="1"
                 oninput="msgOnInput(this)"
@@ -18943,8 +18954,7 @@ function renderPage(name){
       var _hGrade = document.getElementById('msg-header-grade');
       if(_hName) _hName.textContent = _currentMsgContact.nom;
       if(_hGrade) _hGrade.textContent = (_currentMsgContact.grade||'')+(_currentMsgContact.role?' · '+roleLabel(_currentMsgContact.role, _currentMsgContact.section):'');
-      var _iRow = document.getElementById('msg-input-row');
-      if(_iRow) _iRow.style.display='flex';
+      // L'input row est désormais géré via CSS (visible par défaut, caché via le parent msg-conv-wrap).
       renderMsgThread();
     }
   }
@@ -27949,12 +27959,9 @@ function openMsgContact(userId){
   var page = document.getElementById('page-messagerie');
   if(page) page.classList.add('in-chat');
   _msgUpdateConvHeader();
-  // Show input
-  // BUG-FIX : 'flex' (et non 'block') pour rester cohérent avec le CSS .msg-input-row
-  // qui est défini en flex (display:flex), et avec l'autre endroit qui restaure
-  // l'input row au retour sur la page (showPage 'messagerie' utilise 'flex' aussi).
-  var inputRow = document.getElementById('msg-input-row');
-  if(inputRow) inputRow.style.display='flex';
+  // L'input row est maintenant toujours visible via CSS (display:flex par défaut),
+  // et automatiquement caché tant que msg-conv-wrap est en display:none.
+  // Plus besoin de toggle manuel ici.
   // Mark all as read
   var key = _msgKey(currentUser.id, u.id);
   if(DB.messages&&DB.messages[key]){
