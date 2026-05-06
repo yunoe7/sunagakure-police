@@ -8760,43 +8760,6 @@ document.addEventListener('error', function(e){
     }
 
     /* ═══════════════════════════════════════════════════════════════
-       TOGGLE VUE CARTES / TABLEAU
-       ═══════════════════════════════════════════════════════════════ */
-    #page-dossiers .dc-view-toggle{
-      display:inline-flex;
-      background:rgba(20,16,9,0.5);
-      border:1px solid rgba(180,140,20,0.25);
-      border-radius:8px;
-      padding:3px;
-      gap:2px;
-    }
-    #page-dossiers .dc-view-btn{
-      display:inline-flex;align-items:center;gap:6px;
-      padding:7px 12px;
-      background:transparent;border:none;cursor:pointer;
-      color:rgba(255,255,255,0.55);
-      font-family:'Barlow',sans-serif;
-      font-size:12px;font-weight:600;letter-spacing:0.5px;
-      border-radius:5px;
-      transition:all 0.18s ease;
-    }
-    #page-dossiers .dc-view-btn .dc-view-ico{font-size:13px;line-height:1}
-    #page-dossiers .dc-view-btn:hover{
-      color:rgba(255,255,255,0.85);
-      background:rgba(180,140,20,0.08);
-    }
-    #page-dossiers .dc-view-btn.active{
-      background:linear-gradient(135deg,rgba(212,180,74,0.22),rgba(180,140,20,0.18));
-      color:#f0d060;
-      box-shadow:inset 0 1px 0 rgba(255,255,255,0.08), 0 2px 6px rgba(0,0,0,0.18);
-    }
-    @media(max-width:768px){
-      #page-dossiers .dc-view-toggle{order:3;width:100%;justify-content:stretch}
-      #page-dossiers .dc-view-btn{flex:1;justify-content:center;padding:8px 6px}
-      #page-dossiers .dc-view-btn .dc-view-lbl{font-size:11.5px}
-    }
-
-    /* ═══════════════════════════════════════════════════════════════
        VUE CARTES — fiches d'identité officielles
        Inspirées de la maquette LP-2026-001 : sceau ID gauche,
        contenu central avec photo + infos, badges, actions à droite.
@@ -9260,18 +9223,10 @@ document.addEventListener('error', function(e){
       <div class="dc-stat" style="--stat-c:#f59e0b"><div class="lbl">💰 Amendes dues</div><div class="val" id="dc-s-due">0<span class="ryos">RYOS</span></div></div>
     </div>
 
-    <!-- TOOLBAR : recherche + tri + toggle vue -->
+    <!-- TOOLBAR : recherche + tri -->
     <div class="dc-toolbar">
       <div class="dc-search-wrap">
         <input type="text" id="search-dossier" class="dc-search" placeholder="Nom, infraction, agent..." oninput="renderDossiers()">
-      </div>
-      <div class="dc-view-toggle" role="tablist" aria-label="Mode d'affichage">
-        <button type="button" class="dc-view-btn active" id="dc-view-cards" onclick="dcSetView('cards')" title="Vue cartes (fiches d'identité)" aria-pressed="true">
-          <span class="dc-view-ico">🃏</span><span class="dc-view-lbl">Cartes</span>
-        </button>
-        <button type="button" class="dc-view-btn" id="dc-view-table" onclick="dcSetView('table')" title="Vue tableau (compacte)" aria-pressed="false">
-          <span class="dc-view-ico">📋</span><span class="dc-view-lbl">Tableau</span>
-        </button>
       </div>
       <select class="dc-sort" id="dc-sort" onchange="renderDossiers()">
         <option value="recent">⌚ Récents en premier</option>
@@ -9305,27 +9260,8 @@ document.addEventListener('error', function(e){
       </div>
     </div>
 
-    <!-- VUE CARTES — fiches d'identité -->
+    <!-- VUE CARTES — fiches d'identité officielles -->
     <div id="dossiers-cards" class="dc-cards"></div>
-    <!-- VUE TABLEAU PRINCIPAL -->
-    <div class="card dc-table-view" id="dc-table-wrapper" style="overflow:visible;display:none">
-      <div class="table-scroll-wrapper">
-        <table class="data-table">
-          <thead><tr>
-            <th>Photo</th>
-            <th class="sortable-th" onclick="sortTable('dossiers','nom',this)" aria-sort="none">Nom RP <span class="sort-icon">⇅</span></th>
-            <th>Infractions</th>
-            <th class="sortable-th" onclick="sortTable('dossiers','danger',this)" aria-sort="none">Dangerosité <span class="sort-icon">⇅</span></th>
-            <th class="sortable-th" onclick="sortTable('dossiers','statut',this)" aria-sort="none">Statut <span class="sort-icon">⇅</span></th>
-            <th class="sortable-th" onclick="sortTable('dossiers','amendes',this)" aria-sort="none" title="Cliquer pour trier : ↑ impayés en premier · ↓ payés en premier">💰 Amendes <span class="sort-icon">⇅</span></th>
-            <th class="sortable-th" onclick="sortTable('dossiers','agent',this)" aria-sort="none">Agent <span class="sort-icon">⇅</span></th>
-            <th style="color:rgba(109,40,217,0.75);font-size:8.5px;letter-spacing:1px;white-space:nowrap">🏷 Tags</th>
-            <th>Actions</th>
-          </tr></thead>
-          <tbody id="dossiers-tbody"></tbody>
-        </table>
-      </div>
-    </div>
   </div>
 
   <!-- CODE PÉNAL -->
@@ -22289,98 +22225,7 @@ function renderDossiers(){
     list = defunts.concat(vivants);
   }
 
-  // ─── RENDU TABLEAU ───
-  var tbody = el("dossiers-tbody");
-  if(!tbody) return;
-  tbody.innerHTML = list.map(function(d){
-    // Migration silencieuse au rendu : assure que d.incidents existe
-    dcEnsureIncidents(d);
-    var photoCell = d.photo
-      ? '<img alt="Photo" src="'+safeImgSrc(d.photo)+'" style="width:36px;height:44px;object-fit:cover;border-radius:5px;border:1px solid rgba(180,140,20,0.2);box-shadow:0 2px 6px rgba(0,0,0,0.12)">'
-      : '<div style="width:36px;height:44px;border-radius:5px;border:1px dashed rgba(255,255,255,0.15);display:flex;align-items:center;justify-content:center;font-size:18px;opacity:0.35">👤</div>';
-    var defuntStamp = d.defunt ? '<span class="dc-defunt-stamp" title="Suspect décédé">Défunt</span>' : '';
-    var rowClass = d.defunt ? ' class="is-defunt"' : '';
-
-    // ─── Cellule "Infractions" CONDENSÉE ───
-    // L'utilisateur voit un résumé clair : nombre d'incidents/infractions + indicateurs prison/amende.
-    // Le détail complet est consultable via "👁 Voir le dossier".
-    var incidents = d.incidents || [];
-    var totalInfr = incidents.reduce(function(s,inc){
-      var nCp = (inc.infractions||[]).length;
-      var nLib = (inc.infractionsLibres||'').split(',').map(function(x){return x.trim();}).filter(Boolean).length;
-      return s + nCp + nLib;
-    }, 0);
-    var hasPrison = incidents.some(function(inc){
-      return (inc.infractions||[]).some(function(x){return x.prison;});
-    });
-    // Catégories présentes (pour pastilles colorées)
-    var cats = new Set();
-    incidents.forEach(function(inc){
-      (inc.infractions||[]).forEach(function(x){ if(x.cat) cats.add(x.cat); });
-    });
-    var catBadges = Array.from(cats).map(function(c){
-      var color = c==='rouge' ? '#ef4444' : c==='vert' ? '#22c55e' : c==='violet' ? '#a78bfa' : '#9ca3af';
-      return '<span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:'+color+';box-shadow:0 0 4px '+color+'66" title="'+esc(c)+'"></span>';
-    }).join('');
-    // Premier libellé d'infraction pour donner un aperçu
-    var firstInfr = '';
-    for(var ii=0; ii<incidents.length && !firstInfr; ii++){
-      if((incidents[ii].infractions||[]).length){
-        firstInfr = incidents[ii].infractions[0].nom;
-      } else {
-        var libs = (incidents[ii].infractionsLibres||'').split(',').map(function(s){return s.trim();}).filter(Boolean);
-        if(libs.length) firstInfr = libs[0];
-      }
-    }
-    // Si aucun incident structuré, fallback sur le champ legacy
-    if(!firstInfr && d.infractions) firstInfr = d.infractions.split(/[,|]/)[0].trim();
-
-    var nIncidents = incidents.length;
-    var infrCellHTML = '<div style="display:flex;align-items:center;gap:6px;line-height:1.3">'
-      + (catBadges ? '<span style="display:inline-flex;gap:3px;flex-shrink:0">'+catBadges+'</span>' : '')
-      + '<div style="min-width:0;flex:1">'
-      +   (firstInfr ? '<div style="font-size:11.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:200px" title="'+esc(firstInfr)+'">'+esc(firstInfr)+'</div>' : '<span style="color:var(--muted);font-size:10px;font-style:italic">— Aucune —</span>')
-      +   (totalInfr > 1 ? '<div style="font-size:9px;color:var(--muted);font-family:\'Share Tech Mono\',monospace;letter-spacing:0.5px;margin-top:1px">+'+(totalInfr-1)+' autre'+(totalInfr-1>1?'s':'')+(nIncidents>1?' · '+nIncidents+' incidents':'')+'</div>' : (nIncidents>1?'<div style="font-size:9px;color:var(--muted);font-family:\'Share Tech Mono\',monospace;letter-spacing:0.5px;margin-top:1px">'+nIncidents+' incidents</div>':''))
-      + '</div>'
-      + (hasPrison ? '<span title="Au moins une peine de prison" style="color:#fb923c;font-size:13px;flex-shrink:0">⛓</span>' : '')
-      + '</div>';
-
-    return '<tr'+rowClass+'>'
-      +'<td>'+photoCell+'</td>'
-      +'<td><b>'+esc(d.nom)+'</b>'+defuntStamp+'</td>'
-      +'<td style="font-size:11.5px;max-width:230px">'+infrCellHTML+'</td>'
-      +'<td><span class="badge '+dangerBadge(d.danger)+'">'+esc(d.danger)+'</span></td>'
-      +'<td><span class="badge '+dossierStatutBadge(d.statut)+'">'+esc(d.statut)+'</span></td>'
-      +'<td style="font-size:11px;white-space:nowrap">'
-      + ((d.amendePayee||0)>0  ? '<div style="color:#22c55e;font-family:\'Share Tech Mono\',monospace">✅ '+Number(d.amendePayee).toLocaleString()+' Ryos</div>' : '')
-      + ((d.amendeImpayee||0)>0? '<div style="color:#f87171;font-family:\'Share Tech Mono\',monospace">❌ '+Number(d.amendeImpayee).toLocaleString()+' Ryos</div>' : '')
-      + ((!d.amendePayee&&!d.amendeImpayee) ? '<span style="color:var(--muted);font-size:10px">—</span>' : '')
-      +'</td>'
-      +'<td style="font-size:11.5px">'+esc(d.auteur||'')+'</td>'
-      +'<td style="max-width:140px">'
-      +'<div style="display:flex;flex-wrap:wrap;gap:3px;align-items:center">'
-      + (d.tags||[]).slice(0,3).map(function(tid){
-          var t = DOSSIER_TAGS.find(function(x){return x.id===tid});
-          return t
-            ? '<span class="tag-pill" style="background:'+t.bg+';color:'+t.color+';border:1px solid '+t.border+'">'+t.label+'</span>'
-            : (tid ? '<span class="tag-pill" style="background:rgba(109,40,217,0.08);color:#a78bfa;border:1px solid rgba(109,40,217,0.2)">'+esc(tid)+'</span>' : '');
-        }).join('')
-      + ((d.tags||[]).length>3 ? '<span class="tag-pill" style="background:rgba(255,255,255,0.06);color:var(--muted);border:1px solid rgba(255,255,255,0.1)">+'+((d.tags||[]).length-3)+'</span>' : '')
-      + (!(d.tags&&d.tags.length)&&canModify() ? '<span style="font-size:9px;color:var(--muted);font-family:\'Share Tech Mono\',monospace;opacity:0.5">—</span>' : '')
-      +'</div>'
-      +'</td>'
-      +'<td style="white-space:nowrap">'
-      +'<button class="btn btn-outline btn-sm" onclick="viewDossier('+d.id+')" title="Voir le dossier">👁</button>'
-      + (canModify()
-          ? '<button class="btn btn-gold btn-sm" onclick="openEditDossier('+d.id+')" style="margin-left:4px" title="Modifier">✏️</button>'
-            +'<button class="btn btn-danger btn-sm" onclick="deleteDossier('+d.id+')" style="margin-left:4px">🗑</button>'
-          : '')
-      +'</td>'
-      +'</tr>';
-  }).join('') || '<tr><td colspan="9" style="text-align:center;color:var(--muted);padding:40px;font-family:\'Share Tech Mono\',monospace;letter-spacing:1.5px;text-transform:uppercase;font-size:11px">— Aucun dossier ne correspond à ces filtres —</td></tr>';
-  if(typeof restoreSortUI === 'function') restoreSortUI('dossiers');
-
-  // ─── RENDU CARTES (en parallèle du tableau, le toggle gère l'affichage) ───
+  // ─── RENDU CARTES — fiches d'identité ───
   dcRenderCards(list);
 }
 
@@ -22556,38 +22401,6 @@ function dcRenderCards(list){
       + '</div>';
   }).join('');
 }
-
-/* Toggle entre vue cartes et vue tableau.
-   Les deux vues partagent les mêmes données filtrées : on les rend toujours
-   en parallèle, et le toggle ne fait que basculer la visibilité CSS. */
-var _dcView = (function(){
-  try{ return localStorage.getItem('suna_dc_view') || 'cards'; }
-  catch(e){ return 'cards'; }
-})();
-function dcSetView(mode){
-  if(mode !== 'cards' && mode !== 'table') mode = 'cards';
-  _dcView = mode;
-  try{ localStorage.setItem('suna_dc_view', mode); }catch(e){}
-  var cardsBox = document.getElementById('dossiers-cards');
-  var tableBox = document.getElementById('dc-table-wrapper');
-  var btnCards = document.getElementById('dc-view-cards');
-  var btnTable = document.getElementById('dc-view-table');
-  if(cardsBox) cardsBox.style.display = (mode === 'cards' ? '' : 'none');
-  if(tableBox) tableBox.style.display = (mode === 'table' ? '' : 'none');
-  if(btnCards){
-    btnCards.classList.toggle('active', mode === 'cards');
-    btnCards.setAttribute('aria-pressed', mode === 'cards' ? 'true' : 'false');
-  }
-  if(btnTable){
-    btnTable.classList.toggle('active', mode === 'table');
-    btnTable.setAttribute('aria-pressed', mode === 'table' ? 'true' : 'false');
-  }
-}
-// Appliquer le mode sauvegardé au chargement initial — mais seulement quand
-// la page est bien dans le DOM (les ids n'existent qu'après le rendu HTML).
-window.addEventListener('load', function(){
-  setTimeout(function(){ dcSetView(_dcView); }, 50);
-});
 
 function checkDoublonSuspect(){
   const nom=(el("d-nom").value||"").trim().toLowerCase();
@@ -31006,32 +30819,8 @@ document.addEventListener('keydown', function(e) {
       rows.forEach(function(r) { tbody.appendChild(r); });
     };
 
-    // ── Patch renderDossiers ──
-    var _origRD = window.renderDossiers;
-    window.renderDossiers = function() {
-      _origRD();
-      var st = _sortState['dossiers']; if (!st) return;
-      var tbody = document.getElementById('dossiers-tbody'); if (!tbody) return;
-      var rows = Array.from(tbody.querySelectorAll('tr'));
-      if (rows.length <= 1) return;
-      var dangerOrder = {Faible:0,Modéré:1,Élevé:2,Extrême:3};
-      rows.sort(function(a, b) {
-        var cells = {nom:[1],danger:[3],statut:[4],agent:[6]};
-        var colIdx = (cells[st.field] || [1])[0];
-        var va = (a.cells[colIdx]||{}).textContent||''.trim();
-        var vb = (b.cells[colIdx]||{}).textContent||''.trim();
-        if (st.field === 'danger') {
-          va = dangerOrder[va.trim()] !== undefined ? dangerOrder[va.trim()] : 99;
-          vb = dangerOrder[vb.trim()] !== undefined ? dangerOrder[vb.trim()] : 99;
-          return st.dir==='asc'?va-vb:vb-va;
-        }
-        va = va.toLowerCase(); vb = vb.toLowerCase();
-        if (va < vb) return st.dir==='asc'?-1:1;
-        if (va > vb) return st.dir==='asc'?1:-1;
-        return 0;
-      });
-      rows.forEach(function(r) { tbody.appendChild(r); });
-    };
+    // (Patch renderDossiers retiré : la vue dossiers utilise désormais
+    //  uniquement les cartes, le tri est géré par dc-sort + renderDossiers)
 })();
 
 /* ── 7. INDICATEUR "VU PAR" sur les annonces (compteur de vues) ── */
@@ -31527,10 +31316,12 @@ document.addEventListener('keydown', function(e) {
   // Patch les render functions pour ajouter la pagination après chaque rendu
   if (typeof renderPlaintes !== 'function' || typeof renderDossiers !== 'function') return;
 
-    var keys = ['plaintes', 'dossiers', 'candidatures', 'sanctions'];
-    var fns  = ['renderPlaintes', 'renderDossiers', 'renderCandidatures', 'renderSanctions'];
-    var tbodyIds = { plaintes:'plaintes-tbody', dossiers:'dossiers-tbody', candidatures:'candidatures-tbody', sanctions:'sanctions-tbody' };
-    var cardIds  = { plaintes:'page-plaintes',  dossiers:'page-dossiers',  candidatures:'page-recrutement',   sanctions:'page-sanctions' };
+    // Note : 'dossiers' a été retiré de la pagination tableau car la vue
+    // dossiers utilise maintenant les cartes (#dossiers-cards) sans tbody.
+    var keys = ['plaintes', 'candidatures', 'sanctions'];
+    var fns  = ['renderPlaintes', 'renderCandidatures', 'renderSanctions'];
+    var tbodyIds = { plaintes:'plaintes-tbody', candidatures:'candidatures-tbody', sanctions:'sanctions-tbody' };
+    var cardIds  = { plaintes:'page-plaintes',  candidatures:'page-recrutement',   sanctions:'page-sanctions' };
 
     keys.forEach(function(key, i) {
       var fnName = fns[i];
@@ -31754,7 +31545,7 @@ function addDossierComment() {
   saveData();
   document.getElementById('comment-input').value = '';
   renderDossierCommentsList();
-  _patchDossierRows(); // Refresh comment counts in table
+  if (typeof renderDossiers === 'function') renderDossiers(); // refresh badge commentaires sur les cartes
   showToast('💬 Commentaire ajouté.', 'success');
 }
 
@@ -31766,7 +31557,7 @@ function deleteDossierComment(commentId) {
     d.comments = d.comments.filter(function(c) { return String(c.id) !== String(commentId); });
     saveData();
     renderDossierCommentsList();
-    _patchDossierRows();
+    if (typeof renderDossiers === 'function') renderDossiers(); // refresh badge
   });
 }
 
@@ -32140,13 +31931,12 @@ function exportDossierPDF(id) {
 }
 
 /* ════════════════════════════════════════════════════════════════
-   4. PATCH UNIQUE renderDossiers — archive + commentaires + PDF
+   4. BOUTON HEADER « Archives » — affiché si au moins 1 dossier archivé
    ════════════════════════════════════════════════════════════════ */
-function _patchDossierRows() {
-  var tbody = document.getElementById('dossiers-tbody');
-  if (!tbody) return;
-
-  // ── Bouton toggle archive dans l'en-tête ──
+function _refreshArchiveToggleBtn() {
+  // Bouton toggle archives dans l'en-tête de la section Dossiers.
+  // Toute la logique de masquage des lignes archivées est désormais dans
+  // dcRenderCards() (filtrage direct de la liste avant rendu).
   var header = document.querySelector('#page-dossiers .section-header');
   if (header && !document.getElementById('btn-toggle-archived-dossiers') && typeof canModify === 'function' && canModify()) {
     var archToggle = document.createElement('button');
@@ -32155,7 +31945,6 @@ function _patchDossierRows() {
     archToggle.onclick = toggleArchivedDossiers;
     header.appendChild(archToggle);
   }
-
   var archivedCount = (DB.dossiers || []).filter(function(d) { return d.archived; }).length;
   var toggleBtn = document.getElementById('btn-toggle-archived-dossiers');
   if (toggleBtn) {
@@ -32165,100 +31954,16 @@ function _patchDossierRows() {
       ? '📂 Masquer les archives'
       : '📦 Archives <span style="background:rgba(107,114,128,0.2);border-radius:10px;padding:0 6px;font-size:9px;font-weight:700;margin-left:2px">' + archivedCount + '</span>';
   }
-
-  // ── Traitement des lignes ──
-  var rows = tbody.querySelectorAll('tr');
-  rows.forEach(function(tr) {
-    // Identifier le dossier de cette ligne
-    var editBtn = tr.querySelector('[onclick*="openEditDossier"]');
-    if (!editBtn) return;
-    var match = editBtn.getAttribute('onclick').match(/\d+/);
-    if (!match) return;
-    var dosId = parseInt(match[0]);
-    var dos = (DB.dossiers || []).find(function(d) { return d.id === dosId; });
-    if (!dos) return;
-
-    // Gestion archive : masquer/afficher
-    if (dos.archived) {
-      tr.classList.add('archived-row');
-      tr.style.display = _showArchivedDossiers ? '' : 'none';
-    } else {
-      tr.classList.remove('archived-row');
-      tr.style.display = '';
-    }
-
-    // Ne pas injecter deux fois
-    if (tr.querySelector('.extra-row-btns')) return;
-
-    var lastTd = tr.querySelector('td:last-child');
-    if (!lastTd) return;
-
-    var wrap = document.createElement('span');
-    wrap.className = 'extra-row-btns';
-
-    // Bouton commentaires
-    var commentCount = (dos.comments || []).length;
-    var commentBtn = document.createElement('button');
-    commentBtn.className = 'comment-count-btn' + (commentCount > 0 ? ' has-comments' : '');
-    commentBtn.title = commentCount > 0 ? commentCount + ' commentaire(s)' : 'Commenter';
-    commentBtn.innerHTML = '💬' + (commentCount > 0 ? '&nbsp;' + commentCount : '');
-    commentBtn.onclick = (function(id) { return function(e) { e.stopPropagation(); openDossierComments(id); }; })(dosId);
-    wrap.appendChild(commentBtn);
-
-    // Bouton PDF
-    var pdfBtn = document.createElement('button');
-    pdfBtn.className = 'btn btn-outline btn-sm';
-    pdfBtn.title = 'Exporter en PDF';
-    pdfBtn.innerHTML = '📄';
-    pdfBtn.onclick = (function(id) { return function(e) { e.stopPropagation(); exportDossierPDF(id); }; })(dosId);
-    wrap.appendChild(pdfBtn);
-
-    // Bouton archiver (admins/modérateurs uniquement)
-    if (typeof canModify === 'function' && canModify()) {
-      var archBtn = document.createElement('button');
-      archBtn.className = 'btn btn-outline btn-sm';
-      archBtn.title = dos.archived ? 'Désarchiver' : 'Archiver';
-      archBtn.innerHTML = dos.archived ? '📂' : '📦';
-      archBtn.onclick = (function(id) { return function(e) { e.stopPropagation(); archiveDossier(id); }; })(dosId);
-      wrap.appendChild(archBtn);
-    }
-
-    lastTd.appendChild(wrap);
-  });
 }
 
-// Hooker renderDossiers une fois avec MutationObserver (pas de chaîne de patches)
+// Hooker renderDossiers pour que le bouton header soit rafraîchi après chaque rendu.
 (function() {
-  var observer = new MutationObserver(function(mutations) {
-    var hasRelevant = mutations.some(function(m) {
-      return m.target && (m.target.id === 'dossiers-tbody' || (m.target.closest && m.target.closest('#dossiers-tbody')));
-    });
-    if (hasRelevant) {
-      clearTimeout(observer._timer);
-      observer._timer = setTimeout(_patchDossierRows, 60);
-    }
-  });
-  var tbody = document.getElementById('dossiers-tbody');
-  if (tbody) {
-    observer.observe(tbody, { childList: true, subtree: true, characterData: false });
-  } else {
-    // Attendre que le DOM soit prêt
-    new MutationObserver(function(_, obs) {
-      var tb = document.getElementById('dossiers-tbody');
-      if (tb) {
-        obs.disconnect();
-        observer.observe(tb, { childList: true, subtree: true });
-        _patchDossierRows();
-      }
-    }).observe(document.body, { childList: true, subtree: true });
-  }
-  // Patch renderDossiers pour déclencher le MutationObserver + filtre archivé
   window.addEventListener('load', function() {
     var _origRD = window.renderDossiers;
     if (typeof _origRD === 'function') {
       window.renderDossiers = function() {
         _origRD.apply(this, arguments);
-        setTimeout(_patchDossierRows, 80);
+        setTimeout(_refreshArchiveToggleBtn, 60);
       };
     }
   });
