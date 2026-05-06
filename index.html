@@ -18635,7 +18635,10 @@ function initFirebaseSync(){
               'dashboard':   { fn: 'syncDashboard',     keys: ['plaintes','dossiers','annonces','operations','users','recenses','sanctions'] },
               'hierarchie':  { fn: 'renderHierarchie',  keys: ['users'] },
               'profil':      { fn: 'renderProfil',      keys: ['users'] },
-              'bingobook':   { fn: 'bbRender',          keys: ['users'] },
+              // 'bingobook' retiré du pageRenderers : il ne dépend pas de la collection 'users'
+              // (les fiches sont dans la branche Firebase séparée 'sunagakure/bingobook'
+              //  qui a son propre listener dédié). Sans ce retrait, la page se re-rendait à
+              //  chaque heartbeat de présence d'autres users → effet "ça recharge tout seul".
               'diplo-laissezpasse': { fn: 'renderLaissezPasse', keys: ['laissezPasse','recenses'] },
               'juge-plaintes': { fn: 'tribRenderPlaintes', keys: ['plaintes','tribunal'] }
               // 'histoire' et 'messagerie' : pas de sync auto (lecture seule ou listener Firebase dédié)
