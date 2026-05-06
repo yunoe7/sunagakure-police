@@ -3333,138 +3333,143 @@ html{-webkit-tap-highlight-color:transparent}
 .rcv2-card[data-rang="Kazekage"] .rcv2-card-rang,
 .rcv2-card[data-rang="Kage"] .rcv2-card-rang{color:var(--gold2);border-color:rgba(201,162,39,0.5)}
 
-/* ═══ Couleur distinctive par grade — GRADATION DORÉE ═══
+/* ═══ Couleur distinctive par grade — GRADATION DORÉE 0% → 100% ═══
    Concept : tous les rangs hiérarchiques utilisent la teinte dorée du Kazekage,
-   mais avec une intensité (saturation/opacité) qui augmente avec le grade.
-   - Genin       = pratiquement sans couleur (gris neutre, opacité minimale)
-   - Genin Conf. = très léger reflet doré
-   - Chunin      → opacité montante
-   - Tok. Chunin → opacité montante
-   - Kakunin     → opacité montante
-   - Tok. Jonin  → opacité montante
-   - Jonin       = doré bien marqué
-   - Sairin      = doré soutenu
-   - Cdt. Jonin  = doré intense
-   - Kazekage    = doré pur, le plus saturé (référence)
+   avec une intensité qui monte LINÉAIREMENT du Genin (transparent) au Kazekage (saturé).
+   - Genin             = 0%   (invisible / neutre, juste une bordure très subtile)
+   - Genin Confirmé    = 11%
+   - Chunin            = 22%
+   - Tokubetsu Chunin  = 33%
+   - Kakunin           = 44%
+   - Tokubetsu Jonin   = 55%
+   - Jonin             = 66%
+   - Sairin            = 77%
+   - Commandant Jonin  = 88%
+   - Kazekage          = 100% (doré pur, le plus saturé)
    Les rangs spéciaux (Criminel, Civil, Inconnu) gardent leurs codes couleur
    distincts pour rester immédiatement identifiables. */
 
 /* — Badge "rang" en haut à droite de la carte — */
-.rcv2-card[data-rang="Genin"] .rcv2-card-rang{color:rgba(240,232,208,0.55);border-color:rgba(255,255,255,0.10)}
-.rcv2-card[data-rang="Genin Confirmé"] .rcv2-card-rang{color:rgba(220,190,90,0.7);border-color:rgba(201,162,39,0.18)}
-.rcv2-card[data-rang="Chunin"] .rcv2-card-rang{color:rgba(225,195,95,0.78);border-color:rgba(201,162,39,0.25)}
-.rcv2-card[data-rang="Tokubetsu Chunin"] .rcv2-card-rang{color:rgba(228,198,98,0.84);border-color:rgba(201,162,39,0.32)}
-.rcv2-card[data-rang="Kakunin"] .rcv2-card-rang{color:rgba(230,200,100,0.88);border-color:rgba(201,162,39,0.38)}
-.rcv2-card[data-rang="Tokubetsu Jonin"] .rcv2-card-rang{color:rgba(232,202,102,0.92);border-color:rgba(201,162,39,0.45)}
-.rcv2-card[data-rang="Jonin"] .rcv2-card-rang{color:#d4b44a;border-color:rgba(201,162,39,0.55)}
-.rcv2-card[data-rang="Sairin"] .rcv2-card-rang{color:#d8b850;border-color:rgba(201,162,39,0.65)}
-.rcv2-card[data-rang="Commandant Jonin"] .rcv2-card-rang{color:#dcbc55;border-color:rgba(201,162,39,0.78);font-weight:800}
-/* Kazekage : déjà défini plus haut, on le renforce ici pour qu'il soit le plus intense */
+.rcv2-card[data-rang="Genin"] .rcv2-card-rang{color:rgba(240,232,208,0.45);border-color:rgba(255,255,255,0.08)}
+.rcv2-card[data-rang="Genin Confirmé"] .rcv2-card-rang{color:rgba(212,180,74,0.55);border-color:rgba(201,162,39,0.18)}
+.rcv2-card[data-rang="Chunin"] .rcv2-card-rang{color:rgba(212,180,74,0.65);border-color:rgba(201,162,39,0.30)}
+.rcv2-card[data-rang="Tokubetsu Chunin"] .rcv2-card-rang{color:rgba(212,180,74,0.72);border-color:rgba(201,162,39,0.42)}
+.rcv2-card[data-rang="Kakunin"] .rcv2-card-rang{color:rgba(212,180,74,0.80);border-color:rgba(201,162,39,0.55)}
+.rcv2-card[data-rang="Tokubetsu Jonin"] .rcv2-card-rang{color:rgba(212,180,74,0.86);border-color:rgba(201,162,39,0.65)}
+.rcv2-card[data-rang="Jonin"] .rcv2-card-rang{color:#d4b44a;border-color:rgba(201,162,39,0.75)}
+.rcv2-card[data-rang="Sairin"] .rcv2-card-rang{color:#dcbc55;border-color:rgba(212,180,74,0.85)}
+.rcv2-card[data-rang="Commandant Jonin"] .rcv2-card-rang{color:#e4c460;border-color:rgba(212,180,74,0.93);font-weight:800}
+/* Kazekage : 100% doré pur, le plus intense */
 .rcv2-card[data-rang="Kazekage"] .rcv2-card-rang,
 .rcv2-card[data-rang="Kage"] .rcv2-card-rang{
   color:#f0d060 !important;
-  border-color:rgba(212,180,74,0.95) !important;
+  border-color:rgba(240,208,96,1) !important;
   font-weight:800 !important;
-  text-shadow:0 0 6px rgba(201,162,39,0.5);
-  background:rgba(40,28,5,0.7) !important;
+  text-shadow:0 0 8px rgba(240,208,96,0.7);
+  background:rgba(50,35,8,0.75) !important;
 }
 
-/* — Bandeau (banner) en haut de la carte : gradation dorée progressive — */
+/* — Bandeau (banner) en haut de la carte : gradation dorée 0% → 100% — */
 .rcv2-card[data-rang="Genin"] .rcv2-card-banner{
-  background:linear-gradient(135deg,rgba(255,255,255,0.025) 0%,rgba(255,255,255,0.015) 100%);
-  border-bottom-color:rgba(255,255,255,0.06);
+  background:linear-gradient(135deg,rgba(255,255,255,0.012) 0%,rgba(255,255,255,0.006) 100%);
+  border-bottom-color:rgba(255,255,255,0.04);
 }
 .rcv2-card[data-rang="Genin Confirmé"] .rcv2-card-banner{
-  background:linear-gradient(135deg,rgba(201,162,39,0.05) 0%,rgba(212,180,74,0.03) 100%);
-  border-bottom-color:rgba(201,162,39,0.10);
-}
-.rcv2-card[data-rang="Chunin"] .rcv2-card-banner{
   background:linear-gradient(135deg,rgba(201,162,39,0.08) 0%,rgba(212,180,74,0.05) 100%);
   border-bottom-color:rgba(201,162,39,0.14);
 }
-.rcv2-card[data-rang="Tokubetsu Chunin"] .rcv2-card-banner{
-  background:linear-gradient(135deg,rgba(201,162,39,0.11) 0%,rgba(212,180,74,0.07) 100%);
-  border-bottom-color:rgba(201,162,39,0.18);
-}
-.rcv2-card[data-rang="Kakunin"] .rcv2-card-banner{
-  background:linear-gradient(135deg,rgba(201,162,39,0.14) 0%,rgba(212,180,74,0.09) 100%);
+.rcv2-card[data-rang="Chunin"] .rcv2-card-banner{
+  background:linear-gradient(135deg,rgba(201,162,39,0.15) 0%,rgba(212,180,74,0.10) 100%);
   border-bottom-color:rgba(201,162,39,0.22);
 }
+.rcv2-card[data-rang="Tokubetsu Chunin"] .rcv2-card-banner{
+  background:linear-gradient(135deg,rgba(201,162,39,0.22) 0%,rgba(212,180,74,0.15) 100%);
+  border-bottom-color:rgba(201,162,39,0.32);
+}
+.rcv2-card[data-rang="Kakunin"] .rcv2-card-banner{
+  background:linear-gradient(135deg,rgba(201,162,39,0.30) 0%,rgba(212,180,74,0.20) 100%);
+  border-bottom-color:rgba(201,162,39,0.42);
+}
 .rcv2-card[data-rang="Tokubetsu Jonin"] .rcv2-card-banner{
-  background:linear-gradient(135deg,rgba(201,162,39,0.17) 0%,rgba(212,180,74,0.11) 100%);
-  border-bottom-color:rgba(201,162,39,0.27);
+  background:linear-gradient(135deg,rgba(201,162,39,0.38) 0%,rgba(212,180,74,0.26) 100%);
+  border-bottom-color:rgba(201,162,39,0.52);
 }
 .rcv2-card[data-rang="Jonin"] .rcv2-card-banner{
-  background:linear-gradient(135deg,rgba(201,162,39,0.21) 0%,rgba(212,180,74,0.14) 100%);
-  border-bottom-color:rgba(201,162,39,0.33);
+  background:linear-gradient(135deg,rgba(201,162,39,0.46) 0%,rgba(212,180,74,0.32) 100%);
+  border-bottom-color:rgba(201,162,39,0.62);
 }
 .rcv2-card[data-rang="Sairin"] .rcv2-card-banner{
-  background:linear-gradient(135deg,rgba(201,162,39,0.25) 0%,rgba(212,180,74,0.17) 100%);
-  border-bottom-color:rgba(201,162,39,0.40);
+  background:linear-gradient(135deg,rgba(201,162,39,0.55) 0%,rgba(212,180,74,0.40) 100%);
+  border-bottom-color:rgba(201,162,39,0.72);
 }
 .rcv2-card[data-rang="Commandant Jonin"] .rcv2-card-banner{
-  background:linear-gradient(135deg,rgba(201,162,39,0.30) 0%,rgba(212,180,74,0.20) 100%);
-  border-bottom-color:rgba(201,162,39,0.48);
+  background:linear-gradient(135deg,rgba(201,162,39,0.65) 0%,rgba(212,180,74,0.48) 100%);
+  border-bottom-color:rgba(201,162,39,0.82);
 }
-/* Kazekage : bandeau le plus intense, déjà défini plus haut, on le renforce */
+/* Kazekage : 100% — bandeau doré pur */
 .rcv2-card[data-rang="Kazekage"] .rcv2-card-banner,
 .rcv2-card[data-rang="Kage"] .rcv2-card-banner{
-  background:linear-gradient(135deg,rgba(212,180,74,0.42) 0%,rgba(201,162,39,0.30) 50%,rgba(180,140,20,0.22) 100%) !important;
-  border-bottom-color:rgba(212,180,74,0.60) !important;
-  box-shadow:inset 0 -1px 0 rgba(255,220,120,0.25);
+  background:linear-gradient(135deg,rgba(240,208,96,0.75) 0%,rgba(212,180,74,0.60) 50%,rgba(201,162,39,0.50) 100%) !important;
+  border-bottom-color:rgba(240,208,96,1) !important;
+  box-shadow:inset 0 -2px 0 rgba(255,220,120,0.45);
 }
 
-/* — Bordure de la carte elle-même : très subtile gradation, sauf Kazekage qui ressort — */
-.rcv2-card[data-rang="Genin"]{border-color:rgba(255,255,255,0.06)}
-.rcv2-card[data-rang="Genin Confirmé"]{border-color:rgba(201,162,39,0.10)}
-.rcv2-card[data-rang="Chunin"]{border-color:rgba(201,162,39,0.13)}
-.rcv2-card[data-rang="Tokubetsu Chunin"]{border-color:rgba(201,162,39,0.16)}
-.rcv2-card[data-rang="Kakunin"]{border-color:rgba(201,162,39,0.20)}
-.rcv2-card[data-rang="Tokubetsu Jonin"]{border-color:rgba(201,162,39,0.24)}
-.rcv2-card[data-rang="Jonin"]{border-color:rgba(201,162,39,0.30)}
-.rcv2-card[data-rang="Sairin"]{border-color:rgba(201,162,39,0.36)}
-.rcv2-card[data-rang="Commandant Jonin"]{border-color:rgba(201,162,39,0.44)}
-/* Kazekage : bordure dorée intense + halo (déjà partiellement défini, on consolide) */
+/* — Bordure de la carte elle-même : gradation 0% → 100% — */
+.rcv2-card[data-rang="Genin"]{border-color:rgba(255,255,255,0.04)}
+.rcv2-card[data-rang="Genin Confirmé"]{border-color:rgba(201,162,39,0.16)}
+.rcv2-card[data-rang="Chunin"]{border-color:rgba(201,162,39,0.25)}
+.rcv2-card[data-rang="Tokubetsu Chunin"]{border-color:rgba(201,162,39,0.35)}
+.rcv2-card[data-rang="Kakunin"]{border-color:rgba(201,162,39,0.45)}
+.rcv2-card[data-rang="Tokubetsu Jonin"]{border-color:rgba(201,162,39,0.55)}
+.rcv2-card[data-rang="Jonin"]{border-color:rgba(201,162,39,0.65)}
+.rcv2-card[data-rang="Sairin"]{border-color:rgba(201,162,39,0.75)}
+.rcv2-card[data-rang="Commandant Jonin"]{border-color:rgba(201,162,39,0.88)}
+/* Kazekage : 100% — bordure dorée intense + halo */
 .rcv2-card[data-rang="Kazekage"],
 .rcv2-card[data-rang="Kage"]{
-  border-color:rgba(212,180,74,0.65) !important;
-  box-shadow:0 4px 22px rgba(0,0,0,0.45),0 0 0 1px rgba(201,162,39,0.18),0 0 24px rgba(212,180,74,0.12) !important;
+  border-color:rgba(240,208,96,1) !important;
+  box-shadow:0 4px 22px rgba(0,0,0,0.45),0 0 0 1px rgba(240,208,96,0.45),0 0 32px rgba(240,208,96,0.30) !important;
 }
 .rcv2-card[data-rang="Kazekage"]:hover,
 .rcv2-card[data-rang="Kage"]:hover{
-  border-color:rgba(232,202,102,0.85) !important;
-  box-shadow:0 14px 40px rgba(0,0,0,0.5),0 0 0 1px rgba(212,180,74,0.32),0 0 36px rgba(212,180,74,0.22) !important;
+  border-color:rgba(255,220,120,1) !important;
+  box-shadow:0 14px 40px rgba(0,0,0,0.5),0 0 0 1px rgba(240,208,96,0.65),0 0 50px rgba(240,208,96,0.45) !important;
 }
 
-/* — Effet "halo" progressif sur l'avatar (cadre du portrait) selon le grade — */
+/* — Halo progressif sur l'avatar (cadre du portrait) : 0% → 100% — */
 .rcv2-card[data-rang="Genin"] .rcv2-card-avatar-wrap{
-  background:linear-gradient(135deg,rgba(255,255,255,0.10),rgba(255,255,255,0.05));
+  background:linear-gradient(135deg,rgba(255,255,255,0.05),rgba(255,255,255,0.02));
 }
 .rcv2-card[data-rang="Genin Confirmé"] .rcv2-card-avatar-wrap{
-  background:linear-gradient(135deg,rgba(201,162,39,0.18),rgba(212,180,74,0.10));
+  background:linear-gradient(135deg,rgba(201,162,39,0.20),rgba(212,180,74,0.12));
 }
 .rcv2-card[data-rang="Chunin"] .rcv2-card-avatar-wrap{
-  background:linear-gradient(135deg,rgba(201,162,39,0.24),rgba(212,180,74,0.14));
+  background:linear-gradient(135deg,rgba(201,162,39,0.32),rgba(212,180,74,0.20));
 }
 .rcv2-card[data-rang="Tokubetsu Chunin"] .rcv2-card-avatar-wrap{
-  background:linear-gradient(135deg,rgba(201,162,39,0.30),rgba(212,180,74,0.18));
+  background:linear-gradient(135deg,rgba(201,162,39,0.44),rgba(212,180,74,0.28));
 }
 .rcv2-card[data-rang="Kakunin"] .rcv2-card-avatar-wrap{
-  background:linear-gradient(135deg,rgba(201,162,39,0.36),rgba(212,180,74,0.22));
+  background:linear-gradient(135deg,rgba(201,162,39,0.56),rgba(212,180,74,0.36));
 }
 .rcv2-card[data-rang="Tokubetsu Jonin"] .rcv2-card-avatar-wrap{
-  background:linear-gradient(135deg,rgba(201,162,39,0.42),rgba(212,180,74,0.26));
+  background:linear-gradient(135deg,rgba(201,162,39,0.68),rgba(212,180,74,0.44));
 }
 .rcv2-card[data-rang="Jonin"] .rcv2-card-avatar-wrap{
-  background:linear-gradient(135deg,rgba(201,162,39,0.50),rgba(212,180,74,0.32));
+  background:linear-gradient(135deg,rgba(201,162,39,0.78),rgba(212,180,74,0.52));
 }
 .rcv2-card[data-rang="Sairin"] .rcv2-card-avatar-wrap{
-  background:linear-gradient(135deg,rgba(201,162,39,0.58),rgba(212,180,74,0.38));
+  background:linear-gradient(135deg,rgba(201,162,39,0.88),rgba(212,180,74,0.62));
 }
 .rcv2-card[data-rang="Commandant Jonin"] .rcv2-card-avatar-wrap{
-  background:linear-gradient(135deg,rgba(201,162,39,0.66),rgba(212,180,74,0.45));
+  background:linear-gradient(135deg,rgba(212,180,74,0.95),rgba(201,162,39,0.75));
 }
-/* Kazekage : déjà défini plus haut → c'est le plus intense (#d4b44a → #c9a227) */
+/* Kazekage : 100% — avatar entièrement doré pur */
+.rcv2-card[data-rang="Kazekage"] .rcv2-card-avatar-wrap,
+.rcv2-card[data-rang="Kage"] .rcv2-card-avatar-wrap{
+  background:linear-gradient(135deg,#f0d060 0%,#d4b44a 50%,#c9a227 100%) !important;
+  box-shadow:0 0 14px rgba(240,208,96,0.45);
+}
 
 /* ── Autocomplétion nom suspect (dossiers) ─────────────────────────── */
 .dossier-ac-wrap{position:relative}
@@ -14920,6 +14925,8 @@ document.addEventListener('error', function(e){
               <label class="nature-checkbox-label rcv2-nat" data-group="officielles"><input type="checkbox" value="Avocat"> <span>👨‍💼 Avocat</span></label>
               <label class="nature-checkbox-label rcv2-nat" data-group="officielles"><input type="checkbox" value="Agent de mission"> <span>🎯 Agent de mission</span></label>
               <label class="nature-checkbox-label rcv2-nat" data-group="officielles"><input type="checkbox" value="Médecin"> <span>⚕️ Médecin</span></label>
+              <label class="nature-checkbox-label rcv2-nat" data-group="officielles"><input type="checkbox" value="Scientifique"> <span>🔬 Scientifique</span></label>
+              <label class="nature-checkbox-label rcv2-nat" data-group="officielles"><input type="checkbox" value="Stratège"> <span>♟️ Stratège</span></label>
               <label class="nature-checkbox-label rcv2-nat" data-group="officielles"><input type="checkbox" value="Diplomate"> <span>🤝 Diplomate</span></label>
               <!-- Civils -->
               <label class="nature-checkbox-label rcv2-nat" data-group="civils"><input type="checkbox" value="Marchand"> <span>🛒 Marchand</span></label>
@@ -14927,6 +14934,7 @@ document.addEventListener('error', function(e){
               <label class="nature-checkbox-label rcv2-nat" data-group="civils"><input type="checkbox" value="Cuisinier"> <span>🍳 Cuisinier</span></label>
               <label class="nature-checkbox-label rcv2-nat" data-group="civils"><input type="checkbox" value="Artisan"> <span>🎨 Artisan</span></label>
               <label class="nature-checkbox-label rcv2-nat" data-group="civils"><input type="checkbox" value="Paysan"> <span>🌾 Paysan</span></label>
+              <label class="nature-checkbox-label rcv2-nat" data-group="civils"><input type="checkbox" value="Professeur"> <span>👨‍🏫 Professeur</span></label>
               <label class="nature-checkbox-label rcv2-nat" data-group="civils"><input type="checkbox" value="Érudit"> <span>📚 Érudit / Sage</span></label>
               <label class="nature-checkbox-label rcv2-nat" data-group="civils"><input type="checkbox" value="Fonctionnaire"> <span>🏛️ Fonctionnaire</span></label>
               <label class="nature-checkbox-label rcv2-nat" data-group="civils"><input type="checkbox" value="Sans emploi"> <span>🏚️ Sans emploi</span></label>
