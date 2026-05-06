@@ -11979,16 +11979,41 @@ document.addEventListener('error', function(e){
       background:rgba(15,12,7,0.95);
       flex-shrink:0;
       min-height:74px;
-      /* Garde la barre toujours visible dans le flux flex */
       box-sizing:border-box;
       width:100%;
+      /* Ancrage en bas du conteneur conversation pour éviter qu'un flex
+         défaillant du parent écrase la barre à 0px de hauteur. */
+      position:relative;
+      z-index:5;
     }
-    /* BUG-FIX : forcer l'affichage de la barre quand une conversation est ouverte.
-       Sans ce !important, certains états résiduels (display:none inline laissé,
-       conflit avec d'autres règles) pouvaient masquer la barre de saisie. */
-    #msg-conv-wrap[style*="display: flex"] #msg-input-row,
-    #msg-conv-wrap[style*="display:flex"] #msg-input-row{
+    /* BUG-FIX : forcer l'affichage de la barre quand une conversation est ouverte,
+       en visant directement #msg-input-row sans dépendre du parent.
+       Le parent #msg-conv-wrap est en display:none par défaut donc la barre ne sera
+       affichée que quand une conversation est ouverte. */
+    #msg-input-row{
       display:flex !important;
+    }
+    /* Cacher la barre uniquement si son parent est masqué (pas de conv ouverte) */
+    #msg-conv-wrap[style*="display: none"] #msg-input-row,
+    #msg-conv-wrap[style*="display:none"] #msg-input-row{
+      display:none !important;
+    }
+    /* Le conteneur conversation doit être un vrai flex column qui pousse
+       l'input en bas. min-height:0 + overflow contraint pour le thread. */
+    #msg-conv-wrap{
+      display:none; /* override par JS quand convo ouverte */
+    }
+    #page-messagerie #msg-conv-wrap.is-open{
+      display:flex !important;
+      flex:1 !important;
+      flex-direction:column !important;
+      min-height:0 !important;
+      height:100% !important;
+    }
+    #page-messagerie #msg-conv-wrap.is-open .msg-thread-wrap{
+      flex:1 1 0 !important;
+      min-height:0 !important;
+      overflow-y:auto !important;
     }
     #page-messagerie .msg-input-box{
       display:flex;gap:10px;align-items:flex-end;
@@ -12089,8 +12114,8 @@ document.addEventListener('error', function(e){
           <div class="msg-main-empty-sub">Pour démarrer la conversation</div>
         </div>
 
-        <!-- Conversation ouverte -->
-        <div id="msg-conv-wrap" style="display:none;flex:1;flex-direction:column;min-height:0">
+        <!-- Conversation ouverte - visibilité contrôlée par la classe .is-open -->
+        <div id="msg-conv-wrap">
           <div class="msg-conv-head">
             <button class="msg-back-btn" onclick="msgCloseConv()" aria-label="Retour">←</button>
             <div class="msg-conv-av" id="msg-conv-av">?</div>
@@ -18954,7 +18979,11 @@ function renderPage(name){
       var _hGrade = document.getElementById('msg-header-grade');
       if(_hName) _hName.textContent = _currentMsgContact.nom;
       if(_hGrade) _hGrade.textContent = (_currentMsgContact.grade||'')+(_currentMsgContact.role?' · '+roleLabel(_currentMsgContact.role, _currentMsgContact.section):'');
-      // L'input row est désormais géré via CSS (visible par défaut, caché via le parent msg-conv-wrap).
+      // Restaurer l'état "conversation ouverte" via classe CSS (input row apparaît automatiquement)
+      var _convWrap = document.getElementById('msg-conv-wrap');
+      var _emptyEl  = document.getElementById('msg-main-empty');
+      if(_convWrap){ _convWrap.style.display = ''; _convWrap.classList.add('is-open'); }
+      if(_emptyEl) _emptyEl.style.display = 'none';
       renderMsgThread();
     }
   }
@@ -27954,14 +27983,15 @@ function openMsgContact(userId){
   var emptyEl = document.getElementById('msg-main-empty');
   var convWrap = document.getElementById('msg-conv-wrap');
   if(emptyEl) emptyEl.style.display = 'none';
-  if(convWrap) convWrap.style.display = 'flex';
+  if(convWrap){
+    // Reset l'inline style:display:none du HTML pour que la classe puisse prendre le relais
+    convWrap.style.display = '';
+    convWrap.classList.add('is-open');
+  }
   // Mode mobile : afficher la conversation (cacher la sidebar)
   var page = document.getElementById('page-messagerie');
   if(page) page.classList.add('in-chat');
   _msgUpdateConvHeader();
-  // L'input row est maintenant toujours visible via CSS (display:flex par défaut),
-  // et automatiquement caché tant que msg-conv-wrap est en display:none.
-  // Plus besoin de toggle manuel ici.
   // Mark all as read
   var key = _msgKey(currentUser.id, u.id);
   if(DB.messages&&DB.messages[key]){
