@@ -13039,43 +13039,6 @@ document.addEventListener('error', function(e){
     <div class="dc-list" id="dc-com-list"></div>
   </div>
 
-  <!-- Modal saisie d'une transaction (entrée ou sortie) -->
-  <div class="modal-overlay" id="modal-dc-entry">
-    <div class="modal" style="max-width:520px">
-      <div class="modal-header">
-        <h3 id="dc-modal-title">Nouvelle entrée</h3>
-        <span class="modal-close" onclick="closeModal('modal-dc-entry')">✕</span>
-      </div>
-      <div class="modal-body">
-        <input type="hidden" id="dc-form-type" value="">
-        <input type="hidden" id="dc-form-edit-id" value="">
-        <div class="form-group">
-          <label class="form-label">Montant (Ryōs) *</label>
-          <input type="number" id="dc-form-amount" class="form-control" min="1" step="1" placeholder="Ex: 5000" oninput="dcUpdateTaxPreview()">
-        </div>
-        <div class="form-group">
-          <label class="form-label" id="dc-form-passeur-lbl">Qui a passé l'argent ? *</label>
-          <input type="text" id="dc-form-passeur" class="form-control" placeholder="Nom de la personne / source">
-        </div>
-        <div class="form-group">
-          <label class="form-label" id="dc-form-justif-lbl">Justificatif / Raison *</label>
-          <textarea id="dc-form-justif" class="form-control" rows="3" placeholder="Pour quoi cet argent a-t-il été reçu / dépensé ?"></textarea>
-        </div>
-        <div class="form-group">
-          <label class="form-label">Date</label>
-          <input type="date" id="dc-form-date" class="form-control">
-        </div>
-        <div id="dc-form-tax-preview" style="padding:9px 12px;background:rgba(217,119,6,0.08);border:1px solid rgba(217,119,6,0.30);border-radius:6px;margin-top:8px;font-family:'Share Tech Mono',monospace;font-size:11px;color:#fbbf24;display:none">
-          <span id="dc-form-tax-preview-text"></span>
-        </div>
-      </div>
-      <div class="modal-footer">
-        <button class="btn btn-outline" onclick="closeModal('modal-dc-entry')">Annuler</button>
-        <button class="btn btn-primary" onclick="dcSaveEntry()">💾 Enregistrer</button>
-      </div>
-    </div>
-  </div>
-
   <!-- DIPLOMATIE — Laissez-passer (visible par TOUS, modifiable par diplomates+admin) -->
   <div class="page-content" id="page-diplo-laissezpasse">
     <div class="pgv2-hero" data-tone="profil">
@@ -16221,6 +16184,43 @@ document.addEventListener('error', function(e){
       </div>
     </div>
     <div class="modal-footer"><button class="btn btn-outline" onclick="closeModal('modal-annonce')">Annuler</button><button class="btn btn-primary" onclick="saveAnnonce()">Publier</button></div>
+  </div>
+</div>
+
+<!-- Modale Comptabilité diplomatique : saisie d'une transaction -->
+<div class="modal-overlay" role="dialog" aria-modal="true" id="modal-dc-entry">
+  <div class="modal" style="max-width:520px">
+    <div class="modal-header">
+      <h3 id="dc-modal-title">Nouvelle entrée</h3>
+      <span class="modal-close" onclick="closeModal('modal-dc-entry')">✕</span>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="dc-form-type" value="">
+      <input type="hidden" id="dc-form-edit-id" value="">
+      <div class="form-group">
+        <label class="form-label">Montant (Ryōs) *</label>
+        <input type="number" id="dc-form-amount" class="form-control" min="1" step="1" placeholder="Ex: 5000" oninput="dcUpdateTaxPreview()">
+      </div>
+      <div class="form-group">
+        <label class="form-label" id="dc-form-passeur-lbl">Qui a passé l'argent ? *</label>
+        <input type="text" id="dc-form-passeur" class="form-control" placeholder="Nom de la personne / source">
+      </div>
+      <div class="form-group">
+        <label class="form-label" id="dc-form-justif-lbl">Justificatif / Raison *</label>
+        <textarea id="dc-form-justif" class="form-control" rows="3" placeholder="Pour quoi cet argent a-t-il été reçu / dépensé ?"></textarea>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Date</label>
+        <input type="date" id="dc-form-date" class="form-control">
+      </div>
+      <div id="dc-form-tax-preview" style="padding:9px 12px;background:rgba(217,119,6,0.08);border:1px solid rgba(217,119,6,0.30);border-radius:6px;margin-top:8px;font-family:'Share Tech Mono',monospace;font-size:11px;color:#fbbf24;display:none">
+        <span id="dc-form-tax-preview-text"></span>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('modal-dc-entry')">Annuler</button>
+      <button class="btn btn-primary" onclick="dcSaveEntry()">💾 Enregistrer</button>
+    </div>
   </div>
 </div>
 
@@ -34320,31 +34320,36 @@ function dcUpdateTaxPreview(){
 function dcOpenForm(type, editId){
   if(!dcCanAccess()){ if(typeof showToast==='function') showToast('⛔ Action réservée aux diplomates','error'); return; }
   dcInitDB();
-  document.getElementById('dc-form-type').value = type;
-  document.getElementById('dc-form-edit-id').value = editId || '';
-  document.getElementById('dc-modal-title').textContent = (editId ? 'Modifier' : 'Nouvelle') + ' ' + (type==='entree' ? 'entrée d\'argent' : 'sortie d\'argent');
+  // Helper : récupérer un élément en signalant clairement s'il manque (évite les crashes silencieux)
+  var _setText = function(id, txt){ var e = document.getElementById(id); if(e) e.textContent = txt; };
+  var _setVal  = function(id, v){ var e = document.getElementById(id); if(e) e.value = v; };
+  var modal = document.getElementById('modal-dc-entry');
+  if(!modal){ if(typeof showToast==='function') showToast('Modale introuvable — recharger la page','error'); return; }
+  _setVal('dc-form-type', type);
+  _setVal('dc-form-edit-id', editId || '');
+  _setText('dc-modal-title', (editId ? 'Modifier' : 'Nouvelle') + ' ' + (type==='entree' ? 'entrée d\'argent' : 'sortie d\'argent'));
   // Adapter les libellés selon entrée/sortie
-  document.getElementById('dc-form-passeur-lbl').textContent = type==='entree' ? "Qui a apporté l'argent ? *" : "Qui a retiré l'argent ? *";
-  document.getElementById('dc-form-justif-lbl').textContent = type==='entree' ? "Origine / Justificatif *" : "Motif du retrait / Justificatif *";
+  _setText('dc-form-passeur-lbl', type==='entree' ? "Qui a apporté l'argent ? *" : "Qui a retiré l'argent ? *");
+  _setText('dc-form-justif-lbl', type==='entree' ? "Origine / Justificatif *" : "Motif du retrait / Justificatif *");
 
   // Pré-remplir si édition
   if(editId){
     var tx = (DB.diploComptabilite.transactions||[]).find(function(t){ return t.id === editId; });
     if(tx){
-      document.getElementById('dc-form-amount').value = tx.amount || '';
-      document.getElementById('dc-form-passeur').value = tx.passeur || '';
-      document.getElementById('dc-form-justif').value = tx.justif || '';
-      document.getElementById('dc-form-date').value = tx.date || new Date().toISOString().slice(0,10);
+      _setVal('dc-form-amount', tx.amount || '');
+      _setVal('dc-form-passeur', tx.passeur || '');
+      _setVal('dc-form-justif', tx.justif || '');
+      _setVal('dc-form-date', tx.date || new Date().toISOString().slice(0,10));
     }
   } else {
-    document.getElementById('dc-form-amount').value = '';
-    document.getElementById('dc-form-passeur').value = '';
-    document.getElementById('dc-form-justif').value = '';
-    document.getElementById('dc-form-date').value = new Date().toISOString().slice(0,10);
+    _setVal('dc-form-amount', '');
+    _setVal('dc-form-passeur', '');
+    _setVal('dc-form-justif', '');
+    _setVal('dc-form-date', new Date().toISOString().slice(0,10));
   }
   dcUpdateTaxPreview();
   if(typeof openModal === 'function') openModal('modal-dc-entry');
-  else document.getElementById('modal-dc-entry').classList.add('open');
+  else modal.classList.add('open');
 }
 function dcSaveEntry(){
   if(!dcCanAccess()){ if(typeof showToast==='function') showToast('⛔ Action réservée aux diplomates','error'); return; }
