@@ -25996,19 +25996,23 @@ function adminAnalyzePhotos(){
   var entries = _adminCollectPhotoEntries();
   var totalSize = 0;
   var bigPhotos = 0;     // photos > 100 Ko (peuvent encore être réduites)
-  var nonWebpCount = 0;  // photos pas en WebP (peuvent gagner ~30% en passant à WebP)
+  var nonWebpCount = 0;  // photos non-WebP suffisamment grosses pour profiter de la conversion
   var webpSupported = (typeof _webpIsSupported === 'function') ? _webpIsSupported() : false;
+  // Seuil : on ne flag comme "non WebP" que les photos > 30 Ko, car en-dessous
+  // la conversion en WebP donne souvent un fichier plus gros que l'original
+  // (overhead du format + qualité maintenue), donc ce serait contre-productif.
+  var WEBP_FLAG_THRESHOLD = 30000;
   entries.forEach(function(e){
     var size = e.dataURL.length;
     totalSize += size;
     if(size > 100000) bigPhotos++; // > 100 Ko
-    if(webpSupported && !e.dataURL.startsWith('data:image/webp')) nonWebpCount++;
+    if(webpSupported && !e.dataURL.startsWith('data:image/webp') && size > WEBP_FLAG_THRESHOLD) nonWebpCount++;
   });
 
-  // Photos "à recompresser" = grosses OU pas en WebP (si WebP supporté)
+  // Photos "à recompresser" = grosses OU non-WebP suffisamment grandes pour bénéficier
   var toCompress = entries.filter(function(e){
     if(e.dataURL.length > 100000) return true;
-    if(webpSupported && !e.dataURL.startsWith('data:image/webp')) return true;
+    if(webpSupported && !e.dataURL.startsWith('data:image/webp') && e.dataURL.length > WEBP_FLAG_THRESHOLD) return true;
     return false;
   });
 
@@ -26069,11 +26073,13 @@ async function adminCompressAllPhotos(){
   }
 
   var entries = _adminCollectPhotoEntries();
-  // Détection : photos > 100 Ko OU pas en WebP (si WebP supporté)
+  // Détection : photos > 100 Ko OU pas en WebP MAIS suffisamment grosses (> 30 Ko)
+  // En-dessous de 30 Ko, la conversion WebP serait souvent contre-productive
   var webpSupported = (typeof _webpIsSupported === 'function') ? _webpIsSupported() : false;
+  var WEBP_FLAG_THRESHOLD = 30000;
   var toCompress = entries.filter(function(e){
     if(e.dataURL.length > 100000) return true;
-    if(webpSupported && !e.dataURL.startsWith('data:image/webp')) return true;
+    if(webpSupported && !e.dataURL.startsWith('data:image/webp') && e.dataURL.length > WEBP_FLAG_THRESHOLD) return true;
     return false;
   });
 
@@ -35269,6 +35275,10 @@ function bbSaveFiche() {
   bbSaveNinjas(list);
   bbCancelForm();
   bbRender();
+  // Re-render différé : si le listener Firebase pousse une mise à jour juste après
+  // (ce qui peut écraser localStorage avec l'état pré-save), on force un nouveau
+  // render après que tout soit stabilisé.
+  setTimeout(function(){ if(typeof bbRender === 'function') bbRender(); }, 600);
 }
 
 function bbDeleteFiche() {
