@@ -33819,12 +33819,14 @@ function _refreshArchiveToggleBtn() {
     // Retirer au départ
     window.addEventListener('beforeunload', function() {
       clearInterval(heartbeatTimer);
+      // Tenter une suppression propre via le SDK (authentifié).
+      // Note : pas garanti d'aboutir avant que la page ne se ferme, mais si
+      // ça ne passe pas, le système de stale (70s) nettoie automatiquement.
+      // L'ancienne version utilisait fetch REST DELETE direct → 401 Unauthorized
+      // car les règles Firebase exigent une authentification.
       try {
-        // Effacement synchrone via fetch keepalive (méthode DELETE = suppression du nœud)
-        // sendBeacon envoie un POST ce qui crée un enfant push au lieu de supprimer — inutilisable ici
-        var url = 'https://suna-police-default-rtdb.europe-west1.firebasedatabase.app/presence/' + userId + '.json';
-        if (typeof fetch === 'function') {
-          fetch(url, { method: 'DELETE', keepalive: true }).catch(function(){});
+        if (window._fbSet && presenceRef) {
+          window._fbSet(presenceRef, null);
         }
       } catch(e) {}
     });
