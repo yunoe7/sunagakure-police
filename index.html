@@ -3331,16 +3331,138 @@ html{-webkit-tap-highlight-color:transparent}
 .rcv2-card[data-rang="Kazekage"] .rcv2-card-rang,
 .rcv2-card[data-rang="Kage"] .rcv2-card-rang{color:var(--gold2);border-color:rgba(201,162,39,0.5)}
 
-/* Couleur distinctive par grade sur les cartes recensement */
-.rcv2-card[data-rang="Genin"] .rcv2-card-rang{color:#cbd5e1;border-color:rgba(148,163,184,0.4)}
-.rcv2-card[data-rang="Genin Confirmé"] .rcv2-card-rang{color:#4ade80;border-color:rgba(34,197,94,0.4)}
-.rcv2-card[data-rang="Chunin"] .rcv2-card-rang{color:#22d3ee;border-color:rgba(6,182,212,0.4)}
-.rcv2-card[data-rang="Tokubetsu Chunin"] .rcv2-card-rang{color:#2dd4bf;border-color:rgba(20,184,166,0.4)}
-.rcv2-card[data-rang="Kakunin"] .rcv2-card-rang{color:#a3e635;border-color:rgba(132,204,22,0.4)}
-.rcv2-card[data-rang="Tokubetsu Jonin"] .rcv2-card-rang{color:#818cf8;border-color:rgba(99,102,241,0.4)}
-.rcv2-card[data-rang="Jonin"] .rcv2-card-rang{color:#c084fc;border-color:rgba(168,85,247,0.4)}
-.rcv2-card[data-rang="Sairin"] .rcv2-card-rang{color:#fb7185;border-color:rgba(244,63,94,0.4)}
-.rcv2-card[data-rang="Commandant Jonin"] .rcv2-card-rang{color:#ef4444;border-color:rgba(220,38,38,0.4)}
+/* ═══ Couleur distinctive par grade — GRADATION DORÉE ═══
+   Concept : tous les rangs hiérarchiques utilisent la teinte dorée du Kazekage,
+   mais avec une intensité (saturation/opacité) qui augmente avec le grade.
+   - Genin       = pratiquement sans couleur (gris neutre, opacité minimale)
+   - Genin Conf. = très léger reflet doré
+   - Chunin      → opacité montante
+   - Tok. Chunin → opacité montante
+   - Kakunin     → opacité montante
+   - Tok. Jonin  → opacité montante
+   - Jonin       = doré bien marqué
+   - Sairin      = doré soutenu
+   - Cdt. Jonin  = doré intense
+   - Kazekage    = doré pur, le plus saturé (référence)
+   Les rangs spéciaux (Criminel, Civil, Inconnu) gardent leurs codes couleur
+   distincts pour rester immédiatement identifiables. */
+
+/* — Badge "rang" en haut à droite de la carte — */
+.rcv2-card[data-rang="Genin"] .rcv2-card-rang{color:rgba(240,232,208,0.55);border-color:rgba(255,255,255,0.10)}
+.rcv2-card[data-rang="Genin Confirmé"] .rcv2-card-rang{color:rgba(220,190,90,0.7);border-color:rgba(201,162,39,0.18)}
+.rcv2-card[data-rang="Chunin"] .rcv2-card-rang{color:rgba(225,195,95,0.78);border-color:rgba(201,162,39,0.25)}
+.rcv2-card[data-rang="Tokubetsu Chunin"] .rcv2-card-rang{color:rgba(228,198,98,0.84);border-color:rgba(201,162,39,0.32)}
+.rcv2-card[data-rang="Kakunin"] .rcv2-card-rang{color:rgba(230,200,100,0.88);border-color:rgba(201,162,39,0.38)}
+.rcv2-card[data-rang="Tokubetsu Jonin"] .rcv2-card-rang{color:rgba(232,202,102,0.92);border-color:rgba(201,162,39,0.45)}
+.rcv2-card[data-rang="Jonin"] .rcv2-card-rang{color:#d4b44a;border-color:rgba(201,162,39,0.55)}
+.rcv2-card[data-rang="Sairin"] .rcv2-card-rang{color:#d8b850;border-color:rgba(201,162,39,0.65)}
+.rcv2-card[data-rang="Commandant Jonin"] .rcv2-card-rang{color:#dcbc55;border-color:rgba(201,162,39,0.78);font-weight:800}
+/* Kazekage : déjà défini plus haut, on le renforce ici pour qu'il soit le plus intense */
+.rcv2-card[data-rang="Kazekage"] .rcv2-card-rang,
+.rcv2-card[data-rang="Kage"] .rcv2-card-rang{
+  color:#f0d060 !important;
+  border-color:rgba(212,180,74,0.95) !important;
+  font-weight:800 !important;
+  text-shadow:0 0 6px rgba(201,162,39,0.5);
+  background:rgba(40,28,5,0.7) !important;
+}
+
+/* — Bandeau (banner) en haut de la carte : gradation dorée progressive — */
+.rcv2-card[data-rang="Genin"] .rcv2-card-banner{
+  background:linear-gradient(135deg,rgba(255,255,255,0.025) 0%,rgba(255,255,255,0.015) 100%);
+  border-bottom-color:rgba(255,255,255,0.06);
+}
+.rcv2-card[data-rang="Genin Confirmé"] .rcv2-card-banner{
+  background:linear-gradient(135deg,rgba(201,162,39,0.05) 0%,rgba(212,180,74,0.03) 100%);
+  border-bottom-color:rgba(201,162,39,0.10);
+}
+.rcv2-card[data-rang="Chunin"] .rcv2-card-banner{
+  background:linear-gradient(135deg,rgba(201,162,39,0.08) 0%,rgba(212,180,74,0.05) 100%);
+  border-bottom-color:rgba(201,162,39,0.14);
+}
+.rcv2-card[data-rang="Tokubetsu Chunin"] .rcv2-card-banner{
+  background:linear-gradient(135deg,rgba(201,162,39,0.11) 0%,rgba(212,180,74,0.07) 100%);
+  border-bottom-color:rgba(201,162,39,0.18);
+}
+.rcv2-card[data-rang="Kakunin"] .rcv2-card-banner{
+  background:linear-gradient(135deg,rgba(201,162,39,0.14) 0%,rgba(212,180,74,0.09) 100%);
+  border-bottom-color:rgba(201,162,39,0.22);
+}
+.rcv2-card[data-rang="Tokubetsu Jonin"] .rcv2-card-banner{
+  background:linear-gradient(135deg,rgba(201,162,39,0.17) 0%,rgba(212,180,74,0.11) 100%);
+  border-bottom-color:rgba(201,162,39,0.27);
+}
+.rcv2-card[data-rang="Jonin"] .rcv2-card-banner{
+  background:linear-gradient(135deg,rgba(201,162,39,0.21) 0%,rgba(212,180,74,0.14) 100%);
+  border-bottom-color:rgba(201,162,39,0.33);
+}
+.rcv2-card[data-rang="Sairin"] .rcv2-card-banner{
+  background:linear-gradient(135deg,rgba(201,162,39,0.25) 0%,rgba(212,180,74,0.17) 100%);
+  border-bottom-color:rgba(201,162,39,0.40);
+}
+.rcv2-card[data-rang="Commandant Jonin"] .rcv2-card-banner{
+  background:linear-gradient(135deg,rgba(201,162,39,0.30) 0%,rgba(212,180,74,0.20) 100%);
+  border-bottom-color:rgba(201,162,39,0.48);
+}
+/* Kazekage : bandeau le plus intense, déjà défini plus haut, on le renforce */
+.rcv2-card[data-rang="Kazekage"] .rcv2-card-banner,
+.rcv2-card[data-rang="Kage"] .rcv2-card-banner{
+  background:linear-gradient(135deg,rgba(212,180,74,0.42) 0%,rgba(201,162,39,0.30) 50%,rgba(180,140,20,0.22) 100%) !important;
+  border-bottom-color:rgba(212,180,74,0.60) !important;
+  box-shadow:inset 0 -1px 0 rgba(255,220,120,0.25);
+}
+
+/* — Bordure de la carte elle-même : très subtile gradation, sauf Kazekage qui ressort — */
+.rcv2-card[data-rang="Genin"]{border-color:rgba(255,255,255,0.06)}
+.rcv2-card[data-rang="Genin Confirmé"]{border-color:rgba(201,162,39,0.10)}
+.rcv2-card[data-rang="Chunin"]{border-color:rgba(201,162,39,0.13)}
+.rcv2-card[data-rang="Tokubetsu Chunin"]{border-color:rgba(201,162,39,0.16)}
+.rcv2-card[data-rang="Kakunin"]{border-color:rgba(201,162,39,0.20)}
+.rcv2-card[data-rang="Tokubetsu Jonin"]{border-color:rgba(201,162,39,0.24)}
+.rcv2-card[data-rang="Jonin"]{border-color:rgba(201,162,39,0.30)}
+.rcv2-card[data-rang="Sairin"]{border-color:rgba(201,162,39,0.36)}
+.rcv2-card[data-rang="Commandant Jonin"]{border-color:rgba(201,162,39,0.44)}
+/* Kazekage : bordure dorée intense + halo (déjà partiellement défini, on consolide) */
+.rcv2-card[data-rang="Kazekage"],
+.rcv2-card[data-rang="Kage"]{
+  border-color:rgba(212,180,74,0.65) !important;
+  box-shadow:0 4px 22px rgba(0,0,0,0.45),0 0 0 1px rgba(201,162,39,0.18),0 0 24px rgba(212,180,74,0.12) !important;
+}
+.rcv2-card[data-rang="Kazekage"]:hover,
+.rcv2-card[data-rang="Kage"]:hover{
+  border-color:rgba(232,202,102,0.85) !important;
+  box-shadow:0 14px 40px rgba(0,0,0,0.5),0 0 0 1px rgba(212,180,74,0.32),0 0 36px rgba(212,180,74,0.22) !important;
+}
+
+/* — Effet "halo" progressif sur l'avatar (cadre du portrait) selon le grade — */
+.rcv2-card[data-rang="Genin"] .rcv2-card-avatar-wrap{
+  background:linear-gradient(135deg,rgba(255,255,255,0.10),rgba(255,255,255,0.05));
+}
+.rcv2-card[data-rang="Genin Confirmé"] .rcv2-card-avatar-wrap{
+  background:linear-gradient(135deg,rgba(201,162,39,0.18),rgba(212,180,74,0.10));
+}
+.rcv2-card[data-rang="Chunin"] .rcv2-card-avatar-wrap{
+  background:linear-gradient(135deg,rgba(201,162,39,0.24),rgba(212,180,74,0.14));
+}
+.rcv2-card[data-rang="Tokubetsu Chunin"] .rcv2-card-avatar-wrap{
+  background:linear-gradient(135deg,rgba(201,162,39,0.30),rgba(212,180,74,0.18));
+}
+.rcv2-card[data-rang="Kakunin"] .rcv2-card-avatar-wrap{
+  background:linear-gradient(135deg,rgba(201,162,39,0.36),rgba(212,180,74,0.22));
+}
+.rcv2-card[data-rang="Tokubetsu Jonin"] .rcv2-card-avatar-wrap{
+  background:linear-gradient(135deg,rgba(201,162,39,0.42),rgba(212,180,74,0.26));
+}
+.rcv2-card[data-rang="Jonin"] .rcv2-card-avatar-wrap{
+  background:linear-gradient(135deg,rgba(201,162,39,0.50),rgba(212,180,74,0.32));
+}
+.rcv2-card[data-rang="Sairin"] .rcv2-card-avatar-wrap{
+  background:linear-gradient(135deg,rgba(201,162,39,0.58),rgba(212,180,74,0.38));
+}
+.rcv2-card[data-rang="Commandant Jonin"] .rcv2-card-avatar-wrap{
+  background:linear-gradient(135deg,rgba(201,162,39,0.66),rgba(212,180,74,0.45));
+}
+/* Kazekage : déjà défini plus haut → c'est le plus intense (#d4b44a → #c9a227) */
 
 /* ── Autocomplétion nom suspect (dossiers) ─────────────────────────── */
 .dossier-ac-wrap{position:relative}
@@ -3785,6 +3907,21 @@ html{-webkit-tap-highlight-color:transparent}
   grid-template-columns:repeat(auto-fill,minmax(140px,1fr));
   gap:8px;
 }
+/* Grille multi-métiers (même apparence que les natures) */
+.rcv2-metiers-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(160px,1fr));
+  gap:8px;
+  max-height:240px;
+  overflow-y:auto;
+  padding:4px;
+  border:1px solid rgba(201,162,39,0.12);
+  border-radius:8px;
+  background:rgba(0,0,0,0.18);
+}
+.rcv2-metiers-grid::-webkit-scrollbar{width:6px}
+.rcv2-metiers-grid::-webkit-scrollbar-track{background:rgba(0,0,0,0.3)}
+.rcv2-metiers-grid::-webkit-scrollbar-thumb{background:rgba(201,162,39,0.3);border-radius:3px}
 .nature-checkbox-label.rcv2-nat{
   display:flex !important;
   align-items:center !important;
@@ -14402,30 +14539,26 @@ document.addEventListener('error', function(e){
         </div>
         <div class="rcv2-form-grid cols-2" style="margin-top:16px">
           <div class="rcv2-fld">
-            <label class="rcv2-fld-label">Métier <span class="hint">profession RP</span></label>
-            <select id="r-metier" class="rcv2-input">
-              <option value="">— Aucun —</option>
-              <optgroup label="Forces officielles">
-                <option value="Officier de police">👮 Officier de police</option>
-                <option value="Juge">👨‍⚖️ Juge</option>
-                <option value="Avocat">👨‍💼 Avocat</option>
-                <option value="Agent de mission">🎯 Agent de mission</option>
-                <option value="Médecin">⚕️ Médecin</option>
-                <option value="Diplomate">🤝 Diplomate</option>
-              </optgroup>
-              <optgroup label="Civils">
-                <option value="Marchand">🛒 Marchand</option>
-                <option value="Forgeron">🔨 Forgeron</option>
-                <option value="Cuisinier">🍳 Cuisinier</option>
-                <option value="Artisan">🎨 Artisan</option>
-                <option value="Paysan">🌾 Paysan</option>
-                <option value="Érudit">📚 Érudit / Sage</option>
-                <option value="Fonctionnaire">🏛️ Fonctionnaire</option>
-                <option value="Sans emploi">🏚️ Sans emploi</option>
-              </optgroup>
-              <option value="Autre">❓ Autre…</option>
-            </select>
-            <input type="text" id="r-metier-autre" class="rcv2-input" placeholder="Précisez le métier..." style="display:none;margin-top:6px">
+            <label class="rcv2-fld-label">Métiers <span class="hint">vous pouvez en choisir plusieurs</span></label>
+            <div class="rcv2-metiers-grid" id="r-metier-checkboxes">
+              <!-- Forces officielles -->
+              <label class="nature-checkbox-label rcv2-nat" data-group="officielles"><input type="checkbox" value="Officier de police"> <span>👮 Officier de police</span></label>
+              <label class="nature-checkbox-label rcv2-nat" data-group="officielles"><input type="checkbox" value="Juge"> <span>👨‍⚖️ Juge</span></label>
+              <label class="nature-checkbox-label rcv2-nat" data-group="officielles"><input type="checkbox" value="Avocat"> <span>👨‍💼 Avocat</span></label>
+              <label class="nature-checkbox-label rcv2-nat" data-group="officielles"><input type="checkbox" value="Agent de mission"> <span>🎯 Agent de mission</span></label>
+              <label class="nature-checkbox-label rcv2-nat" data-group="officielles"><input type="checkbox" value="Médecin"> <span>⚕️ Médecin</span></label>
+              <label class="nature-checkbox-label rcv2-nat" data-group="officielles"><input type="checkbox" value="Diplomate"> <span>🤝 Diplomate</span></label>
+              <!-- Civils -->
+              <label class="nature-checkbox-label rcv2-nat" data-group="civils"><input type="checkbox" value="Marchand"> <span>🛒 Marchand</span></label>
+              <label class="nature-checkbox-label rcv2-nat" data-group="civils"><input type="checkbox" value="Forgeron"> <span>🔨 Forgeron</span></label>
+              <label class="nature-checkbox-label rcv2-nat" data-group="civils"><input type="checkbox" value="Cuisinier"> <span>🍳 Cuisinier</span></label>
+              <label class="nature-checkbox-label rcv2-nat" data-group="civils"><input type="checkbox" value="Artisan"> <span>🎨 Artisan</span></label>
+              <label class="nature-checkbox-label rcv2-nat" data-group="civils"><input type="checkbox" value="Paysan"> <span>🌾 Paysan</span></label>
+              <label class="nature-checkbox-label rcv2-nat" data-group="civils"><input type="checkbox" value="Érudit"> <span>📚 Érudit / Sage</span></label>
+              <label class="nature-checkbox-label rcv2-nat" data-group="civils"><input type="checkbox" value="Fonctionnaire"> <span>🏛️ Fonctionnaire</span></label>
+              <label class="nature-checkbox-label rcv2-nat" data-group="civils"><input type="checkbox" value="Sans emploi"> <span>🏚️ Sans emploi</span></label>
+            </div>
+            <input type="text" id="r-metier-autre" class="rcv2-input" placeholder="Métier(s) personnalisé(s) — séparez par des virgules" style="margin-top:8px">
           </div>
           <div class="rcv2-fld">
             <label class="rcv2-fld-label">Clan <span class="hint">appartenance familiale</span></label>
@@ -19649,7 +19782,7 @@ function renderAnnonces(){
     var isNew = ats > readTs && ats > 0;
     var cat = _annCatKey(a.cat);
     var photo = a.photo && safeImgSrc(a.photo)
-      ? '<img alt="Photo annonce" class="ann-photo" src="'+esc(safeImgSrc(a.photo))+'">'
+      ? '<img alt="Photo annonce" class="ann-photo" loading="lazy" src="'+esc(safeImgSrc(a.photo))+'">'
       : '';
     var contentLong = _annIsLong(a.contenu);
     return '<article class="ann-card cat-'+cat+'" data-id="'+a.id+'">'
@@ -19890,9 +20023,11 @@ function renderRecensement(){
     // Support multi-mots : tous les mots doivent matcher (ET logique).
     var terms = q.split(/\s+/).filter(Boolean);
     list = list.filter(function(r){
+      // r.metier peut être array OU string → on aplatit en string pour la recherche
+      var metierSearch = Array.isArray(r.metier) ? r.metier.join(" ") : (r.metier||"");
       var hay = ((r.prenom||"")+" "+(r.nom||"")+" "+(r.faction||"")+" "
               +((r.natures||[]).join(" "))+" "+(r.rang||"")+" "+(r.competences||"")+" "
-              +(r.metier||"")+" "+(r.clan||"")+" "+(r.notes||"")+" "
+              +metierSearch+" "+(r.clan||"")+" "+(r.notes||"")+" "
               +(r.age||"")+" "+(r.sexe||"")).toLowerCase();
       return terms.every(function(t){ return hay.indexOf(t) !== -1; });
     });
@@ -19928,7 +20063,7 @@ function renderRecensement(){
 
   grid.innerHTML=list.map(r=>{
     const initials=((r.prenom||"?").charAt(0)+((r.nom||"").charAt(0)||"")).toUpperCase();
-    const photoHTML=r.photo&&safeImgSrc(r.photo)?`<img alt="Photo" src="${safeImgSrc(r.photo)}">`:`${initials}`;
+    const photoHTML=r.photo&&safeImgSrc(r.photo)?`<img alt="Photo" loading="lazy" src="${safeImgSrc(r.photo)}">`:`${initials}`;
     const rangSafe=esc(r.rang||"Inconnu");
     const numSeq = recIdToNum[r.id] || 0;
     const idStr = '#' + String(numSeq).padStart(3, '0');
@@ -19948,9 +20083,18 @@ function renderRecensement(){
     const titreHTML = r.titre
       ? `<div class="rcv2-card-titre" style="font-style:italic;font-size:11px;color:var(--gold);opacity:0.85;margin-top:2px">« ${esc(r.titre)} »</div>`
       : "";
-    // Métier + Clan (chips dans la zone meta)
+    // Métier(s) + Clan (chips dans la zone meta).
+    // r.metier peut être : array (nouveau format), string (ancien format), ou vide.
+    const metierChipsArr = [];
+    if(Array.isArray(r.metier)){
+      r.metier.filter(Boolean).forEach(function(m){ metierChipsArr.push(m); });
+    } else if(typeof r.metier === 'string' && r.metier.trim()){
+      metierChipsArr.push(r.metier.trim());
+    }
     const metierClanChips = [];
-    if(r.metier) metierClanChips.push(`<span class="rcv2-card-chip" style="background:rgba(168,85,247,0.12);border-color:rgba(168,85,247,0.35);color:#c084fc">💼 ${esc(r.metier)}</span>`);
+    metierChipsArr.forEach(function(m){
+      metierClanChips.push(`<span class="rcv2-card-chip" style="background:rgba(168,85,247,0.12);border-color:rgba(168,85,247,0.35);color:#c084fc">💼 ${esc(m)}</span>`);
+    });
     if(r.clan) metierClanChips.push(`<span class="rcv2-card-chip" style="background:rgba(34,197,94,0.12);border-color:rgba(34,197,94,0.35);color:#86efac">🏛 Clan ${esc(r.clan)}</span>`);
     const metierClanHTML = metierClanChips.length
       ? `<div class="rcv2-card-meta">${metierClanChips.join("")}</div>`
@@ -20006,21 +20150,37 @@ function openEditRecense(id){
   el("r-notes").value = r.notes||"";
   // Nouveaux champs (Phase 1)
   const titreEl = el("r-titre"); if(titreEl) titreEl.value = r.titre||"";
-  // Métier : si la valeur n'est pas dans la liste prédéfinie, c'est un "Autre" custom
-  const metierSel = el("r-metier");
+  // Métiers (multi-sélection) : r.metier peut être un string (ancien format) ou un array (nouveau).
+  // On normalise en array, on coche les valeurs connues et on remplit "Autre" avec les inconnues.
+  const metierBox = document.getElementById("r-metier-checkboxes");
   const metierAutreEl = el("r-metier-autre");
-  if(metierSel){
-    const metierVal = r.metier||"";
-    const knownMetiers = ["Officier de police","Juge","Avocat","Agent de mission","Médecin","Diplomate",
-                          "Marchand","Forgeron","Cuisinier","Artisan","Paysan","Érudit","Fonctionnaire","Sans emploi"];
-    if(metierVal && !knownMetiers.includes(metierVal)){
-      // Valeur custom → on sélectionne "Autre" et on remplit le champ texte
-      metierSel.value = "Autre";
-      if(metierAutreEl){ metierAutreEl.value = metierVal; metierAutreEl.style.display = "block"; }
+  // Reset
+  if(metierBox){
+    metierBox.querySelectorAll("input[type='checkbox']").forEach(function(c){ c.checked = false; });
+  }
+  if(metierAutreEl){ metierAutreEl.value = ""; }
+  // Normalisation array
+  let metierList = [];
+  if(Array.isArray(r.metier)) metierList = r.metier.filter(Boolean);
+  else if(typeof r.metier === 'string' && r.metier.trim()) metierList = [r.metier.trim()];
+  // Liste des valeurs prédéfinies (= valeurs des checkboxes)
+  const knownMetiers = ["Officier de police","Juge","Avocat","Agent de mission","Médecin","Diplomate",
+                        "Marchand","Forgeron","Cuisinier","Artisan","Paysan","Érudit","Fonctionnaire","Sans emploi"];
+  const customMetiers = [];
+  metierList.forEach(function(m){
+    if(!m) return;
+    if(knownMetiers.indexOf(m) !== -1){
+      // Cocher la case correspondante
+      if(metierBox){
+        const cb = metierBox.querySelector('input[type="checkbox"][value="'+m.replace(/"/g,'\\"')+'"]');
+        if(cb) cb.checked = true;
+      }
     } else {
-      metierSel.value = metierVal;
-      if(metierAutreEl){ metierAutreEl.value = ""; metierAutreEl.style.display = "none"; }
+      customMetiers.push(m);
     }
+  });
+  if(metierAutreEl && customMetiers.length){
+    metierAutreEl.value = customMetiers.join(", ");
   }
   // Clan : pareil
   const clanSel = el("r-clan");
@@ -20066,9 +20226,21 @@ function saveRecense(){
 
   // Nouveaux champs (Phase 1)
   const titre = v("r-titre") || "";
-  // Métier : si "Autre" est sélectionné, utiliser le champ texte custom
-  const metierSel = v("r-metier") || "";
-  const metier = (metierSel === "Autre") ? (v("r-metier-autre") || "Autre") : metierSel;
+  // Métiers (multi-sélection) : récupérer toutes les checkboxes cochées + parser le champ "Autre"
+  const metierSelected = [...document.querySelectorAll("#r-metier-checkboxes input:checked")].map(c=>c.value);
+  const metierAutreRaw = (v("r-metier-autre")||"").trim();
+  // Le champ "Autre" peut contenir plusieurs métiers séparés par des virgules
+  const metierAutreList = metierAutreRaw
+    ? metierAutreRaw.split(",").map(s=>s.trim()).filter(Boolean)
+    : [];
+  // Fusion sans doublons
+  const metierAll = [];
+  metierSelected.concat(metierAutreList).forEach(function(m){
+    if(m && metierAll.indexOf(m) === -1) metierAll.push(m);
+  });
+  // Stockage : array si plusieurs, string si un seul (rétrocompat avec l'ancien format string).
+  // Pour simplifier les autres parties du code, on stocke toujours un array (`r.metier` peut donc être array OU string selon les fiches anciennes).
+  const metier = metierAll;
   // Clan : pareil
   const clanSel = v("r-clan") || "";
   const clan = (clanSel === "Autre") ? (v("r-clan-autre") || "Autre") : clanSel;
@@ -20099,15 +20271,38 @@ function saveRecense(){
     const saveBtn=document.querySelector("#modal-recense .modal-footer .btn-purple"); if(saveBtn) saveBtn.textContent="✓ Enregistrer";
     clearForm(["r-prenom","r-nom","r-age","r-faction","r-competences","r-notes","r-titre","r-metier-autre","r-clan-autre"]);
     document.querySelectorAll("#nature-checkboxes input").forEach(c=>c.checked=false);
-    // Reset selects
-    if(el("r-metier")) el("r-metier").value = "";
+    // Reset multi-jobs (nouveau système)
+    document.querySelectorAll("#r-metier-checkboxes input").forEach(c=>c.checked=false);
     if(el("r-clan")) el("r-clan").value = "";
     if(el("r-defunt-statut")) el("r-defunt-statut").value = "";
-    if(el("r-metier-autre")) el("r-metier-autre").style.display = "none";
+    if(el("r-metier-autre")) el("r-metier-autre").value = "";
     if(el("r-clan-autre")) el("r-clan-autre").style.display = "none";
     removeRecensePhoto(); return;
   }
 
+  // ─── Vérification doublon : prénom + nom déjà utilisés ───
+  // On compare en lower-case et trim pour éviter les variantes "Jean " / "jean"
+  const _normName = (s) => (s||"").toString().trim().toLowerCase();
+  const _newKey = _normName(prenom) + "|" + _normName(nom);
+  const doublons = (DB.recenses||[]).filter(function(x){
+    return _normName(x.prenom) + "|" + _normName(x.nom) === _newKey;
+  });
+  if(doublons.length > 0){
+    // Une fiche existe déjà avec ce prénom+nom → demander confirmation
+    askDelete(
+      `⚠️ Une fiche existe déjà au nom de "${prenom} ${nom}" (${doublons.length} déjà recensé${doublons.length>1?"s":""}).\n\nSouhaitez-vous vraiment créer une nouvelle fiche en doublon ?`,
+      function(){ _doSaveRecenseNew(prenom, nom, natures, photo, titre, metier, clan, defuntStatut); },
+      "✓ Créer quand même"
+    );
+    return;
+  }
+  // Pas de doublon → création directe
+  _doSaveRecenseNew(prenom, nom, natures, photo, titre, metier, clan, defuntStatut);
+}
+
+// Helper extrait pour la création effective d'une nouvelle fiche recensement.
+// Appelé soit directement (pas de doublon) soit après confirmation de l'utilisateur.
+function _doSaveRecenseNew(prenom, nom, natures, photo, titre, metier, clan, defuntStatut){
   const newRec = {
     id:Date.now(),prenom,nom,age:v("r-age"),sexe:v("r-sexe"),faction:v("r-faction"),rang:v("r-rang"),
     competences:v("r-competences"),natures,notes:v("r-notes"),photo,auteur:currentUser.nom,date:now(),
@@ -20122,12 +20317,15 @@ function saveRecense(){
   if(typeof renderImpots === 'function') renderImpots();
   clearForm(["r-prenom","r-nom","r-age","r-faction","r-competences","r-notes","r-titre","r-metier-autre","r-clan-autre"]);
   document.querySelectorAll("#nature-checkboxes input").forEach(c=>c.checked=false);
-  if(el("r-metier")) el("r-metier").value = "";
+  // Reset multi-jobs (nouveau système)
+  document.querySelectorAll("#r-metier-checkboxes input").forEach(c=>c.checked=false);
   if(el("r-clan")) el("r-clan").value = "";
   if(el("r-defunt-statut")) el("r-defunt-statut").value = "";
   if(el("r-metier-autre")) el("r-metier-autre").style.display = "none";
+  if(el("r-metier-autre")) el("r-metier-autre").value = "";
   if(el("r-clan-autre")) el("r-clan-autre").style.display = "none";
   removeRecensePhoto();
+  showToast("Fiche créée.","success");
 }
 
 let _recensePhoto="";
@@ -20213,8 +20411,16 @@ function viewRecense(id){
   const titreHTML = r.titre
     ? `<div class="rcv2-fiche-block"><div class="rcv2-fiche-block-title">🏆 Titre RP</div><div class="rcv2-fiche-text" style="font-style:italic;color:var(--gold)">« ${esc(r.titre)} »</div></div>`
     : "";
-  const affilHTML = (r.metier || r.clan)
-    ? `<div class="rcv2-fiche-block"><div class="rcv2-fiche-block-title">🏛 Affiliation civile</div><div class="rcv2-fiche-natures-bar">${r.metier?`<span class="badge" style="background:rgba(168,85,247,0.18);border-color:rgba(168,85,247,0.4);color:#c084fc">💼 ${esc(r.metier)}</span>`:""}${r.clan?`<span class="badge" style="background:rgba(34,197,94,0.18);border-color:rgba(34,197,94,0.4);color:#86efac">🏛 Clan ${esc(r.clan)}</span>`:""}</div></div>`
+  // Affiliation civile (métier(s) + clan).
+  // r.metier peut être array, string ou vide.
+  let _ficheMetierList = [];
+  if(Array.isArray(r.metier)) _ficheMetierList = r.metier.filter(Boolean);
+  else if(typeof r.metier === 'string' && r.metier.trim()) _ficheMetierList = [r.metier.trim()];
+  const _ficheMetierBadges = _ficheMetierList.map(function(m){
+    return `<span class="badge" style="background:rgba(168,85,247,0.18);border-color:rgba(168,85,247,0.4);color:#c084fc">💼 ${esc(m)}</span>`;
+  }).join("");
+  const affilHTML = (_ficheMetierList.length || r.clan)
+    ? `<div class="rcv2-fiche-block"><div class="rcv2-fiche-block-title">🏛 Affiliation civile</div><div class="rcv2-fiche-natures-bar">${_ficheMetierBadges}${r.clan?`<span class="badge" style="background:rgba(34,197,94,0.18);border-color:rgba(34,197,94,0.4);color:#86efac">🏛 Clan ${esc(r.clan)}</span>`:""}</div></div>`
     : "";
   const defuntHTML = (r.defuntStatut === "defunt-suna" || r.defuntStatut === "execution")
     ? `<div class="rcv2-fiche-block" style="border-color:rgba(0,0,0,0.6);background:rgba(0,0,0,0.25)"><div class="rcv2-fiche-block-title" style="color:#aaa">⚱ Statut</div><div class="rcv2-fiche-text" style="color:${r.defuntStatut==='execution'?'#ff3737':'#94a3b8'};font-weight:600;letter-spacing:1px">${r.defuntStatut === "execution" ? "⚔️ MORT PAR EXÉCUTION" : "⚱️ DÉFUNT DE SUNA"}</div></div>`
@@ -20273,7 +20479,9 @@ function rcv2OpenForm(){
 // Brancher les selects "Autre" pour afficher/cacher les champs texte custom
 // Idempotent (peut être appelé plusieurs fois sans dupliquer les listeners)
 function _rcv2InitAutreSelects(){
-  ['r-metier', 'r-clan'].forEach(function(id){
+  // Note : 'r-metier' a été remplacé par un système multi-checkboxes (#r-metier-checkboxes)
+  // → seul 'r-clan' utilise encore l'ancien système select+champ "Autre".
+  ['r-clan'].forEach(function(id){
     const sel = document.getElementById(id);
     if(!sel || sel.dataset.autreBound === '1') return;
     sel.dataset.autreBound = '1';
@@ -27521,8 +27729,8 @@ document.querySelectorAll('.modal-overlay').forEach(function(o){
 })();
 </script>
 
-<!-- Chart.js CDN -->
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+<!-- Chart.js CDN — defer : ne bloque pas le parsing HTML, exécuté avant DOMContentLoaded -->
+<script defer src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
 
 <script>
 /* ════════════════════════════════════════════════════════════════
