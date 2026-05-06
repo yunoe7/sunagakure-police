@@ -24821,13 +24821,18 @@ function closeModal(id){
   m.style.transition = '';
   // Restituer le focus à l'élément d'origine
   if(_lastFocusedEl && _lastFocusedEl.focus){ try{ _lastFocusedEl.focus(); }catch(e){} }
-  // bug-fix : re-render la page courante après fermeture de modale, au cas où
-  // un sync distant aurait eu lieu pendant que la modale était ouverte (le re-render
-  // est skippé dans onValue tant qu'une modale est ouverte pour ne pas perturber l'édition).
+  // bug-fix : re-render la page courante après fermeture de modale, MAIS UNIQUEMENT
+  // si un sync distant a effectivement eu lieu pendant que la modale était ouverte
+  // (le re-render est skippé dans onValue tant qu'une modale est ouverte pour ne pas
+  // perturber l'édition). Sans ce garde-fou, ouvrir+fermer un simple "👁 Voir" provoquait
+  // un re-render inutile qui faisait "trembler" la liste (innerHTML reconstruit).
   setTimeout(function(){
     try{
       var anyOtherModal = !!document.querySelector('.modal-overlay.open');
       if(anyOtherModal) return; // une autre modale est encore ouverte, on attend
+      // Pas de changements en attente → pas de re-render (évite le flicker)
+      var hasPending = !!(window._fbPendingChanges && window._fbPendingChanges.size > 0);
+      if(!hasPending) return;
       var activePageEl = document.querySelector('.page-content.active');
       var activePage = activePageEl ? activePageEl.id.replace(/^page-/,'') : null;
       var renderers = {
@@ -24838,7 +24843,12 @@ function closeModal(id){
         'dashboard':'syncDashboard'
       };
       if(activePage && renderers[activePage] && typeof window[renderers[activePage]] === 'function'){
-        try{ window[renderers[activePage]](); }catch(e){}
+        try{
+          window[renderers[activePage]]();
+          // Vider le set des changements appliqués (le debounced flush du onValue le fera aussi
+          // si jamais il tourne après nous, mais on évite un double-render)
+          if(window._fbPendingChanges) window._fbPendingChanges.clear();
+        }catch(e){}
       }
     }catch(e){}
   }, 100);
