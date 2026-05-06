@@ -8813,6 +8813,358 @@ document.addEventListener('error', function(e){
 
   <!-- PLAINTES -->
   <div class="page-content" id="page-plaintes">
+    <style>
+    /* ═══════════════════════════════════════════════════════════════
+       PLAINTES — VUE CARTES (fiches officielles civiles)
+       Mêmes principes que Dossiers / Recrutement :
+       sceau ID gauche, contenu central, actions à droite.
+       Couleur d'accent selon le statut juridique de la plainte.
+       ═══════════════════════════════════════════════════════════════ */
+    #page-plaintes .pl-cards{
+      display:flex;flex-direction:column;
+      gap:11px;
+    }
+    #page-plaintes .pl-cards:empty{display:none}
+
+    #page-plaintes .pl-card{
+      position:relative;
+      display:grid;
+      grid-template-columns:130px 1fr auto;
+      gap:18px;
+      align-items:stretch;
+      padding:16px 20px;
+      background:linear-gradient(135deg, rgba(26,20,16,0.92) 0%, rgba(34,28,19,0.88) 100%);
+      border:1px solid rgba(180,140,20,0.22);
+      border-radius:12px;
+      box-shadow:0 4px 18px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.04);
+      transition:transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
+      overflow:hidden;
+    }
+    /* Filet décoratif en haut, couleur selon statut */
+    #page-plaintes .pl-card::before{
+      content:'';
+      position:absolute;top:0;left:0;right:0;height:1px;
+      background:linear-gradient(90deg,
+        transparent 0%,
+        rgba(212,180,74,0.45) 20%,
+        rgba(212,180,74,0.55) 50%,
+        rgba(212,180,74,0.45) 80%,
+        transparent 100%);
+    }
+    #page-plaintes .pl-card:hover{
+      transform:translateY(-2px);
+      border-color:rgba(212,180,74,0.45);
+      box-shadow:0 8px 28px rgba(0,0,0,0.45), 0 0 0 1px rgba(212,180,74,0.15), inset 0 1px 0 rgba(255,255,255,0.06);
+    }
+
+    /* ─── Variantes par statut ─── */
+    #page-plaintes .pl-card[data-statut="ouverte"]{
+      border-color:rgba(239,68,68,0.32);
+    }
+    #page-plaintes .pl-card[data-statut="ouverte"]::before{
+      background:linear-gradient(90deg, transparent 0%, rgba(239,68,68,0.6) 50%, transparent 100%);
+    }
+    #page-plaintes .pl-card[data-statut="ouverte"]:hover{
+      border-color:rgba(239,68,68,0.55);
+      box-shadow:0 8px 28px rgba(0,0,0,0.45), 0 0 0 1px rgba(239,68,68,0.22), inset 0 1px 0 rgba(255,255,255,0.06);
+    }
+    #page-plaintes .pl-card[data-statut="en_cours"]{
+      border-color:rgba(217,119,6,0.32);
+    }
+    #page-plaintes .pl-card[data-statut="en_cours"]::before{
+      background:linear-gradient(90deg, transparent 0%, rgba(217,119,6,0.6) 50%, transparent 100%);
+    }
+    #page-plaintes .pl-card[data-statut="en_cours"]:hover{
+      border-color:rgba(217,119,6,0.55);
+    }
+    #page-plaintes .pl-card[data-statut="transmise_tribunal"]{
+      border-color:rgba(168,85,247,0.40);
+    }
+    #page-plaintes .pl-card[data-statut="transmise_tribunal"]::before{
+      background:linear-gradient(90deg, transparent 0%, rgba(168,85,247,0.7) 50%, transparent 100%);
+    }
+    #page-plaintes .pl-card[data-statut="transmise_tribunal"]:hover{
+      border-color:rgba(168,85,247,0.65);
+      box-shadow:0 8px 28px rgba(0,0,0,0.45), 0 0 0 1px rgba(168,85,247,0.25), inset 0 1px 0 rgba(255,255,255,0.06);
+    }
+    #page-plaintes .pl-card[data-statut="fermee"]{
+      border-color:rgba(107,114,128,0.30);
+      opacity:0.72;
+    }
+    #page-plaintes .pl-card[data-statut="fermee"]::before{
+      background:linear-gradient(90deg, transparent 0%, rgba(107,114,128,0.5) 50%, transparent 100%);
+    }
+    #page-plaintes .pl-card[data-statut="fermee"]:hover{
+      opacity:0.92;
+      border-color:rgba(107,114,128,0.55);
+    }
+
+    /* ─── BANDEAU IDENTIFICATION (gauche) ─── */
+    #page-plaintes .pl-card-id{
+      display:flex;flex-direction:column;align-items:center;justify-content:center;
+      padding:8px 6px;
+      background:linear-gradient(180deg, rgba(212,180,74,0.10), rgba(212,180,74,0.04));
+      border:1px solid rgba(212,180,74,0.30);
+      border-radius:8px;
+      gap:6px;
+    }
+    #page-plaintes .pl-card-id-num{
+      font-family:'Share Tech Mono',monospace;
+      font-size:13px;font-weight:700;
+      letter-spacing:1.2px;
+      color:#f0d060;
+      text-shadow:0 0 8px rgba(212,180,74,0.4);
+      text-align:center;
+      line-height:1.2;
+    }
+    #page-plaintes .pl-card-id-icon{
+      width:64px;height:80px;
+      border-radius:6px;
+      overflow:hidden;
+      border:1px solid rgba(212,180,74,0.35);
+      background:linear-gradient(135deg, rgba(192,65,14,0.18), rgba(180,140,20,0.10));
+      display:flex;align-items:center;justify-content:center;
+      flex-shrink:0;
+      font-size:34px;
+      color:rgba(240,232,208,0.85);
+      filter:drop-shadow(0 1px 2px rgba(0,0,0,0.5));
+    }
+    #page-plaintes .pl-card-id-tag{
+      font-family:'Share Tech Mono',monospace;
+      font-size:8px;letter-spacing:1.5px;
+      color:rgba(212,180,74,0.65);
+      text-transform:uppercase;
+      margin-top:2px;
+    }
+
+    /* ─── CONTENU CENTRAL ─── */
+    #page-plaintes .pl-card-body{
+      display:flex;flex-direction:column;
+      gap:7px;
+      min-width:0;
+      padding:2px 0;
+    }
+    /* Tête : Plaignant ⚔ Accusé */
+    #page-plaintes .pl-card-parties{
+      display:flex;align-items:center;flex-wrap:wrap;
+      gap:8px 12px;
+      margin-bottom:2px;
+      font-family:'Cinzel',serif;
+      font-weight:700;
+      letter-spacing:1px;
+      text-transform:uppercase;
+    }
+    #page-plaintes .pl-card-party{
+      display:inline-flex;flex-direction:column;
+      gap:1px;min-width:0;
+    }
+    #page-plaintes .pl-card-party-lbl{
+      font-family:'Share Tech Mono',monospace;
+      font-size:8.5px;letter-spacing:2px;
+      color:rgba(212,180,74,0.65);
+      font-weight:600;
+      text-transform:uppercase;
+    }
+    #page-plaintes .pl-card-party-name{
+      font-family:'Cinzel',serif;
+      font-size:16px;font-weight:700;
+      letter-spacing:1px;
+      color:#f0e8d0;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      max-width:240px;
+    }
+    #page-plaintes .pl-card-party.is-plaignant .pl-card-party-name{color:#86efac}
+    #page-plaintes .pl-card-party.is-accuse .pl-card-party-name{color:#fca5a5}
+    #page-plaintes .pl-card-party-vs{
+      font-family:'Cinzel',serif;
+      font-size:13px;
+      color:rgba(212,180,74,0.55);
+      font-weight:400;
+      padding:0 4px;
+      letter-spacing:2px;
+    }
+
+    #page-plaintes .pl-card-meta{
+      display:flex;flex-wrap:wrap;align-items:center;
+      gap:7px 14px;
+      font-family:'Share Tech Mono',monospace;
+      font-size:10.5px;
+      color:rgba(255,255,255,0.55);
+      letter-spacing:0.5px;
+    }
+    #page-plaintes .pl-card-meta .pl-meta-item{
+      display:inline-flex;align-items:center;gap:5px;
+    }
+    #page-plaintes .pl-card-meta .ico{opacity:0.6}
+
+    /* Ligne badges : statut + type/motif */
+    #page-plaintes .pl-card-badges{
+      display:flex;flex-wrap:wrap;align-items:center;
+      gap:6px;
+      margin-top:1px;
+    }
+    #page-plaintes .pl-card-badges .badge{
+      font-size:10.5px;letter-spacing:0.8px;
+      padding:3px 9px;border-radius:4px;
+      font-family:'Barlow Condensed',sans-serif;
+      font-weight:700;text-transform:uppercase;
+    }
+    #page-plaintes .pl-card-motif-pill{
+      display:inline-flex;align-items:center;gap:6px;
+      padding:3px 10px;
+      background:rgba(0,0,0,0.35);
+      border:1px solid rgba(180,140,20,0.18);
+      border-radius:5px;
+      font-family:'Share Tech Mono',monospace;
+      font-size:10.5px;
+      color:var(--text2);
+    }
+    #page-plaintes .pl-card-motif-pill .lbl{
+      color:rgba(212,180,74,0.7);
+      font-weight:700;
+      letter-spacing:1px;
+    }
+
+    /* Aperçu de la description */
+    #page-plaintes .pl-card-desc{
+      font-family:'EB Garamond',Georgia,serif;
+      font-style:italic;
+      font-size:12.5px;
+      color:rgba(240,232,208,0.72);
+      line-height:1.5;
+      max-width:100%;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      display:-webkit-box;
+      -webkit-line-clamp:2;
+      -webkit-box-orient:vertical;
+      padding:6px 12px;
+      background:rgba(0,0,0,0.18);
+      border-left:2px solid rgba(212,180,74,0.3);
+      border-radius:0 4px 4px 0;
+    }
+    #page-plaintes .pl-card-desc::before{
+      content:'« ';
+      color:rgba(212,180,74,0.5);
+      font-size:14px;
+    }
+    #page-plaintes .pl-card-desc::after{
+      content:' »';
+      color:rgba(212,180,74,0.5);
+      font-size:14px;
+    }
+    #page-plaintes .pl-card-desc-empty{
+      font-family:'Share Tech Mono',monospace;
+      font-size:10.5px;
+      color:var(--muted);
+      font-style:italic;
+      padding:4px 0;
+    }
+
+    /* Pied : date + dépôt */
+    #page-plaintes .pl-card-footer{
+      display:flex;align-items:center;
+      gap:14px;flex-wrap:wrap;
+      font-family:'Share Tech Mono',monospace;
+      font-size:9.5px;letter-spacing:1px;
+      color:rgba(255,255,255,0.4);
+      text-transform:uppercase;
+      margin-top:3px;
+      padding-top:7px;
+      border-top:1px dashed rgba(180,140,20,0.18);
+    }
+    #page-plaintes .pl-card-footer .pl-foot-item{
+      display:inline-flex;align-items:center;gap:5px;
+    }
+
+    /* ─── ACTIONS (droite) ─── */
+    #page-plaintes .pl-card-actions{
+      display:flex;flex-direction:column;
+      gap:6px;
+      align-items:flex-end;
+      justify-content:center;
+    }
+    #page-plaintes .pl-card-actions-btns{
+      display:flex;gap:5px;
+      flex-wrap:nowrap;
+    }
+    #page-plaintes .pl-card-actions .pl-act-btn{
+      width:32px;height:32px;
+      display:inline-flex;align-items:center;justify-content:center;
+      border-radius:6px;
+      border:1px solid rgba(180,140,20,0.25);
+      background:rgba(20,16,9,0.6);
+      color:#d4b44a;
+      font-size:14px;
+      cursor:pointer;
+      transition:all 0.15s ease;
+    }
+    #page-plaintes .pl-card-actions .pl-act-btn:hover{
+      transform:translateY(-1px);
+      border-color:rgba(212,180,74,0.55);
+      background:rgba(212,180,74,0.10);
+      box-shadow:0 4px 10px rgba(0,0,0,0.3);
+    }
+    #page-plaintes .pl-card-actions .pl-act-btn.is-edit{color:#facc15}
+    #page-plaintes .pl-card-actions .pl-act-btn.is-delete{
+      color:#f87171;border-color:rgba(220,38,38,0.30);
+    }
+    #page-plaintes .pl-card-actions .pl-act-btn.is-delete:hover{
+      border-color:rgba(220,38,38,0.6);
+      background:rgba(220,38,38,0.10);
+    }
+
+    /* État vide */
+    #page-plaintes .pl-cards-empty{
+      padding:60px 30px;
+      text-align:center;
+      background:rgba(20,16,9,0.5);
+      border:1px dashed rgba(180,140,20,0.25);
+      border-radius:12px;
+      color:var(--muted);
+    }
+    #page-plaintes .pl-cards-empty-ico{
+      font-size:42px;opacity:0.35;margin-bottom:10px;
+    }
+    #page-plaintes .pl-cards-empty-msg{
+      font-family:'Share Tech Mono',monospace;
+      font-size:11.5px;letter-spacing:2px;
+      text-transform:uppercase;
+    }
+
+    /* ─── RESPONSIVE ─── */
+    @media(max-width:900px){
+      #page-plaintes .pl-card{
+        grid-template-columns:96px 1fr;
+        grid-template-rows:auto auto;
+        gap:14px;
+      }
+      #page-plaintes .pl-card-actions{
+        grid-column:1 / -1;
+        flex-direction:row;
+        align-items:center;justify-content:flex-end;
+        padding-top:10px;
+        border-top:1px dashed rgba(180,140,20,0.15);
+      }
+      #page-plaintes .pl-card-id{padding:6px 4px;gap:4px}
+      #page-plaintes .pl-card-id-icon{width:54px;height:68px;font-size:26px}
+      #page-plaintes .pl-card-id-num{font-size:11px}
+      #page-plaintes .pl-card-party-name{max-width:160px}
+    }
+    @media(max-width:560px){
+      #page-plaintes .pl-card{padding:13px 14px;gap:11px}
+      #page-plaintes .pl-card-party-name{font-size:14px;letter-spacing:0.5px;max-width:120px}
+      #page-plaintes .pl-card-party-vs{font-size:11px}
+      #page-plaintes .pl-card-meta{font-size:9.5px}
+      #page-plaintes .pl-card-id{padding:5px 3px}
+      #page-plaintes .pl-card-id-icon{width:48px;height:60px;font-size:22px}
+      #page-plaintes .pl-card-id-num{font-size:10px;letter-spacing:1px}
+      #page-plaintes .pl-card-id-tag{font-size:7px}
+      #page-plaintes .pl-card-desc{font-size:11.5px}
+    }
+    </style>
     <!-- Hero premium -->
     <div class="pgv2-hero" data-tone="plaintes">
       <div class="pgv2-hero-inner">
@@ -8839,22 +9191,8 @@ document.addEventListener('error', function(e){
       <div class="tab-btn" onclick="filterPlaintes('transmise_tribunal',this)">⚖️ Au Tribunal</div>
       <div class="tab-btn" onclick="filterPlaintes('fermee',this)">Fermées</div>
     </div>
-    <div class="card" style="overflow:visible">
-      <div class="table-scroll-wrapper">
-        <table class="data-table">
-          <thead><tr>
-            <th class="sortable-th" onclick="sortTable('plaintes','id',this)" aria-sort="none">Réf. <span class="sort-icon">⇅</span></th>
-            <th class="sortable-th" onclick="sortTable('plaintes','plaignant',this)" aria-sort="none">Plaignant <span class="sort-icon">⇅</span></th>
-            <th class="sortable-th" onclick="sortTable('plaintes','accuse',this)" aria-sort="none">Contre <span class="sort-icon">⇅</span></th>
-            <th>Motif</th>
-            <th class="sortable-th" onclick="sortTable('plaintes','statut',this)" aria-sort="none">Statut <span class="sort-icon">⇅</span></th>
-            <th class="sortable-th" onclick="sortTable('plaintes','date',this)" aria-sort="none">Date <span class="sort-icon">⇅</span></th>
-            <th>Actions</th>
-          </tr></thead>
-          <tbody id="plaintes-tbody"></tbody>
-        </table>
-      </div>
-    </div>
+    <!-- VUE CARTES — fiches officielles de plaintes -->
+    <div id="plaintes-cards" class="pl-cards"></div>
   </div>
 
   <!-- DOSSIERS -->
@@ -11810,6 +12148,205 @@ document.addEventListener('error', function(e){
                      Expert/Maître = tout dans sa section
                      Admin/Gérant = tout partout
        ═══════════════════════════════════════════════════════════════════════ -->
+  <style>
+  /* ═══════════════════════════════════════════════════════════════
+     CARTES MÉDICALES (Patients, Morgue, Études, Dons de sang)
+     Mêmes principes que Dossiers / Plaintes / Sanctions :
+     sceau ID gauche, contenu central, actions à droite.
+     Variations de couleur via data-statut / data-type sur la carte.
+     ═══════════════════════════════════════════════════════════════ */
+  .med-cards{display:flex;flex-direction:column;gap:11px}
+  .med-cards:empty{display:none}
+  .med-card{
+    position:relative;display:grid;
+    grid-template-columns:130px 1fr auto;
+    gap:18px;align-items:stretch;
+    padding:16px 20px;
+    background:linear-gradient(135deg, rgba(26,20,16,0.92) 0%, rgba(34,28,19,0.88) 100%);
+    border:1px solid rgba(180,140,20,0.22);
+    border-radius:12px;
+    box-shadow:0 4px 18px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.04);
+    transition:transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
+    overflow:hidden;
+  }
+  .med-card::before{
+    content:'';position:absolute;top:0;left:0;right:0;height:1px;
+    background:linear-gradient(90deg, transparent 0%, rgba(212,180,74,0.55) 50%, transparent 100%);
+  }
+  .med-card:hover{
+    transform:translateY(-2px);
+    border-color:rgba(212,180,74,0.45);
+    box-shadow:0 8px 28px rgba(0,0,0,0.45), 0 0 0 1px rgba(212,180,74,0.15), inset 0 1px 0 rgba(255,255,255,0.06);
+  }
+  /* Statuts : critique = rouge, en cours/actif = orange, sorti/clos = vert/gris */
+  .med-card[data-tone="red"]{border-color:rgba(239,68,68,0.40)}
+  .med-card[data-tone="red"]::before{background:linear-gradient(90deg, transparent 0%, rgba(239,68,68,0.7) 50%, transparent 100%)}
+  .med-card[data-tone="red"]:hover{border-color:rgba(239,68,68,0.65);box-shadow:0 8px 28px rgba(0,0,0,0.45), 0 0 0 1px rgba(239,68,68,0.25), inset 0 1px 0 rgba(255,255,255,0.06)}
+
+  .med-card[data-tone="orange"]{border-color:rgba(217,119,6,0.32)}
+  .med-card[data-tone="orange"]::before{background:linear-gradient(90deg, transparent 0%, rgba(217,119,6,0.6) 50%, transparent 100%)}
+  .med-card[data-tone="orange"]:hover{border-color:rgba(217,119,6,0.55)}
+
+  .med-card[data-tone="green"]{border-color:rgba(34,197,94,0.32)}
+  .med-card[data-tone="green"]::before{background:linear-gradient(90deg, transparent 0%, rgba(34,197,94,0.6) 50%, transparent 100%)}
+  .med-card[data-tone="green"]:hover{border-color:rgba(34,197,94,0.55)}
+
+  .med-card[data-tone="blue"]{border-color:rgba(59,130,246,0.32)}
+  .med-card[data-tone="blue"]::before{background:linear-gradient(90deg, transparent 0%, rgba(59,130,246,0.6) 50%, transparent 100%)}
+  .med-card[data-tone="blue"]:hover{border-color:rgba(59,130,246,0.55)}
+
+  .med-card[data-tone="purple"]{border-color:rgba(168,85,247,0.40)}
+  .med-card[data-tone="purple"]::before{background:linear-gradient(90deg, transparent 0%, rgba(168,85,247,0.7) 50%, transparent 100%)}
+  .med-card[data-tone="purple"]:hover{border-color:rgba(168,85,247,0.65);box-shadow:0 8px 28px rgba(0,0,0,0.45), 0 0 0 1px rgba(168,85,247,0.25), inset 0 1px 0 rgba(255,255,255,0.06)}
+
+  .med-card[data-tone="gray"]{border-color:rgba(107,114,128,0.30);opacity:0.78}
+  .med-card[data-tone="gray"]::before{background:linear-gradient(90deg, transparent 0%, rgba(107,114,128,0.5) 50%, transparent 100%)}
+  .med-card[data-tone="gray"]:hover{opacity:0.95;border-color:rgba(107,114,128,0.55)}
+
+  /* Sceau ID gauche */
+  .med-card-id{
+    display:flex;flex-direction:column;align-items:center;justify-content:center;
+    padding:8px 6px;gap:6px;
+    background:linear-gradient(180deg, rgba(212,180,74,0.10), rgba(212,180,74,0.04));
+    border:1px solid rgba(212,180,74,0.30);
+    border-radius:8px;
+  }
+  .med-card-id-num{
+    font-family:'Share Tech Mono',monospace;
+    font-size:13px;font-weight:700;letter-spacing:1.2px;
+    color:#f0d060;text-shadow:0 0 8px rgba(212,180,74,0.4);
+    text-align:center;line-height:1.2;
+  }
+  .med-card-id-icon{
+    width:64px;height:80px;border-radius:6px;
+    border:1px solid rgba(212,180,74,0.35);
+    background:linear-gradient(135deg, rgba(192,65,14,0.15), rgba(180,140,20,0.10));
+    display:flex;align-items:center;justify-content:center;
+    flex-shrink:0;font-size:34px;
+    filter:drop-shadow(0 1px 2px rgba(0,0,0,0.5));
+  }
+  .med-card-id-tag{
+    font-family:'Share Tech Mono',monospace;
+    font-size:8px;letter-spacing:1.5px;
+    color:rgba(212,180,74,0.65);
+    text-transform:uppercase;margin-top:2px;
+  }
+
+  /* Corps */
+  .med-card-body{display:flex;flex-direction:column;gap:7px;min-width:0;padding:2px 0}
+  .med-card-name{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:2px}
+  .med-card-name h3{
+    font-family:'Cinzel',serif;
+    font-size:18px;font-weight:700;letter-spacing:1.5px;
+    color:#f0e8d0;margin:0;text-transform:uppercase;
+  }
+  .med-card-meta{
+    display:flex;flex-wrap:wrap;align-items:center;gap:7px 14px;
+    font-family:'Share Tech Mono',monospace;
+    font-size:10.5px;color:rgba(255,255,255,0.55);letter-spacing:0.5px;
+  }
+  .med-card-meta .ico{opacity:0.6}
+  .med-card-badges{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-top:1px}
+  .med-card-badges .badge{
+    font-size:10.5px;letter-spacing:0.8px;padding:3px 9px;border-radius:4px;
+    font-family:'Barlow Condensed',sans-serif;font-weight:700;text-transform:uppercase;
+  }
+  .med-card-pill{
+    display:inline-flex;align-items:center;gap:6px;
+    padding:3px 10px;
+    background:rgba(0,0,0,0.35);
+    border:1px solid rgba(180,140,20,0.18);
+    border-radius:5px;
+    font-family:'Share Tech Mono',monospace;
+    font-size:10.5px;color:var(--text2);
+  }
+  .med-card-pill .lbl{
+    color:rgba(212,180,74,0.7);
+    font-weight:700;letter-spacing:1px;
+  }
+  .med-card-desc{
+    font-family:'EB Garamond',Georgia,serif;
+    font-style:italic;font-size:12.5px;
+    color:rgba(240,232,208,0.72);line-height:1.5;
+    max-width:100%;overflow:hidden;text-overflow:ellipsis;
+    display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;
+    padding:6px 12px;background:rgba(0,0,0,0.18);
+    border-left:2px solid rgba(212,180,74,0.3);border-radius:0 4px 4px 0;
+  }
+  .med-card-desc::before{content:'« ';color:rgba(212,180,74,0.5);font-size:14px}
+  .med-card-desc::after{content:' »';color:rgba(212,180,74,0.5);font-size:14px}
+  .med-card-desc-empty{
+    font-family:'Share Tech Mono',monospace;font-size:10.5px;
+    color:var(--muted);font-style:italic;padding:4px 0;
+  }
+  .med-card-footer{
+    display:flex;align-items:center;gap:14px;flex-wrap:wrap;
+    font-family:'Share Tech Mono',monospace;
+    font-size:9.5px;letter-spacing:1px;
+    color:rgba(255,255,255,0.4);text-transform:uppercase;
+    margin-top:3px;padding-top:7px;
+    border-top:1px dashed rgba(180,140,20,0.18);
+  }
+  .med-card-footer .med-foot-item{display:inline-flex;align-items:center;gap:5px}
+
+  /* Actions */
+  .med-card-actions{display:flex;flex-direction:column;gap:6px;align-items:flex-end;justify-content:center}
+  .med-card-actions-btns{display:flex;gap:5px;flex-wrap:nowrap}
+  .med-card-actions .med-act-btn{
+    width:32px;height:32px;
+    display:inline-flex;align-items:center;justify-content:center;
+    border-radius:6px;
+    border:1px solid rgba(180,140,20,0.25);
+    background:rgba(20,16,9,0.6);
+    color:#d4b44a;font-size:14px;
+    cursor:pointer;transition:all 0.15s ease;
+  }
+  .med-card-actions .med-act-btn:hover{
+    transform:translateY(-1px);
+    border-color:rgba(212,180,74,0.55);
+    background:rgba(212,180,74,0.10);
+    box-shadow:0 4px 10px rgba(0,0,0,0.3);
+  }
+  .med-card-actions .med-act-btn.is-edit{color:#facc15}
+  .med-card-actions .med-act-btn.is-delete{color:#f87171;border-color:rgba(220,38,38,0.30)}
+  .med-card-actions .med-act-btn.is-delete:hover{border-color:rgba(220,38,38,0.6);background:rgba(220,38,38,0.10)}
+
+  /* État vide */
+  .med-cards-empty{
+    padding:60px 30px;text-align:center;
+    background:rgba(20,16,9,0.5);
+    border:1px dashed rgba(180,140,20,0.25);
+    border-radius:12px;color:var(--muted);
+  }
+  .med-cards-empty-ico{font-size:42px;opacity:0.35;margin-bottom:10px}
+  .med-cards-empty-msg{
+    font-family:'Share Tech Mono',monospace;
+    font-size:11.5px;letter-spacing:2px;text-transform:uppercase;
+  }
+
+  /* Responsive */
+  @media(max-width:900px){
+    .med-card{grid-template-columns:96px 1fr;grid-template-rows:auto auto;gap:14px}
+    .med-card-actions{
+      grid-column:1 / -1;flex-direction:row;
+      align-items:center;justify-content:flex-end;
+      padding-top:10px;border-top:1px dashed rgba(180,140,20,0.15);
+    }
+    .med-card-id{padding:6px 4px;gap:4px}
+    .med-card-id-icon{width:54px;height:68px;font-size:28px}
+    .med-card-id-num{font-size:11px}
+  }
+  @media(max-width:560px){
+    .med-card{padding:13px 14px;gap:11px}
+    .med-card-name h3{font-size:15px;letter-spacing:1px}
+    .med-card-meta{font-size:9.5px}
+    .med-card-id{padding:5px 3px}
+    .med-card-id-icon{width:48px;height:60px;font-size:22px}
+    .med-card-id-num{font-size:10px;letter-spacing:1px}
+    .med-card-id-tag{font-size:7px}
+    .med-card-desc{font-size:11.5px}
+  }
+  </style>
 
   <!-- HÔPITAL — Patients -->
   <div class="page-content" id="page-medical-patients" data-sec-page="medical">
@@ -11843,7 +12380,7 @@ document.addEventListener('error', function(e){
         </select>
       </div>
     </div>
-    <div class="card" style="overflow-x:auto"><div id="hosp-pat-list"></div></div>
+    <div id="hosp-pat-list"></div>
   </div>
 
   <!-- HÔPITAL — Consultations -->
@@ -11975,7 +12512,7 @@ document.addEventListener('error', function(e){
         </select>
       </div>
     </div>
-    <div class="card" style="overflow-x:auto"><div id="hosp-dons-list"></div></div>
+    <div id="hosp-dons-list"></div>
   </div>
 
   <!-- SCIENTIFIQUE — Salon -->
@@ -12009,7 +12546,7 @@ document.addEventListener('error', function(e){
         </select>
       </div>
     </div>
-    <div class="card" style="overflow-x:auto"><div id="hosp-sci-list"></div></div>
+    <div id="hosp-sci-list"></div>
   </div>
 
   <!-- SCIENTIFIQUE — Morgue -->
@@ -12043,7 +12580,7 @@ document.addEventListener('error', function(e){
         </select>
       </div>
     </div>
-    <div class="card" style="overflow-x:auto"><div id="hosp-morg-list"></div></div>
+    <div id="hosp-morg-list"></div>
   </div>
 
   <!-- COMPTABILITÉ — Paiements en Ryōs -->
@@ -13116,6 +13653,203 @@ document.addEventListener('error', function(e){
   </div>
   <!-- SANCTIONS -->
   <div class="page-content" id="page-sanctions">
+    <style>
+    /* ═══════════════════════════════════════════════════════════════
+       SANCTIONS / PROMOS — VUE CARTES (mêmes principes que Dossiers)
+       Couleur d'accent selon le type : Promo/Félicit (vert), Avert (orange), Exclu (rouge)
+       ═══════════════════════════════════════════════════════════════ */
+    #page-sanctions .sn-cards{display:flex;flex-direction:column;gap:11px}
+    #page-sanctions .sn-cards:empty{display:none}
+    #page-sanctions .sn-card{
+      position:relative;display:grid;
+      grid-template-columns:130px 1fr auto;
+      gap:18px;align-items:stretch;
+      padding:16px 20px;
+      background:linear-gradient(135deg, rgba(26,20,16,0.92) 0%, rgba(34,28,19,0.88) 100%);
+      border:1px solid rgba(180,140,20,0.22);
+      border-radius:12px;
+      box-shadow:0 4px 18px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.04);
+      transition:transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
+      overflow:hidden;
+    }
+    #page-sanctions .sn-card::before{
+      content:'';position:absolute;top:0;left:0;right:0;height:1px;
+      background:linear-gradient(90deg, transparent 0%, rgba(212,180,74,0.55) 50%, transparent 100%);
+    }
+    #page-sanctions .sn-card:hover{
+      transform:translateY(-2px);
+      border-color:rgba(212,180,74,0.45);
+      box-shadow:0 8px 28px rgba(0,0,0,0.45), 0 0 0 1px rgba(212,180,74,0.15), inset 0 1px 0 rgba(255,255,255,0.06);
+    }
+    /* Variantes par type */
+    #page-sanctions .sn-card[data-type="Promotion"],
+    #page-sanctions .sn-card[data-type="Félicitation"]{border-color:rgba(34,197,94,0.32)}
+    #page-sanctions .sn-card[data-type="Promotion"]::before,
+    #page-sanctions .sn-card[data-type="Félicitation"]::before{
+      background:linear-gradient(90deg, transparent 0%, rgba(34,197,94,0.6) 50%, transparent 100%);
+    }
+    #page-sanctions .sn-card[data-type="Promotion"]:hover,
+    #page-sanctions .sn-card[data-type="Félicitation"]:hover{border-color:rgba(34,197,94,0.55)}
+
+    #page-sanctions .sn-card[data-type="Avertissement"]{border-color:rgba(217,119,6,0.32)}
+    #page-sanctions .sn-card[data-type="Avertissement"]::before{
+      background:linear-gradient(90deg, transparent 0%, rgba(217,119,6,0.6) 50%, transparent 100%);
+    }
+    #page-sanctions .sn-card[data-type="Avertissement"]:hover{border-color:rgba(217,119,6,0.55)}
+
+    #page-sanctions .sn-card[data-type="Exclusion"]{border-color:rgba(239,68,68,0.40)}
+    #page-sanctions .sn-card[data-type="Exclusion"]::before{
+      background:linear-gradient(90deg, transparent 0%, rgba(239,68,68,0.7) 50%, transparent 100%);
+    }
+    #page-sanctions .sn-card[data-type="Exclusion"]:hover{
+      border-color:rgba(239,68,68,0.65);
+      box-shadow:0 8px 28px rgba(0,0,0,0.45), 0 0 0 1px rgba(239,68,68,0.25), inset 0 1px 0 rgba(255,255,255,0.06);
+    }
+
+    /* Sceau ID gauche */
+    #page-sanctions .sn-card-id{
+      display:flex;flex-direction:column;align-items:center;justify-content:center;
+      padding:8px 6px;gap:6px;
+      background:linear-gradient(180deg, rgba(212,180,74,0.10), rgba(212,180,74,0.04));
+      border:1px solid rgba(212,180,74,0.30);
+      border-radius:8px;
+    }
+    #page-sanctions .sn-card-id-num{
+      font-family:'Share Tech Mono',monospace;
+      font-size:13px;font-weight:700;letter-spacing:1.2px;
+      color:#f0d060;text-shadow:0 0 8px rgba(212,180,74,0.4);
+      text-align:center;line-height:1.2;
+    }
+    #page-sanctions .sn-card-id-icon{
+      width:64px;height:80px;border-radius:6px;
+      border:1px solid rgba(212,180,74,0.35);
+      background:linear-gradient(135deg, rgba(192,65,14,0.15), rgba(180,140,20,0.10));
+      display:flex;align-items:center;justify-content:center;
+      flex-shrink:0;font-size:36px;
+      filter:drop-shadow(0 1px 2px rgba(0,0,0,0.5));
+    }
+    #page-sanctions .sn-card-id-tag{
+      font-family:'Share Tech Mono',monospace;
+      font-size:8px;letter-spacing:1.5px;
+      color:rgba(212,180,74,0.65);
+      text-transform:uppercase;margin-top:2px;
+    }
+
+    /* Corps */
+    #page-sanctions .sn-card-body{display:flex;flex-direction:column;gap:7px;min-width:0;padding:2px 0}
+    #page-sanctions .sn-card-name{
+      display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:2px;
+    }
+    #page-sanctions .sn-card-name h3{
+      font-family:'Cinzel',serif;
+      font-size:18px;font-weight:700;letter-spacing:1.5px;
+      color:#f0e8d0;margin:0;text-transform:uppercase;
+    }
+    #page-sanctions .sn-card-meta{
+      display:flex;flex-wrap:wrap;align-items:center;gap:7px 14px;
+      font-family:'Share Tech Mono',monospace;
+      font-size:10.5px;color:rgba(255,255,255,0.55);letter-spacing:0.5px;
+    }
+    #page-sanctions .sn-card-meta .ico{opacity:0.6}
+    #page-sanctions .sn-card-badges{
+      display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-top:1px;
+    }
+    #page-sanctions .sn-card-badges .badge{
+      font-size:10.5px;letter-spacing:0.8px;padding:3px 9px;border-radius:4px;
+      font-family:'Barlow Condensed',sans-serif;font-weight:700;text-transform:uppercase;
+    }
+    #page-sanctions .sn-card-motif{
+      font-family:'EB Garamond',Georgia,serif;
+      font-style:italic;font-size:12.5px;
+      color:rgba(240,232,208,0.72);line-height:1.5;
+      max-width:100%;overflow:hidden;text-overflow:ellipsis;
+      display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;
+      padding:6px 12px;background:rgba(0,0,0,0.18);
+      border-left:2px solid rgba(212,180,74,0.3);border-radius:0 4px 4px 0;
+    }
+    #page-sanctions .sn-card-motif::before{content:'« ';color:rgba(212,180,74,0.5);font-size:14px}
+    #page-sanctions .sn-card-motif::after{content:' »';color:rgba(212,180,74,0.5);font-size:14px}
+    #page-sanctions .sn-card-motif-empty{
+      font-family:'Share Tech Mono',monospace;font-size:10.5px;
+      color:var(--muted);font-style:italic;padding:4px 0;
+    }
+    #page-sanctions .sn-card-footer{
+      display:flex;align-items:center;gap:14px;flex-wrap:wrap;
+      font-family:'Share Tech Mono',monospace;
+      font-size:9.5px;letter-spacing:1px;
+      color:rgba(255,255,255,0.4);text-transform:uppercase;
+      margin-top:3px;padding-top:7px;
+      border-top:1px dashed rgba(180,140,20,0.18);
+    }
+    #page-sanctions .sn-card-footer .sn-foot-item{display:inline-flex;align-items:center;gap:5px}
+
+    /* Actions */
+    #page-sanctions .sn-card-actions{
+      display:flex;flex-direction:column;gap:6px;
+      align-items:flex-end;justify-content:center;
+    }
+    #page-sanctions .sn-card-actions-btns{display:flex;gap:5px;flex-wrap:nowrap}
+    #page-sanctions .sn-card-actions .sn-act-btn{
+      width:32px;height:32px;
+      display:inline-flex;align-items:center;justify-content:center;
+      border-radius:6px;
+      border:1px solid rgba(180,140,20,0.25);
+      background:rgba(20,16,9,0.6);
+      color:#d4b44a;font-size:14px;
+      cursor:pointer;transition:all 0.15s ease;
+    }
+    #page-sanctions .sn-card-actions .sn-act-btn:hover{
+      transform:translateY(-1px);
+      border-color:rgba(212,180,74,0.55);
+      background:rgba(212,180,74,0.10);
+      box-shadow:0 4px 10px rgba(0,0,0,0.3);
+    }
+    #page-sanctions .sn-card-actions .sn-act-btn.is-delete{
+      color:#f87171;border-color:rgba(220,38,38,0.30);
+    }
+    #page-sanctions .sn-card-actions .sn-act-btn.is-delete:hover{
+      border-color:rgba(220,38,38,0.6);background:rgba(220,38,38,0.10);
+    }
+
+    /* État vide */
+    #page-sanctions .sn-cards-empty{
+      padding:60px 30px;text-align:center;
+      background:rgba(20,16,9,0.5);
+      border:1px dashed rgba(180,140,20,0.25);
+      border-radius:12px;color:var(--muted);
+    }
+    #page-sanctions .sn-cards-empty-ico{font-size:42px;opacity:0.35;margin-bottom:10px}
+    #page-sanctions .sn-cards-empty-msg{
+      font-family:'Share Tech Mono',monospace;
+      font-size:11.5px;letter-spacing:2px;text-transform:uppercase;
+    }
+
+    /* Responsive */
+    @media(max-width:900px){
+      #page-sanctions .sn-card{
+        grid-template-columns:96px 1fr;
+        grid-template-rows:auto auto;gap:14px;
+      }
+      #page-sanctions .sn-card-actions{
+        grid-column:1 / -1;flex-direction:row;
+        align-items:center;justify-content:flex-end;
+        padding-top:10px;border-top:1px dashed rgba(180,140,20,0.15);
+      }
+      #page-sanctions .sn-card-id{padding:6px 4px;gap:4px}
+      #page-sanctions .sn-card-id-icon{width:54px;height:68px;font-size:28px}
+      #page-sanctions .sn-card-id-num{font-size:11px}
+    }
+    @media(max-width:560px){
+      #page-sanctions .sn-card{padding:13px 14px;gap:11px}
+      #page-sanctions .sn-card-name h3{font-size:15px;letter-spacing:1px}
+      #page-sanctions .sn-card-meta{font-size:9.5px}
+      #page-sanctions .sn-card-id{padding:5px 3px}
+      #page-sanctions .sn-card-id-icon{width:48px;height:60px;font-size:22px}
+      #page-sanctions .sn-card-id-num{font-size:10px;letter-spacing:1px}
+      #page-sanctions .sn-card-id-tag{font-size:7px}
+      #page-sanctions .sn-card-motif{font-size:11.5px}
+    }
+    </style>
     <!-- Hero premium -->
     <div class="pgv2-hero" data-tone="sanctions">
       <div class="pgv2-hero-inner">
@@ -13171,14 +13905,8 @@ document.addEventListener('error', function(e){
         </div>
       </div>
     </div>
-    <div class="card" style="overflow:visible">
-      <div class="table-scroll-wrapper">
-        <table class="data-table">
-          <thead><tr><th>Type</th><th>Concerné</th><th>Motif</th><th>Par</th><th>Date</th><th id="sanction-del-th" style="display:none">Action</th></tr></thead>
-          <tbody id="sanctions-tbody"></tbody>
-        </table>
-      </div>
-    </div>
+    <!-- VUE CARTES — fiches officielles de sanctions/promotions -->
+    <div id="sanctions-cards" class="sn-cards"></div>
   </div>
 
   <!-- ═══════════════════════════════════════════════════════
@@ -19867,7 +20595,6 @@ function applyLogin(){
     // Boutons export visibles uniquement pour les admins
     if(isAdmin()){document.querySelectorAll('[data-export-btn]').forEach(b=>b.style.display="inline-flex");["btn-export-cand","btn-export-sanctions"].forEach(id=>{const e=el(id);if(e)e.style.display="inline-flex";});}
     el("comm-pencil").style.display="inline";
-    el("sanction-del-th").style.display="";
   }
   // Éléments admin-only (opérations, effectifs, sanctions)
   const isAdminUser=currentUser&&currentUser.role==="admin";
@@ -20018,7 +20745,6 @@ function doLogout(){
   document.querySelectorAll('[data-export-btn]').forEach(b=>b.style.display="none");
   const btnRecLogout=el("btn-recenser");if(btnRecLogout)btnRecLogout.style.display="none";
   el("comm-pencil").style.display="none";
-  el("sanction-del-th").style.display="none";
   // Fermer tous les modaux ouverts
   document.querySelectorAll(".modal-overlay.open").forEach(m=>m.classList.remove("open"));
   // Réinitialiser l'avatar sidebar
@@ -21977,13 +22703,90 @@ function renderPlaintes(){
   var sO=el("pgv2-pl-ouvertes");if(sO)sO.textContent=allP.filter(p=>p.statut==="ouverte").length;
   var sC=el("pgv2-pl-cours");if(sC)sC.textContent=allP.filter(p=>p.statut==="en_cours").length;
 
-  // Tri par en-tête de colonne (clic sur Réf., Plaignant, etc.)
-  if(_sortState && _sortState['plaintes'] && _sortState['plaintes'].field){
-    list = applySortToArray(list, 'plaintes');
+  // Tri par défaut : récents en premier
+  list = list.slice().sort(function(a,b){ return (b.id||0) - (a.id||0); });
+
+  var box = document.getElementById('plaintes-cards');
+  if(!box) return;
+  if(!list.length){
+    box.innerHTML = '<div class="pl-cards-empty">'
+                  +   '<div class="pl-cards-empty-ico">⚖️</div>'
+                  +   '<div class="pl-cards-empty-msg">— Aucune plainte ne correspond à ce filtre —</div>'
+                  + '</div>';
+    return;
   }
 
-  el("plaintes-tbody").innerHTML=list.map(p=>`<tr><td class="mono">${esc(p.ref||('#'+p.id))}</td><td>${esc(p.plaignant)}</td><td>${esc(p.accuse)}</td><td>${esc(p.type)}</td><td><span class="badge ${statutPlainte(p.statut)}">${fmtStatut(p.statut)}</span></td><td class="mono">${fmtDate(p.date)}</td><td><button class="btn btn-outline btn-sm" onclick="viewPlainte(${p.id})">👁</button>${canModify()?` <button class="btn btn-gold btn-sm" onclick="openEditPlainte(${p.id})" title="Modifier">✏️</button> <button class="btn btn-danger btn-sm" onclick="deletePlainte(${p.id})">🗑</button>`:""}</td></tr>`).join("")||`<tr><td colspan="7" style="text-align:center;color:var(--muted);padding:18px">Aucune plainte</td></tr>`;
-  if(typeof restoreSortUI === 'function') restoreSortUI('plaintes');
+  // Mapping statut → libellé/badge/icône
+  var statutCfg = {
+    'ouverte':            { label:'Ouverte',      badgeCls:'badge-red',    ico:'🔴' },
+    'en_cours':           { label:'En cours',     badgeCls:'badge-gold',   ico:'⏳' },
+    'transmise_tribunal': { label:'Au Tribunal',  badgeCls:'badge-purple', ico:'⚖️' },
+    'fermee':             { label:'Fermée',       badgeCls:'badge-gray',   ico:'🔒' }
+  };
+
+  box.innerHTML = list.map(function(p){
+    var canMod = canModify();
+    var st = statutCfg[p.statut] || { label:p.statut||'—', badgeCls:'badge-gray', ico:'•' };
+
+    // Numéro de fiche : utiliser p.ref si présent (POL-2026-001), sinon fallback sur l'ID
+    var fileNum = p.ref || ('#' + (p.id || '?'));
+
+    // Description (motif détaillé) : aperçu sur 2 lignes, le reste accessible via 👁 Voir
+    var desc = (p.desc || '').trim();
+
+    // Type / motif court (ex : "Agression physique", "Vol", "Dispute")
+    var typeLabel = (p.type || '').trim();
+
+    // Construction des actions
+    var actionsBtns = '';
+    actionsBtns += '<button class="pl-act-btn" onclick="viewPlainte(' + p.id + ')" title="Voir les détails">👁</button>';
+    if(canMod){
+      actionsBtns += '<button class="pl-act-btn is-edit" onclick="openEditPlainte(' + p.id + ')" title="Modifier">✏️</button>';
+      actionsBtns += '<button class="pl-act-btn is-delete" onclick="deletePlainte(' + p.id + ')" title="Supprimer">🗑</button>';
+    }
+
+    // Footer : date de dépôt + dernière modif éventuelle
+    var footerHTML = '<div class="pl-card-footer">'
+                   +   '<span class="pl-foot-item">📅 Déposée le ' + esc(fmtDate(p.date)) + '</span>'
+                   +   (p.modifiedAt && p.modifiedAt !== p.date ? '<span class="pl-foot-item">✏️ Modifiée le ' + esc(fmtDate(p.modifiedAt)) + '</span>' : '')
+                   + '</div>';
+
+    return '<div class="pl-card" data-statut="' + esc(p.statut || '') + '">'
+      // ─── Sceau ID ───
+      + '<div class="pl-card-id">'
+      +   '<div class="pl-card-id-num">' + esc(fileNum) + '</div>'
+      +   '<div class="pl-card-id-icon">' + st.ico + '</div>'
+      +   '<div class="pl-card-id-tag">№ Plainte</div>'
+      + '</div>'
+      // ─── Corps ───
+      + '<div class="pl-card-body">'
+      // Plaignant ⚔ Accusé
+      +   '<div class="pl-card-parties">'
+      +     '<div class="pl-card-party is-plaignant">'
+      +       '<span class="pl-card-party-lbl">Plaignant</span>'
+      +       '<span class="pl-card-party-name" title="' + esc(p.plaignant || '') + '">' + esc(p.plaignant || '—') + '</span>'
+      +     '</div>'
+      +     '<span class="pl-card-party-vs">VS</span>'
+      +     '<div class="pl-card-party is-accuse">'
+      +       '<span class="pl-card-party-lbl">Mis en cause</span>'
+      +       '<span class="pl-card-party-name" title="' + esc(p.accuse || '') + '">' + esc(p.accuse || '—') + '</span>'
+      +     '</div>'
+      +   '</div>'
+      +   '<div class="pl-card-badges">'
+      +     '<span class="badge ' + st.badgeCls + '">' + st.ico + ' ' + esc(st.label) + '</span>'
+      +     (typeLabel ? '<span class="pl-card-motif-pill"><span class="lbl">Motif</span> ' + esc(typeLabel) + '</span>' : '')
+      +   '</div>'
+      +   (desc
+            ? '<div class="pl-card-desc" title="' + esc(desc) + '">' + esc(desc) + '</div>'
+            : '<div class="pl-card-desc-empty">— Aucune description fournie —</div>')
+      +   footerHTML
+      + '</div>'
+      // ─── Actions ───
+      + '<div class="pl-card-actions">'
+      +   '<div class="pl-card-actions-btns">' + actionsBtns + '</div>'
+      + '</div>'
+      + '</div>';
+  }).join('');
 }
 let _plaintePhoto="";
 function loadPlaintePhoto(input){
@@ -25363,25 +26166,77 @@ function renderSanctions(){
   if(el("s-stat-fel"))el("s-stat-fel").textContent=all.filter(s=>s.type==="Félicitation").length;
   if(el("s-stat-avert"))el("s-stat-avert").textContent=all.filter(s=>s.type==="Avertissement").length;
   if(el("s-stat-excl"))el("s-stat-excl").textContent=all.filter(s=>s.type==="Exclusion").length;
-  // Stats hero V2
   if(el("pgv2-s-promo"))el("pgv2-s-promo").textContent=all.filter(s=>s.type==="Promotion").length;
   if(el("pgv2-s-fel"))el("pgv2-s-fel").textContent=all.filter(s=>s.type==="Félicitation").length;
   if(el("pgv2-s-sanc"))el("pgv2-s-sanc").textContent=all.filter(s=>s.type==="Avertissement"||s.type==="Exclusion").length;
+
   const q=(el("search-sanctions")?.value||"").toLowerCase();
   const showDel=canModify();
-  if(el("sanction-del-th"))el("sanction-del-th").style.display=showDel?"":"none";
-  let list=[...all].reverse();
+
+  let list=[...all].sort(function(a,b){ return (b.id||0) - (a.id||0); });
   if(_sancFilter!=="all")list=list.filter(s=>s.type===_sancFilter);
   if(q)list=list.filter(s=>(s.cible+s.motif+s.auteur+s.type).toLowerCase().includes(q));
-  const sTypeBadge=t=>t==="Promotion"||t==="Félicitation"?"badge-green":t==="Exclusion"?"badge-red":t==="Avertissement"?"badge-orange":"badge-gold";
-  el("sanctions-tbody").innerHTML=list.map(s=>`<tr>
-    <td><span class="badge ${sTypeBadge(s.type)}">${esc(s.type)}</span></td>
-    <td><b>${esc(s.cible)}</b></td>
-    <td style="font-size:11.5px;max-width:180px">${esc(s.motif)}</td>
-    <td style="font-size:11.5px">${esc(s.auteur)}</td>
-    <td class="mono">${fmtDate(s.date)}</td>
-    ${showDel?`<td><button class="btn btn-danger btn-sm" onclick="deleteSanction(${s.id})">🗑</button></td>`:""}
-  </tr>`).join("")||`<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:18px">Aucune entrée</td></tr>`;
+
+  var box = document.getElementById('sanctions-cards');
+  if(!box) return;
+  if(!list.length){
+    box.innerHTML = '<div class="sn-cards-empty">'
+                  +   '<div class="sn-cards-empty-ico">📜</div>'
+                  +   '<div class="sn-cards-empty-msg">— Aucune entrée ne correspond à ce filtre —</div>'
+                  + '</div>';
+    return;
+  }
+
+  // Numérotation : SANC-AAAA-NNN basé sur l'année + ordre stable de création
+  var allSorted = (DB.sanctions||[]).slice().sort(function(a,b){ return (a.id||0) - (b.id||0); });
+  var indexById = {};
+  allSorted.forEach(function(s, i){ indexById[s.id] = i + 1; });
+
+  // Mapping type → config visuelle
+  var typeCfg = {
+    'Promotion':     { badgeCls:'badge-green',  ico:'⭐', label:'Promotion' },
+    'Félicitation':  { badgeCls:'badge-green',  ico:'🎖️', label:'Félicitation' },
+    'Avertissement': { badgeCls:'badge-orange', ico:'⚠️', label:'Avertissement' },
+    'Exclusion':     { badgeCls:'badge-red',    ico:'⛔', label:'Exclusion' }
+  };
+
+  box.innerHTML = list.map(function(s){
+    var cfg = typeCfg[s.type] || { badgeCls:'badge-gold', ico:'📜', label: s.type || '—' };
+    var idxStr = String(indexById[s.id] || 1).padStart(3, '0');
+    var year = (function(){ try{ return new Date(s.date).getFullYear() || new Date().getFullYear(); } catch(e){ return new Date().getFullYear(); } })();
+    var fileNum = 'SANC-' + year + '-' + idxStr;
+    var motif = (s.motif || '').trim();
+
+    var actionsBtns = '';
+    if(showDel){
+      actionsBtns += '<button class="sn-act-btn is-delete" onclick="deleteSanction(' + s.id + ')" title="Supprimer">🗑</button>';
+    }
+
+    return '<div class="sn-card" data-type="' + esc(s.type || '') + '">'
+      + '<div class="sn-card-id">'
+      +   '<div class="sn-card-id-num">' + fileNum + '</div>'
+      +   '<div class="sn-card-id-icon">' + cfg.ico + '</div>'
+      +   '<div class="sn-card-id-tag">№ Acte</div>'
+      + '</div>'
+      + '<div class="sn-card-body">'
+      +   '<div class="sn-card-name"><h3>' + esc(s.cible || '—') + '</h3></div>'
+      +   '<div class="sn-card-meta">'
+      +     '<span><span class="ico">📅</span> ' + esc(fmtDate(s.date)) + '</span>'
+      +     '<span><span class="ico">👤</span> Par ' + esc(s.auteur || '—') + '</span>'
+      +   '</div>'
+      +   '<div class="sn-card-badges">'
+      +     '<span class="badge ' + cfg.badgeCls + '">' + cfg.ico + ' ' + esc(cfg.label) + '</span>'
+      +   '</div>'
+      +   (motif
+            ? '<div class="sn-card-motif" title="' + esc(motif) + '">' + esc(motif) + '</div>'
+            : '<div class="sn-card-motif-empty">— Aucun motif renseigné —</div>')
+      +   '<div class="sn-card-footer">'
+      +     '<span class="sn-foot-item">📜 ' + cfg.label + ' enregistrée</span>'
+      +   '</div>'
+      + '</div>'
+      + (actionsBtns ? '<div class="sn-card-actions"><div class="sn-card-actions-btns">' + actionsBtns + '</div></div>' : '<div class="sn-card-actions"></div>')
+      + '</div>';
+  }).join('');
 }
 function saveSanction(){
   if(typeof canModify === 'function' && !canModify()){ showToast('⛔ Action réservée aux modérateurs.','error'); return; }
@@ -31196,28 +32051,8 @@ document.addEventListener('keydown', function(e) {
 (function patchRenderForSort() {
   if (typeof renderPlaintes !== 'function') return;
 
-    // ── Patch renderPlaintes ──
-    var _origRP = window.renderPlaintes;
-    window.renderPlaintes = function() {
-      _origRP();
-      var st = _sortState['plaintes']; if (!st) return;
-      var tbody = document.getElementById('plaintes-tbody'); if (!tbody) return;
-      var rows = Array.from(tbody.querySelectorAll('tr'));
-      if (rows.length <= 1) return;
-      var dangerOrder = {Faible:0,Modéré:1,Élevé:2,Extrême:3};
-      rows.sort(function(a, b) {
-        var cells = {id:[0],plaignant:[1],accuse:[2],statut:[4],date:[5]};
-        var colIdx = (cells[st.field] || [0])[0];
-        var va = (a.cells[colIdx]||{}).textContent||'';
-        var vb = (b.cells[colIdx]||{}).textContent||'';
-        if (st.field === 'id') { va = parseInt(va)||0; vb = parseInt(vb)||0; return st.dir==='asc'?va-vb:vb-va; }
-        va = va.toLowerCase(); vb = vb.toLowerCase();
-        if (va < vb) return st.dir==='asc'?-1:1;
-        if (va > vb) return st.dir==='asc'?1:-1;
-        return 0;
-      });
-      rows.forEach(function(r) { tbody.appendChild(r); });
-    };
+    // (Patch renderPlaintes retiré : la vue plaintes utilise désormais
+    //  uniquement les cartes, le tri par défaut est géré dans renderPlaintes)
 
     // (Patch renderCandidatures retiré : la vue recrutement utilise désormais
     //  uniquement les cartes, le tri par défaut est géré dans renderCandidatures)
@@ -31689,14 +32524,11 @@ document.addEventListener('keydown', function(e) {
   }
 
   function rePaginate(key) {
-    var tbodyIds = {
-      plaintes: 'plaintes-tbody',
-      sanctions: 'sanctions-tbody'
-    };
-    var cardIds = {
-      plaintes: 'page-plaintes',
-      sanctions: 'page-sanctions'
-    };
+    // Note : aucun tableau actuel n'a besoin de pagination — toutes les vues
+    // listables ont été converties en cartes. Cette fonction est conservée
+    // pour les futurs tableaux qui en auraient besoin.
+    var tbodyIds = {};
+    var cardIds = {};
     var tbody = document.getElementById(tbodyIds[key]);
     if (!tbody) return;
     var rows = Array.from(tbody.querySelectorAll('tr'));
@@ -31704,7 +32536,6 @@ document.addEventListener('keydown', function(e) {
     if (rows.length === 1 && rows[0].cells.length === 1) return;
     applyPaginationToTbody(tbody, key);
     renderPagination(key, total, cardIds[key]);
-    // Scroll vers le haut de la table
     var card = document.getElementById(cardIds[key]);
     if (card) {
       var tableEl = card.querySelector('.card');
@@ -31712,43 +32543,8 @@ document.addEventListener('keydown', function(e) {
     }
   }
 
-  // Patch les render functions pour ajouter la pagination après chaque rendu
-  if (typeof renderPlaintes !== 'function' || typeof renderDossiers !== 'function') return;
-
-    // Note : 'dossiers' et 'candidatures' ont été retirés de la pagination tableau
-    // car ces vues utilisent maintenant des cartes (sans tbody).
-    var keys = ['plaintes', 'sanctions'];
-    var fns  = ['renderPlaintes', 'renderSanctions'];
-    var tbodyIds = { plaintes:'plaintes-tbody', sanctions:'sanctions-tbody' };
-    var cardIds  = { plaintes:'page-plaintes',  sanctions:'page-sanctions' };
-
-    keys.forEach(function(key, i) {
-      var fnName = fns[i];
-      if (typeof window[fnName] !== 'function') return;
-      var _orig = window[fnName];
-      window[fnName] = function() {
-        _orig.apply(this, arguments);
-        setTimeout(function() {
-          var tbody = document.getElementById(tbodyIds[key]);
-          if (!tbody) return;
-          var rows = Array.from(tbody.querySelectorAll('tr'));
-          if (rows.length <= 1) return;
-          applyPaginationToTbody(tbody, key);
-          renderPagination(key, rows.length, cardIds[key]);
-        }, 30);
-      };
-    });
-
-    // Réinitialiser la page à 1 quand on change de filtre ou de recherche
-    ['filterPlaintes'].forEach(function(fnName) {
-      if (typeof window[fnName] !== 'function') return;
-      var _orig = window[fnName];
-      window[fnName] = function() {
-        var key = fnName.replace('filter','').toLowerCase();
-        _pages[key] = 1;
-        _orig.apply(this, arguments);
-      };
-    });
+  // Aucune fonction render n'a besoin de pagination tableau actuellement
+  // (toutes les vues listables sont passées en cartes).
 })();
 </script>
 
@@ -33925,33 +34721,66 @@ function renderHospPatients(){
   // Render
   var el = document.getElementById('hosp-pat-list'); if(!el) return;
   if(filtered.length === 0){
-    el.innerHTML = '<div style="padding:40px 20px;text-align:center;color:var(--muted);font-size:13px"><div style="font-size:36px;opacity:0.35;margin-bottom:8px">🛌</div>Aucun patient '+(q||f!=='all'?'(filtre actif)':'enregistré')+'</div>';
+    el.innerHTML = '<div class="med-cards-empty">'
+                 +   '<div class="med-cards-empty-ico">🛌</div>'
+                 +   '<div class="med-cards-empty-msg">— Aucun patient '+(q||f!=='all'?'(filtre actif)':'enregistré')+' —</div>'
+                 + '</div>';
     return;
   }
-  var rows = filtered.map(function(p){
-    var statutBadge = {
-      'hospitalise': '<span class="badge badge-orange">🛌 Hospitalisé</span>',
-      'suivi':       '<span class="badge badge-blue">📋 En suivi</span>',
-      'sorti':       '<span class="badge badge-green">✅ Sorti</span>',
-      'critique':    '<span class="badge badge-red">⚠️ Critique</span>'
-    }[p.statut] || '<span class="badge badge-gray">—</span>';
+
+  // Mapping statut → tone + badge
+  var statutCfg = {
+    'hospitalise': { tone:'orange', badge:'badge-orange', ico:'🛌', label:'Hospitalisé' },
+    'suivi':       { tone:'blue',   badge:'badge-blue',   ico:'📋', label:'En suivi' },
+    'sorti':       { tone:'green',  badge:'badge-green',  ico:'✅', label:'Sorti' },
+    'critique':    { tone:'red',    badge:'badge-red',    ico:'⚠️', label:'Critique' }
+  };
+  // Numérotation : PAT-AAAA-NNN basé sur l'ordre stable de création
+  var allSorted = (DB.hospital.patients||[]).slice().sort(function(a,b){ return (a.id||0) - (b.id||0); });
+  var indexById = {};
+  allSorted.forEach(function(x, i){ indexById[x.id] = i + 1; });
+
+  el.innerHTML = '<div class="med-cards">' + filtered.map(function(p){
+    var cfg = statutCfg[p.statut] || { tone:'', badge:'badge-gray', ico:'•', label:'—' };
     var canEdit = hospCanEditEntry(p, 'medical');
-    var viewBtn = '<button class="btn btn-outline btn-sm" onclick="hospViewPatient('+p.id+')" title="Voir la fiche">👁</button>';
-    var actions = canEdit
-      ? viewBtn + ' <button class="btn btn-gold btn-sm" onclick="hospOpenPatient('+p.id+')" title="Modifier">✏️</button> <button class="btn btn-danger btn-sm" onclick="hospDeletePatient('+p.id+')" title="Supprimer">🗑</button>'
-      : viewBtn;
-    return '<tr>'
-      +'<td><strong>'+_hospEsc(p.nom)+'</strong></td>'
-      +'<td>'+(p.age?_hospEsc(p.age)+' ans':'—')+'</td>'
-      +'<td>'+_hospEsc(p.pathologie||'—')+'</td>'
-      +'<td class="mono">'+_hospEsc(p.chambre||'—')+'</td>'
-      +'<td>'+_hospEsc(p.medecin||'—')+'</td>'
-      +'<td>'+statutBadge+'</td>'
-      +'<td class="mono" style="font-size:11px">'+_hospFmtDate(p.dateAdmission)+'</td>'
-      +'<td style="white-space:nowrap">'+actions+'</td>'
-      +'</tr>';
-  }).join('');
-  el.innerHTML = '<table class="data-table"><thead><tr><th>Nom</th><th>Âge</th><th>Pathologie</th><th>Chambre</th><th>Médecin</th><th>Statut</th><th>Admission</th><th style="width:140px;white-space:nowrap">Actions</th></tr></thead><tbody>'+rows+'</tbody></table>';
+    var idxStr = String(indexById[p.id] || 1).padStart(3, '0');
+    var year = (function(){ try{ return new Date(p.dateAdmission).getFullYear() || new Date().getFullYear(); } catch(e){ return new Date().getFullYear(); } })();
+    var fileNum = 'PAT-' + year + '-' + idxStr;
+    var pathologie = (p.pathologie||'').trim();
+
+    var actionsBtns = '<button class="med-act-btn" onclick="hospViewPatient('+p.id+')" title="Voir la fiche">👁</button>';
+    if(canEdit){
+      actionsBtns += '<button class="med-act-btn is-edit" onclick="hospOpenPatient('+p.id+')" title="Modifier">✏️</button>';
+      actionsBtns += '<button class="med-act-btn is-delete" onclick="hospDeletePatient('+p.id+')" title="Supprimer">🗑</button>';
+    }
+
+    return '<div class="med-card" data-tone="'+cfg.tone+'">'
+      + '<div class="med-card-id">'
+      +   '<div class="med-card-id-num">'+fileNum+'</div>'
+      +   '<div class="med-card-id-icon">'+cfg.ico+'</div>'
+      +   '<div class="med-card-id-tag">№ Patient</div>'
+      + '</div>'
+      + '<div class="med-card-body">'
+      +   '<div class="med-card-name"><h3>'+_hospEsc(p.nom||'—')+'</h3></div>'
+      +   '<div class="med-card-meta">'
+      +     (p.age ? '<span><span class="ico">🎂</span> '+_hospEsc(p.age)+' ans</span>' : '')
+      +     '<span><span class="ico">📅</span> Admis le '+_hospFmtDate(p.dateAdmission)+'</span>'
+      +     (p.medecin ? '<span><span class="ico">⚕️</span> '+_hospEsc(p.medecin)+'</span>' : '')
+      +   '</div>'
+      +   '<div class="med-card-badges">'
+      +     '<span class="badge '+cfg.badge+'">'+cfg.ico+' '+cfg.label+'</span>'
+      +     (p.chambre ? '<span class="med-card-pill"><span class="lbl">Chambre</span> '+_hospEsc(p.chambre)+'</span>' : '')
+      +   '</div>'
+      +   (pathologie
+          ? '<div class="med-card-desc" title="'+_hospEsc(pathologie)+'">'+_hospEsc(pathologie)+'</div>'
+          : '<div class="med-card-desc-empty">— Aucune pathologie renseignée —</div>')
+      +   '<div class="med-card-footer">'
+      +     '<span class="med-foot-item">🛌 Dossier patient officiel</span>'
+      +   '</div>'
+      + '</div>'
+      + '<div class="med-card-actions"><div class="med-card-actions-btns">'+actionsBtns+'</div></div>'
+      + '</div>';
+  }).join('') + '</div>';
 }
 
 function hospOpenPatient(editId){
@@ -34425,10 +35254,13 @@ function renderHospDons(){
   filtered.sort(function(a,b){ return (b.dateTs||0) - (a.dateTs||0); });
   var el = document.getElementById('hosp-dons-list'); if(!el) return;
   if(filtered.length === 0){
-    el.innerHTML = '<div style="padding:40px 20px;text-align:center;color:var(--muted);font-size:13px"><div style="font-size:36px;opacity:0.35;margin-bottom:8px">🩸</div>Aucun don enregistré</div>';
+    el.innerHTML = '<div class="med-cards-empty">'
+                 +   '<div class="med-cards-empty-ico">🩸</div>'
+                 +   '<div class="med-cards-empty-msg">— Aucun don enregistré —</div>'
+                 + '</div>';
     return;
   }
-  // Stock par groupe (récap)
+  // Stock par groupe (récap visible au-dessus des cartes)
   var stockParGroupe = {};
   list.forEach(function(d){
     var g = d.groupe || '?';
@@ -34436,27 +35268,57 @@ function renderHospDons(){
     stockParGroupe[g] += (parseInt(d.poches,10)||0) - (parseInt(d.utilisees,10)||0);
   });
   var groupesHtml = Object.keys(stockParGroupe).sort().map(function(g){
-    return '<div style="display:inline-block;margin:3px;padding:5px 11px;border-radius:14px;background:rgba(220,38,38,0.08);border:1px solid rgba(220,38,38,0.2);font-family:\'Share Tech Mono\',monospace;font-size:11px"><strong>'+_hospEsc(g)+'</strong> · '+Math.max(0,stockParGroupe[g])+' poches</div>';
+    return '<div style="display:inline-block;margin:3px;padding:5px 11px;border-radius:14px;background:rgba(220,38,38,0.08);border:1px solid rgba(220,38,38,0.2);font-family:\'Share Tech Mono\',monospace;font-size:11px;color:var(--text2)"><strong style="color:#fca5a5">'+_hospEsc(g)+'</strong> · '+Math.max(0,stockParGroupe[g])+' poches</div>';
   }).join('');
-  var rows = filtered.map(function(d){
+
+  // Numérotation : DON-AAAA-NNN
+  var allSorted = (DB.hospital.dons||[]).slice().sort(function(a,b){ return (a.id||0) - (b.id||0); });
+  var indexById = {};
+  allSorted.forEach(function(x, i){ indexById[x.id] = i + 1; });
+
+  el.innerHTML = '<div style="padding:12px 14px;background:rgba(220,38,38,0.04);border:1px solid rgba(220,38,38,0.15);border-radius:10px;margin-bottom:11px">'
+               +   '<div style="font-size:9px;letter-spacing:2px;color:var(--gold2);font-family:\'Share Tech Mono\',monospace;text-transform:uppercase;margin-bottom:6px">Stock disponible par groupe sanguin</div>'
+               +   (groupesHtml||'<span style="color:var(--muted);font-size:11px">Aucun stock</span>')
+               + '</div>'
+               + '<div class="med-cards">' + filtered.map(function(d){
     var dispo = Math.max(0, (parseInt(d.poches,10)||0) - (parseInt(d.utilisees,10)||0));
     var canEdit = hospCanEditEntry(d,'medical');
-    var viewBtn = '<button class="btn btn-outline btn-sm" onclick="hospViewDon('+d.id+')" title="Voir la fiche">👁</button>';
-    var actions = canEdit
-      ? viewBtn + ' <button class="btn btn-gold btn-sm" onclick="hospOpenDon('+d.id+')" title="Modifier">✏️</button> <button class="btn btn-danger btn-sm" onclick="hospDeleteDon('+d.id+')" title="Supprimer">🗑</button>'
-      : viewBtn;
-    return '<tr>'
-      +'<td class="mono" style="font-size:11px;white-space:nowrap">'+_hospFmtDate(d.dateTs)+'</td>'
-      +'<td><strong>'+_hospEsc(d.donneur)+'</strong></td>'
-      +'<td><span class="badge badge-red">'+_hospEsc(d.groupe||'?')+'</span></td>'
-      +'<td class="mono">'+(d.poches||0)+'</td>'
-      +'<td class="mono"><span style="color:'+(dispo>0?'var(--green)':'var(--muted)')+'">'+dispo+'</span></td>'
-      +'<td>'+_hospEsc(d.medecin||'—')+'</td>'
-      +'<td style="white-space:nowrap">'+actions+'</td>'
-      +'</tr>';
-  }).join('');
-  el.innerHTML = '<div style="padding:12px 14px;background:rgba(220,38,38,0.04);border-bottom:1px solid rgba(220,38,38,0.15)"><div style="font-size:9px;letter-spacing:2px;color:var(--gold2);font-family:\'Share Tech Mono\',monospace;text-transform:uppercase;margin-bottom:6px">Stock disponible par groupe</div>'+(groupesHtml||'<span style="color:var(--muted);font-size:11px">Aucun stock</span>')+'</div>'
-    +'<table class="data-table"><thead><tr><th>Date</th><th>Donneur</th><th>Groupe</th><th>Récolté</th><th>Disponible</th><th>Médecin</th><th style="width:140px;white-space:nowrap">Actions</th></tr></thead><tbody>'+rows+'</tbody></table>';
+    var idxStr = String(indexById[d.id] || 1).padStart(3, '0');
+    var year = (function(){ try{ return new Date(d.dateTs).getFullYear() || new Date().getFullYear(); } catch(e){ return new Date().getFullYear(); } })();
+    var fileNum = 'DON-' + year + '-' + idxStr;
+    // Tone : rouge si stock épuisé, vert si plein, orange si partiellement utilisé
+    var tone = dispo === 0 ? 'gray' : (d.utilisees && d.utilisees > 0 ? 'orange' : 'green');
+
+    var actionsBtns = '<button class="med-act-btn" onclick="hospViewDon('+d.id+')" title="Voir la fiche">👁</button>';
+    if(canEdit){
+      actionsBtns += '<button class="med-act-btn is-edit" onclick="hospOpenDon('+d.id+')" title="Modifier">✏️</button>';
+      actionsBtns += '<button class="med-act-btn is-delete" onclick="hospDeleteDon('+d.id+')" title="Supprimer">🗑</button>';
+    }
+
+    return '<div class="med-card" data-tone="'+tone+'">'
+      + '<div class="med-card-id">'
+      +   '<div class="med-card-id-num">'+fileNum+'</div>'
+      +   '<div class="med-card-id-icon">🩸</div>'
+      +   '<div class="med-card-id-tag">№ Don</div>'
+      + '</div>'
+      + '<div class="med-card-body">'
+      +   '<div class="med-card-name"><h3>'+_hospEsc(d.donneur||'—')+'</h3></div>'
+      +   '<div class="med-card-meta">'
+      +     '<span><span class="ico">📅</span> Récolté le '+_hospFmtDate(d.dateTs)+'</span>'
+      +     (d.medecin ? '<span><span class="ico">⚕️</span> '+_hospEsc(d.medecin)+'</span>' : '')
+      +   '</div>'
+      +   '<div class="med-card-badges">'
+      +     '<span class="badge badge-red">🩸 Groupe '+_hospEsc(d.groupe||'?')+'</span>'
+      +     '<span class="med-card-pill"><span class="lbl">Récolté</span> '+(d.poches||0)+' poches</span>'
+      +     '<span class="med-card-pill" style="border-color:'+(dispo>0?'rgba(34,197,94,0.3)':'rgba(107,114,128,0.3)')+'"><span class="lbl">Disponible</span> <span style="color:'+(dispo>0?'#86efac':'rgba(255,255,255,0.4)')+';font-weight:700">'+dispo+'</span></span>'
+      +   '</div>'
+      +   '<div class="med-card-footer">'
+      +     '<span class="med-foot-item">🩸 Banque de sang officielle</span>'
+      +   '</div>'
+      + '</div>'
+      + '<div class="med-card-actions"><div class="med-card-actions-btns">'+actionsBtns+'</div></div>'
+      + '</div>';
+  }).join('') + '</div>';
 }
 
 function hospOpenDon(editId){
@@ -34549,32 +35411,65 @@ function renderHospSci(){
   filtered.sort(function(a,b){ return (b.dateTs||0) - (a.dateTs||0); });
   var el = document.getElementById('hosp-sci-list'); if(!el) return;
   if(filtered.length === 0){
-    el.innerHTML = '<div style="padding:40px 20px;text-align:center;color:var(--muted);font-size:13px"><div style="font-size:36px;opacity:0.35;margin-bottom:8px">🧪</div>Aucun rapport scientifique</div>';
+    el.innerHTML = '<div class="med-cards-empty">'
+                 +   '<div class="med-cards-empty-ico">🧪</div>'
+                 +   '<div class="med-cards-empty-msg">— Aucun rapport scientifique —</div>'
+                 + '</div>';
     return;
   }
-  var rows = filtered.map(function(r){
-    var statutBadge = {
-      'encours': '<span class="badge badge-cyan">⏳ En cours</span>',
-      'publie':  '<span class="badge badge-green">✅ Publié</span>',
-      'archive': '<span class="badge badge-gray">📦 Archivé</span>'
-    }[r.statut] || '<span class="badge badge-gray">—</span>';
+
+  // Mapping statut → tone + badge
+  var statutCfg = {
+    'encours': { tone:'orange', badge:'badge-cyan',  ico:'⏳', label:'En cours' },
+    'publie':  { tone:'green',  badge:'badge-green', ico:'✅', label:'Publié' },
+    'archive': { tone:'gray',   badge:'badge-gray',  ico:'📦', label:'Archivé' }
+  };
+  // Numérotation : RAP-AAAA-NNN
+  var allSorted = (DB.hospital.scientifique||[]).slice().sort(function(a,b){ return (a.id||0) - (b.id||0); });
+  var indexById = {};
+  allSorted.forEach(function(x, i){ indexById[x.id] = i + 1; });
+
+  el.innerHTML = '<div class="med-cards">' + filtered.map(function(r){
+    var cfg = statutCfg[r.statut] || { tone:'', badge:'badge-gray', ico:'•', label:'—' };
     var canEdit = hospCanEditEntry(r,'sci');
-    var viewBtn = '<button class="btn btn-outline btn-sm" onclick="hospViewSci('+r.id+')" title="Voir la fiche">👁</button>';
-    var actions = canEdit
-      ? viewBtn + ' <button class="btn btn-gold btn-sm" onclick="hospOpenSci('+r.id+')" title="Modifier">✏️</button> <button class="btn btn-danger btn-sm" onclick="hospDeleteSci('+r.id+')" title="Supprimer">🗑</button>'
-      : viewBtn;
-    var resume = r.resultats ? '<div style="font-size:11px;color:var(--muted);margin-top:3px;max-width:340px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+_hospEsc(r.resultats)+'</div>' : '';
-    return '<tr>'
-      +'<td class="mono" style="font-size:11px;white-space:nowrap">'+_hospFmtDate(r.dateTs)+'</td>'
-      +'<td><strong>'+_hospEsc(r.titre)+'</strong>'+resume+'</td>'
-      +'<td>'+_hospEsc(r.scientifique||'—')+'</td>'
-      +'<td>'+_hospEsc(r.type||'—')+'</td>'
-      +'<td>'+_hospEsc(r.echantillons||'—')+'</td>'
-      +'<td>'+statutBadge+'</td>'
-      +'<td style="white-space:nowrap">'+actions+'</td>'
-      +'</tr>';
-  }).join('');
-  el.innerHTML = '<table class="data-table"><thead><tr><th>Date</th><th>Titre / Résultats</th><th>Scientifique</th><th>Type d\'étude</th><th>Échantillons</th><th>Statut</th><th style="width:140px;white-space:nowrap">Actions</th></tr></thead><tbody>'+rows+'</tbody></table>';
+    var idxStr = String(indexById[r.id] || 1).padStart(3, '0');
+    var year = (function(){ try{ return new Date(r.dateTs).getFullYear() || new Date().getFullYear(); } catch(e){ return new Date().getFullYear(); } })();
+    var fileNum = 'RAP-' + year + '-' + idxStr;
+    var resume = (r.resultats||'').trim();
+
+    var actionsBtns = '<button class="med-act-btn" onclick="hospViewSci('+r.id+')" title="Voir la fiche">👁</button>';
+    if(canEdit){
+      actionsBtns += '<button class="med-act-btn is-edit" onclick="hospOpenSci('+r.id+')" title="Modifier">✏️</button>';
+      actionsBtns += '<button class="med-act-btn is-delete" onclick="hospDeleteSci('+r.id+')" title="Supprimer">🗑</button>';
+    }
+
+    return '<div class="med-card" data-tone="'+cfg.tone+'">'
+      + '<div class="med-card-id">'
+      +   '<div class="med-card-id-num">'+fileNum+'</div>'
+      +   '<div class="med-card-id-icon">🧪</div>'
+      +   '<div class="med-card-id-tag">№ Rapport</div>'
+      + '</div>'
+      + '<div class="med-card-body">'
+      +   '<div class="med-card-name"><h3>'+_hospEsc(r.titre||'—')+'</h3></div>'
+      +   '<div class="med-card-meta">'
+      +     '<span><span class="ico">📅</span> '+_hospFmtDate(r.dateTs)+'</span>'
+      +     (r.scientifique ? '<span><span class="ico">🔬</span> '+_hospEsc(r.scientifique)+'</span>' : '')
+      +   '</div>'
+      +   '<div class="med-card-badges">'
+      +     '<span class="badge '+cfg.badge+'">'+cfg.ico+' '+cfg.label+'</span>'
+      +     (r.type ? '<span class="med-card-pill"><span class="lbl">Type</span> '+_hospEsc(r.type)+'</span>' : '')
+      +     (r.echantillons ? '<span class="med-card-pill"><span class="lbl">Échantillons</span> '+_hospEsc(r.echantillons)+'</span>' : '')
+      +   '</div>'
+      +   (resume
+          ? '<div class="med-card-desc" title="'+_hospEsc(resume)+'">'+_hospEsc(resume)+'</div>'
+          : '<div class="med-card-desc-empty">— Aucun résultat consigné —</div>')
+      +   '<div class="med-card-footer">'
+      +     '<span class="med-foot-item">🧪 Rapport d\'étude scientifique</span>'
+      +   '</div>'
+      + '</div>'
+      + '<div class="med-card-actions"><div class="med-card-actions-btns">'+actionsBtns+'</div></div>'
+      + '</div>';
+  }).join('') + '</div>';
 }
 
 function hospOpenSci(editId){
@@ -34676,31 +35571,66 @@ function renderHospMorgue(){
   filtered.sort(function(a,b){ return (b.dateDeces||0) - (a.dateDeces||0); });
   var el = document.getElementById('hosp-morg-list'); if(!el) return;
   if(filtered.length === 0){
-    el.innerHTML = '<div style="padding:40px 20px;text-align:center;color:var(--muted);font-size:13px"><div style="font-size:36px;opacity:0.35;margin-bottom:8px">⚰️</div>Aucun défunt enregistré</div>';
+    el.innerHTML = '<div class="med-cards-empty">'
+                 +   '<div class="med-cards-empty-ico">⚰️</div>'
+                 +   '<div class="med-cards-empty-msg">— Aucun défunt enregistré —</div>'
+                 + '</div>';
     return;
   }
-  var rows = filtered.map(function(m){
-    var statutBadge = {
-      'autopsie': '<span class="badge badge-orange">🔬 Autopsie</span>',
-      'clos':     '<span class="badge badge-gray">📁 Clos</span>',
-      'restitue': '<span class="badge badge-purple">⚱️ Restitué</span>'
-    }[m.statut] || '<span class="badge badge-gray">—</span>';
+
+  var statutCfg = {
+    'autopsie': { tone:'orange', badge:'badge-orange', ico:'🔬', label:'En autopsie' },
+    'clos':     { tone:'gray',   badge:'badge-gray',   ico:'📁', label:'Clos' },
+    'restitue': { tone:'purple', badge:'badge-purple', ico:'⚱️', label:'Restitué' }
+  };
+  // Numérotation : MOR-AAAA-NNN
+  var allSorted = (DB.hospital.morgue||[]).slice().sort(function(a,b){ return (a.id||0) - (b.id||0); });
+  var indexById = {};
+  allSorted.forEach(function(x, i){ indexById[x.id] = i + 1; });
+
+  el.innerHTML = '<div class="med-cards">' + filtered.map(function(m){
+    var cfg = statutCfg[m.statut] || { tone:'', badge:'badge-gray', ico:'•', label:'—' };
     var canEdit = hospCanEditEntry(m,'sci');
-    var viewBtn = '<button class="btn btn-outline btn-sm" onclick="hospViewMorgue('+m.id+')" title="Voir la fiche">👁</button>';
-    var actions = canEdit
-      ? viewBtn + ' <button class="btn btn-gold btn-sm" onclick="hospOpenMorgue('+m.id+')" title="Modifier">✏️</button> <button class="btn btn-danger btn-sm" onclick="hospDeleteMorgue('+m.id+')" title="Supprimer">🗑</button>'
-      : viewBtn;
-    var notes = m.notes ? '<div style="font-size:11px;color:var(--muted);margin-top:3px;max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+_hospEsc(m.notes)+'</div>' : '';
-    return '<tr>'
-      +'<td><strong>'+_hospEsc(m.nom)+'</strong></td>'
-      +'<td class="mono" style="font-size:11px;white-space:nowrap">'+_hospFmtDate(m.dateDeces)+'</td>'
-      +'<td>'+_hospEsc(m.cause||'—')+notes+'</td>'
-      +'<td>'+_hospEsc(m.legiste||'—')+'</td>'
-      +'<td>'+statutBadge+'</td>'
-      +'<td style="white-space:nowrap">'+actions+'</td>'
-      +'</tr>';
-  }).join('');
-  el.innerHTML = '<table class="data-table"><thead><tr><th>Nom</th><th>Date décès</th><th>Cause / Notes</th><th>Médecin légiste</th><th>Statut</th><th style="width:140px;white-space:nowrap">Actions</th></tr></thead><tbody>'+rows+'</tbody></table>';
+    var idxStr = String(indexById[m.id] || 1).padStart(3, '0');
+    var year = (function(){ try{ return new Date(m.dateDeces).getFullYear() || new Date().getFullYear(); } catch(e){ return new Date().getFullYear(); } })();
+    var fileNum = 'MOR-' + year + '-' + idxStr;
+    var notes = (m.notes||'').trim();
+    var cause = (m.cause||'').trim();
+    // Le résumé textuel est la cause + notes éventuelles (priorité à la cause)
+    var resume = cause && notes ? cause + ' — ' + notes : (cause || notes);
+
+    var actionsBtns = '<button class="med-act-btn" onclick="hospViewMorgue('+m.id+')" title="Voir la fiche">👁</button>';
+    if(canEdit){
+      actionsBtns += '<button class="med-act-btn is-edit" onclick="hospOpenMorgue('+m.id+')" title="Modifier">✏️</button>';
+      actionsBtns += '<button class="med-act-btn is-delete" onclick="hospDeleteMorgue('+m.id+')" title="Supprimer">🗑</button>';
+    }
+
+    return '<div class="med-card" data-tone="'+cfg.tone+'">'
+      + '<div class="med-card-id">'
+      +   '<div class="med-card-id-num">'+fileNum+'</div>'
+      +   '<div class="med-card-id-icon">⚰️</div>'
+      +   '<div class="med-card-id-tag">№ Défunt</div>'
+      + '</div>'
+      + '<div class="med-card-body">'
+      +   '<div class="med-card-name"><h3>'+_hospEsc(m.nom||'—')+'</h3></div>'
+      +   '<div class="med-card-meta">'
+      +     '<span><span class="ico">📅</span> Décédé le '+_hospFmtDate(m.dateDeces)+'</span>'
+      +     (m.legiste ? '<span><span class="ico">⚕️</span> Légiste : '+_hospEsc(m.legiste)+'</span>' : '')
+      +   '</div>'
+      +   '<div class="med-card-badges">'
+      +     '<span class="badge '+cfg.badge+'">'+cfg.ico+' '+cfg.label+'</span>'
+      +     (cause ? '<span class="med-card-pill"><span class="lbl">Cause</span> '+_hospEsc(cause)+'</span>' : '')
+      +   '</div>'
+      +   (resume
+          ? '<div class="med-card-desc" title="'+_hospEsc(resume)+'">'+_hospEsc(resume)+'</div>'
+          : '<div class="med-card-desc-empty">— Aucune information complémentaire —</div>')
+      +   '<div class="med-card-footer">'
+      +     '<span class="med-foot-item">⚰️ Registre des défunts — Sunagakure</span>'
+      +   '</div>'
+      + '</div>'
+      + '<div class="med-card-actions"><div class="med-card-actions-btns">'+actionsBtns+'</div></div>'
+      + '</div>';
+  }).join('') + '</div>';
 }
 
 function hospOpenMorgue(editId){
