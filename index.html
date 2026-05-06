@@ -11981,39 +11981,45 @@ document.addEventListener('error', function(e){
       min-height:74px;
       box-sizing:border-box;
       width:100%;
-      /* Ancrage en bas du conteneur conversation pour éviter qu'un flex
-         défaillant du parent écrase la barre à 0px de hauteur. */
       position:relative;
       z-index:5;
     }
-    /* BUG-FIX : forcer l'affichage de la barre quand une conversation est ouverte,
-       en visant directement #msg-input-row sans dépendre du parent.
-       Le parent #msg-conv-wrap est en display:none par défaut donc la barre ne sera
-       affichée que quand une conversation est ouverte. */
-    #msg-input-row{
-      display:flex !important;
-    }
-    /* Cacher la barre uniquement si son parent est masqué (pas de conv ouverte) */
-    #msg-conv-wrap[style*="display: none"] #msg-input-row,
-    #msg-conv-wrap[style*="display:none"] #msg-input-row{
-      display:none !important;
-    }
-    /* Le conteneur conversation doit être un vrai flex column qui pousse
-       l'input en bas. min-height:0 + overflow contraint pour le thread. */
-    #msg-conv-wrap{
-      display:none; /* override par JS quand convo ouverte */
-    }
+    /* ═══ BARRE D'INPUT — APPROCHE ROBUSTE ═══
+       Toujours affichée (display:flex) tant que le wrapper conversation
+       est .is-open. Plus aucun toggle JS, juste du CSS. */
     #page-messagerie #msg-conv-wrap.is-open{
       display:flex !important;
       flex:1 !important;
       flex-direction:column !important;
       min-height:0 !important;
       height:100% !important;
+      position:relative;
     }
+    /* Le thread-wrap doit laisser de la place à l'input row en bas */
     #page-messagerie #msg-conv-wrap.is-open .msg-thread-wrap{
       flex:1 1 0 !important;
       min-height:0 !important;
       overflow-y:auto !important;
+      /* Réserve la hauteur de l'input row pour qu'il ne soit jamais caché */
+      padding-bottom:8px !important;
+    }
+    /* L'input row : garantie absolue d'affichage par tous les moyens */
+    #page-messagerie #msg-conv-wrap.is-open #msg-input-row{
+      display:flex !important;
+      visibility:visible !important;
+      opacity:1 !important;
+      flex-shrink:0 !important;
+      flex-grow:0 !important;
+      flex-basis:auto !important;
+      height:auto !important;
+      min-height:74px !important;
+      max-height:none !important;
+      overflow:visible !important;
+      pointer-events:auto !important;
+    }
+    /* Tant que le wrapper n'est pas .is-open, tout est caché */
+    #page-messagerie #msg-conv-wrap:not(.is-open){
+      display:none !important;
     }
     #page-messagerie .msg-input-box{
       display:flex;gap:10px;align-items:flex-end;
