@@ -33481,12 +33481,14 @@ function bbDefaultNinjas() {
 }
 
 function bbDangerClass(d){ return {eleve:'bb-badge-eleve',moyen:'bb-badge-moyen',faible:'bb-badge-faible'}[d]||'bb-badge-faible'; }
-function bbDangerLabel(d){ return {eleve:'⚠ DANGER ÉLEVÉ',moyen:'◆ DANGER MOYEN',faible:'▸ DANGER FAIBLE'}[d]||d.toUpperCase(); }
+function bbDangerLabel(d){ return {eleve:'⚠ DANGER ÉLEVÉ',moyen:'◆ DANGER MOYEN',faible:'▸ DANGER FAIBLE'}[d] || (d ? String(d).toUpperCase() : '— INCONNU —'); }
 function bbStatusLabel(s){ return {actif:'RECHERCHÉ',capture:'CAPTURÉ',tue:'TUÉ',evade:'ÉVADÉ'}[s||'actif']||'RECHERCHÉ'; }
 function bbStatusPillLabel(s){ return {actif:'Actif',capture:'Capturé',tue:'Tué',evade:'Évadé'}[s||'actif']||'Actif'; }
 // Change rapide du statut depuis la card (sans rouvrir le formulaire complet)
 function bbQuickSetStatus(id, newStatus){
-  if(typeof canModify === 'function' && !canModify()){ if(typeof showToast==='function') showToast('⛔ Action réservée aux modérateurs.','error'); return; }
+  // Utilise bbCanEdit() pour autoriser admins/police-modos ET diplomates
+  // (cohérent avec bbSaveFiche et bbDeleteById qui utilisent aussi bbCanEdit)
+  if(typeof bbCanEdit === 'function' && !bbCanEdit()){ if(typeof showToast==='function') showToast('⛔ Action réservée aux administrateurs et diplomates.','error'); return; }
   var list = bbGetNinjas();
   var n = list.find(function(x){return x.id===id});
   if(!n) return;
@@ -33514,7 +33516,7 @@ function bbRender() {
   var q = (document.getElementById('bb-search') ? document.getElementById('bb-search').value : '').toLowerCase();
   list = list.filter(function(n){
     if (bbFilter !== 'all' && n.danger !== bbFilter) return false;
-    if (q) { var s=(n.nom+n.prenom+n.grade+n.village+(n.desc||'')).toLowerCase(); if(!s.includes(q)) return false; }
+    if (q) { var s=((n.nom||'')+(n.prenom||'')+(n.grade||'')+(n.village||'')+(n.desc||'')).toLowerCase(); if(!s.includes(q)) return false; }
     return true;
   });
   var g = document.getElementById('bb-grid');
@@ -33524,8 +33526,15 @@ function bbRender() {
   if (addBtn) addBtn.style.display = bbCanEdit() ? 'inline-block' : 'none';
   if (!list.length) { g.innerHTML='<div class="bb-empty">Aucune fiche dans le registre pour ces critères.</div>'; return; }
   var isMod = bbCanEdit();
+  // Helper local d'échappement (alias de la fonction globale, robuste si elle n'est pas chargée)
+  var _e = (typeof esc === 'function') ? esc : function(s){ if(s==null) return ''; return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); };
   g.innerHTML = list.map(function(n, i){
-    var portrait = '<img src="'+n.portrait+'" alt="portrait" onerror="this.style.display=\'none\'">';
+    // Le portrait est une dataURL générée par compression côté client : c'est sûr.
+    // Mais on n'inclut l'<img> que si la dataURL commence bien par "data:image/" (anti-tampering minimal).
+    var safePortrait = (n.portrait && typeof n.portrait==='string' && n.portrait.indexOf('data:image/')===0) ? n.portrait : '';
+    var portrait = safePortrait
+      ? '<img src="'+safePortrait+'" alt="portrait" onerror="this.style.display=\'none\'">'
+      : '';
     var actionBtns = isMod
       ? '<div class="bb-card-actions">'+
           '<button class="bb-card-btn" title="Voir" onclick="event.stopPropagation();bbOpenDossier('+n.id+')">👁</button>'+
@@ -33534,34 +33543,34 @@ function bbRender() {
         '</div>'
       : '<div class="bb-card-actions"><button class="bb-card-btn" title="Voir" onclick="event.stopPropagation();bbOpenDossier('+n.id+')">👁</button></div>';
     var portraitPlaceholder = '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:4px">'
-      + '<span style="font-size:20px;color:rgba(80,50,10,0.3);font-family:\'Cinzel\',serif">'+bbInitials(n.nom,n.prenom)+'</span>'
+      + '<span style="font-size:20px;color:rgba(80,50,10,0.3);font-family:\'Cinzel\',serif">'+_e(bbInitials(n.nom,n.prenom))+'</span>'
       + '<span class="bb-portrait-placeholder-text">portrait</span>'
       + '</div>';
-    return '<div class="bb-card" data-status="'+(n.status||'actif')+'" onclick="bbOpenDossier('+n.id+')" style="animation:fadeIn 0.22s ease '+(i*0.05)+'s both">'+
-      ((n.status && n.status!=='actif') ? '<div class="bb-status-stamp s-'+n.status+'">'+bbStatusLabel(n.status)+'</div>' : '')+
+    return '<div class="bb-card" data-status="'+_e(n.status||'actif')+'" onclick="bbOpenDossier('+n.id+')" style="animation:fadeIn 0.22s ease '+(i*0.05)+'s both">'+
+      ((n.status && n.status!=='actif') ? '<div class="bb-status-stamp s-'+_e(n.status)+'">'+_e(bbStatusLabel(n.status))+'</div>' : '')+
       '<div class="bb-card-header">'+
         '<span class="bb-card-fiche-num">Fiche '+(i+1)+'</span>'+
         actionBtns+
       '</div>'+
       '<div class="bb-card-body">'+
-        '<div class="bb-portrait-wrap">'+(n.portrait?portrait:portraitPlaceholder)+'</div>'+
+        '<div class="bb-portrait-wrap">'+(safePortrait?portrait:portraitPlaceholder)+'</div>'+
         '<div class="bb-card-info">'+
-          '<div class="bb-card-nom">'+n.nom+'</div>'+
-          '<div class="bb-card-prenom">'+n.prenom+'</div>'+
-          '<span class="'+bbDangerClass(n.danger)+'">'+bbDangerLabel(n.danger)+'</span>'+
-          '<span class="bb-status-pill s-'+(n.status||'actif')+'">'+bbStatusPillLabel(n.status||'actif')+'</span>'+
+          '<div class="bb-card-nom">'+_e(n.nom||'')+'</div>'+
+          '<div class="bb-card-prenom">'+_e(n.prenom||'')+'</div>'+
+          '<span class="'+bbDangerClass(n.danger)+'">'+_e(bbDangerLabel(n.danger))+'</span>'+
+          '<span class="bb-status-pill s-'+_e(n.status||'actif')+'">'+_e(bbStatusPillLabel(n.status||'actif'))+'</span>'+
           '<div class="bb-card-meta">'+
-            '<div class="bb-card-row"><span class="bb-card-lbl">Grade</span><span class="bb-card-val">'+n.grade+'</span></div>'+
-            '<div class="bb-card-row"><span class="bb-card-lbl">Village</span><span class="bb-card-val">'+n.village+'</span></div>'+
-            (n.recompense?'<div class="bb-card-row"><span class="bb-card-lbl">Prime</span><span class="bb-card-val" style="color:#7a4e08;font-weight:600">'+n.recompense.toLocaleString()+' Ryos</span></div>':'')+
+            '<div class="bb-card-row"><span class="bb-card-lbl">Grade</span><span class="bb-card-val">'+_e(n.grade||'')+'</span></div>'+
+            '<div class="bb-card-row"><span class="bb-card-lbl">Village</span><span class="bb-card-val">'+_e(n.village||'')+'</span></div>'+
+            (n.recompense?'<div class="bb-card-row"><span class="bb-card-lbl">Prime</span><span class="bb-card-val" style="color:#7a4e08;font-weight:600">'+(parseInt(n.recompense,10)||0).toLocaleString()+' Ryos</span></div>':'')+
           '</div>'+
         '</div>'+
       '</div>'+
-      (n.desc?'<div class="bb-desc-snip">'+n.desc.slice(0,90)+(n.desc.length>90?'…':'')+'</div>':'')+
-      (n.vu?'<div style="padding:6px 13px 0;font-size:9.5px;color:rgba(50,25,5,0.55);font-family:\'Share Tech Mono\',monospace;letter-spacing:0.5px">Vu : '+n.vu.slice(0,45)+(n.vu.length>45?'…':'')+'</div>':'')+
+      (n.desc?'<div class="bb-desc-snip">'+_e(String(n.desc).slice(0,90))+(String(n.desc).length>90?'…':'')+'</div>':'')+
+      (n.vu?'<div style="padding:6px 13px 0;font-size:9.5px;color:rgba(50,25,5,0.55);font-family:\'Share Tech Mono\',monospace;letter-spacing:0.5px">Vu : '+_e(String(n.vu).slice(0,45))+(String(n.vu).length>45?'…':'')+'</div>':'')+
       '<div class="bb-card-footer">'+
         '<div>'+
-          (n.recompense?'<div class="bb-reward-label">Récompense</div><div class="bb-reward">'+n.recompense.toLocaleString()+' Ryos</div>':'<span style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:rgba(80,50,10,0.4)">Non renseignée</span>')+
+          (n.recompense?'<div class="bb-reward-label">Récompense</div><div class="bb-reward">'+(parseInt(n.recompense,10)||0).toLocaleString()+' Ryos</div>':'<span style="font-family:\'Share Tech Mono\',monospace;font-size:9px;color:rgba(80,50,10,0.4)">Non renseignée</span>')+
         '</div>'+
         '<span class="bb-fiche-id">#'+String(n.id).padStart(3,'0')+'</span>'+
       '</div>'+
@@ -33574,25 +33583,32 @@ function bbOpenDossier(id) {
   var n = list.find(function(x){return x.id===id});
   if (!n) return;
   var isMod = bbCanEdit();
-  var portrait = n.portrait
-    ? '<img src="'+n.portrait+'" alt="portrait">'
-    : '<div style="font-family:\'Cinzel\',serif;font-size:22px;color:rgba(100,70,20,0.4);font-style:italic;text-align:center">'+bbInitials(n.nom,n.prenom)+'<br><span style="font-size:9px;display:block;margin-top:4px">PORTRAIT</span></div>';
+  // Helper local d'échappement (alias de la fonction globale)
+  var _e = (typeof esc === 'function') ? esc : function(s){ if(s==null) return ''; return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); };
+  // Le portrait est une dataURL : on vérifie qu'elle commence bien par "data:image/" (anti-tampering minimal)
+  var safePortrait = (n.portrait && typeof n.portrait==='string' && n.portrait.indexOf('data:image/')===0) ? n.portrait : '';
+  var portrait = safePortrait
+    ? '<img src="'+safePortrait+'" alt="portrait">'
+    : '<div style="font-family:\'Cinzel\',serif;font-size:22px;color:rgba(100,70,20,0.4);font-style:italic;text-align:center">'+_e(bbInitials(n.nom,n.prenom))+'<br><span style="font-size:9px;display:block;margin-top:4px">PORTRAIT</span></div>';
   var _bbTitle = document.getElementById('bb-modal-title');
   var _bbBody = document.getElementById('bb-modal-body');
   if(!_bbTitle || !_bbBody) return;
-  _bbTitle.textContent = '~ DOSSIER — '+n.nom.toUpperCase()+' '+n.prenom+' ~';
+  // textContent est intrinsèquement safe (pas d'interprétation HTML)
+  _bbTitle.textContent = '~ DOSSIER — '+(n.nom||'').toUpperCase()+' '+(n.prenom||'')+' ~';
+  // Pour la desc, on remplace les retours à la ligne par <br> APRÈS l'échappement
+  var descHtml = n.desc ? _e(String(n.desc)).replace(/\n/g, '<br>') : '';
   _bbBody.innerHTML =
     '<div class="bb-book-open">'+
     '<div class="bb-dossier-left">'+
       '<div class="bb-dossier-portrait">'+portrait+'</div>'+
-      '<div class="bb-dossier-nom">'+n.nom+'</div>'+
-      '<div class="bb-dossier-prenom">'+n.prenom+'</div>'+
-      '<span class="'+bbDangerClass(n.danger)+'">'+bbDangerLabel(n.danger)+'</span>'+
-      '<span class="bb-status-pill s-'+(n.status||'actif')+'">'+bbStatusPillLabel(n.status||'actif')+'</span>'+
+      '<div class="bb-dossier-nom">'+_e(n.nom||'')+'</div>'+
+      '<div class="bb-dossier-prenom">'+_e(n.prenom||'')+'</div>'+
+      '<span class="'+bbDangerClass(n.danger)+'">'+_e(bbDangerLabel(n.danger))+'</span>'+
+      '<span class="bb-status-pill s-'+_e(n.status||'actif')+'">'+_e(bbStatusPillLabel(n.status||'actif'))+'</span>'+
       ((n.status && n.status!=='actif')
-        ? '<div class="bb-dossier-stamp s-'+n.status+'">'+bbStatusLabel(n.status)+'</div>'
+        ? '<div class="bb-dossier-stamp s-'+_e(n.status)+'">'+_e(bbStatusLabel(n.status))+'</div>'
         : '')+
-      ((n.status && n.status!=='actif' && n.statusTs) ? '<div class="bb-status-meta">Mis à jour le '+new Date(n.statusTs).toLocaleDateString('fr-FR')+(n.statusBy?' par '+n.statusBy:'')+'</div>' : '')+
+      ((n.status && n.status!=='actif' && n.statusTs) ? '<div class="bb-status-meta">Mis à jour le '+_e(new Date(n.statusTs).toLocaleDateString('fr-FR'))+(n.statusBy?' par '+_e(n.statusBy):'')+'</div>' : '')+
       '<div style="font-family:\'Share Tech Mono\',monospace;font-size:8px;color:rgba(80,50,10,0.4);letter-spacing:1.5px;margin-top:4px">FICHE #'+String(n.id).padStart(3,'0')+'</div>'+
       (isMod ? '<div class="bb-dossier-actions" style="flex-direction:column;align-items:stretch;gap:6px">'+
           '<div style="display:flex;gap:5px;flex-wrap:wrap;justify-content:center">'+
@@ -33610,18 +33626,18 @@ function bbOpenDossier(id) {
     '<div class="bb-dossier-right">'+
       '<div class="bb-dossier-section-title">Informations générales</div>'+
       '<div class="bb-dossier-grid">'+
-        '<div class="bb-dossier-field"><div class="bb-dossier-field-lbl">Grade</div><div class="bb-dossier-field-val">'+n.grade+'</div></div>'+
-        '<div class="bb-dossier-field"><div class="bb-dossier-field-lbl">Village d\'origine</div><div class="bb-dossier-field-val">'+n.village+'</div></div>'+
-        '<div class="bb-dossier-field"><div class="bb-dossier-field-lbl">Récompense</div><div class="bb-dossier-field-val" style="color:#d4a820;font-weight:700;font-family:\'Cinzel\',serif">'+(n.recompense?n.recompense.toLocaleString()+' Ryos':'Non définie')+'</div></div>'+
-        '<div class="bb-dossier-field"><div class="bb-dossier-field-lbl">Niveau de danger</div><div class="bb-dossier-field-val"><span class="'+bbDangerClass(n.danger)+'">'+bbDangerLabel(n.danger)+'</span></div></div>'+
+        '<div class="bb-dossier-field"><div class="bb-dossier-field-lbl">Grade</div><div class="bb-dossier-field-val">'+_e(n.grade||'—')+'</div></div>'+
+        '<div class="bb-dossier-field"><div class="bb-dossier-field-lbl">Village d\'origine</div><div class="bb-dossier-field-val">'+_e(n.village||'—')+'</div></div>'+
+        '<div class="bb-dossier-field"><div class="bb-dossier-field-lbl">Récompense</div><div class="bb-dossier-field-val" style="color:#d4a820;font-weight:700;font-family:\'Cinzel\',serif">'+(n.recompense?(parseInt(n.recompense,10)||0).toLocaleString()+' Ryos':'Non définie')+'</div></div>'+
+        '<div class="bb-dossier-field"><div class="bb-dossier-field-lbl">Niveau de danger</div><div class="bb-dossier-field-val"><span class="'+bbDangerClass(n.danger)+'">'+_e(bbDangerLabel(n.danger))+'</span></div></div>'+
       '</div>'+
       (n.vu?
         '<div class="bb-dossier-section-title" style="margin-top:6px">Dernière localisation connue</div>'+
-        '<div class="bb-dossier-vu-box"><div class="bb-dossier-field-val" style="font-size:12px;line-height:1.6">'+n.vu+'</div></div>'
+        '<div class="bb-dossier-vu-box"><div class="bb-dossier-field-val" style="font-size:12px;line-height:1.6">'+_e(n.vu)+'</div></div>'
       :'')+
       (n.desc?
         '<div class="bb-dossier-section-title" style="margin-top:6px">Rapport de signalement</div>'+
-        '<div class="bb-dossier-desc-box">'+n.desc+'</div>'
+        '<div class="bb-dossier-desc-box">'+descHtml+'</div>'
       :'')+
     '</div>'+
     '</div>';
@@ -33634,6 +33650,8 @@ function bbHandleImageUpload(event) {
   // Vérification basique de type
   if (!file.type || file.type.indexOf('image/') !== 0) {
     if(typeof showToast==='function') showToast('Fichier non reconnu comme image', 'error');
+    // Reset l'input pour permettre une nouvelle sélection (sinon le 'change' ne se redéclenche pas)
+    try{ event.target.value = ''; }catch(e){}
     return;
   }
   var lbl = document.getElementById('bb-upload-label');
@@ -34205,6 +34223,12 @@ function deleteLaissezPasse(id){
 }
 
 function bbToggleAddPanel() {
+  // Si on est en mode édition (ou panel fermé), on bascule vers "nouveau".
+  // Si on est déjà dans un nouveau formulaire ouvert, on referme.
+  var p = document.getElementById('bb-form-wrap');
+  var wasOpen = p && p.style.display !== 'none';
+  var wasEditing = !!bbEditingId;
+
   bbEditingId = null;
   _bbPortraitData = '';
   var _fTitle = document.getElementById('bb-form-title');
@@ -34220,8 +34244,16 @@ function bbToggleAddPanel() {
   var lbl = document.getElementById('bb-upload-label');
   if(prev){prev.src='';prev.style.display='none';}
   if(lbl){lbl.textContent='📷 Cliquer pour choisir une image';}
-  var p = document.getElementById('bb-form-wrap');
-  p.style.display = p.style.display==='none' ? 'block' : 'none';
+  // Reset également l'input file pour permettre un nouveau choix
+  var fileInput = document.getElementById('bb-portrait-file');
+  if(fileInput) fileInput.value = '';
+  // Logique d'affichage : si on était en édition ET panel ouvert, on bascule en mode "nouveau" (panel reste ouvert)
+  // Sinon : toggle classique (open/close).
+  if(wasOpen && wasEditing){
+    p.style.display = 'block'; // on reste ouvert mais en mode "nouveau"
+  } else {
+    p.style.display = wasOpen ? 'none' : 'block';
+  }
   if(p.style.display==='block') p.scrollIntoView({behavior:'smooth'});
 }
 
@@ -34314,6 +34346,9 @@ function bbCancelForm() {
   bbEditingId = null;
   _bbPortraitData = '';
   document.getElementById('bb-form-wrap').style.display='none';
+  // Reset l'input file pour permettre un nouvel upload propre la prochaine fois
+  var fileInput = document.getElementById('bb-portrait-file');
+  if(fileInput) fileInput.value = '';
 }
 
 /* ═══════════════════════════════════════════════════════════════════════
