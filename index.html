@@ -26657,12 +26657,7 @@ function exportAdminData(){
 }
 
 function openEditUser(id){
-  populateGradeSelects();
   const u=DB.users.find(x=>String(x.id)===String(id));if(!u)return;
-  // Adapter les grades selon la section du compte édité (Tribunal/Cabinet/Médical/etc.)
-  if(typeof populateGradeSelectForSection === 'function'){
-    populateGradeSelectForSection(u.section || 'police');
-  }
   // Protect admin accounts — only an admin can edit another admin
   if(u.role==="admin"&&!isAdmin()){
     showToast("Seul un Administrateur peut modifier un compte Admin.","error");return;
@@ -26672,19 +26667,48 @@ function openEditUser(id){
   el("eu-id").value=u.id;
   el("eu-nom").value=u.nom;
   el("eu-pass").value="";
-  // Set section AVANT le grade pour que les options soient bien chargées
+  // ─── 1. Section AVANT tout (pilote les listes de grades et rôles) ───
   var euSec = el("eu-section");
   if(euSec) euSec.value = u.section || 'police';
-  // Re-populate grade select pour la bonne section (au cas où)
+  // ─── 2. Repeupler le select GRADE selon la section du user édité ───
   if(typeof populateGradeSelectForSection === 'function'){
     populateGradeSelectForSection(u.section || 'police');
   }
-  el("eu-grade").value=u.grade;
-  // Repeupler eu-role avec les labels adaptés à la section (ex: Médical → "Médecin" au lieu de "Officier")
+  // Si le grade actuel n'existe pas dans la liste des options (cas legacy : grade
+  // supprimé de la section, ou grade d'une autre section pour un compte migré),
+  // on l'ajoute manuellement à la fin pour que .value = u.grade fonctionne.
+  // Sinon le select reste silencieusement sur le premier élément (souvent "Gérant"),
+  // ce qui a fait croire à tort que tous les comptes étaient Gérants.
+  var gradeSel = el("eu-grade");
+  if(gradeSel && u.grade){
+    var hasOption = Array.from(gradeSel.options).some(function(o){ return o.value === u.grade || o.textContent === u.grade; });
+    if(!hasOption){
+      var opt = document.createElement('option');
+      opt.value = u.grade;
+      opt.textContent = '⚠️ ' + u.grade + ' (legacy)';
+      gradeSel.appendChild(opt);
+    }
+    gradeSel.value = u.grade;
+  }
+  // ─── 3. Repeupler le select RÔLE avec les libellés adaptés à la section ───
+  // Important : ce repeupler DOIT être fait à chaque ouverture, pour gérer le cas
+  // où on rouvre la modale après avoir édité un user d'une autre section.
   if(typeof populateRoleSelectForSection === 'function'){
     populateRoleSelectForSection('eu-role', u.section || 'police');
   }
-  el("eu-role").value=u.role;
+  // Si le rôle actuel a été exclu de la section (ex: 'membre' n'existe plus en
+  // section Médical), on l'ajoute manuellement pour ne pas réinitialiser à 'visiteur'.
+  var roleSel = el("eu-role");
+  if(roleSel && u.role){
+    var hasRoleOption = Array.from(roleSel.options).some(function(o){ return o.value === u.role; });
+    if(!hasRoleOption){
+      var rOpt = document.createElement('option');
+      rOpt.value = u.role;
+      rOpt.textContent = '⚠️ ' + (u.role.charAt(0).toUpperCase()+u.role.slice(1)) + ' (legacy)';
+      roleSel.appendChild(rOpt);
+    }
+    roleSel.value = u.role;
+  }
   // Hide admin option for non-admins
   const adminOpt=el("eu-role-admin-opt");
   if(adminOpt)adminOpt.style.display=isAdmin()?"":"none";
