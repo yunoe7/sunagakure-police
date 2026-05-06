@@ -1509,7 +1509,7 @@ body.dark #btn-darkmode:hover {
 .msg-bubble.mine{align-self:flex-end;background:linear-gradient(135deg,var(--accent),#8a2c08);color:#fff;border-bottom-right-radius:4px}
 .msg-bubble.theirs{align-self:flex-start;background:rgba(25,20,12,0.95);border:1px solid rgba(201,162,39,0.15);color:var(--text);border-bottom-left-radius:4px}
 .msg-meta{font-size:9.5px;opacity:0.6;margin-top:4px;font-family:'Share Tech Mono',monospace}
-.msg-input-row{display:flex;gap:8px;padding:12px 16px;border-top:1px solid rgba(180,140,20,0.12);background:rgba(255,255,255,0.6);backdrop-filter:blur(8px);position:sticky;bottom:0}
+.msg-input-row{display:flex;gap:8px;padding:12px 16px;border-top:1px solid rgba(180,140,20,0.12);background:rgba(255,255,255,0.6);backdrop-filter:blur(8px);flex-shrink:0}
 .msg-contact{display:flex;align-items:center;gap:10px;padding:11px 16px;cursor:pointer;border-bottom:1px solid rgba(180,140,20,0.08);transition:background 0.15s}
 .msg-contact:hover{background:rgba(180,140,20,0.05)}
 .msg-contact.active{background:rgba(192,65,14,0.08);border-left:3px solid var(--accent)}
@@ -8767,7 +8767,7 @@ document.addEventListener('error', function(e){
         <button class="dc-fbtn s-incarcere" data-filter="statut" data-val="Incarcéré"      onclick="dcSetFilter('statut','Incarcéré',this)">Incarcéré</button>
         <button class="dc-fbtn s-libere"    data-filter="statut" data-val="Libéré"         onclick="dcSetFilter('statut','Libéré',this)">Libéré</button>
         <button class="dc-fbtn s-surveille" data-filter="statut" data-val="Surveillé"      onclick="dcSetFilter('statut','Surveillé',this)">Surveillé</button>
-        <button class="dc-fbtn dc-toggle-defunt" id="dc-toggle-defunt" onclick="dcToggleDefunt(this)" title="Cacher / afficher les suspects défunts" style="margin-left:auto">⚱ Défunts visibles</button>
+        <button class="dc-fbtn dc-toggle-defunt" id="dc-toggle-defunt" onclick="dcToggleDefunt(this)" title="Cycle 3 états : Visibles → Masqués → En premier" style="margin-left:auto">⚱ Défunts visibles</button>
       </div>
     </div>
 
@@ -20746,7 +20746,10 @@ function viewDossier(id){
 
 // État des filtres rapides Dossiers
 var _dcFilters = { danger: 'all', statut: 'all' };
-var _dcHideDefunt = false; // Toggle "Masquer défunts"
+// Mode défunts : 'visible' (par défaut, mélangés dans la liste) | 'hidden' (cachés) | 'top' (en premier)
+var _dcDefuntMode = 'visible';
+// Compat : ancien nom utilisé ailleurs dans le code (renderDossiers le lit)
+var _dcHideDefunt = false;
 function dcSetFilter(group, val, btn){
   _dcFilters[group] = val;
   // Toggle visuel : retirer .active de tous les boutons du même groupe
@@ -20754,11 +20757,21 @@ function dcSetFilter(group, val, btn){
   if(btn) btn.classList.add('active');
   renderDossiers();
 }
+// Cycle 3 états : visible → hidden → top → visible …
+// 'visible' : défunts mélangés au reste (comportement par défaut)
+// 'hidden'  : défunts masqués
+// 'top'     : défunts en haut de la liste, peu importe le tri actif
 function dcToggleDefunt(btn){
-  _dcHideDefunt = !_dcHideDefunt;
+  if(_dcDefuntMode === 'visible')      _dcDefuntMode = 'hidden';
+  else if(_dcDefuntMode === 'hidden')  _dcDefuntMode = 'top';
+  else                                 _dcDefuntMode = 'visible';
+  // Sync vers l'ancienne variable pour compat avec renderDossiers
+  _dcHideDefunt = (_dcDefuntMode === 'hidden');
   if(btn){
-    btn.classList.toggle('active', _dcHideDefunt);
-    btn.textContent = _dcHideDefunt ? '⚱ Défunts masqués' : '⚱ Défunts visibles';
+    btn.classList.toggle('active', _dcDefuntMode !== 'visible');
+    btn.textContent = _dcDefuntMode === 'hidden' ? '⚱ Défunts masqués'
+                    : _dcDefuntMode === 'top'    ? '⚱ Défunts en premier'
+                    : '⚱ Défunts visibles';
   }
   renderDossiers();
 }
@@ -20792,7 +20805,7 @@ function renderDossiers(){
   });
   if(_dcFilters.danger !== 'all') list = list.filter(function(d){return d.danger === _dcFilters.danger});
   if(_dcFilters.statut !== 'all') list = list.filter(function(d){return d.statut === _dcFilters.statut});
-  if(_dcHideDefunt) list = list.filter(function(d){return !d.defunt});
+  if(_dcDefuntMode === 'hidden') list = list.filter(function(d){return !d.defunt});
 
   // ─── TRI ───
   // Priorité de tri :
@@ -20823,6 +20836,16 @@ function renderDossiers(){
       }
       return 0;
     });
+  }
+
+  // Mode "Défunts en premier" via le bouton du toggle : promeut les défunts en tête
+  // de manière stable, sans changer l'ordre interne (tri principal préservé).
+  // Note : cette promotion est en plus de l'option "defunt" du dropdown dc-sort,
+  // qui fait un tri complet ; ici c'est juste un re-arrangement.
+  if(_dcDefuntMode === 'top'){
+    var defunts = list.filter(function(d){return d.defunt;});
+    var vivants = list.filter(function(d){return !d.defunt;});
+    list = defunts.concat(vivants);
   }
 
   // ─── RENDU TABLEAU ───
@@ -27927,8 +27950,11 @@ function openMsgContact(userId){
   if(page) page.classList.add('in-chat');
   _msgUpdateConvHeader();
   // Show input
+  // BUG-FIX : 'flex' (et non 'block') pour rester cohérent avec le CSS .msg-input-row
+  // qui est défini en flex (display:flex), et avec l'autre endroit qui restaure
+  // l'input row au retour sur la page (showPage 'messagerie' utilise 'flex' aussi).
   var inputRow = document.getElementById('msg-input-row');
-  if(inputRow) inputRow.style.display='block';
+  if(inputRow) inputRow.style.display='flex';
   // Mark all as read
   var key = _msgKey(currentUser.id, u.id);
   if(DB.messages&&DB.messages[key]){
@@ -31778,10 +31804,10 @@ function renderHospPatients(){
       +'<td>'+_hospEsc(p.medecin||'—')+'</td>'
       +'<td>'+statutBadge+'</td>'
       +'<td class="mono" style="font-size:11px">'+_hospFmtDate(p.dateAdmission)+'</td>'
-      +'<td>'+actions+'</td>'
+      +'<td style="white-space:nowrap">'+actions+'</td>'
       +'</tr>';
   }).join('');
-  el.innerHTML = '<table class="data-table"><thead><tr><th>Nom</th><th>Âge</th><th>Pathologie</th><th>Chambre</th><th>Médecin</th><th>Statut</th><th>Admission</th><th style="width:110px">Actions</th></tr></thead><tbody>'+rows+'</tbody></table>';
+  el.innerHTML = '<table class="data-table"><thead><tr><th>Nom</th><th>Âge</th><th>Pathologie</th><th>Chambre</th><th>Médecin</th><th>Statut</th><th>Admission</th><th style="width:140px;white-space:nowrap">Actions</th></tr></thead><tbody>'+rows+'</tbody></table>';
 }
 
 function hospOpenPatient(editId){
@@ -31906,10 +31932,10 @@ function renderHospConsultations(){
       +'<td>'+_hospEsc(c.medecin||'—')+'</td>'
       +'<td>'+_hospEsc(c.motif||'—')+compteRendu+'</td>'
       +'<td>'+statutBadge+'</td>'
-      +'<td>'+actions+'</td>'
+      +'<td style="white-space:nowrap">'+actions+'</td>'
       +'</tr>';
   }).join('');
-  el.innerHTML = '<table class="data-table"><thead><tr><th>Date / Heure</th><th>Patient</th><th>Médecin</th><th>Motif</th><th>Statut</th><th style="width:110px">Actions</th></tr></thead><tbody>'+rows+'</tbody></table>';
+  el.innerHTML = '<table class="data-table"><thead><tr><th>Date / Heure</th><th>Patient</th><th>Médecin</th><th>Motif</th><th>Statut</th><th style="width:140px;white-space:nowrap">Actions</th></tr></thead><tbody>'+rows+'</tbody></table>';
 }
 
 function hospOpenConsultation(editId){
@@ -32030,10 +32056,10 @@ function renderHospPharmacie(){
       +'<td class="mono">'+(p.seuil||0)+'</td>'
       +'<td class="mono">'+(p.prix||0)+' ryōs</td>'
       +'<td class="mono" style="font-size:11px">'+_hospFmtDate(p.modified||p.created)+'</td>'
-      +'<td>'+actions+'</td>'
+      +'<td style="white-space:nowrap">'+actions+'</td>'
       +'</tr>';
   }).join('');
-  el.innerHTML = '<table class="data-table"><thead><tr><th>Produit</th><th>Catégorie</th><th>Stock</th><th>Seuil alerte</th><th>Prix unité</th><th>Dernière MAJ</th><th style="width:110px">Actions</th></tr></thead><tbody>'+rows+'</tbody></table>';
+  el.innerHTML = '<table class="data-table"><thead><tr><th>Produit</th><th>Catégorie</th><th>Stock</th><th>Seuil alerte</th><th>Prix unité</th><th>Dernière MAJ</th><th style="width:140px;white-space:nowrap">Actions</th></tr></thead><tbody>'+rows+'</tbody></table>';
 }
 
 function _hospPharmStock(p){
@@ -32153,10 +32179,10 @@ function renderHospPsy(){
       +'<td>'+_hospEsc(c.psychologue||'—')+'</td>'
       +'<td>'+_hospEsc(c.motif||'—')+notes+'</td>'
       +'<td class="mono" style="font-size:11px">'+suiviTxt+'</td>'
-      +'<td>'+actions+'</td>'
+      +'<td style="white-space:nowrap">'+actions+'</td>'
       +'</tr>';
   }).join('');
-  el.innerHTML = '<table class="data-table"><thead><tr><th>Date</th><th>Patient</th><th>Psychologue</th><th>Motif / Notes</th><th>Suivi prévu</th><th style="width:110px">Actions</th></tr></thead><tbody>'+rows+'</tbody></table>';
+  el.innerHTML = '<table class="data-table"><thead><tr><th>Date</th><th>Patient</th><th>Psychologue</th><th>Motif / Notes</th><th>Suivi prévu</th><th style="width:140px;white-space:nowrap">Actions</th></tr></thead><tbody>'+rows+'</tbody></table>';
 }
 
 function hospOpenPsy(editId){
@@ -32282,11 +32308,11 @@ function renderHospDons(){
       +'<td class="mono">'+(d.poches||0)+'</td>'
       +'<td class="mono"><span style="color:'+(dispo>0?'var(--green)':'var(--muted)')+'">'+dispo+'</span></td>'
       +'<td>'+_hospEsc(d.medecin||'—')+'</td>'
-      +'<td>'+actions+'</td>'
+      +'<td style="white-space:nowrap">'+actions+'</td>'
       +'</tr>';
   }).join('');
   el.innerHTML = '<div style="padding:12px 14px;background:rgba(220,38,38,0.04);border-bottom:1px solid rgba(220,38,38,0.15)"><div style="font-size:9px;letter-spacing:2px;color:var(--gold2);font-family:\'Share Tech Mono\',monospace;text-transform:uppercase;margin-bottom:6px">Stock disponible par groupe</div>'+(groupesHtml||'<span style="color:var(--muted);font-size:11px">Aucun stock</span>')+'</div>'
-    +'<table class="data-table"><thead><tr><th>Date</th><th>Donneur</th><th>Groupe</th><th>Récolté</th><th>Disponible</th><th>Médecin</th><th style="width:110px">Actions</th></tr></thead><tbody>'+rows+'</tbody></table>';
+    +'<table class="data-table"><thead><tr><th>Date</th><th>Donneur</th><th>Groupe</th><th>Récolté</th><th>Disponible</th><th>Médecin</th><th style="width:140px;white-space:nowrap">Actions</th></tr></thead><tbody>'+rows+'</tbody></table>';
 }
 
 function hospOpenDon(editId){
@@ -32401,10 +32427,10 @@ function renderHospSci(){
       +'<td>'+_hospEsc(r.type||'—')+'</td>'
       +'<td>'+_hospEsc(r.echantillons||'—')+'</td>'
       +'<td>'+statutBadge+'</td>'
-      +'<td>'+actions+'</td>'
+      +'<td style="white-space:nowrap">'+actions+'</td>'
       +'</tr>';
   }).join('');
-  el.innerHTML = '<table class="data-table"><thead><tr><th>Date</th><th>Titre / Résultats</th><th>Scientifique</th><th>Type d\'étude</th><th>Échantillons</th><th>Statut</th><th style="width:110px">Actions</th></tr></thead><tbody>'+rows+'</tbody></table>';
+  el.innerHTML = '<table class="data-table"><thead><tr><th>Date</th><th>Titre / Résultats</th><th>Scientifique</th><th>Type d\'étude</th><th>Échantillons</th><th>Statut</th><th style="width:140px;white-space:nowrap">Actions</th></tr></thead><tbody>'+rows+'</tbody></table>';
 }
 
 function hospOpenSci(editId){
@@ -32527,10 +32553,10 @@ function renderHospMorgue(){
       +'<td>'+_hospEsc(m.cause||'—')+notes+'</td>'
       +'<td>'+_hospEsc(m.legiste||'—')+'</td>'
       +'<td>'+statutBadge+'</td>'
-      +'<td>'+actions+'</td>'
+      +'<td style="white-space:nowrap">'+actions+'</td>'
       +'</tr>';
   }).join('');
-  el.innerHTML = '<table class="data-table"><thead><tr><th>Nom</th><th>Date décès</th><th>Cause / Notes</th><th>Médecin légiste</th><th>Statut</th><th style="width:110px">Actions</th></tr></thead><tbody>'+rows+'</tbody></table>';
+  el.innerHTML = '<table class="data-table"><thead><tr><th>Nom</th><th>Date décès</th><th>Cause / Notes</th><th>Médecin légiste</th><th>Statut</th><th style="width:140px;white-space:nowrap">Actions</th></tr></thead><tbody>'+rows+'</tbody></table>';
 }
 
 function hospOpenMorgue(editId){
@@ -32644,10 +32670,10 @@ function renderHospPaiements(){
       +'<td>'+_hospEsc(p.acte||'—')+'</td>'
       +'<td class="mono" style="font-weight:700;color:var(--gold2)">'+(parseInt(p.montant,10)||0).toLocaleString('fr-FR')+' ryōs</td>'
       +'<td>'+statutBadge+'</td>'
-      +'<td>'+actions+'</td>'
+      +'<td style="white-space:nowrap">'+actions+'</td>'
       +'</tr>';
   }).join('');
-  el.innerHTML = '<table class="data-table"><thead><tr><th>Date</th><th>Patient</th><th>Médecin</th><th>Acte / Soin</th><th>Montant</th><th>Statut</th><th style="width:110px">Actions</th></tr></thead><tbody>'+rows+'</tbody></table>';
+  el.innerHTML = '<table class="data-table"><thead><tr><th>Date</th><th>Patient</th><th>Médecin</th><th>Acte / Soin</th><th>Montant</th><th>Statut</th><th style="width:140px;white-space:nowrap">Actions</th></tr></thead><tbody>'+rows+'</tbody></table>';
 }
 
 function hospOpenPaiement(editId){
