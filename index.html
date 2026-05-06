@@ -7289,6 +7289,112 @@ document.addEventListener('error', function(e){
       <div class="lg-bb-footer-info">Ces individus sont considérés comme dangereux. Ne tentez aucune approche directe — contactez la Police de Sunagakure immédiatement.</div>
     </div>
 
+    <!-- Section Missions disponibles (affichée publiquement) -->
+    <div class="lg-bb-section" style="margin-top:24px">
+      <style>
+      .lg-ms-grid{
+        display:grid;grid-template-columns:repeat(auto-fill, minmax(260px, 1fr));
+        gap:14px;margin-top:18px;
+      }
+      .lg-ms-card{
+        position:relative;
+        background:linear-gradient(180deg,#f5e8c8 0%,#e8d5a8 100%);
+        border:2px solid #8b6914;
+        border-radius:6px;
+        padding:14px 16px;
+        box-shadow:0 4px 16px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.3);
+        font-family:'EB Garamond',Georgia,serif;
+        color:#2a1a0a;
+        overflow:hidden;
+      }
+      .lg-ms-card::before{
+        content:'';position:absolute;top:0;left:0;right:0;height:3px;
+        background:linear-gradient(90deg, transparent, #8b6914, transparent);
+      }
+      .lg-ms-card[data-rang="S"]{
+        border-color:#7c1414;
+        background:linear-gradient(180deg, #f5e8c8 0%, #f0d8c0 100%);
+      }
+      .lg-ms-card[data-rang="A"]{border-color:#5b21b6}
+      .lg-ms-card[data-rang="B"]{border-color:#1e40af}
+      .lg-ms-card[data-rang="C"]{border-color:#15803d}
+      .lg-ms-card[data-rang="D"]{border-color:#525252}
+      .lg-ms-card-head{
+        display:flex;align-items:center;justify-content:space-between;gap:8px;
+        padding-bottom:8px;margin-bottom:8px;
+        border-bottom:1px dashed rgba(80,50,10,0.3);
+      }
+      .lg-ms-card-rang{
+        width:36px;height:36px;border-radius:6px;
+        display:flex;align-items:center;justify-content:center;
+        font-family:'Cinzel',serif;font-size:18px;font-weight:700;
+        flex-shrink:0;border:2px solid;
+      }
+      .lg-ms-card-rang[data-r="D"]{background:rgba(82,82,82,0.15);border-color:#525252;color:#3a3a3a}
+      .lg-ms-card-rang[data-r="C"]{background:rgba(21,128,61,0.15);border-color:#15803d;color:#155224}
+      .lg-ms-card-rang[data-r="B"]{background:rgba(30,64,175,0.15);border-color:#1e40af;color:#1e3a8a}
+      .lg-ms-card-rang[data-r="A"]{background:rgba(91,33,182,0.15);border-color:#5b21b6;color:#4c1d95}
+      .lg-ms-card-rang[data-r="S"]{
+        background:rgba(124,20,20,0.15);border-color:#7c1414;color:#7c1414;
+        box-shadow:0 0 8px rgba(124,20,20,0.4);
+      }
+      .lg-ms-card-num{
+        font-family:'Share Tech Mono',monospace;
+        font-size:9.5px;letter-spacing:1.5px;
+        color:rgba(80,50,10,0.65);
+      }
+      .lg-ms-card-title{
+        font-family:'Cinzel',serif;font-size:14px;font-weight:700;
+        letter-spacing:0.8px;color:#3a1a0a;
+        text-transform:uppercase;line-height:1.25;
+        margin-bottom:6px;
+        display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;
+        overflow:hidden;
+      }
+      .lg-ms-card-meta{
+        display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px;
+      }
+      .lg-ms-card-pill{
+        font-family:'Share Tech Mono',monospace;
+        font-size:9px;letter-spacing:0.8px;
+        padding:2px 8px;border-radius:3px;
+        background:rgba(80,50,10,0.10);
+        color:#3a1f06;
+        border:1px solid rgba(80,50,10,0.25);
+      }
+      .lg-ms-card-pill.reward{
+        background:rgba(180,140,20,0.18);
+        border-color:#8b6914;
+        color:#5c4308;
+        font-weight:700;
+      }
+      .lg-ms-card-desc{
+        font-style:italic;font-size:11.5px;line-height:1.45;
+        color:rgba(50,30,10,0.75);
+        display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;
+        overflow:hidden;
+      }
+      .lg-ms-card-foot{
+        margin-top:8px;padding-top:6px;
+        border-top:1px dashed rgba(80,50,10,0.25);
+        font-family:'Share Tech Mono',monospace;
+        font-size:9px;letter-spacing:1px;
+        color:rgba(80,50,10,0.55);text-transform:uppercase;
+      }
+      .lg-ms-empty{
+        text-align:center;padding:40px 20px;
+        color:rgba(80,50,10,0.5);font-style:italic;
+        font-family:'Share Tech Mono',monospace;font-size:11px;
+        letter-spacing:1.5px;text-transform:uppercase;
+      }
+      </style>
+      <div class="lg-bb-overline">CONTRATS OUVERTS — BUREAU DES MISSIONS</div>
+      <h2 class="lg-bb-title"><span>Missions disponibles</span></h2>
+      <p class="lg-bb-desc">Le Bureau des missions de Sunagakure publie ici les contrats officiels ouverts à l'ensemble des ninjas du village. Chaque mission affiche son rang de difficulté, sa récompense en Ryōs, et son objectif. Les ninjas qualifiés sont invités à se connecter pour postuler et accepter les contrats correspondant à leur niveau.</p>
+      <div class="lg-ms-grid" id="lg-ms-grid"></div>
+      <div class="lg-bb-footer-info">Connectez-vous pour postuler à une mission. Les missions de rang A et S sont réservées aux ninjas confirmés.</div>
+    </div>
+
     <!-- CTA connexion -->
     <div class="lg-lore-cta">
       <div class="lg-lore-cta-text">Connectez-vous pour accéder à l'intranet complet</div>
@@ -7859,6 +7965,15 @@ document.addEventListener('error', function(e){
         <div class="card-header"><span>📋</span><h3>Plaintes récentes</h3></div>
         <div class="card-body" id="dash-plaintes"></div>
       </div>
+    </div>
+
+    <!-- MISSIONS DISPONIBLES (widget compact) -->
+    <div class="card mt-6" id="dash-missions-card">
+      <div class="card-header">
+        <span>🎯</span><h3>Missions ouvertes</h3>
+        <a href="#" onclick="event.preventDefault();showPage('mission-disponibles')" style="margin-left:auto;font-size:11px;color:var(--gold);text-decoration:none;font-family:'Share Tech Mono',monospace;letter-spacing:1px">Voir toutes →</a>
+      </div>
+      <div class="card-body" id="dash-missions"></div>
     </div>
 
     <!-- JOURNAL D'ACTIVITÉ (admin uniquement) -->
@@ -12097,48 +12212,503 @@ document.addEventListener('error', function(e){
   </div>
 
   <!-- MISSION — Disponibles -->
+  <!-- ═══════════════════════════════════════════════════════════════════════
+       MISSIONS — système complet
+       Stockage : DB.missions = [{ id, titre, desc, rang, type, recompense,
+                                    statut, lieu, deadline, creePar, creeLe,
+                                    assignes:[], terminePar, termineLe, ... }]
+       Permissions : tous les membres mission peuvent accepter ;
+                     créateur/admin peuvent éditer/supprimer/valider
+       ═══════════════════════════════════════════════════════════════════════ -->
   <div class="page-content" id="page-mission-disponibles" data-sec-page="mission">
-    <div class="pgv2-hero" data-tone="profil">
-      <div class="pgv2-hero-inner">
-        <div class="pgv2-hero-icon">📋</div>
-        <div class="pgv2-hero-text">
-          <div class="pgv2-hero-tag">Bureau des missions</div>
-          <div class="pgv2-hero-title">Missions disponibles</div>
-          <div class="pgv2-hero-sub">Contrats et missions ouvertes aux ninjas</div>
+    <style>
+    /* ═══ Hero & layouts communs ═══ */
+    [id^="page-mission-"] .ms-hero{
+      background:linear-gradient(135deg, #15110b 0%, #1f1610 100%);
+      border:1px solid rgba(180,140,20,0.30);
+      border-radius:14px;
+      padding:22px 26px;margin-bottom:14px;
+      position:relative;overflow:hidden;
+    }
+    [id^="page-mission-"] .ms-hero::before{
+      content:'';position:absolute;top:0;left:0;right:0;height:1px;
+      background:linear-gradient(90deg, transparent, rgba(212,180,74,0.55), transparent);
+    }
+    [id^="page-mission-"] .ms-hero-inner{display:flex;align-items:center;gap:18px;flex-wrap:wrap}
+    [id^="page-mission-"] .ms-hero-icon{
+      width:56px;height:56px;border-radius:12px;
+      background:linear-gradient(135deg, rgba(212,180,74,0.20), rgba(192,65,14,0.15));
+      border:1px solid rgba(212,180,74,0.35);
+      display:flex;align-items:center;justify-content:center;
+      font-size:28px;flex-shrink:0;
+    }
+    [id^="page-mission-"] .ms-hero-text{flex:1;min-width:200px}
+    [id^="page-mission-"] .ms-hero-tag{
+      font-family:'Share Tech Mono',monospace;
+      font-size:10px;letter-spacing:2.5px;
+      color:rgba(212,180,74,0.65);text-transform:uppercase;
+    }
+    [id^="page-mission-"] .ms-hero-title{
+      font-family:'Cinzel',serif;font-size:26px;font-weight:700;
+      letter-spacing:2px;color:#f0e8d0;margin:2px 0 4px;
+    }
+    [id^="page-mission-"] .ms-hero-sub{font-size:12.5px;color:var(--muted)}
+    [id^="page-mission-"] .ms-hero-stats{
+      display:flex;gap:14px;flex-wrap:wrap;margin-left:auto;
+      font-family:'Share Tech Mono',monospace;
+    }
+    [id^="page-mission-"] .ms-hero-stat{
+      text-align:center;padding:8px 14px;
+      background:rgba(0,0,0,0.3);
+      border:1px solid rgba(212,180,74,0.25);
+      border-radius:8px;min-width:70px;
+    }
+    [id^="page-mission-"] .ms-hero-stat-val{
+      font-size:18px;font-weight:700;color:#f0d060;
+      font-family:'Cinzel',serif;
+    }
+    [id^="page-mission-"] .ms-hero-stat-lbl{
+      font-size:8.5px;letter-spacing:1.5px;
+      color:rgba(212,180,74,0.6);text-transform:uppercase;margin-top:2px;
+    }
+
+    /* ═══ Bandeau actions ═══ */
+    [id^="page-mission-"] .ms-actions-bar{
+      display:flex;flex-wrap:wrap;gap:10px;align-items:center;
+      padding:12px 16px;
+      background:linear-gradient(135deg, rgba(26,20,16,0.92) 0%, rgba(34,28,19,0.88) 100%);
+      border:1px solid rgba(180,140,20,0.22);
+      border-radius:10px;margin-bottom:14px;
+    }
+    [id^="page-mission-"] .ms-actions-bar input,
+    [id^="page-mission-"] .ms-actions-bar select{
+      background:rgba(20,16,9,0.6);
+      border:1px solid rgba(180,140,20,0.25);
+      color:var(--text);
+      padding:7px 11px;border-radius:6px;
+      font-family:'Share Tech Mono',monospace;font-size:11.5px;
+    }
+    [id^="page-mission-"] .ms-btn-create{
+      background:linear-gradient(135deg, #16a34a, #15803d);
+      color:#fff;border:0;padding:8px 16px;border-radius:6px;
+      font-family:'Cinzel',serif;font-weight:600;letter-spacing:1px;
+      cursor:pointer;text-transform:uppercase;font-size:11.5px;
+      transition:transform 0.15s, box-shadow 0.15s;
+    }
+    [id^="page-mission-"] .ms-btn-create:hover{
+      transform:translateY(-1px);box-shadow:0 4px 14px rgba(22,163,74,0.35);
+    }
+
+    /* ═══ Sous-onglets pour Mes missions ═══ */
+    [id^="page-mission-"] .ms-subtabs{
+      display:flex;gap:0;margin-bottom:14px;
+      border-bottom:1px solid rgba(180,140,20,0.18);
+      flex-wrap:wrap;
+    }
+    [id^="page-mission-"] .ms-subtab{
+      padding:9px 18px;
+      font-family:'Cinzel',serif;font-size:12px;letter-spacing:1.3px;
+      color:rgba(255,255,255,0.4);
+      background:transparent;border:0;cursor:pointer;
+      border-bottom:2px solid transparent;
+      text-transform:uppercase;font-weight:600;
+      transition:all 0.18s ease;
+    }
+    [id^="page-mission-"] .ms-subtab:hover{color:#f0e8d0}
+    [id^="page-mission-"] .ms-subtab.active{
+      color:#f0d060;
+      border-bottom-color:#d4b44a;
+      text-shadow:0 0 8px rgba(212,180,74,0.3);
+    }
+    [id^="page-mission-"] .ms-subtab .badge-count{
+      display:inline-block;margin-left:6px;
+      padding:1px 7px;border-radius:10px;
+      background:rgba(212,180,74,0.18);
+      font-family:'Share Tech Mono',monospace;
+      font-size:10px;color:#f0d060;
+      vertical-align:middle;
+    }
+
+    /* ═══ Cartes mission ═══ */
+    .ms-cards{display:flex;flex-direction:column;gap:11px}
+    .ms-cards:empty{display:none}
+    .ms-card{
+      position:relative;display:grid;
+      grid-template-columns:130px 1fr auto;
+      gap:18px;align-items:stretch;
+      padding:16px 20px;
+      background:linear-gradient(135deg, rgba(26,20,16,0.92) 0%, rgba(34,28,19,0.88) 100%);
+      border:1px solid rgba(180,140,20,0.22);
+      border-radius:12px;
+      box-shadow:0 4px 18px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.04);
+      transition:transform 0.18s, border-color 0.18s, box-shadow 0.18s;
+      overflow:hidden;
+    }
+    .ms-card::before{
+      content:'';position:absolute;top:0;left:0;right:0;height:1px;
+      background:linear-gradient(90deg, transparent, rgba(212,180,74,0.55), transparent);
+    }
+    .ms-card:hover{
+      transform:translateY(-2px);
+      border-color:rgba(212,180,74,0.45);
+      box-shadow:0 8px 28px rgba(0,0,0,0.45), 0 0 0 1px rgba(212,180,74,0.15), inset 0 1px 0 rgba(255,255,255,0.06);
+    }
+    /* Variantes par rang */
+    .ms-card[data-rang="D"]{border-color:rgba(107,114,128,0.30)}
+    .ms-card[data-rang="D"]::before{background:linear-gradient(90deg, transparent, rgba(107,114,128,0.5), transparent)}
+    .ms-card[data-rang="C"]{border-color:rgba(34,197,94,0.32)}
+    .ms-card[data-rang="C"]::before{background:linear-gradient(90deg, transparent, rgba(34,197,94,0.6), transparent)}
+    .ms-card[data-rang="B"]{border-color:rgba(59,130,246,0.32)}
+    .ms-card[data-rang="B"]::before{background:linear-gradient(90deg, transparent, rgba(59,130,246,0.6), transparent)}
+    .ms-card[data-rang="A"]{border-color:rgba(168,85,247,0.40)}
+    .ms-card[data-rang="A"]::before{background:linear-gradient(90deg, transparent, rgba(168,85,247,0.7), transparent)}
+    .ms-card[data-rang="S"]{border-color:rgba(239,68,68,0.45)}
+    .ms-card[data-rang="S"]::before{background:linear-gradient(90deg, transparent, rgba(239,68,68,0.8), transparent)}
+    .ms-card[data-statut="terminee"]{opacity:0.78}
+    .ms-card[data-statut="terminee"]:hover{opacity:0.95}
+    .ms-card[data-statut="echouee"],
+    .ms-card[data-statut="annulee"]{opacity:0.6}
+    .ms-card[data-statut="echouee"]:hover,
+    .ms-card[data-statut="annulee"]:hover{opacity:0.85}
+
+    /* Sceau ID */
+    .ms-card-id{
+      display:flex;flex-direction:column;align-items:center;justify-content:center;
+      padding:8px 6px;gap:6px;
+      background:linear-gradient(180deg, rgba(212,180,74,0.10), rgba(212,180,74,0.04));
+      border:1px solid rgba(212,180,74,0.30);
+      border-radius:8px;
+    }
+    .ms-card-id-num{
+      font-family:'Share Tech Mono',monospace;
+      font-size:13px;font-weight:700;letter-spacing:1.2px;
+      color:#f0d060;text-shadow:0 0 8px rgba(212,180,74,0.4);
+      text-align:center;line-height:1.2;
+    }
+    .ms-card-id-rang{
+      width:64px;height:80px;border-radius:6px;
+      border:2px solid;
+      display:flex;flex-direction:column;align-items:center;justify-content:center;
+      flex-shrink:0;
+      filter:drop-shadow(0 1px 4px rgba(0,0,0,0.5));
+      font-family:'Cinzel',serif;font-weight:700;
+    }
+    .ms-card-id-rang[data-r="D"]{
+      border-color:#9ca3af;
+      background:linear-gradient(135deg, rgba(156,163,175,0.18), rgba(75,85,99,0.10));
+      color:#d1d5db;
+    }
+    .ms-card-id-rang[data-r="C"]{
+      border-color:#22c55e;
+      background:linear-gradient(135deg, rgba(34,197,94,0.18), rgba(22,163,74,0.10));
+      color:#86efac;
+    }
+    .ms-card-id-rang[data-r="B"]{
+      border-color:#3b82f6;
+      background:linear-gradient(135deg, rgba(59,130,246,0.20), rgba(37,99,235,0.10));
+      color:#93c5fd;
+    }
+    .ms-card-id-rang[data-r="A"]{
+      border-color:#a855f7;
+      background:linear-gradient(135deg, rgba(168,85,247,0.22), rgba(126,34,206,0.12));
+      color:#c4b5fd;
+    }
+    .ms-card-id-rang[data-r="S"]{
+      border-color:#ef4444;
+      background:linear-gradient(135deg, rgba(239,68,68,0.25), rgba(185,28,28,0.15));
+      color:#fca5a5;
+      animation:ms-rang-s-pulse 2s ease-in-out infinite;
+    }
+    @keyframes ms-rang-s-pulse{
+      0%,100%{box-shadow:0 0 0 0 rgba(239,68,68,0.4)}
+      50%{box-shadow:0 0 0 6px rgba(239,68,68,0)}
+    }
+    .ms-card-id-rang-letter{font-size:34px;line-height:1}
+    .ms-card-id-rang-lbl{
+      font-family:'Share Tech Mono',monospace;
+      font-size:7.5px;letter-spacing:1.5px;
+      opacity:0.7;margin-top:2px;
+    }
+    .ms-card-id-tag{
+      font-family:'Share Tech Mono',monospace;
+      font-size:8px;letter-spacing:1.5px;
+      color:rgba(212,180,74,0.65);
+      text-transform:uppercase;margin-top:2px;
+    }
+
+    /* Corps */
+    .ms-card-body{display:flex;flex-direction:column;gap:7px;min-width:0;padding:2px 0}
+    .ms-card-title{
+      font-family:'Cinzel',serif;
+      font-size:18px;font-weight:700;letter-spacing:1.3px;
+      color:#f0e8d0;margin:0;text-transform:uppercase;
+    }
+    .ms-card-meta{
+      display:flex;flex-wrap:wrap;align-items:center;gap:7px 14px;
+      font-family:'Share Tech Mono',monospace;
+      font-size:10.5px;color:rgba(255,255,255,0.55);letter-spacing:0.5px;
+    }
+    .ms-card-meta .ico{opacity:0.6}
+    .ms-card-badges{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-top:1px}
+    .ms-card-badges .badge{
+      font-size:10.5px;letter-spacing:0.8px;padding:3px 9px;border-radius:4px;
+      font-family:'Barlow Condensed',sans-serif;font-weight:700;text-transform:uppercase;
+    }
+    .ms-card-pill{
+      display:inline-flex;align-items:center;gap:6px;
+      padding:3px 10px;
+      background:rgba(0,0,0,0.35);
+      border:1px solid rgba(180,140,20,0.18);
+      border-radius:5px;
+      font-family:'Share Tech Mono',monospace;
+      font-size:10.5px;color:var(--text2);
+    }
+    .ms-card-pill .lbl{color:rgba(212,180,74,0.7);font-weight:700;letter-spacing:1px}
+    .ms-card-pill.reward{
+      background:rgba(212,180,74,0.10);
+      border-color:rgba(212,180,74,0.40);
+      color:#f0d060;font-weight:700;
+    }
+    .ms-card-pill.deadline-near{
+      background:rgba(239,68,68,0.10);
+      border-color:rgba(239,68,68,0.40);
+      color:#fca5a5;
+    }
+    .ms-card-desc{
+      font-family:'EB Garamond',Georgia,serif;
+      font-style:italic;font-size:12.5px;
+      color:rgba(240,232,208,0.72);line-height:1.5;
+      max-width:100%;overflow:hidden;text-overflow:ellipsis;
+      display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;
+      padding:6px 12px;background:rgba(0,0,0,0.18);
+      border-left:2px solid rgba(212,180,74,0.3);border-radius:0 4px 4px 0;
+    }
+    .ms-card-desc::before{content:'« ';color:rgba(212,180,74,0.5);font-size:14px}
+    .ms-card-desc::after{content:' »';color:rgba(212,180,74,0.5);font-size:14px}
+    .ms-card-footer{
+      display:flex;align-items:center;gap:14px;flex-wrap:wrap;
+      font-family:'Share Tech Mono',monospace;
+      font-size:9.5px;letter-spacing:1px;
+      color:rgba(255,255,255,0.4);text-transform:uppercase;
+      margin-top:3px;padding-top:7px;
+      border-top:1px dashed rgba(180,140,20,0.18);
+    }
+    .ms-card-footer .ms-foot-item{display:inline-flex;align-items:center;gap:5px}
+    .ms-card-assignees{
+      display:inline-flex;align-items:center;gap:4px;
+      flex-wrap:wrap;
+    }
+    .ms-card-assignees .av{
+      width:20px;height:20px;border-radius:50%;
+      background:linear-gradient(135deg,#d4b44a,#7a4e08);
+      color:#1a140e;
+      display:inline-flex;align-items:center;justify-content:center;
+      font-family:'Cinzel',serif;font-weight:700;font-size:9px;
+      border:1px solid rgba(212,180,74,0.4);
+      text-transform:uppercase;
+    }
+
+    /* Actions */
+    .ms-card-actions{display:flex;flex-direction:column;gap:6px;align-items:flex-end;justify-content:center}
+    .ms-card-actions-btns{display:flex;gap:5px;flex-wrap:wrap;justify-content:flex-end}
+    .ms-act-btn{
+      width:32px;height:32px;
+      display:inline-flex;align-items:center;justify-content:center;
+      border-radius:6px;
+      border:1px solid rgba(180,140,20,0.25);
+      background:rgba(20,16,9,0.6);
+      color:#d4b44a;font-size:14px;
+      cursor:pointer;transition:all 0.15s ease;
+    }
+    .ms-act-btn:hover{
+      transform:translateY(-1px);
+      border-color:rgba(212,180,74,0.55);
+      background:rgba(212,180,74,0.10);
+    }
+    .ms-act-btn.is-accept{
+      width:auto;padding:0 11px;
+      color:#86efac;border-color:rgba(34,197,94,0.40);
+      font-family:'Cinzel',serif;font-size:11px;letter-spacing:0.5px;
+      font-weight:600;text-transform:uppercase;
+    }
+    .ms-act-btn.is-accept:hover{
+      background:rgba(34,197,94,0.12);
+      border-color:rgba(34,197,94,0.65);
+    }
+    .ms-act-btn.is-complete{
+      width:auto;padding:0 11px;
+      color:#f0d060;border-color:rgba(212,180,74,0.45);
+      font-family:'Cinzel',serif;font-size:11px;letter-spacing:0.5px;
+      font-weight:600;text-transform:uppercase;
+    }
+    .ms-act-btn.is-complete:hover{
+      background:rgba(212,180,74,0.12);
+      border-color:rgba(212,180,74,0.7);
+    }
+    .ms-act-btn.is-edit{color:#facc15}
+    .ms-act-btn.is-delete{color:#f87171;border-color:rgba(220,38,38,0.30)}
+    .ms-act-btn.is-delete:hover{border-color:rgba(220,38,38,0.6);background:rgba(220,38,38,0.10)}
+
+    /* État vide */
+    .ms-empty{
+      padding:60px 30px;text-align:center;
+      background:rgba(20,16,9,0.5);
+      border:1px dashed rgba(180,140,20,0.25);
+      border-radius:12px;color:var(--muted);
+    }
+    .ms-empty-ico{font-size:42px;opacity:0.35;margin-bottom:10px}
+    .ms-empty-msg{
+      font-family:'Share Tech Mono',monospace;
+      font-size:11.5px;letter-spacing:2px;text-transform:uppercase;
+    }
+
+    /* Récompenses : tableau récap */
+    .ms-rewards-summary{
+      display:grid;
+      grid-template-columns:repeat(auto-fit, minmax(170px, 1fr));
+      gap:11px;margin-bottom:14px;
+    }
+    .ms-rewards-stat{
+      background:linear-gradient(135deg, rgba(26,20,16,0.92) 0%, rgba(34,28,19,0.88) 100%);
+      border:1px solid rgba(180,140,20,0.22);
+      border-radius:10px;
+      padding:13px 16px;position:relative;overflow:hidden;
+    }
+    .ms-rewards-stat::before{
+      content:'';position:absolute;top:0;left:0;right:0;height:1px;
+      background:linear-gradient(90deg, transparent, rgba(212,180,74,0.4), transparent);
+    }
+    .ms-rewards-stat-lbl{
+      font-family:'Share Tech Mono',monospace;
+      font-size:9px;letter-spacing:2px;
+      color:rgba(212,180,74,0.7);
+      text-transform:uppercase;margin-bottom:4px;
+    }
+    .ms-rewards-stat-val{
+      font-family:'Cinzel',serif;font-size:22px;font-weight:700;
+      color:#f0d060;letter-spacing:0.5px;
+    }
+    .ms-rewards-stat-val .unit{
+      font-size:11px;color:var(--muted);
+      letter-spacing:1px;font-weight:400;margin-left:3px;
+    }
+
+    /* Responsive */
+    @media(max-width:900px){
+      .ms-card{grid-template-columns:96px 1fr;grid-template-rows:auto auto;gap:14px}
+      .ms-card-actions{
+        grid-column:1 / -1;flex-direction:row;
+        align-items:center;justify-content:flex-end;
+        padding-top:10px;border-top:1px dashed rgba(180,140,20,0.15);
+      }
+      .ms-card-id{padding:6px 4px;gap:4px}
+      .ms-card-id-rang{width:54px;height:68px}
+      .ms-card-id-rang-letter{font-size:26px}
+      .ms-card-id-num{font-size:11px}
+      [id^="page-mission-"] .ms-hero-stats{margin-left:0;width:100%}
+    }
+    @media(max-width:560px){
+      .ms-card{padding:13px 14px;gap:11px}
+      .ms-card-title{font-size:15px;letter-spacing:0.8px}
+      .ms-card-meta{font-size:9.5px}
+      .ms-card-id-rang{width:48px;height:60px}
+      .ms-card-id-rang-letter{font-size:22px}
+    }
+    </style>
+
+    <!-- Hero -->
+    <div class="ms-hero">
+      <div class="ms-hero-inner">
+        <div class="ms-hero-icon">📋</div>
+        <div class="ms-hero-text">
+          <div class="ms-hero-tag">Bureau des missions</div>
+          <div class="ms-hero-title">Missions disponibles</div>
+          <div class="ms-hero-sub">Contrats et missions ouverts aux ninjas</div>
+        </div>
+        <div class="ms-hero-stats">
+          <div class="ms-hero-stat"><div class="ms-hero-stat-val" id="ms-stat-dispo-total">0</div><div class="ms-hero-stat-lbl">Total</div></div>
+          <div class="ms-hero-stat"><div class="ms-hero-stat-val" id="ms-stat-dispo-rangS">0</div><div class="ms-hero-stat-lbl">Rang S</div></div>
+          <div class="ms-hero-stat"><div class="ms-hero-stat-val" id="ms-stat-dispo-prime">0</div><div class="ms-hero-stat-lbl">Total Ryōs</div></div>
         </div>
       </div>
     </div>
-    <div class="card" data-sec-card="mission:disponibles"></div>
+
+    <!-- Bandeau actions -->
+    <div class="ms-actions-bar">
+      <button class="ms-btn-create" id="ms-btn-create" onclick="msOpenForm()">+ Nouvelle mission</button>
+      <input type="text" id="ms-search-dispo" placeholder="🔍 Rechercher..." style="flex:1;min-width:160px" oninput="msRender()">
+      <select id="ms-filter-rang" onchange="msRender()">
+        <option value="all">Tous rangs</option>
+        <option value="S">Rang S</option>
+        <option value="A">Rang A</option>
+        <option value="B">Rang B</option>
+        <option value="C">Rang C</option>
+        <option value="D">Rang D</option>
+      </select>
+      <select id="ms-filter-type" onchange="msRender()">
+        <option value="all">Tous types</option>
+        <option>Infiltration</option>
+        <option>Escorte</option>
+        <option>Combat</option>
+        <option>Recherche</option>
+        <option>Diplomatie</option>
+        <option>Élimination</option>
+        <option>Protection</option>
+        <option>Reconnaissance</option>
+        <option>Capture</option>
+        <option>Livraison</option>
+        <option>Autre</option>
+      </select>
+    </div>
+
+    <div class="ms-cards" id="ms-list-dispo"></div>
   </div>
 
   <!-- MISSION — Mes missions -->
   <div class="page-content" id="page-mission-actives" data-sec-page="mission">
-    <div class="pgv2-hero" data-tone="profil">
-      <div class="pgv2-hero-inner">
-        <div class="pgv2-hero-icon">🎯</div>
-        <div class="pgv2-hero-text">
-          <div class="pgv2-hero-tag">Bureau des missions</div>
-          <div class="pgv2-hero-title">Mes missions</div>
-          <div class="pgv2-hero-sub">Missions qui vous sont assignées</div>
+    <div class="ms-hero">
+      <div class="ms-hero-inner">
+        <div class="ms-hero-icon">🎯</div>
+        <div class="ms-hero-text">
+          <div class="ms-hero-tag">Bureau des missions</div>
+          <div class="ms-hero-title">Mes missions</div>
+          <div class="ms-hero-sub">Missions en cours, terminées et créées par vous</div>
+        </div>
+        <div class="ms-hero-stats">
+          <div class="ms-hero-stat"><div class="ms-hero-stat-val" id="ms-stat-mes-encours">0</div><div class="ms-hero-stat-lbl">En cours</div></div>
+          <div class="ms-hero-stat"><div class="ms-hero-stat-val" id="ms-stat-mes-finies">0</div><div class="ms-hero-stat-lbl">Terminées</div></div>
+          <div class="ms-hero-stat"><div class="ms-hero-stat-val" id="ms-stat-mes-creees">0</div><div class="ms-hero-stat-lbl">Créées</div></div>
         </div>
       </div>
     </div>
-    <div class="card" data-sec-card="mission:actives"></div>
+    <div class="ms-subtabs">
+      <button class="ms-subtab active" data-tab="encours" onclick="msSwitchSubtab('encours')">⏳ En cours <span class="badge-count" id="ms-cnt-encours">0</span></button>
+      <button class="ms-subtab" data-tab="terminees" onclick="msSwitchSubtab('terminees')">✅ Terminées <span class="badge-count" id="ms-cnt-terminees">0</span></button>
+      <button class="ms-subtab" data-tab="echouees" onclick="msSwitchSubtab('echouees')">❌ Échouées <span class="badge-count" id="ms-cnt-echouees">0</span></button>
+      <button class="ms-subtab" data-tab="creees" onclick="msSwitchSubtab('creees')">✏️ Créées par moi <span class="badge-count" id="ms-cnt-creees">0</span></button>
+    </div>
+    <div class="ms-cards" id="ms-list-mes"></div>
   </div>
 
   <!-- MISSION — Récompenses -->
   <div class="page-content" id="page-mission-recompenses" data-sec-page="mission">
-    <div class="pgv2-hero" data-tone="profil">
-      <div class="pgv2-hero-inner">
-        <div class="pgv2-hero-icon">💰</div>
-        <div class="pgv2-hero-text">
-          <div class="pgv2-hero-tag">Bureau des missions</div>
-          <div class="pgv2-hero-title">Récompenses</div>
-          <div class="pgv2-hero-sub">Primes obtenues et historique de paiement</div>
+    <div class="ms-hero">
+      <div class="ms-hero-inner">
+        <div class="ms-hero-icon">💰</div>
+        <div class="ms-hero-text">
+          <div class="ms-hero-tag">Bureau des missions</div>
+          <div class="ms-hero-title">Récompenses</div>
+          <div class="ms-hero-sub">Primes obtenues et historique des paiements</div>
         </div>
       </div>
     </div>
-    <div class="card" data-sec-card="mission:recompenses"></div>
+    <div class="ms-rewards-summary">
+      <div class="ms-rewards-stat"><div class="ms-rewards-stat-lbl">Total perçu</div><div class="ms-rewards-stat-val" id="ms-rew-total">0<span class="unit">Ryōs</span></div></div>
+      <div class="ms-rewards-stat"><div class="ms-rewards-stat-lbl">Missions terminées</div><div class="ms-rewards-stat-val" id="ms-rew-count">0</div></div>
+      <div class="ms-rewards-stat"><div class="ms-rewards-stat-lbl">Plus haut rang réussi</div><div class="ms-rewards-stat-val" id="ms-rew-toprank">—</div></div>
+      <div class="ms-rewards-stat"><div class="ms-rewards-stat-lbl">Moyenne / mission</div><div class="ms-rewards-stat-val" id="ms-rew-avg">0<span class="unit">Ryōs</span></div></div>
+    </div>
+    <div class="ms-cards" id="ms-list-rewards"></div>
   </div>
 
   <!-- ═══════════════════════════════════════════════════════════════════════
@@ -16224,6 +16794,88 @@ document.addEventListener('error', function(e){
   </div>
 </div>
 
+<!-- Modales Missions -->
+<div class="modal-overlay" role="dialog" aria-modal="true" id="modal-ms-form">
+  <div class="modal" style="max-width:580px">
+    <div class="modal-header">
+      <h3 id="ms-modal-title">📋 Nouvelle mission</h3>
+      <span class="modal-close" onclick="closeModal('modal-ms-form')">✕</span>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="ms-form-edit-id" value="">
+      <div class="form-group">
+        <label class="form-label">Titre de la mission *</label>
+        <input type="text" id="ms-form-titre" class="form-control" placeholder="Ex: Escorte de marchand vers Konoha" maxlength="120">
+      </div>
+      <div class="grid grid-2">
+        <div class="form-group">
+          <label class="form-label">Rang *</label>
+          <select id="ms-form-rang" class="form-control" onchange="msUpdateRewardSuggestion()">
+            <option value="D">D — Faible (entraînement)</option>
+            <option value="C">C — Moyen</option>
+            <option value="B">B — Difficile</option>
+            <option value="A">A — Très difficile</option>
+            <option value="S">S — Extrême</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Type *</label>
+          <select id="ms-form-type" class="form-control">
+            <option>Infiltration</option>
+            <option>Escorte</option>
+            <option>Combat</option>
+            <option>Recherche</option>
+            <option>Diplomatie</option>
+            <option>Élimination</option>
+            <option>Protection</option>
+            <option>Reconnaissance</option>
+            <option>Capture</option>
+            <option>Livraison</option>
+            <option>Autre</option>
+          </select>
+        </div>
+      </div>
+      <div class="grid grid-2">
+        <div class="form-group">
+          <label class="form-label">Récompense (Ryōs) *</label>
+          <input type="number" id="ms-form-recompense" class="form-control" min="0" step="100" placeholder="Ex: 5000">
+          <div style="font-size:10px;color:var(--muted);margin-top:3px;font-family:'Share Tech Mono',monospace" id="ms-form-reward-hint">Suggéré pour ce rang : —</div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Lieu / Zone</label>
+          <input type="text" id="ms-form-lieu" class="form-control" placeholder="Ex: Forêt interdite, secteur nord" maxlength="120">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Deadline (optionnel)</label>
+        <input type="date" id="ms-form-deadline" class="form-control">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Description / Briefing *</label>
+        <textarea id="ms-form-desc" class="form-control" rows="5" placeholder="Décrivez la mission, les objectifs, les risques, les conditions de réussite..."></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('modal-ms-form')">Annuler</button>
+      <button class="btn btn-primary" onclick="msSaveForm()">💾 Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modale détail mission -->
+<div class="modal-overlay" role="dialog" aria-modal="true" id="modal-ms-view">
+  <div class="modal" style="max-width:620px">
+    <div class="modal-header">
+      <h3 id="ms-view-title">Mission</h3>
+      <span class="modal-close" onclick="closeModal('modal-ms-view')">✕</span>
+    </div>
+    <div class="modal-body" id="ms-view-body"></div>
+    <div class="modal-footer" id="ms-view-footer">
+      <button class="btn btn-outline" onclick="closeModal('modal-ms-view')">Fermer</button>
+    </div>
+  </div>
+</div>
+
 <!-- Modale création/édition Laissez-passer -->
 <div class="modal-overlay" role="dialog" aria-modal="true" id="modal-lp">
   <div class="modal">
@@ -18762,7 +19414,7 @@ function initFirebaseSync(){
       if(!wasFirst&&currentUser){
         // Mettre a jour seulement les tableaux avec les nouvelles donnees distantes
         // mais respecter les suppressions locales (ne pas restaurer les elements supprimes)
-        const SYNC_KEYS=['plaintes','dossiers','annonces','candidatures','operations','sanctions','recenses','infractions','timeline','users','laissezPasse'];
+        const SYNC_KEYS=['plaintes','dossiers','annonces','candidatures','operations','sanctions','recenses','infractions','timeline','users','laissezPasse','missions'];
         // bug-fix : tracker quelles collections ont changé pour re-render uniquement
         // les pages concernées (au lieu de re-render aveuglément ou de ne rien faire).
         var _changedKeys = new Set();
@@ -18992,6 +19644,24 @@ function initFirebaseSync(){
             _changedKeys.add('hospital');
           }
         }
+        // Pareil pour DB.diploComptabilite (caisse commune des diplomates)
+        // Sans ça, les transactions ajoutées par un autre diplomate ne se propagent pas.
+        if(data.diploComptabilite && typeof data.diploComptabilite === 'object'){
+          // Normaliser : transactions doit être un array
+          if(!Array.isArray(data.diploComptabilite.transactions)){
+            if(data.diploComptabilite.transactions && typeof data.diploComptabilite.transactions === 'object'){
+              data.diploComptabilite.transactions = Object.values(data.diploComptabilite.transactions).filter(Boolean);
+            } else {
+              data.diploComptabilite.transactions = [];
+            }
+          }
+          if(typeof data.diploComptabilite.taxRate !== 'number') data.diploComptabilite.taxRate = 10;
+          var _dcChanged = JSON.stringify(DB.diploComptabilite||{}) !== JSON.stringify(data.diploComptabilite);
+          if(_dcChanged){
+            DB.diploComptabilite = data.diploComptabilite;
+            _changedKeys.add('diploComptabilite');
+          }
+        }
         try{localStorage.setItem(STORE,JSON.stringify(DB));}catch(e){}
 
         // ═══ BUG-FIX MAJEUR : RE-RENDER DE LA PAGE COURANTE SI SES DONNÉES ONT CHANGÉ ═══
@@ -19053,6 +19723,10 @@ function initFirebaseSync(){
               //  qui a son propre listener dédié). Sans ce retrait, la page se re-rendait à
               //  chaque heartbeat de présence d'autres users → effet "ça recharge tout seul".
               'diplo-laissezpasse': { fn: 'renderLaissezPasse', keys: ['laissezPasse','recenses'] },
+              'diplo-comptabilite': { fn: 'dcRender',           keys: ['diploComptabilite'] },
+              'mission-disponibles': { fn: 'msRender',           keys: ['missions'] },
+              'mission-actives':     { fn: 'msRender',           keys: ['missions'] },
+              'mission-recompenses': { fn: 'msRender',           keys: ['missions'] },
               'juge-plaintes': { fn: 'tribRenderPlaintes', keys: ['plaintes','tribunal'] }
               // 'histoire' et 'messagerie' : pas de sync auto (lecture seule ou listener Firebase dédié)
             };
@@ -20040,6 +20714,74 @@ if(document.readyState==='loading'){document.addEventListener('DOMContentLoaded'
 else{lgRenderBingoBook();}
 // Re-render au cas où Firebase pousse de nouvelles fiches après le chargement
 window.addEventListener('load', function(){ setTimeout(lgRenderBingoBook, 500); setTimeout(lgRenderBingoBook, 2000); });
+
+// ─── Missions disponibles sur l'écran de connexion ────────────────────────
+function lgRenderMissions(){
+  try{
+    var grid = document.getElementById('lg-ms-grid');
+    if(!grid) return;
+    // Source : DB.missions (chargé depuis Firebase) — fallback sur localStorage si DB pas encore prêt
+    var missions = [];
+    try {
+      if(typeof DB !== 'undefined' && Array.isArray(DB.missions)){
+        missions = DB.missions.slice();
+      } else {
+        // Fallback : tenter le cache local (clé réelle utilisée par l'app : suna_v4)
+        try {
+          var raw = localStorage.getItem('suna_v4');
+          if(raw){
+            var d = JSON.parse(raw);
+            if(d && Array.isArray(d.missions)) missions = d.missions.slice();
+          }
+        } catch(e){}
+      }
+    } catch(e){ missions = []; }
+    // Filtrer : uniquement les ouvertes
+    var ouvertes = missions.filter(function(m){ return m && m.statut === 'ouverte'; });
+    // Trier par rang descendant (S en premier) puis date de création
+    var rangOrder = {S:5, A:4, B:3, C:2, D:1};
+    ouvertes.sort(function(a,b){
+      var ra = rangOrder[a.rang] || 0, rb = rangOrder[b.rang] || 0;
+      if(rb !== ra) return rb - ra;
+      return (b.creeLe||0) - (a.creeLe||0);
+    });
+    // Limiter à 6 missions max sur l'écran public
+    var displayList = ouvertes.slice(0, 6);
+    if(!displayList.length){
+      grid.innerHTML = '<div class="lg-ms-empty">— Aucune mission ouverte pour le moment —</div>';
+      return;
+    }
+    // Helper d'échappement (le login peut s'afficher avant que `esc` soit défini)
+    var escLg = function(s){ return String(s==null?'':s).replace(/[&<>"']/g, function(c){return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]}); };
+    var fmtMoney = function(n){ n = parseInt(n,10) || 0; return n.toLocaleString('fr-FR'); };
+    // Numérotation : retrouver l'index stable comme msComputeFileNum
+    var allSorted = missions.slice().sort(function(a,b){ return (a.creeLe||0) - (b.creeLe||0); });
+    var indexById = {};
+    allSorted.forEach(function(m, i){ indexById[m.id] = i + 1; });
+    grid.innerHTML = displayList.map(function(m){
+      var idx = indexById[m.id] || 1;
+      var year = (function(){ try{ return new Date(m.creeLe).getFullYear() || new Date().getFullYear(); } catch(e){ return new Date().getFullYear(); } })();
+      var fileNum = 'MSN-' + year + '-' + String(idx).padStart(3,'0');
+      return '<div class="lg-ms-card" data-rang="'+escLg(m.rang||'D')+'">'
+        + '<div class="lg-ms-card-head">'
+        +   '<div class="lg-ms-card-rang" data-r="'+escLg(m.rang||'D')+'">'+escLg(m.rang||'D')+'</div>'
+        +   '<div class="lg-ms-card-num">'+fileNum+'</div>'
+        + '</div>'
+        + '<div class="lg-ms-card-title">'+escLg(m.titre||'Sans titre')+'</div>'
+        + '<div class="lg-ms-card-meta">'
+        +   '<span class="lg-ms-card-pill">'+escLg(m.type||'—')+'</span>'
+        +   '<span class="lg-ms-card-pill reward">💰 '+fmtMoney(m.recompense)+' Ryōs</span>'
+        + '</div>'
+        + (m.desc ? '<div class="lg-ms-card-desc">'+escLg(m.desc)+'</div>' : '')
+        + '<div class="lg-ms-card-foot">📝 Publiée par '+escLg(m.creePar||'?')+'</div>'
+        + '</div>';
+    }).join('');
+  }catch(e){}
+}
+if(document.readyState==='loading'){document.addEventListener('DOMContentLoaded',lgRenderMissions);}
+else{lgRenderMissions();}
+window.addEventListener('load', function(){ setTimeout(lgRenderMissions, 500); setTimeout(lgRenderMissions, 2000); });
+window.lgRenderMissions = lgRenderMissions;
 
 // ─── LORE PREVIEW EXAMPLE — données éditables ───
 var LP_KEY='suna_lore_preview';
@@ -21366,12 +22108,16 @@ function renderPage(name){
   if(name === 'diplo-comptabilite'){
     if(typeof dcRender === 'function') dcRender();
   }
+  // Missions : page custom (système complet)
+  if(/^mission-/.test(name)){
+    if(typeof msRender === 'function') msRender();
+  }
   // Pages du Tribunal : système dédié riche (affaires, audiences, jugements, procédure, jurisprudence)
   if(typeof tribRenderPage === 'function' && /^juge-/.test(name)){
     tribRenderPage(name);
   }
-  // Pages des AUTRES sections (avocat, mission, médical, diplomatie) : système générique
-  else if(typeof renderSectionPage === 'function' && /^(avocat|mission|medical|diplo)-/.test(name) && name !== 'diplo-laissezpasse' && name !== 'diplo-comptabilite'){
+  // Pages des AUTRES sections (avocat, médical, diplomatie sauf custom) : système générique
+  else if(typeof renderSectionPage === 'function' && /^(avocat|medical|diplo)-/.test(name) && name !== 'diplo-laissezpasse' && name !== 'diplo-comptabilite'){
     renderSectionPage(name);
   }
   if(name==="messagerie"){
@@ -21612,9 +22358,44 @@ function renderDashboard(){
   if(qa) qa.style.display = (currentUser && currentUser.role !== 'visiteur') ? '' : 'none';
   const _da=el("dash-annonces"); if(_da) _da.innerHTML=[...(DB.annonces||[])].reverse().slice(0,3).map(a=>`<div class="plainte-item"><div class="plainte-header"><span class="badge ${catBadge(a.cat)}">${esc(a.cat)}</span><span class="plainte-title">${esc(a.titre)}</span></div><div class="plainte-meta">${esc(a.auteur)} — ${fmtDate(a.date)}</div></div>`).join("")||'<p class="text-muted">Aucune annonce.</p>';
   const _dp=el("dash-plaintes"); if(_dp) _dp.innerHTML=[...(DB.plaintes||[])].reverse().slice(0,4).map(p=>`<div class="plainte-item"><div class="plainte-header"><span class="badge ${statutPlainte(p.statut)}">${fmtStatut(p.statut)}</span><span class="plainte-title">${esc(p.type)}</span></div><div class="plainte-meta">${esc(p.plaignant)} vs ${esc(p.accuse)} — ${fmtDate(p.date)}</div></div>`).join("")||'<p class="text-muted">Aucune plainte.</p>';
+  dashRenderMissions();
   renderTimeline();
   setTimeout(renderDashboardCharts,100);
 }
+
+// ─── Widget Missions du dashboard (top 5 ouvertes, sortie par rang) ───────
+function dashRenderMissions(){
+  var box = document.getElementById('dash-missions');
+  if(!box) return;
+  var all = (DB && Array.isArray(DB.missions)) ? DB.missions : [];
+  var ouvertes = all.filter(function(m){ return m && m.statut === 'ouverte'; });
+  if(!ouvertes.length){
+    box.innerHTML = '<p class="text-muted" style="margin:0;padding:8px 0;font-style:italic">Aucune mission ouverte pour le moment.</p>';
+    return;
+  }
+  var rangOrder = {S:5, A:4, B:3, C:2, D:1};
+  ouvertes.sort(function(a,b){
+    var ra = rangOrder[a.rang]||0, rb = rangOrder[b.rang]||0;
+    if(rb !== ra) return rb - ra;
+    return (b.creeLe||0) - (a.creeLe||0);
+  });
+  var rangColors = { D:'#9ca3af', C:'#22c55e', B:'#3b82f6', A:'#a855f7', S:'#ef4444' };
+  box.innerHTML = ouvertes.slice(0, 5).map(function(m){
+    var color = rangColors[m.rang] || '#9ca3af';
+    return '<div class="plainte-item" style="cursor:pointer" onclick="msViewMission(\''+m.id+'\')">'
+      + '<div class="plainte-header">'
+      +   '<span class="badge" style="background:'+color+'20;color:'+color+';border:1px solid '+color+'66;font-family:Cinzel,serif;font-weight:700">Rang '+esc(m.rang||'?')+'</span>'
+      +   '<span class="plainte-title">'+esc(m.titre||'Sans titre')+'</span>'
+      + '</div>'
+      + '<div class="plainte-meta">'
+      +   esc(m.type||'—')
+      +   ' · 💰 ' + ((parseInt(m.recompense,10)||0).toLocaleString('fr-FR')) + ' Ryōs'
+      +   ' · par ' + esc(m.creePar||'?')
+      + '</div>'
+      + '</div>';
+  }).join('');
+}
+window.dashRenderMissions = dashRenderMissions;
 
 // ─── Bienvenue personnalisée ───
 function _dbRenderWelcome(){
@@ -23662,6 +24443,559 @@ function dcOpenNewDossier(){
   var btnF = document.getElementById('d-btn-forcer'); if(btnF) btnF.style.display = 'none';
   openModal('modal-dossier');
 }
+
+// ═══════════════════════════════════════════════════════════════════════════
+// MISSIONS — Système complet (création, acceptation, validation, récompenses)
+// Stockage : DB.missions = [{
+//   id, titre, desc, rang (D/C/B/A/S), type, recompense,
+//   statut (ouverte | en_cours | terminee | echouee | annulee),
+//   lieu, deadline (YYYY-MM-DD), creePar, creeLe,
+//   assignes:[{nom, acceptedAt}], terminePar, termineLe, validePar, valideLe
+// }]
+// ═══════════════════════════════════════════════════════════════════════════
+
+// État local : sous-onglet courant pour "Mes missions"
+var _msSubtab = 'encours';
+
+// Récompenses suggérées par rang
+var MS_REWARD_BY_RANK = { D:500, C:1500, B:5000, A:15000, S:50000 };
+
+// Helpers
+function msEsc(s){ return (typeof esc === 'function') ? esc(s) : String(s==null?'':s).replace(/[&<>"']/g, function(c){return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]}); }
+function msFmtMoney(n){ n = parseInt(n,10) || 0; return n.toLocaleString('fr-FR'); }
+function msFmtDate(d){
+  if(!d) return '—';
+  try { return new Date(d).toLocaleDateString('fr-FR'); } catch(e){ return '—'; }
+}
+function msInitDB(){
+  if(!Array.isArray(DB.missions)){
+    // Firebase peut renvoyer un objet {0:..,1:..} → convertir au lieu d'écraser
+    if(DB.missions && typeof DB.missions === 'object'){
+      DB.missions = Object.values(DB.missions).filter(Boolean);
+    } else {
+      DB.missions = [];
+    }
+  }
+}
+// Permission : qui peut CRÉER / ÉDITER / SUPPRIMER une mission ?
+// → Admins, Gérants, et tous les membres de la section mission (sauf visiteurs)
+function msCanManage(){
+  if(typeof currentUser === 'undefined' || !currentUser) return false;
+  if(typeof isAdmin === 'function' && isAdmin()) return true;
+  if(typeof canModify === 'function' && canModify()) return true;
+  // Membre section mission non-visiteur
+  var sec = currentUser.section;
+  var role = (currentUser.role||'').toLowerCase();
+  if(sec === 'mission' && role !== 'visiteur') return true;
+  // Multi-section "all"
+  if(sec === 'all' && role !== 'visiteur') return true;
+  return false;
+}
+// Permission : qui peut ACCEPTER une mission ? (= la prendre en charge)
+// → tout membre non-visiteur (de n'importe quelle section, c'est ouvert à tous)
+function msCanAccept(){
+  if(typeof currentUser === 'undefined' || !currentUser) return false;
+  var role = (currentUser.role||'').toLowerCase();
+  return role !== 'visiteur';
+}
+// Permission : peut éditer/supprimer CETTE mission spécifique ?
+function msCanEditMission(m){
+  if(!m) return false;
+  if(typeof isAdmin === 'function' && isAdmin()) return true;
+  if(typeof canModify === 'function' && canModify()) return true;
+  // Le créateur peut éditer la sienne
+  var myName = (currentUser && currentUser.nom) || '';
+  if(myName && m.creePar === myName) return true;
+  return false;
+}
+// L'utilisateur courant a-t-il accepté cette mission ?
+function msIsAssignedToMe(m){
+  if(!m || !Array.isArray(m.assignes)) return false;
+  var myName = (currentUser && currentUser.nom) || '';
+  return !!myName && m.assignes.some(function(a){ return a && a.nom === myName; });
+}
+// Numéro de fiche : MSN-AAAA-NNN basé sur ordre stable de création
+function msComputeFileNum(m){
+  msInitDB();
+  var sorted = DB.missions.slice().sort(function(a,b){ return (a.creeLe||0) - (b.creeLe||0); });
+  var idx = sorted.findIndex(function(x){ return x.id === m.id; }) + 1;
+  if(idx < 1) idx = 1;
+  var year = (function(){
+    try { return new Date(m.creeLe).getFullYear() || new Date().getFullYear(); }
+    catch(e){ return new Date().getFullYear(); }
+  })();
+  return 'MSN-' + year + '-' + String(idx).padStart(3,'0');
+}
+// Détecte si une deadline est imminente (< 3 jours) et non passée
+function msDeadlineNear(deadline){
+  if(!deadline) return false;
+  try {
+    var d = new Date(deadline).getTime();
+    var now = Date.now();
+    var diff = d - now;
+    return diff > 0 && diff < 3 * 24 * 3600 * 1000;
+  } catch(e){ return false; }
+}
+function msDeadlinePassed(deadline){
+  if(!deadline) return false;
+  try { return new Date(deadline).getTime() < Date.now(); } catch(e){ return false; }
+}
+
+// ─── FORMULAIRE : ouvrir / sauver ───
+function msUpdateRewardSuggestion(){
+  var rang = (document.getElementById('ms-form-rang')||{}).value || 'D';
+  var hint = document.getElementById('ms-form-reward-hint');
+  if(hint) hint.textContent = 'Suggéré pour ce rang : ' + msFmtMoney(MS_REWARD_BY_RANK[rang]||0) + ' Ryōs';
+  var rewardInput = document.getElementById('ms-form-recompense');
+  if(rewardInput && !rewardInput.value){
+    rewardInput.value = MS_REWARD_BY_RANK[rang] || 0;
+  }
+}
+function msOpenForm(editId){
+  if(!msCanManage()){ if(typeof showToast === 'function') showToast('⛔ Action réservée aux membres du Bureau des missions','error'); return; }
+  msInitDB();
+  var modal = document.getElementById('modal-ms-form');
+  if(!modal){ if(typeof showToast === 'function') showToast('Modale introuvable','error'); return; }
+  var setVal = function(id, v){ var e = document.getElementById(id); if(e) e.value = v; };
+  var setText = function(id, t){ var e = document.getElementById(id); if(e) e.textContent = t; };
+
+  if(editId){
+    var m = DB.missions.find(function(x){ return x.id === editId; });
+    if(!m){ if(typeof showToast === 'function') showToast('Mission introuvable','error'); return; }
+    if(!msCanEditMission(m)){ if(typeof showToast === 'function') showToast('⛔ Vous ne pouvez modifier que vos missions','error'); return; }
+    setText('ms-modal-title', '✏️ Modifier la mission');
+    setVal('ms-form-edit-id', m.id);
+    setVal('ms-form-titre', m.titre || '');
+    setVal('ms-form-rang', m.rang || 'D');
+    setVal('ms-form-type', m.type || 'Autre');
+    setVal('ms-form-recompense', m.recompense || 0);
+    setVal('ms-form-lieu', m.lieu || '');
+    setVal('ms-form-deadline', m.deadline || '');
+    setVal('ms-form-desc', m.desc || '');
+  } else {
+    setText('ms-modal-title', '📋 Nouvelle mission');
+    setVal('ms-form-edit-id', '');
+    setVal('ms-form-titre', '');
+    setVal('ms-form-rang', 'D');
+    setVal('ms-form-type', 'Infiltration');
+    setVal('ms-form-recompense', MS_REWARD_BY_RANK.D);
+    setVal('ms-form-lieu', '');
+    setVal('ms-form-deadline', '');
+    setVal('ms-form-desc', '');
+  }
+  msUpdateRewardSuggestion();
+  if(typeof openModal === 'function') openModal('modal-ms-form');
+  else modal.classList.add('open');
+}
+function msSaveForm(){
+  if(!msCanManage()){ if(typeof showToast === 'function') showToast('⛔ Action réservée aux membres du Bureau des missions','error'); return; }
+  msInitDB();
+  var getVal = function(id){ var e = document.getElementById(id); return e ? e.value : ''; };
+  var editId = getVal('ms-form-edit-id');
+  var titre = (getVal('ms-form-titre')||'').trim();
+  var rang = getVal('ms-form-rang') || 'D';
+  var type = getVal('ms-form-type') || 'Autre';
+  var recompense = parseInt(getVal('ms-form-recompense'),10) || 0;
+  var lieu = (getVal('ms-form-lieu')||'').trim();
+  var deadline = getVal('ms-form-deadline') || '';
+  var desc = (getVal('ms-form-desc')||'').trim();
+
+  if(!titre){ if(typeof showToast === 'function') showToast('Titre requis','error'); return; }
+  if(!desc){ if(typeof showToast === 'function') showToast('Description requise','error'); return; }
+  if(['D','C','B','A','S'].indexOf(rang) === -1){ if(typeof showToast === 'function') showToast('Rang invalide','error'); return; }
+
+  if(editId){
+    var idx = DB.missions.findIndex(function(x){ return x.id === editId; });
+    if(idx === -1){ if(typeof showToast === 'function') showToast('Mission introuvable','error'); return; }
+    var existing = DB.missions[idx];
+    if(!msCanEditMission(existing)){ if(typeof showToast === 'function') showToast('⛔ Permission refusée','error'); return; }
+    DB.missions[idx] = Object.assign({}, existing, {
+      titre: titre, rang: rang, type: type, recompense: recompense,
+      lieu: lieu, deadline: deadline, desc: desc,
+      modifieLe: Date.now(),
+      modifiePar: (currentUser && currentUser.nom) || '?'
+    });
+    if(typeof showToast === 'function') showToast('Mission mise à jour','success');
+  } else {
+    DB.missions.push({
+      id: 'MS-' + Date.now() + '-' + Math.random().toString(36).slice(2,7),
+      titre: titre, desc: desc, rang: rang, type: type, recompense: recompense,
+      lieu: lieu, deadline: deadline,
+      statut: 'ouverte',
+      assignes: [],
+      creePar: (currentUser && currentUser.nom) || '?',
+      creeLe: Date.now()
+    });
+    if(typeof showToast === 'function') showToast('✅ Mission publiée','success');
+  }
+  if(typeof saveData === 'function') saveData();
+  if(typeof closeModal === 'function') closeModal('modal-ms-form');
+  msRender();
+  // Mettre à jour aussi l'écran de connexion
+  if(typeof lgRenderMissions === 'function') lgRenderMissions();
+  // Et le widget dashboard
+  if(typeof dashRenderMissions === 'function') dashRenderMissions();
+}
+
+// ─── ACCEPTATION / TERMINAISON ───
+function msAcceptMission(id){
+  if(!msCanAccept()){ if(typeof showToast === 'function') showToast('⛔ Réservé aux membres','error'); return; }
+  msInitDB();
+  var m = DB.missions.find(function(x){ return x.id === id; });
+  if(!m){ if(typeof showToast === 'function') showToast('Mission introuvable','error'); return; }
+  if(m.statut === 'terminee' || m.statut === 'echouee' || m.statut === 'annulee'){
+    if(typeof showToast === 'function') showToast('Cette mission est clôturée','error'); return;
+  }
+  if(!Array.isArray(m.assignes)) m.assignes = [];
+  var myName = (currentUser && currentUser.nom) || '?';
+  if(m.assignes.some(function(a){ return a && a.nom === myName; })){
+    if(typeof showToast === 'function') showToast('Vous êtes déjà sur cette mission','info'); return;
+  }
+  m.assignes.push({ nom: myName, acceptedAt: Date.now() });
+  // Si c'est le 1er à accepter, la mission passe en cours
+  if(m.statut === 'ouverte') m.statut = 'en_cours';
+  if(typeof saveData === 'function') saveData();
+  if(typeof showToast === 'function') showToast('🎯 Mission acceptée','success');
+  msRender();
+  if(typeof lgRenderMissions === 'function') lgRenderMissions();
+  if(typeof dashRenderMissions === 'function') dashRenderMissions();
+}
+function msAbandonMission(id){
+  msInitDB();
+  var m = DB.missions.find(function(x){ return x.id === id; });
+  if(!m){ return; }
+  var myName = (currentUser && currentUser.nom) || '?';
+  if(typeof askDelete === 'function'){
+    askDelete('Abandonner cette mission ?\nVous serez retiré de la liste des assignés.', function(){
+      m.assignes = (m.assignes||[]).filter(function(a){ return a && a.nom !== myName; });
+      // S'il n'y a plus personne, la mission redevient ouverte
+      if(m.statut === 'en_cours' && m.assignes.length === 0) m.statut = 'ouverte';
+      if(typeof saveData === 'function') saveData();
+      if(typeof showToast === 'function') showToast('Mission abandonnée','info');
+      msRender();
+    }, '⚠ Abandonner');
+  }
+}
+function msCompleteMission(id, success){
+  msInitDB();
+  var m = DB.missions.find(function(x){ return x.id === id; });
+  if(!m){ return; }
+  // Seuls : assigné, créateur, ou admin peuvent valider
+  var myName = (currentUser && currentUser.nom) || '?';
+  var canComplete = msIsAssignedToMe(m) || m.creePar === myName || (typeof isAdmin === 'function' && isAdmin()) || (typeof canModify === 'function' && canModify());
+  if(!canComplete){ if(typeof showToast === 'function') showToast('⛔ Vous n\'êtes pas assigné à cette mission','error'); return; }
+  var msg = success
+    ? 'Marquer cette mission comme terminée avec succès ?\n\nLes assignés recevront leur récompense au registre.'
+    : 'Marquer cette mission comme échouée ?\n\nAucune récompense ne sera versée.';
+  if(typeof askDelete === 'function'){
+    askDelete(msg, function(){
+      m.statut = success ? 'terminee' : 'echouee';
+      m.termineLe = Date.now();
+      m.terminePar = myName;
+      if(typeof saveData === 'function') saveData();
+      if(typeof showToast === 'function') showToast(success ? '✅ Mission terminée — récompense créditée' : '❌ Mission échouée','success');
+      msRender();
+      if(typeof lgRenderMissions === 'function') lgRenderMissions();
+      if(typeof dashRenderMissions === 'function') dashRenderMissions();
+    }, success ? '✓ Confirmer succès' : '✗ Confirmer échec');
+  }
+}
+function msDeleteMission(id){
+  msInitDB();
+  var m = DB.missions.find(function(x){ return x.id === id; });
+  if(!m){ return; }
+  if(!msCanEditMission(m)){ if(typeof showToast === 'function') showToast('⛔ Permission refusée','error'); return; }
+  if(typeof askDelete === 'function'){
+    askDelete('Supprimer définitivement la mission "' + (m.titre||'?') + '" ?\n\nCette action est irréversible.', function(){
+      DB.missions = DB.missions.filter(function(x){ return x.id !== id; });
+      if(typeof saveData === 'function') saveData();
+      if(typeof showToast === 'function') showToast('Mission supprimée','info');
+      msRender();
+      if(typeof lgRenderMissions === 'function') lgRenderMissions();
+      if(typeof dashRenderMissions === 'function') dashRenderMissions();
+    }, '🗑 Supprimer');
+  }
+}
+
+// ─── DÉTAIL (modale view) ───
+function msViewMission(id){
+  msInitDB();
+  var m = DB.missions.find(function(x){ return x.id === id; });
+  if(!m){ if(typeof showToast === 'function') showToast('Mission introuvable','error'); return; }
+  var setText = function(id, t){ var e = document.getElementById(id); if(e) e.textContent = t; };
+  var setHTML = function(id, h){ var e = document.getElementById(id); if(e) e.innerHTML = h; };
+
+  setText('ms-view-title', '📋 ' + (m.titre || 'Mission'));
+
+  var statutLabels = {ouverte:'🟢 Ouverte', en_cours:'⏳ En cours', terminee:'✅ Terminée', echouee:'❌ Échouée', annulee:'⊘ Annulée'};
+  var assigneList = (Array.isArray(m.assignes) && m.assignes.length)
+    ? m.assignes.map(function(a){ return '<div style="display:inline-flex;align-items:center;gap:6px;padding:4px 11px;background:rgba(212,180,74,0.10);border:1px solid rgba(212,180,74,0.3);border-radius:14px;margin:2px 4px 2px 0;font-family:\'Share Tech Mono\',monospace;font-size:11px"><span style="width:18px;height:18px;border-radius:50%;background:linear-gradient(135deg,#d4b44a,#7a4e08);color:#1a140e;display:inline-flex;align-items:center;justify-content:center;font-weight:700;font-size:9px">'+msEsc((a.nom||'?').charAt(0).toUpperCase())+'</span>'+msEsc(a.nom||'?')+'</div>'; }).join('')
+    : '<span style="color:var(--muted);font-style:italic;font-size:12px">— Personne n\'a encore accepté cette mission —</span>';
+
+  var deadlineHTML = '';
+  if(m.deadline){
+    var passed = msDeadlinePassed(m.deadline) && m.statut !== 'terminee';
+    var near = msDeadlineNear(m.deadline);
+    var color = passed ? '#fca5a5' : (near ? '#fbbf24' : 'inherit');
+    var ico = passed ? '⚠️ DÉPASSÉE' : (near ? '⏰ Proche' : '📅');
+    deadlineHTML = '<div class="form-group"><label class="form-label">Deadline</label><div style="font-family:\'Share Tech Mono\',monospace;font-size:13px;color:'+color+'">'+ico+' '+msEsc(msFmtDate(m.deadline))+'</div></div>';
+  }
+
+  setHTML('ms-view-body',
+    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px">'
+    + '<div class="form-group" style="margin:0"><label class="form-label">Rang</label><div style="font-family:\'Cinzel\',serif;font-size:18px;font-weight:700">'+msEsc(m.rang||'?')+'</div></div>'
+    + '<div class="form-group" style="margin:0"><label class="form-label">Type</label><div style="font-size:13px;font-weight:600">'+msEsc(m.type||'—')+'</div></div>'
+    + '<div class="form-group" style="margin:0"><label class="form-label">Récompense</label><div style="font-family:\'Cinzel\',serif;font-size:18px;font-weight:700;color:#f0d060">💰 '+msFmtMoney(m.recompense)+' Ryōs</div></div>'
+    + '<div class="form-group" style="margin:0"><label class="form-label">Statut</label><div style="font-size:13px;font-weight:600">'+(statutLabels[m.statut]||m.statut||'?')+'</div></div>'
+    + '</div>'
+    + (m.lieu ? '<div class="form-group"><label class="form-label">📍 Lieu</label><div style="font-family:\'Share Tech Mono\',monospace;font-size:12px">'+msEsc(m.lieu)+'</div></div>' : '')
+    + deadlineHTML
+    + '<div class="form-group"><label class="form-label">📜 Briefing</label><div style="font-family:\'EB Garamond\',Georgia,serif;font-size:14px;line-height:1.6;white-space:pre-wrap;padding:10px 14px;background:rgba(0,0,0,0.2);border-left:3px solid rgba(212,180,74,0.4);border-radius:0 6px 6px 0">'+msEsc(m.desc||'')+'</div></div>'
+    + '<div class="form-group"><label class="form-label">👥 Ninjas assignés ('+((m.assignes||[]).length)+')</label><div style="display:flex;flex-wrap:wrap;gap:0">'+assigneList+'</div></div>'
+    + '<div class="form-group" style="margin-top:14px;padding-top:12px;border-top:1px dashed rgba(180,140,20,0.18)"><div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;font-family:\'Share Tech Mono\',monospace;font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px">'
+    + '<span>📝 Créée par <strong style="color:#f0e8d0">'+msEsc(m.creePar||'?')+'</strong> le '+msEsc(msFmtDate(m.creeLe))+'</span>'
+    + (m.terminePar ? '<span>'+(m.statut==='terminee'?'✅':'❌')+' Validée par <strong style="color:#f0e8d0">'+msEsc(m.terminePar)+'</strong> le '+msEsc(msFmtDate(m.termineLe))+'</span>' : '')
+    + '</div></div>'
+  );
+
+  // Footer dynamique
+  var fileNum = msComputeFileNum(m);
+  var canEdit = msCanEditMission(m);
+  var isAssigned = msIsAssignedToMe(m);
+  var canComplete = isAssigned || (currentUser && m.creePar === currentUser.nom) || (typeof isAdmin === 'function' && isAdmin());
+  var actionsHTML = '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-right:auto;font-family:\'Share Tech Mono\',monospace;font-size:10px;color:var(--muted);align-self:center">№ '+fileNum+'</div>';
+  // Bouton Accepter
+  if(m.statut === 'ouverte' && msCanAccept() && !isAssigned){
+    actionsHTML += '<button class="btn" style="background:linear-gradient(135deg,#16a34a,#15803d);color:#fff;border:0" onclick="msAcceptMission(\''+m.id+'\');closeModal(\'modal-ms-view\')">🎯 Accepter</button>';
+  }
+  // Bouton Abandonner
+  if(isAssigned && (m.statut === 'ouverte' || m.statut === 'en_cours')){
+    actionsHTML += '<button class="btn btn-outline" onclick="msAbandonMission(\''+m.id+'\');closeModal(\'modal-ms-view\')" style="border-color:rgba(217,119,6,0.45);color:#fbbf24">⚠ Abandonner</button>';
+  }
+  // Boutons valider succès/échec
+  if(canComplete && m.statut === 'en_cours'){
+    actionsHTML += '<button class="btn btn-gold" onclick="msCompleteMission(\''+m.id+'\', true);closeModal(\'modal-ms-view\')">✅ Terminée</button>';
+    actionsHTML += '<button class="btn btn-danger" onclick="msCompleteMission(\''+m.id+'\', false);closeModal(\'modal-ms-view\')">❌ Échec</button>';
+  }
+  // Boutons éditer / supprimer
+  if(canEdit){
+    actionsHTML += '<button class="btn btn-outline" onclick="msOpenForm(\''+m.id+'\');closeModal(\'modal-ms-view\')">✏️ Modifier</button>';
+    actionsHTML += '<button class="btn btn-danger" onclick="msDeleteMission(\''+m.id+'\');closeModal(\'modal-ms-view\')">🗑</button>';
+  }
+  actionsHTML += '<button class="btn btn-outline" onclick="closeModal(\'modal-ms-view\')">Fermer</button>';
+  setHTML('ms-view-footer', actionsHTML);
+
+  if(typeof openModal === 'function') openModal('modal-ms-view');
+  else document.getElementById('modal-ms-view').classList.add('open');
+}
+
+// ─── RENDU CARTES (utilisé pour les 3 pages) ───
+function msBuildCard(m){
+  var fileNum = msComputeFileNum(m);
+  var statutLabels = {ouverte:'🟢 Ouverte', en_cours:'⏳ En cours', terminee:'✅ Terminée', echouee:'❌ Échouée', annulee:'⊘ Annulée'};
+  var statutBadgeCls = {ouverte:'badge-green', en_cours:'badge-orange', terminee:'badge-gray', echouee:'badge-red', annulee:'badge-gray'};
+  var rangLabels = {D:'Faible', C:'Moyen', B:'Difficile', A:'Très diff.', S:'Extrême'};
+
+  var canAccept = m.statut === 'ouverte' && msCanAccept() && !msIsAssignedToMe(m);
+  var canEdit = msCanEditMission(m);
+  var isAssigned = msIsAssignedToMe(m);
+  var canComplete = (isAssigned || (currentUser && m.creePar === currentUser.nom) || (typeof isAdmin === 'function' && isAdmin())) && m.statut === 'en_cours';
+
+  // Liste avatars assignés
+  var assigneeAvatars = '';
+  if(Array.isArray(m.assignes) && m.assignes.length){
+    var max = 4;
+    assigneeAvatars = '<div class="ms-card-assignees">';
+    m.assignes.slice(0, max).forEach(function(a){
+      assigneeAvatars += '<span class="av" title="'+msEsc(a.nom||'?')+'">'+msEsc((a.nom||'?').charAt(0))+'</span>';
+    });
+    if(m.assignes.length > max) assigneeAvatars += '<span style="font-size:9.5px;color:var(--muted);margin-left:3px">+'+(m.assignes.length - max)+'</span>';
+    assigneeAvatars += '</div>';
+  }
+
+  // Pastille deadline si applicable
+  var deadlinePill = '';
+  if(m.deadline && (m.statut === 'ouverte' || m.statut === 'en_cours')){
+    if(msDeadlinePassed(m.deadline)){
+      deadlinePill = '<span class="ms-card-pill deadline-near"><span class="lbl">⚠ Deadline</span> Dépassée</span>';
+    } else if(msDeadlineNear(m.deadline)){
+      deadlinePill = '<span class="ms-card-pill deadline-near"><span class="lbl">⏰ Deadline</span> '+msFmtDate(m.deadline)+'</span>';
+    } else {
+      deadlinePill = '<span class="ms-card-pill"><span class="lbl">📅 Deadline</span> '+msFmtDate(m.deadline)+'</span>';
+    }
+  }
+
+  // Boutons d'actions
+  var actionsBtns = '<button class="ms-act-btn" onclick="msViewMission(\''+m.id+'\')" title="Voir">👁</button>';
+  if(canAccept) actionsBtns += '<button class="ms-act-btn is-accept" onclick="msAcceptMission(\''+m.id+'\')" title="Accepter">🎯 Accepter</button>';
+  if(canComplete) actionsBtns += '<button class="ms-act-btn is-complete" onclick="msCompleteMission(\''+m.id+'\', true)" title="Terminer">✓ Terminer</button>';
+  if(canEdit){
+    actionsBtns += '<button class="ms-act-btn is-edit" onclick="msOpenForm(\''+m.id+'\')" title="Modifier">✏️</button>';
+    actionsBtns += '<button class="ms-act-btn is-delete" onclick="msDeleteMission(\''+m.id+'\')" title="Supprimer">🗑</button>';
+  }
+
+  return '<div class="ms-card" data-rang="'+msEsc(m.rang||'D')+'" data-statut="'+msEsc(m.statut||'ouverte')+'">'
+    + '<div class="ms-card-id">'
+    +   '<div class="ms-card-id-num">'+fileNum+'</div>'
+    +   '<div class="ms-card-id-rang" data-r="'+msEsc(m.rang||'D')+'">'
+    +     '<div class="ms-card-id-rang-letter">'+msEsc(m.rang||'D')+'</div>'
+    +     '<div class="ms-card-id-rang-lbl">'+msEsc(rangLabels[m.rang]||'')+'</div>'
+    +   '</div>'
+    +   '<div class="ms-card-id-tag">№ Mission</div>'
+    + '</div>'
+    + '<div class="ms-card-body">'
+    +   '<h3 class="ms-card-title">'+msEsc(m.titre||'Sans titre')+'</h3>'
+    +   '<div class="ms-card-meta">'
+    +     '<span><span class="ico">📝</span> Par '+msEsc(m.creePar||'?')+'</span>'
+    +     (m.lieu ? '<span><span class="ico">📍</span> '+msEsc(m.lieu)+'</span>' : '')
+    +     (assigneeAvatars ? '<span><span class="ico">👥</span> '+assigneeAvatars+'</span>' : '')
+    +   '</div>'
+    +   '<div class="ms-card-badges">'
+    +     '<span class="badge '+(statutBadgeCls[m.statut]||'badge-gray')+'">'+(statutLabels[m.statut]||m.statut||'?')+'</span>'
+    +     '<span class="ms-card-pill"><span class="lbl">Type</span> '+msEsc(m.type||'—')+'</span>'
+    +     '<span class="ms-card-pill reward">💰 '+msFmtMoney(m.recompense)+' Ryōs</span>'
+    +     deadlinePill
+    +   '</div>'
+    +   (m.desc ? '<div class="ms-card-desc">'+msEsc(m.desc)+'</div>' : '')
+    +   '<div class="ms-card-footer">'
+    +     '<span class="ms-foot-item">📅 Publiée le '+msEsc(msFmtDate(m.creeLe))+'</span>'
+    +     (m.termineLe ? '<span class="ms-foot-item">'+(m.statut==='terminee'?'✅':'❌')+' '+msEsc(msFmtDate(m.termineLe))+'</span>' : '')
+    +   '</div>'
+    + '</div>'
+    + '<div class="ms-card-actions"><div class="ms-card-actions-btns">'+actionsBtns+'</div></div>'
+    + '</div>';
+}
+
+function msSwitchSubtab(tab){
+  _msSubtab = tab;
+  document.querySelectorAll('#page-mission-actives .ms-subtab').forEach(function(b){
+    b.classList.toggle('active', b.dataset.tab === tab);
+  });
+  msRender();
+}
+
+function msRender(){
+  msInitDB();
+  var page = (function(){
+    if(document.getElementById('page-mission-disponibles') && document.getElementById('page-mission-disponibles').classList.contains('active')) return 'dispo';
+    if(document.getElementById('page-mission-actives') && document.getElementById('page-mission-actives').classList.contains('active')) return 'mes';
+    if(document.getElementById('page-mission-recompenses') && document.getElementById('page-mission-recompenses').classList.contains('active')) return 'rew';
+    return null;
+  })();
+
+  // Toujours mettre à jour les stats des 3 pages (peu importe quelle est active)
+  var all = DB.missions || [];
+  var ouvertes = all.filter(function(m){ return m.statut === 'ouverte' || m.statut === 'en_cours'; });
+  var dispoCount = all.filter(function(m){ return m.statut === 'ouverte'; }).length;
+  var totalDispo = all.filter(function(m){ return m.statut === 'ouverte'; }).length;
+  var rangSCount = all.filter(function(m){ return m.statut === 'ouverte' && m.rang === 'S'; }).length;
+  var totalPrime = all.filter(function(m){ return m.statut === 'ouverte'; }).reduce(function(s,m){ return s + (parseInt(m.recompense,10)||0); }, 0);
+
+  var setStat = function(id, val){ var e = document.getElementById(id); if(e) e.textContent = val; };
+  setStat('ms-stat-dispo-total', totalDispo);
+  setStat('ms-stat-dispo-rangS', rangSCount);
+  setStat('ms-stat-dispo-prime', msFmtMoney(totalPrime));
+
+  // Permission création
+  var canCreate = msCanManage();
+  var btnCreate = document.getElementById('ms-btn-create');
+  if(btnCreate) btnCreate.style.display = canCreate ? '' : 'none';
+
+  // Comptes par sous-onglet "Mes missions"
+  var myName = (currentUser && currentUser.nom) || '';
+  var mineEnCours = all.filter(function(m){ return msIsAssignedToMe(m) && m.statut === 'en_cours'; });
+  var mineTerminees = all.filter(function(m){ return msIsAssignedToMe(m) && m.statut === 'terminee'; });
+  var mineEchouees = all.filter(function(m){ return msIsAssignedToMe(m) && m.statut === 'echouee'; });
+  var creees = all.filter(function(m){ return m.creePar === myName; });
+  setStat('ms-stat-mes-encours', mineEnCours.length);
+  setStat('ms-stat-mes-finies', mineTerminees.length);
+  setStat('ms-stat-mes-creees', creees.length);
+  setStat('ms-cnt-encours', mineEnCours.length);
+  setStat('ms-cnt-terminees', mineTerminees.length);
+  setStat('ms-cnt-echouees', mineEchouees.length);
+  setStat('ms-cnt-creees', creees.length);
+
+  // Récompenses : stats
+  var totalReward = mineTerminees.reduce(function(s,m){ return s + (parseInt(m.recompense,10)||0); }, 0);
+  var rewTotalEl = document.getElementById('ms-rew-total');
+  if(rewTotalEl) rewTotalEl.innerHTML = msFmtMoney(totalReward) + '<span class="unit">Ryōs</span>';
+  setStat('ms-rew-count', mineTerminees.length);
+  var topRank = '—';
+  ['S','A','B','C','D'].some(function(r){ if(mineTerminees.some(function(m){ return m.rang === r; })){ topRank = r; return true; } return false; });
+  setStat('ms-rew-toprank', topRank);
+  var avgReward = mineTerminees.length ? Math.round(totalReward / mineTerminees.length) : 0;
+  var avgEl = document.getElementById('ms-rew-avg');
+  if(avgEl) avgEl.innerHTML = msFmtMoney(avgReward) + '<span class="unit">Ryōs</span>';
+
+  // ─── Page Disponibles ───
+  var listDispo = document.getElementById('ms-list-dispo');
+  if(listDispo){
+    var q = ((document.getElementById('ms-search-dispo')||{}).value||'').toLowerCase();
+    var fRang = (document.getElementById('ms-filter-rang')||{}).value || 'all';
+    var fType = (document.getElementById('ms-filter-type')||{}).value || 'all';
+    var dispoList = all.filter(function(m){
+      if(m.statut !== 'ouverte') return false;
+      if(fRang !== 'all' && m.rang !== fRang) return false;
+      if(fType !== 'all' && m.type !== fType) return false;
+      if(q){
+        var blob = ((m.titre||'')+(m.desc||'')+(m.lieu||'')+(m.type||'')+(m.creePar||'')).toLowerCase();
+        if(blob.indexOf(q) === -1) return false;
+      }
+      return true;
+    }).sort(function(a,b){
+      // S en premier, puis A, B, C, D ; puis date de création décroissante
+      var rangOrder = {S:5, A:4, B:3, C:2, D:1};
+      var ra = rangOrder[a.rang] || 0;
+      var rb = rangOrder[b.rang] || 0;
+      if(rb !== ra) return rb - ra;
+      return (b.creeLe||0) - (a.creeLe||0);
+    });
+    if(!dispoList.length){
+      listDispo.innerHTML = '<div class="ms-empty"><div class="ms-empty-ico">📋</div><div class="ms-empty-msg">— Aucune mission disponible —</div></div>';
+    } else {
+      listDispo.innerHTML = dispoList.map(msBuildCard).join('');
+    }
+  }
+
+  // ─── Page Mes missions (selon sous-onglet) ───
+  var listMes = document.getElementById('ms-list-mes');
+  if(listMes){
+    var sourceList;
+    var emptyMsg;
+    if(_msSubtab === 'encours'){ sourceList = mineEnCours; emptyMsg = 'Aucune mission en cours'; }
+    else if(_msSubtab === 'terminees'){ sourceList = mineTerminees; emptyMsg = 'Aucune mission terminée'; }
+    else if(_msSubtab === 'echouees'){ sourceList = mineEchouees; emptyMsg = 'Aucune mission échouée'; }
+    else { sourceList = creees; emptyMsg = 'Vous n\'avez créé aucune mission'; }
+    sourceList = sourceList.slice().sort(function(a,b){ return (b.creeLe||0) - (a.creeLe||0); });
+    if(!sourceList.length){
+      listMes.innerHTML = '<div class="ms-empty"><div class="ms-empty-ico">🎯</div><div class="ms-empty-msg">— '+emptyMsg+' —</div></div>';
+    } else {
+      listMes.innerHTML = sourceList.map(msBuildCard).join('');
+    }
+  }
+
+  // ─── Page Récompenses ───
+  var listRew = document.getElementById('ms-list-rewards');
+  if(listRew){
+    var rewList = mineTerminees.slice().sort(function(a,b){ return (b.termineLe||0) - (a.termineLe||0); });
+    if(!rewList.length){
+      listRew.innerHTML = '<div class="ms-empty"><div class="ms-empty-ico">💰</div><div class="ms-empty-msg">— Aucune récompense perçue pour le moment —</div></div>';
+    } else {
+      listRew.innerHTML = rewList.map(msBuildCard).join('');
+    }
+  }
+}
+
+window.msOpenForm = msOpenForm;
+window.msSaveForm = msSaveForm;
+window.msAcceptMission = msAcceptMission;
+window.msAbandonMission = msAbandonMission;
+window.msCompleteMission = msCompleteMission;
+window.msDeleteMission = msDeleteMission;
+window.msViewMission = msViewMission;
+window.msSwitchSubtab = msSwitchSubtab;
+window.msUpdateRewardSuggestion = msUpdateRewardSuggestion;
+window.msRender = msRender;
 
 // ═══════════════════════════════════════════════════════════════════════════
 // PONT DOSSIER CRIMINEL → BINGO BOOK
