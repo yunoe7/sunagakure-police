@@ -12415,7 +12415,7 @@ document.addEventListener('error', function(e){
         </select>
       </div>
     </div>
-    <div class="card" style="overflow-x:auto"><div id="hosp-cons-list"></div></div>
+    <div id="hosp-cons-list"></div>
   </div>
 
   <!-- HÔPITAL — Pharmacie -->
@@ -34921,32 +34921,69 @@ function renderHospConsultations(){
   filtered.sort(function(a,b){ return (b.dateTs||0) - (a.dateTs||0); });
   var el = document.getElementById('hosp-cons-list'); if(!el) return;
   if(filtered.length === 0){
-    el.innerHTML = '<div style="padding:40px 20px;text-align:center;color:var(--muted);font-size:13px"><div style="font-size:36px;opacity:0.35;margin-bottom:8px">🩺</div>Aucune consultation</div>';
+    el.innerHTML = '<div class="med-cards-empty">'
+                 +   '<div class="med-cards-empty-ico">🩺</div>'
+                 +   '<div class="med-cards-empty-msg">— Aucune consultation —</div>'
+                 + '</div>';
     return;
   }
-  var rows = filtered.map(function(c){
-    var statutBadge = {
-      'prevue':   '<span class="badge badge-gold">📅 Prévue</span>',
-      'encours':  '<span class="badge badge-orange">⏳ En cours</span>',
-      'terminee': '<span class="badge badge-green">✅ Terminée</span>',
-      'annulee':  '<span class="badge badge-gray">❌ Annulée</span>'
-    }[c.statut] || '<span class="badge badge-gray">—</span>';
+
+  // Mapping statut → tone + badge + ico
+  var statutCfg = {
+    'prevue':   { tone:'blue',   badge:'badge-gold',   ico:'📅', label:'Prévue' },
+    'encours':  { tone:'orange', badge:'badge-orange', ico:'⏳', label:'En cours' },
+    'terminee': { tone:'green',  badge:'badge-green',  ico:'✅', label:'Terminée' },
+    'annulee':  { tone:'gray',   badge:'badge-gray',   ico:'❌', label:'Annulée' }
+  };
+  // Numérotation : CONS-AAAA-NNN (ordre stable de création)
+  var allSorted = (DB.hospital.consultations||[]).slice().sort(function(a,b){ return (a.id||0) - (b.id||0); });
+  var indexById = {};
+  allSorted.forEach(function(x, i){ indexById[x.id] = i + 1; });
+
+  el.innerHTML = '<div class="med-cards">' + filtered.map(function(c){
+    var cfg = statutCfg[c.statut] || { tone:'', badge:'badge-gray', ico:'•', label:'—' };
     var canEdit = hospCanEditEntry(c,'medical');
-    var viewBtn = '<button class="btn btn-outline btn-sm" onclick="hospViewConsultation('+c.id+')" title="Voir la fiche">👁</button>';
-    var actions = canEdit
-      ? viewBtn + ' <button class="btn btn-gold btn-sm" onclick="hospOpenConsultation('+c.id+')" title="Modifier">✏️</button> <button class="btn btn-danger btn-sm" onclick="hospDeleteConsultation('+c.id+')" title="Supprimer">🗑</button>'
-      : viewBtn;
-    var compteRendu = c.compteRendu ? '<div style="font-size:11px;color:var(--muted);margin-top:3px;max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+_hospEsc(c.compteRendu)+'</div>' : '';
-    return '<tr>'
-      +'<td class="mono" style="font-size:11px;white-space:nowrap">'+_hospFmtDateTime(c.dateTs)+'</td>'
-      +'<td><strong>'+_hospEsc(c.patient)+'</strong></td>'
-      +'<td>'+_hospEsc(c.medecin||'—')+'</td>'
-      +'<td>'+_hospEsc(c.motif||'—')+compteRendu+'</td>'
-      +'<td>'+statutBadge+'</td>'
-      +'<td style="white-space:nowrap">'+actions+'</td>'
-      +'</tr>';
-  }).join('');
-  el.innerHTML = '<table class="data-table"><thead><tr><th>Date / Heure</th><th>Patient</th><th>Médecin</th><th>Motif</th><th>Statut</th><th style="width:140px;white-space:nowrap">Actions</th></tr></thead><tbody>'+rows+'</tbody></table>';
+    var idxStr = String(indexById[c.id] || 1).padStart(3, '0');
+    var year = (function(){ try{ return new Date(c.dateTs).getFullYear() || new Date().getFullYear(); } catch(e){ return new Date().getFullYear(); } })();
+    var fileNum = 'CONS-' + year + '-' + idxStr;
+    var motif = (c.motif||'').trim();
+    var compteRendu = (c.compteRendu||'').trim();
+    // Aperçu narratif : motif principal + (si présent) début du compte-rendu
+    var resume = motif && compteRendu ? motif + ' — ' + compteRendu
+              : (motif || compteRendu);
+
+    var actionsBtns = '<button class="med-act-btn" onclick="hospViewConsultation('+c.id+')" title="Voir la fiche">👁</button>';
+    if(canEdit){
+      actionsBtns += '<button class="med-act-btn is-edit" onclick="hospOpenConsultation('+c.id+')" title="Modifier">✏️</button>';
+      actionsBtns += '<button class="med-act-btn is-delete" onclick="hospDeleteConsultation('+c.id+')" title="Supprimer">🗑</button>';
+    }
+
+    return '<div class="med-card" data-tone="'+cfg.tone+'">'
+      + '<div class="med-card-id">'
+      +   '<div class="med-card-id-num">'+fileNum+'</div>'
+      +   '<div class="med-card-id-icon">🩺</div>'
+      +   '<div class="med-card-id-tag">№ Consult.</div>'
+      + '</div>'
+      + '<div class="med-card-body">'
+      +   '<div class="med-card-name"><h3>'+_hospEsc(c.patient||'—')+'</h3></div>'
+      +   '<div class="med-card-meta">'
+      +     '<span><span class="ico">📅</span> '+_hospFmtDateTime(c.dateTs)+'</span>'
+      +     (c.medecin ? '<span><span class="ico">⚕️</span> '+_hospEsc(c.medecin)+'</span>' : '')
+      +   '</div>'
+      +   '<div class="med-card-badges">'
+      +     '<span class="badge '+cfg.badge+'">'+cfg.ico+' '+cfg.label+'</span>'
+      +     (motif ? '<span class="med-card-pill"><span class="lbl">Motif</span> '+_hospEsc(motif)+'</span>' : '')
+      +   '</div>'
+      +   (resume
+          ? '<div class="med-card-desc" title="'+_hospEsc(resume)+'">'+_hospEsc(resume)+'</div>'
+          : '<div class="med-card-desc-empty">— Aucun compte-rendu rédigé —</div>')
+      +   '<div class="med-card-footer">'
+      +     '<span class="med-foot-item">🩺 Fiche de consultation médicale</span>'
+      +   '</div>'
+      + '</div>'
+      + '<div class="med-card-actions"><div class="med-card-actions-btns">'+actionsBtns+'</div></div>'
+      + '</div>';
+  }).join('') + '</div>';
 }
 
 function hospOpenConsultation(editId){
