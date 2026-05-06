@@ -7804,7 +7804,7 @@ document.addEventListener('error', function(e){
           <span class="ic">📋</span>
           <div class="txt"><div class="lbl">Nouvelle plainte</div><div class="sub">Déposer un signalement</div></div>
         </button>
-        <button class="db-quick-btn" style="--qa-bg:rgba(192,65,14,0.1);--qa-bd:rgba(192,65,14,0.4)" onclick="clearDossierPhoto&&clearDossierPhoto();buildTagPicker&&buildTagPicker('d',[]);openModal('modal-dossier')">
+        <button class="db-quick-btn" style="--qa-bg:rgba(192,65,14,0.1);--qa-bd:rgba(192,65,14,0.4)" onclick="dcOpenNewDossier()">
           <span class="ic">🗂️</span>
           <div class="txt"><div class="lbl">Nouveau dossier</div><div class="sub">Ouvrir un dossier criminel</div></div>
         </button>
@@ -8859,7 +8859,7 @@ document.addEventListener('error', function(e){
           <div class="dc-hero-quote">« Que nul individu fiché n'échappe à la mémoire du Désert. »</div>
         </div>
         <div class="dc-hero-actions">
-          <button class="btn btn-primary" id="btn-new-dossier" onclick="clearDossierPhoto();buildTagPicker('d',[]);openModal('modal-dossier')" style="display:none">+ Nouveau dossier</button>
+          <button class="btn btn-primary" id="btn-new-dossier" onclick="dcOpenNewDossier()" style="display:none">+ Nouveau dossier</button>
         </div>
       </div>
     </div>
@@ -15738,6 +15738,290 @@ function plv2SelectCible(el,val){
   #modal-dossier .modal-body{padding:18px 20px !important}
   #modal-dossier .modal-footer{padding:14px 20px 18px !important}
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   AUTOMATISATION CODE PÉNAL — recherche & calcul auto des amendes
+   ═══════════════════════════════════════════════════════════════ */
+.dc-cp-block{
+  background:rgba(180,140,20,0.04);
+  border:1px solid rgba(180,140,20,0.18);
+  border-radius:10px;
+  padding:13px 14px 14px;
+  margin-bottom:13px;
+}
+.dc-cp-block-title{
+  font-family:'Share Tech Mono',monospace;
+  font-size:9.5px;letter-spacing:2px;text-transform:uppercase;
+  color:var(--gold2);margin-bottom:9px;
+  display:flex;align-items:baseline;gap:8px;
+}
+.dc-cp-block-title .dc-cp-hint{
+  font-size:9.5px;letter-spacing:0;text-transform:none;
+  color:var(--muted);font-weight:400;
+}
+.dc-cp-search-wrap{
+  position:relative;
+}
+.dc-cp-search{
+  font-family:'Barlow',sans-serif !important;
+}
+.dc-cp-results{
+  position:absolute;top:100%;left:0;right:0;z-index:50;
+  margin-top:3px;
+  max-height:280px;overflow-y:auto;
+  background:rgba(20,16,9,0.98);
+  border:1px solid rgba(201,162,39,0.4);
+  border-radius:6px;
+  box-shadow:0 12px 32px rgba(0,0,0,0.6);
+}
+.dc-cp-results::-webkit-scrollbar{width:5px}
+.dc-cp-results::-webkit-scrollbar-thumb{background:rgba(201,162,39,0.3);border-radius:3px}
+.dc-cp-result-item{
+  padding:9px 12px;cursor:pointer;
+  border-bottom:1px solid rgba(180,140,20,0.08);
+  transition:background 0.12s;
+  display:flex;align-items:center;gap:9px;
+}
+.dc-cp-result-item:last-child{border-bottom:none}
+.dc-cp-result-item:hover,.dc-cp-result-item.is-highlighted{background:rgba(201,162,39,0.10)}
+.dc-cp-result-cat{
+  flex-shrink:0;
+  width:8px;height:8px;border-radius:50%;
+}
+.dc-cp-result-cat[data-cat="violet"]{background:#a78bfa;box-shadow:0 0 6px rgba(168,140,247,0.55)}
+.dc-cp-result-cat[data-cat="vert"]{background:#22c55e;box-shadow:0 0 6px rgba(34,197,94,0.55)}
+.dc-cp-result-cat[data-cat="rouge"]{background:#ef4444;box-shadow:0 0 6px rgba(239,68,68,0.55)}
+.dc-cp-result-text{
+  flex:1;font-size:11.5px;color:var(--text);line-height:1.3;
+}
+.dc-cp-result-meta{
+  font-size:10px;font-family:'Share Tech Mono',monospace;
+  color:var(--muted);white-space:nowrap;
+}
+.dc-cp-result-meta.has-prison{color:#fb923c}
+.dc-cp-empty{
+  padding:14px;text-align:center;font-style:italic;
+  color:var(--muted);font-size:11px;
+}
+.dc-cp-selected{
+  display:flex;flex-direction:column;gap:6px;
+  margin-top:9px;
+  min-height:0;
+}
+.dc-cp-selected:empty{display:none}
+.dc-cp-chip{
+  display:flex;align-items:center;gap:8px;
+  padding:7px 10px 7px 11px;
+  background:rgba(201,162,39,0.08);
+  border:1px solid rgba(201,162,39,0.30);
+  border-radius:6px;
+  font-size:11.5px;
+  color:var(--text);
+  animation:dcChipIn 0.18s ease;
+}
+@keyframes dcChipIn{from{opacity:0;transform:translateY(-3px)}to{opacity:1;transform:translateY(0)}}
+.dc-cp-chip-cat{
+  flex-shrink:0;width:7px;height:7px;border-radius:50%;
+}
+.dc-cp-chip-cat[data-cat="violet"]{background:#a78bfa}
+.dc-cp-chip-cat[data-cat="vert"]{background:#22c55e}
+.dc-cp-chip-cat[data-cat="rouge"]{background:#ef4444}
+.dc-cp-chip-text{flex:1;line-height:1.3}
+.dc-cp-chip-meta{
+  font-size:10px;font-family:'Share Tech Mono',monospace;
+  color:var(--gold2);font-weight:700;white-space:nowrap;
+}
+.dc-cp-chip-meta.has-prison{color:#fb923c}
+.dc-cp-chip-rm{
+  cursor:pointer;flex-shrink:0;
+  width:18px;height:18px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  background:rgba(239,68,68,0.12);
+  color:#f87171;font-size:11px;font-weight:700;
+  transition:all 0.15s;
+  border:none;
+}
+.dc-cp-chip-rm:hover{background:rgba(239,68,68,0.25);transform:scale(1.1)}
+.dc-cp-free{
+  font-size:11.5px !important;
+}
+.dc-cp-recap{
+  margin-top:11px;padding-top:11px;
+  border-top:1px dashed rgba(180,140,20,0.25);
+  display:flex;flex-direction:column;gap:5px;
+}
+.dc-cp-recap-row{
+  display:flex;justify-content:space-between;align-items:center;
+  font-size:11.5px;
+}
+.dc-cp-recap-lbl{
+  font-family:'Share Tech Mono',monospace;
+  font-size:10px;letter-spacing:1.5px;text-transform:uppercase;
+  color:var(--muted);
+}
+.dc-cp-recap-val{
+  font-family:'Share Tech Mono',monospace;
+  font-weight:700;color:var(--gold2);
+  font-size:13px;
+}
+.dc-cp-recap-val.has-prison{color:#fb923c}
+.dc-cp-recap-val.no-prison{color:var(--muted);font-weight:500;font-size:11px}
+
+/* ═══ Liste des incidents (édition multi-dates) ═══ */
+.dc-incidents-list{
+  display:flex;flex-direction:column;gap:10px;
+  margin-bottom:13px;
+}
+.dc-incidents-list:empty{display:none}
+.dc-incident-card{
+  background:rgba(20,16,9,0.65);
+  border:1px solid rgba(180,140,20,0.22);
+  border-radius:9px;
+  padding:11px 13px;
+  position:relative;
+}
+.dc-incident-card.is-paid{
+  border-color:rgba(34,197,94,0.35);
+  background:rgba(34,197,94,0.04);
+}
+.dc-incident-head{
+  display:flex;align-items:center;gap:10px;
+  margin-bottom:7px;
+}
+.dc-incident-date{
+  font-family:'Share Tech Mono',monospace;
+  font-size:11px;letter-spacing:1.5px;
+  color:var(--gold2);font-weight:700;
+}
+.dc-incident-status-pill{
+  font-family:'Share Tech Mono',monospace;
+  font-size:8.5px;letter-spacing:1.2px;text-transform:uppercase;
+  padding:2px 7px;border-radius:3px;
+  background:rgba(239,68,68,0.15);color:#fca5a5;
+  border:1px solid rgba(239,68,68,0.3);
+  margin-left:auto;
+}
+.dc-incident-status-pill.is-paid{
+  background:rgba(34,197,94,0.15);color:#86efac;
+  border-color:rgba(34,197,94,0.3);
+}
+.dc-incident-status-pill.is-partial{
+  background:rgba(245,158,11,0.15);color:#fcd34d;
+  border-color:rgba(245,158,11,0.3);
+}
+.dc-incident-rm{
+  cursor:pointer;
+  width:22px;height:22px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  background:rgba(239,68,68,0.10);color:#f87171;
+  font-size:12px;border:none;flex-shrink:0;
+  transition:all 0.15s;
+}
+.dc-incident-rm:hover{background:rgba(239,68,68,0.25);transform:scale(1.05)}
+.dc-incident-infractions{
+  display:flex;flex-wrap:wrap;gap:5px;margin-bottom:8px;
+}
+.dc-incident-infr-chip{
+  font-size:10.5px;
+  padding:3px 8px;border-radius:4px;
+  background:rgba(180,140,20,0.10);
+  border:1px solid rgba(180,140,20,0.22);
+  color:var(--text2);
+  display:inline-flex;align-items:center;gap:5px;
+}
+.dc-incident-infr-chip[data-cat="violet"]{background:rgba(168,85,247,0.10);border-color:rgba(168,85,247,0.28);color:#c4b5fd}
+.dc-incident-infr-chip[data-cat="vert"]{background:rgba(34,197,94,0.10);border-color:rgba(34,197,94,0.28);color:#86efac}
+.dc-incident-infr-chip[data-cat="rouge"]{background:rgba(239,68,68,0.10);border-color:rgba(239,68,68,0.28);color:#fca5a5}
+.dc-incident-amounts{
+  display:flex;gap:14px;align-items:center;
+  font-family:'Share Tech Mono',monospace;font-size:11px;
+  margin-bottom:7px;
+}
+.dc-incident-amount-paye{color:#22c55e}
+.dc-incident-amount-impaye{color:#f87171;font-weight:700}
+.dc-incident-pay-row{
+  display:flex;align-items:center;gap:8px;
+  padding-top:7px;border-top:1px dashed rgba(180,140,20,0.18);
+}
+.dc-incident-pay-row label{
+  font-family:'Share Tech Mono',monospace;
+  font-size:9.5px;letter-spacing:1.2px;text-transform:uppercase;
+  color:var(--muted);flex-shrink:0;
+}
+.dc-incident-pay-row input{
+  flex:1;background:rgba(0,0,0,0.3);
+  border:1px solid rgba(180,140,20,0.25);
+  border-radius:5px;padding:5px 9px;
+  color:var(--text);font-size:12px;
+  font-family:'Share Tech Mono',monospace;
+}
+.dc-incident-pay-row input:focus{
+  border-color:rgba(212,180,74,0.6);outline:none;
+}
+.dc-incident-pay-btn{
+  flex-shrink:0;padding:5px 11px;
+  background:linear-gradient(135deg,#22c55e,#15803d);
+  border:none;color:#fff;border-radius:5px;
+  font-size:10.5px;font-weight:700;cursor:pointer;
+  transition:all 0.15s;
+}
+.dc-incident-pay-btn:hover{transform:translateY(-1px);box-shadow:0 3px 10px rgba(34,197,94,0.4)}
+.dc-incident-pay-btn:disabled{opacity:0.45;cursor:not-allowed;transform:none}
+.dc-incident-prison-row{
+  font-size:11px;color:#fb923c;
+  margin-top:6px;font-family:'Share Tech Mono',monospace;
+  display:flex;align-items:center;gap:6px;
+}
+
+/* Formulaire d'ajout d'un nouvel incident (replié par défaut) */
+.dc-incident-new{
+  background:rgba(192,65,14,0.05);
+  border:1px solid rgba(192,65,14,0.25);
+  border-radius:9px;
+  padding:13px 14px;
+  margin-bottom:13px;
+  animation:dcChipIn 0.22s ease;
+}
+.dc-incident-new-title{
+  font-family:'Share Tech Mono',monospace;
+  font-size:10px;letter-spacing:2px;text-transform:uppercase;
+  color:#e05c1a;margin-bottom:10px;font-weight:700;
+}
+
+/* Récap global du dossier */
+.dc-recap-global{
+  background:linear-gradient(135deg,rgba(201,162,39,0.10),rgba(192,65,14,0.05));
+  border:1px solid rgba(201,162,39,0.30);
+  border-radius:10px;
+  padding:13px 15px;
+  margin-bottom:13px;
+}
+.dc-recap-global-title{
+  font-family:'Share Tech Mono',monospace;
+  font-size:9.5px;letter-spacing:2px;text-transform:uppercase;
+  color:var(--gold2);margin-bottom:10px;font-weight:700;
+}
+.dc-recap-global-grid{
+  display:grid;grid-template-columns:repeat(3,1fr);gap:11px;
+}
+@media(max-width:520px){
+  .dc-recap-global-grid{grid-template-columns:1fr;gap:7px}
+}
+.dc-recap-global-item{
+  background:rgba(0,0,0,0.25);
+  border:1px solid rgba(180,140,20,0.15);
+  border-radius:6px;
+  padding:8px 10px;
+}
+.dc-recap-global-lbl{
+  font-family:'Share Tech Mono',monospace;
+  font-size:8.5px;letter-spacing:1.5px;text-transform:uppercase;
+  color:var(--muted);margin-bottom:3px;
+}
+.dc-recap-global-val{
+  font-family:'Share Tech Mono',monospace;
+  font-size:14px;font-weight:700;color:var(--gold2);
+}
 </style>
 
 <div class="modal-overlay" role="dialog" aria-modal="true" id="modal-dossier">
@@ -15765,7 +16049,37 @@ function plv2SelectCible(el,val){
         <div id="d-doublon-btns" style="display:flex;flex-wrap:wrap;gap:7px"></div>
       </div>
       <div class="form-group"><label class="form-label">Nom RP du suspect</label><div class="dossier-ac-wrap"><input type="text" id="d-nom" class="form-control" placeholder="Prénom Nom (autocomplétion depuis le recensement)" autocomplete="off" oninput="checkDoublonSuspect();_dossierNomAutocomplete('d-nom','d-nom-ac')" onfocus="_dossierNomAutocomplete('d-nom','d-nom-ac')" onblur="_dossierNomAutocompleteHide('d-nom-ac')" onkeydown="_dossierNomAutocompleteKey(event,'d-nom','d-nom-ac')"><div id="d-nom-ac" class="dossier-ac-dropdown" style="display:none"></div></div></div>
-      <div class="form-group"><label class="form-label">Infractions reprochées</label><input type="text" id="d-infractions" class="form-control" placeholder="Vol, agression..."></div>
+
+      <!-- Date de l'incident -->
+      <div class="form-group">
+        <label class="form-label">📅 Date de l'incident <span style="font-weight:400;color:var(--muted);font-size:10px;letter-spacing:1px">— RP / réelle</span></label>
+        <input type="date" id="d-incident-date" class="form-control">
+      </div>
+
+      <!-- AUTOMATISATION : recherche dans le code pénal -->
+      <div class="dc-cp-block">
+        <div class="dc-cp-block-title">⚖ Infractions reprochées <span class="dc-cp-hint">recherche dans le Code Pénal</span></div>
+        <div class="dc-cp-search-wrap">
+          <input type="text" id="d-cp-search" class="form-control dc-cp-search" placeholder="🔎 Tapez : 'vol', 'rébellion', '1.7'..." autocomplete="off" oninput="dcCpSearch('d')" onfocus="dcCpSearch('d')" onblur="setTimeout(function(){var d=document.getElementById('d-cp-results');if(d)d.style.display='none';},200)">
+          <div id="d-cp-results" class="dc-cp-results" style="display:none"></div>
+        </div>
+        <!-- Liste des infractions sélectionnées -->
+        <div id="d-cp-selected" class="dc-cp-selected"></div>
+        <!-- Saisie libre (en plus du code pénal) -->
+        <input type="text" id="d-infractions" class="form-control dc-cp-free" placeholder="…ou saisie libre supplémentaire (séparée par virgules)" style="margin-top:9px">
+        <!-- Récap auto -->
+        <div id="d-cp-recap" class="dc-cp-recap" style="display:none">
+          <div class="dc-cp-recap-row">
+            <span class="dc-cp-recap-lbl">💰 Total amendes</span>
+            <span class="dc-cp-recap-val" id="d-cp-recap-amende">0 Ryos</span>
+          </div>
+          <div class="dc-cp-recap-row">
+            <span class="dc-cp-recap-lbl">⛓ Peine de prison</span>
+            <span class="dc-cp-recap-val" id="d-cp-recap-prison">—</span>
+          </div>
+        </div>
+      </div>
+
       <div class="grid grid-2">
         <div class="form-group"><label class="form-label">Dangerosité</label>
           <select id="d-danger" class="form-control"><option>Faible</option><option>Modéré</option><option>Élevé</option><option>Extrême</option></select></div>
@@ -15780,23 +16094,25 @@ function plv2SelectCible(el,val){
           <span class="dc-defunt-icon">⚱</span>
           <span class="dc-defunt-lbl">Marquer comme défunt</span>
         </label>
-        <div class="dc-defunt-help">Le suspect apparaîtra grisé avec un tampon « DÉFUNT » dans la liste. Utilisé quand le suspect est décédé (mort RP, exécution, etc.).</div>
+        <div class="dc-defunt-help">Le suspect apparaîtra grisé avec un tampon « DÉFUNT » dans la liste. Toutes les amendes impayées seront automatiquement annulées.</div>
       </div>
-      <!-- Amendes -->
+      <!-- Paiement : amende totale calculée auto à partir du code pénal,
+           seule la part PAYÉE est saisissable. L'impayé est calculé automatiquement
+           et n'est plus modifiable (read-only) → impossible de truquer. -->
       <div style="background:rgba(180,140,20,0.05);border:1px solid rgba(180,140,20,0.2);border-radius:9px;padding:13px 15px;margin-bottom:13px">
-        <div style="font-size:9px;letter-spacing:2px;color:var(--gold2);font-family:'Share Tech Mono',monospace;text-transform:uppercase;margin-bottom:10px">💰 Amendes (Ryos)</div>
+        <div style="font-size:9px;letter-spacing:2px;color:var(--gold2);font-family:'Share Tech Mono',monospace;text-transform:uppercase;margin-bottom:10px">💰 Paiement (Ryos) <span style="font-weight:400;letter-spacing:0;text-transform:none;color:var(--muted);font-size:10px;margin-left:6px">— l'impayé est calculé automatiquement</span></div>
         <div class="grid grid-2">
           <div class="form-group" style="margin-bottom:0">
-            <label class="form-label" style="color:#166534">✅ Amende payée</label>
+            <label class="form-label" style="color:#22c55e">✅ Déjà payé</label>
             <div style="position:relative">
-              <input type="number" id="d-amende-payee" class="form-control" placeholder="0" min="0" style="padding-right:50px">
+              <input type="number" id="d-amende-payee" class="form-control" placeholder="0" min="0" style="padding-right:50px" oninput="dcUpdateImpayeePreview('d')">
               <span style="position:absolute;right:10px;top:50%;transform:translateY(-50%);font-size:10px;color:var(--muted);font-family:'Share Tech Mono',monospace">Ryos</span>
             </div>
           </div>
           <div class="form-group" style="margin-bottom:0">
-            <label class="form-label" style="color:#991b1b">❌ Amende impayée</label>
+            <label class="form-label" style="color:#f87171">❌ Reste à payer <span style="font-weight:400;color:var(--muted);font-size:9px;letter-spacing:1px">(auto)</span></label>
             <div style="position:relative">
-              <input type="number" id="d-amende-impayee" class="form-control" placeholder="0" min="0" style="padding-right:50px">
+              <input type="text" id="d-amende-impayee-preview" class="form-control" readonly value="0" style="padding-right:50px;cursor:not-allowed;background:rgba(0,0,0,0.25);font-weight:700;color:#f87171">
               <span style="position:absolute;right:10px;top:50%;transform:translateY(-50%);font-size:10px;color:var(--muted);font-family:'Share Tech Mono',monospace">Ryos</span>
             </div>
           </div>
@@ -15850,14 +16166,56 @@ function plv2SelectCible(el,val){
     <div class="modal-body">
       <input type="hidden" id="ed-id">
       <div class="form-group"><label class="form-label">Nom RP du suspect</label><div class="dossier-ac-wrap"><input type="text" id="ed-nom" class="form-control" placeholder="Prénom Nom (autocomplétion depuis le recensement)" autocomplete="off" oninput="_dossierNomAutocomplete('ed-nom','ed-nom-ac')" onfocus="_dossierNomAutocomplete('ed-nom','ed-nom-ac')" onblur="_dossierNomAutocompleteHide('ed-nom-ac')" onkeydown="_dossierNomAutocompleteKey(event,'ed-nom','ed-nom-ac')"><div id="ed-nom-ac" class="dossier-ac-dropdown" style="display:none"></div></div></div>
-      <div class="form-group"><label class="form-label">Infractions reprochées</label><input type="text" id="ed-infractions" class="form-control" placeholder="Vol, agression..."></div>
+
+      <!-- Liste des incidents existants (multi-dates) avec possibilité d'éditer chacun -->
+      <div id="ed-incidents-list" class="dc-incidents-list"></div>
+
+      <!-- Bouton pour ajouter un nouvel incident à une autre date -->
+      <button type="button" class="btn btn-outline btn-sm" onclick="dcAddIncidentForm('ed')" style="width:100%;margin-bottom:13px;padding:10px;font-size:12px;border:1px dashed rgba(180,140,20,0.4)">➕ Ajouter un incident à une autre date</button>
+
+      <!-- Formulaire d'ajout d'un nouvel incident (replié par défaut) -->
+      <div id="ed-incident-new-form" class="dc-incident-new" style="display:none">
+        <div class="dc-incident-new-title">📅 Nouvel incident</div>
+        <div class="form-group">
+          <label class="form-label">Date de l'incident</label>
+          <input type="date" id="ed-incident-date" class="form-control">
+        </div>
+        <div class="dc-cp-block" style="margin-bottom:10px">
+          <div class="dc-cp-block-title">⚖ Infractions <span class="dc-cp-hint">recherche dans le Code Pénal</span></div>
+          <div class="dc-cp-search-wrap">
+            <input type="text" id="ed-cp-search" class="form-control dc-cp-search" placeholder="🔎 Tapez : 'vol', 'rébellion', '1.7'..." autocomplete="off" oninput="dcCpSearch('ed')" onfocus="dcCpSearch('ed')" onblur="setTimeout(function(){var d=document.getElementById('ed-cp-results');if(d)d.style.display='none';},200)">
+            <div id="ed-cp-results" class="dc-cp-results" style="display:none"></div>
+          </div>
+          <div id="ed-cp-selected" class="dc-cp-selected"></div>
+          <input type="text" id="ed-infractions" class="form-control dc-cp-free" placeholder="…ou saisie libre supplémentaire" style="margin-top:9px">
+        </div>
+        <div class="form-group" style="margin-bottom:10px">
+          <label class="form-label">Notes de l'incident</label>
+          <textarea id="ed-incident-notes" class="form-control" placeholder="Détails de cet incident..."></textarea>
+        </div>
+        <div class="grid grid-2" style="margin-bottom:0">
+          <div class="form-group" style="margin-bottom:0">
+            <label class="form-label" style="color:#22c55e">✅ Déjà payé</label>
+            <input type="number" id="ed-amende-payee" class="form-control" placeholder="0" min="0" oninput="dcUpdateImpayeePreview('ed')">
+          </div>
+          <div class="form-group" style="margin-bottom:0">
+            <label class="form-label" style="color:#f87171">❌ Reste à payer (auto)</label>
+            <input type="text" id="ed-amende-impayee-preview" class="form-control" readonly value="0" style="cursor:not-allowed;background:rgba(0,0,0,0.25);font-weight:700;color:#f87171">
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;margin-top:10px;justify-content:flex-end">
+          <button type="button" class="btn btn-outline btn-sm" onclick="dcCancelNewIncident('ed')">Annuler</button>
+          <button type="button" class="btn btn-primary btn-sm" onclick="dcSaveNewIncident()">✓ Ajouter cet incident</button>
+        </div>
+      </div>
+
       <div class="grid grid-2">
         <div class="form-group"><label class="form-label">Dangerosité</label>
           <select id="ed-danger" class="form-control"><option>Faible</option><option>Modéré</option><option>Élevé</option><option>Extrême</option></select></div>
         <div class="form-group"><label class="form-label">Statut</label>
           <select id="ed-statut" class="form-control"><option>Recherché</option><option>En garde à vue</option><option>Incarcéré</option><option>Libéré</option><option>Surveillé</option></select></div>
       </div>
-      <div class="form-group"><label class="form-label">Notes</label><textarea id="ed-notes" class="form-control"></textarea></div>
+      <div class="form-group"><label class="form-label">Notes générales du dossier</label><textarea id="ed-notes" class="form-control"></textarea></div>
       <!-- Marqueur défunt -->
       <div class="dc-defunt-block">
         <label class="dc-defunt-row">
@@ -15865,28 +16223,28 @@ function plv2SelectCible(el,val){
           <span class="dc-defunt-icon">⚱</span>
           <span class="dc-defunt-lbl">Marquer comme défunt</span>
         </label>
-        <div class="dc-defunt-help">Le suspect apparaîtra grisé avec un tampon « DÉFUNT » dans la liste. Utilisé quand le suspect est décédé (mort RP, exécution, etc.).</div>
+        <div class="dc-defunt-help">Le suspect apparaîtra grisé avec un tampon « DÉFUNT ». Toutes les amendes impayées seront automatiquement annulées.</div>
       </div>
-      <!-- Amendes -->
-      <div style="background:rgba(180,140,20,0.05);border:1px solid rgba(180,140,20,0.2);border-radius:9px;padding:13px 15px;margin-bottom:13px">
-        <div style="font-size:9px;letter-spacing:2px;color:var(--gold2);font-family:'Share Tech Mono',monospace;text-transform:uppercase;margin-bottom:10px">💰 Amendes (Ryos)</div>
-        <div class="grid grid-2">
-          <div class="form-group" style="margin-bottom:0">
-            <label class="form-label" style="color:#166534">✅ Amende payée</label>
-            <div style="position:relative">
-              <input type="number" id="ed-amende-payee" class="form-control" placeholder="0" min="0" style="padding-right:50px">
-              <span style="position:absolute;right:10px;top:50%;transform:translateY(-50%);font-size:10px;color:var(--muted);font-family:'Share Tech Mono',monospace">Ryos</span>
-            </div>
+
+      <!-- Récap global du dossier (somme de tous les incidents) -->
+      <div class="dc-recap-global">
+        <div class="dc-recap-global-title">📊 Récapitulatif global du dossier</div>
+        <div class="dc-recap-global-grid">
+          <div class="dc-recap-global-item">
+            <div class="dc-recap-global-lbl">💰 Total amendes</div>
+            <div class="dc-recap-global-val" id="ed-recap-total">0 Ryos</div>
           </div>
-          <div class="form-group" style="margin-bottom:0">
-            <label class="form-label" style="color:#991b1b">❌ Amende impayée</label>
-            <div style="position:relative">
-              <input type="number" id="ed-amende-impayee" class="form-control" placeholder="0" min="0" style="padding-right:50px">
-              <span style="position:absolute;right:10px;top:50%;transform:translateY(-50%);font-size:10px;color:var(--muted);font-family:'Share Tech Mono',monospace">Ryos</span>
-            </div>
+          <div class="dc-recap-global-item">
+            <div class="dc-recap-global-lbl">✅ Total payé</div>
+            <div class="dc-recap-global-val" id="ed-recap-paye" style="color:#22c55e">0 Ryos</div>
+          </div>
+          <div class="dc-recap-global-item">
+            <div class="dc-recap-global-lbl">❌ Reste à payer</div>
+            <div class="dc-recap-global-val" id="ed-recap-impaye" style="color:#f87171">0 Ryos</div>
           </div>
         </div>
       </div>
+
       <!-- Tags -->
       <div class="form-group" style="margin-bottom:13px">
         <label class="form-label" style="color:rgba(109,40,217,0.85)">🏷 Tags</label>
@@ -21013,10 +21371,268 @@ function deletePlainte(id){
   id=parseInt(id);askDelete("Supprimer cette plainte ?",()=>{_markDeleted("plaintes",id);DB.plaintes=DB.plaintes.filter(p=>String(p.id)!==String(id));saveData('plaintes');renderPlaintes();syncDashboard()})
 }
 
+// ═══════════════════════════════════════════════════════════════
+// AUTOMATISATION CODE PÉNAL — utilitaires partagés création/édition
+// ═══════════════════════════════════════════════════════════════
+
+/* Parse une chaîne d'amende du code pénal vers un nombre.
+   Exemples : "2 500両" → 2500 ; "100 000両" → 100000 ; "MORT" → 0 ; "" → 0
+   Le code pénal RP utilise le caractère 両 (= Ryos) et des espaces fines comme séparateurs. */
+function dcParseAmende(str){
+  if(!str) return 0;
+  if(typeof str === 'number') return str;
+  // Si "MORT" ou autre texte non-numérique → 0 (peine capitale, traitée à part)
+  var s = String(str).replace(/[\s\u00A0両,]/g, '');
+  if(/^[A-Za-zÀ-ÿ]+$/.test(s)) return 0;
+  var n = parseInt(s, 10);
+  return isNaN(n) ? 0 : n;
+}
+
+/* État courant des infractions sélectionnées dans les formulaires de création/édition.
+   Les clés sont les préfixes ('d' = create, 'ed' = edit-new-incident). */
+var _dcSelectedInfractions = { d: [], ed: [] };
+
+/* Recherche dans le code pénal (DB.infractions) selon le terme tapé.
+   Affichage d'un dropdown avec catégorie en pastille, montant et indication prison.
+   prefix : 'd' (création) ou 'ed' (nouvel incident dans édition). */
+function dcCpSearch(prefix){
+  var input = document.getElementById(prefix+'-cp-search');
+  var results = document.getElementById(prefix+'-cp-results');
+  if(!input || !results) return;
+  var q = (input.value||'').toLowerCase().trim();
+  var all = Array.isArray(DB.infractions) ? DB.infractions : [];
+  // Si vide : montrer les premières infractions par catégorie (10 max)
+  var matches;
+  if(q.length === 0){
+    matches = all.slice(0, 10);
+  } else {
+    matches = all.filter(function(inf){
+      if(!inf) return false;
+      var hay = ((inf.nom||'')+' '+(inf.cat||'')+' '+(inf.notes||'')).toLowerCase();
+      return hay.indexOf(q) !== -1;
+    }).slice(0, 12);
+  }
+  // Filtrer les déjà sélectionnés
+  var selected = _dcSelectedInfractions[prefix] || [];
+  var selectedIds = selected.map(function(x){return x.codeId;});
+  matches = matches.filter(function(inf){return selectedIds.indexOf(inf.id) === -1;});
+  if(matches.length === 0){
+    results.innerHTML = '<div class="dc-cp-empty">— Aucune infraction trouvée. Tapez un mot-clé ou utilisez la saisie libre ci-dessous —</div>';
+    results.style.display = 'block';
+    return;
+  }
+  results.innerHTML = matches.map(function(inf){
+    var amende = dcParseAmende(inf.amende);
+    var hasPrison = (inf.prison||'').toString().toLowerCase() === 'oui'
+                 || (inf.prison||'').toString().toUpperCase() === 'MORT';
+    var amStr = amende > 0 ? amende.toLocaleString('fr-FR')+' Ryos' : (inf.amende || '—');
+    var meta = amStr + (hasPrison ? ' · ⛓ prison' : '');
+    return '<div class="dc-cp-result-item" onmousedown="dcCpAdd(\''+prefix+'\','+inf.id+')">'
+         +   '<span class="dc-cp-result-cat" data-cat="'+esc(inf.cat||'')+'"></span>'
+         +   '<span class="dc-cp-result-text">'+esc(inf.nom||'')+'</span>'
+         +   '<span class="dc-cp-result-meta'+(hasPrison?' has-prison':'')+'">'+esc(meta)+'</span>'
+         + '</div>';
+  }).join('');
+  results.style.display = 'block';
+}
+
+/* Ajoute une infraction du code pénal à la liste sélectionnée. */
+function dcCpAdd(prefix, codeId){
+  var inf = (DB.infractions||[]).find(function(x){return String(x.id)===String(codeId);});
+  if(!inf) return;
+  if(!_dcSelectedInfractions[prefix]) _dcSelectedInfractions[prefix] = [];
+  // Anti-doublon
+  if(_dcSelectedInfractions[prefix].some(function(x){return x.codeId === inf.id;})) return;
+  _dcSelectedInfractions[prefix].push({
+    codeId: inf.id,
+    nom: inf.nom||'',
+    cat: inf.cat||'',
+    amende: dcParseAmende(inf.amende),
+    amendeText: inf.amende||'',  // garde la version texte d'origine pour MORT etc.
+    prison: ((inf.prison||'').toString().toLowerCase() === 'oui'
+          || (inf.prison||'').toString().toUpperCase() === 'MORT'),
+    prisonText: inf.prison||'',
+    duree: inf.duree||''
+  });
+  // Vider la recherche pour permettre une nouvelle recherche
+  var input = document.getElementById(prefix+'-cp-search');
+  if(input) input.value = '';
+  var results = document.getElementById(prefix+'-cp-results');
+  if(results) results.style.display = 'none';
+  dcRenderSelected(prefix);
+  dcUpdateImpayeePreview(prefix);
+}
+
+/* Retire une infraction de la liste. */
+function dcCpRemove(prefix, codeId){
+  if(!_dcSelectedInfractions[prefix]) return;
+  _dcSelectedInfractions[prefix] = _dcSelectedInfractions[prefix].filter(function(x){return x.codeId !== codeId;});
+  dcRenderSelected(prefix);
+  dcUpdateImpayeePreview(prefix);
+}
+
+/* Rendu visuel des chips sélectionnées + récap. */
+function dcRenderSelected(prefix){
+  var box = document.getElementById(prefix+'-cp-selected');
+  var recap = document.getElementById(prefix+'-cp-recap');
+  if(!box) return;
+  var arr = _dcSelectedInfractions[prefix] || [];
+  if(arr.length === 0){
+    box.innerHTML = '';
+    if(recap) recap.style.display = 'none';
+    return;
+  }
+  box.innerHTML = arr.map(function(it){
+    var amStr = (it.amendeText && /[A-Za-zÀ-ÿ]/.test(it.amendeText) && !it.amende)
+      ? it.amendeText
+      : (it.amende > 0 ? it.amende.toLocaleString('fr-FR')+' Ryos' : '—');
+    var meta = amStr + (it.prison ? ' · ⛓' : '');
+    return '<div class="dc-cp-chip">'
+         +   '<span class="dc-cp-chip-cat" data-cat="'+esc(it.cat)+'"></span>'
+         +   '<span class="dc-cp-chip-text">'+esc(it.nom)+'</span>'
+         +   '<span class="dc-cp-chip-meta'+(it.prison?' has-prison':'')+'">'+esc(meta)+'</span>'
+         +   '<button class="dc-cp-chip-rm" type="button" onclick="dcCpRemove(\''+prefix+'\','+it.codeId+')" title="Retirer">✕</button>'
+         + '</div>';
+  }).join('');
+  // Récap : total amendes + indication prison
+  var totalAmende = arr.reduce(function(s,x){return s + (x.amende||0);},0);
+  var hasPrison = arr.some(function(x){return x.prison;});
+  var prisonInfractions = arr.filter(function(x){return x.prison;});
+  if(recap){
+    recap.style.display = '';
+    var amVal = document.getElementById(prefix+'-cp-recap-amende');
+    var prVal = document.getElementById(prefix+'-cp-recap-prison');
+    if(amVal) amVal.textContent = totalAmende > 0 ? totalAmende.toLocaleString('fr-FR')+' Ryos' : '—';
+    if(prVal){
+      if(hasPrison){
+        prVal.textContent = '⛓ Oui — '+prisonInfractions.length+' infraction'+(prisonInfractions.length>1?'s':'')+' avec prison';
+        prVal.className = 'dc-cp-recap-val has-prison';
+      } else {
+        prVal.textContent = 'Aucune';
+        prVal.className = 'dc-cp-recap-val no-prison';
+      }
+    }
+  }
+}
+
+/* Mise à jour du champ "Reste à payer" (read-only) à partir du total des amendes
+   et du montant déjà payé. Cette fonction est aussi appelée quand l'utilisateur
+   change le montant payé. */
+function dcUpdateImpayeePreview(prefix){
+  var arr = _dcSelectedInfractions[prefix] || [];
+  var totalAmende = arr.reduce(function(s,x){return s + (x.amende||0);},0);
+  var payeEl = document.getElementById(prefix+'-amende-payee');
+  var paye = payeEl ? (parseInt(payeEl.value, 10) || 0) : 0;
+  // Plafonner le payé au total (impossible de payer plus que ce qui est dû)
+  if(totalAmende > 0 && paye > totalAmende){
+    paye = totalAmende;
+    if(payeEl) payeEl.value = paye;
+  }
+  var impaye = Math.max(0, totalAmende - paye);
+  var impayeEl = document.getElementById(prefix+'-amende-impayee-preview');
+  if(impayeEl) impayeEl.value = impaye.toLocaleString('fr-FR');
+}
+
+/* Reset complet de l'état des infractions sélectionnées pour un préfixe. */
+function dcResetSelected(prefix){
+  _dcSelectedInfractions[prefix] = [];
+  var box = document.getElementById(prefix+'-cp-selected');
+  if(box) box.innerHTML = '';
+  var recap = document.getElementById(prefix+'-cp-recap');
+  if(recap) recap.style.display = 'none';
+  var search = document.getElementById(prefix+'-cp-search');
+  if(search) search.value = '';
+  var results = document.getElementById(prefix+'-cp-results');
+  if(results) results.style.display = 'none';
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   GESTION DES INCIDENTS — un dossier peut contenir plusieurs incidents
+   (= plusieurs dates où des infractions ont été commises).
+   ═══════════════════════════════════════════════════════════════ */
+
+/* Migration : convertit un dossier "ancien format" en nouveau format avec un incident.
+   Idempotent : si le dossier a déjà un tableau .incidents non vide, ne fait rien. */
+function dcEnsureIncidents(d){
+  if(!d) return d;
+  if(Array.isArray(d.incidents) && d.incidents.length > 0) return d;
+  // Construire un incident à partir des données legacy
+  var legacyAmendePayee   = parseInt(d.amendePayee, 10)   || 0;
+  var legacyAmendeImpayee = parseInt(d.amendeImpayee, 10) || 0;
+  var legacyTotal = legacyAmendePayee + legacyAmendeImpayee;
+  d.incidents = [{
+    id: (d.id || Date.now()),
+    date: d.date || now(),
+    auteur: d.auteur || '',
+    infractions: [],  // pas d'entrées de code pénal pour les anciens dossiers
+    infractionsLibres: d.infractions || '',
+    notes: '',
+    // L'amende totale en legacy = payée + impayée (si l'utilisateur avait saisi les deux)
+    amendeTotal: legacyTotal,
+    amendePayee: legacyAmendePayee
+    // amendeImpayee est calculé dynamiquement → pas stocké
+  }];
+  return d;
+}
+
+/* Total des amendes pour tout un dossier (somme de tous les incidents). */
+function dcDossierTotalAmende(d){
+  dcEnsureIncidents(d);
+  return (d.incidents||[]).reduce(function(s,inc){return s + (inc.amendeTotal||0);}, 0);
+}
+function dcDossierTotalPaye(d){
+  dcEnsureIncidents(d);
+  return (d.incidents||[]).reduce(function(s,inc){return s + (inc.amendePayee||0);}, 0);
+}
+/* Reste à payer global. Si le suspect est défunt → 0 (les amendes meurent avec lui). */
+function dcDossierTotalImpaye(d){
+  if(d && d.defunt) return 0;
+  var total = dcDossierTotalAmende(d);
+  var paye  = dcDossierTotalPaye(d);
+  return Math.max(0, total - paye);
+}
+/* Statut de paiement d'un incident : 'paid' | 'partial' | 'unpaid'. */
+function dcIncidentPayStatus(inc, dossierIsDefunt){
+  if(dossierIsDefunt) return 'paid'; // mort = quitte
+  var total = inc.amendeTotal || 0;
+  var paye  = inc.amendePayee || 0;
+  if(total === 0) return 'paid';
+  if(paye >= total) return 'paid';
+  if(paye > 0) return 'partial';
+  return 'unpaid';
+}
+
 // DOSSIERS
+/* Wrapper pour ouvrir le modal de création de dossier proprement :
+   pré-remplit la date d'incident à aujourd'hui, vide la liste d'infractions, etc. */
+function dcOpenNewDossier(){
+  if(typeof clearDossierPhoto === 'function') clearDossierPhoto();
+  if(typeof buildTagPicker === 'function') buildTagPicker('d', []);
+  // Reset infractions code pénal
+  if(typeof dcResetSelected === 'function') dcResetSelected('d');
+  // Reset des champs
+  ['d-nom','d-infractions','d-notes','d-amende-payee'].forEach(function(id){
+    var e = document.getElementById(id); if(e) e.value = '';
+  });
+  var imp = document.getElementById('d-amende-impayee-preview'); if(imp) imp.value = '0';
+  if(document.getElementById('d-defunt')) document.getElementById('d-defunt').checked = false;
+  // Pré-remplir la date à aujourd'hui
+  var dateEl = document.getElementById('d-incident-date');
+  if(dateEl){
+    var now2 = new Date();
+    dateEl.value = now2.getFullYear()+'-'+String(now2.getMonth()+1).padStart(2,'0')+'-'+String(now2.getDate()).padStart(2,'0');
+  }
+  // Reset alerte doublon
+  var alertEl = document.getElementById('d-doublon-alert'); if(alertEl) alertEl.style.display = 'none';
+  var btnF = document.getElementById('d-btn-forcer'); if(btnF) btnF.style.display = 'none';
+  openModal('modal-dossier');
+}
+
 function viewDossier(id){
   id=parseInt(id);
   const d=DB.dossiers.find(x=>String(x.id)===String(id));if(!d)return;
+  // Migration auto vers le format multi-incidents
+  dcEnsureIncidents(d);
   var m=document.getElementById("modal-view-dossier");
   if(!m){
     m=document.createElement("div");m.className="modal-overlay";m.id="modal-view-dossier";
@@ -21025,21 +21641,91 @@ function viewDossier(id){
     m.addEventListener("click",function(e){if(e.target===m)m.classList.remove("open");});
   }
   document.getElementById("vd-title").textContent="🗂️ Dossier — "+d.nom;
-  const photoHTML=d.photo&&safeImgSrc(d.photo)?`<div style="display:flex;justify-content:center;margin-bottom:14px"><img alt="Photo" src="${safeImgSrc(d.photo)}" style="max-width:120px;max-height:150px;border-radius:10px;object-fit:cover;border:2px solid rgba(180,140,20,0.25)"></div>`:"";
-  document.getElementById("vd-body").innerHTML=`${photoHTML}
+  const photoHTML = d.photo && safeImgSrc(d.photo)
+    ? `<div style="display:flex;justify-content:center;margin-bottom:14px"><img alt="Photo" src="${safeImgSrc(d.photo)}" style="max-width:120px;max-height:150px;border-radius:10px;object-fit:cover;border:2px solid rgba(180,140,20,0.25)"></div>`
+    : "";
+
+  // ─── Récap global ───
+  var totalAmende = dcDossierTotalAmende(d);
+  var totalPaye   = dcDossierTotalPaye(d);
+  var totalImpaye = dcDossierTotalImpaye(d);
+  var defuntNote  = d.defunt
+    ? '<div style="margin-top:6px;padding:7px 10px;background:rgba(0,0,0,0.4);border-left:3px solid rgba(220,80,90,0.7);border-radius:4px;font-size:11px;color:rgba(225,90,100,0.95);font-style:italic">⚱ Suspect défunt — toutes les amendes impayées sont annulées.</div>'
+    : '';
+  var recapGlobalHTML = (totalAmende > 0 || totalPaye > 0)
+    ? `<div class="dc-recap-global" style="margin-top:0;margin-bottom:14px">
+         <div class="dc-recap-global-title">📊 Récapitulatif financier</div>
+         <div class="dc-recap-global-grid">
+           <div class="dc-recap-global-item"><div class="dc-recap-global-lbl">💰 Total amendes</div><div class="dc-recap-global-val">${totalAmende.toLocaleString('fr-FR')} Ryos</div></div>
+           <div class="dc-recap-global-item"><div class="dc-recap-global-lbl">✅ Total payé</div><div class="dc-recap-global-val" style="color:#22c55e">${totalPaye.toLocaleString('fr-FR')} Ryos</div></div>
+           <div class="dc-recap-global-item"><div class="dc-recap-global-lbl">❌ Reste à payer</div><div class="dc-recap-global-val" style="color:${d.defunt?'rgba(255,255,255,0.4)':'#f87171'}">${totalImpaye.toLocaleString('fr-FR')} Ryos${d.defunt?' <span style="font-size:9px;font-weight:400;font-style:italic">(annulé)</span>':''}</div></div>
+         </div>
+         ${defuntNote}
+       </div>`
+    : '';
+
+  // ─── Timeline des incidents ───
+  var incidents = (d.incidents||[]).slice().sort(function(a,b){
+    var ad = new Date(a.date||0).getTime();
+    var bd = new Date(b.date||0).getTime();
+    return bd - ad; // plus récent en premier
+  });
+  var incidentsHTML = incidents.length === 0
+    ? '<div style="text-align:center;padding:18px;color:var(--muted);font-style:italic;font-size:12px">— Aucun incident enregistré —</div>'
+    : incidents.map(function(inc, idx){
+        var status = dcIncidentPayStatus(inc, d.defunt);
+        var statusLabel = status === 'paid' ? '✅ Soldé' : status === 'partial' ? '⚠ Partiellement payé' : '❌ Impayé';
+        var statusClass = status === 'paid' ? 'is-paid' : status === 'partial' ? 'is-partial' : '';
+        var infrChips = (inc.infractions||[]).map(function(it){
+          var amStr = (it.amendeText && /[A-Za-zÀ-ÿ]/.test(it.amendeText) && !it.amende)
+            ? it.amendeText
+            : (it.amende > 0 ? it.amende.toLocaleString('fr-FR')+' Ryos' : '');
+          return '<span class="dc-incident-infr-chip" data-cat="'+esc(it.cat||'')+'">'
+               + esc(it.nom||'')
+               + (amStr ? ' <strong style="margin-left:4px;font-family:\'Share Tech Mono\',monospace;font-size:9.5px">'+esc(amStr)+'</strong>' : '')
+               + (it.prison ? ' <span style="color:#fb923c;margin-left:3px">⛓</span>' : '')
+               + '</span>';
+        }).join('');
+        // Saisie libre : afficher chaque morceau séparé par virgule comme un chip neutre
+        var libres = (inc.infractionsLibres||'').split(',').map(function(s){return s.trim();}).filter(Boolean);
+        var libresHTML = libres.map(function(s){
+          return '<span class="dc-incident-infr-chip">'+esc(s)+'</span>';
+        }).join('');
+        var hasPrison = (inc.infractions||[]).some(function(x){return x.prison;});
+        var prisonHTML = hasPrison
+          ? '<div class="dc-incident-prison-row">⛓ Peine de prison applicable'+(inc.dureePrisonRP?' — '+esc(inc.dureePrisonRP):'')+'</div>'
+          : '';
+        var incImpaye = d.defunt ? 0 : Math.max(0, (inc.amendeTotal||0) - (inc.amendePayee||0));
+        return `<div class="dc-incident-card ${status==='paid'?'is-paid':''}">
+          <div class="dc-incident-head">
+            <span class="dc-incident-date">📅 ${fmtDate(inc.date)}</span>
+            <span class="dc-incident-status-pill ${statusClass}">${statusLabel}</span>
+          </div>
+          ${(infrChips || libresHTML) ? `<div class="dc-incident-infractions">${infrChips}${libresHTML}</div>` : ''}
+          ${inc.notes ? `<div style="font-size:11.5px;color:var(--text2);margin-bottom:7px;padding:6px 9px;background:rgba(0,0,0,0.2);border-radius:4px;border-left:2px solid rgba(180,140,20,0.4);white-space:pre-wrap">${esc(inc.notes)}</div>` : ''}
+          ${prisonHTML}
+          <div class="dc-incident-amounts" style="margin-top:7px">
+            ${(inc.amendeTotal||0)>0 ? '<span>💰 <strong>'+Number(inc.amendeTotal).toLocaleString('fr-FR')+' Ryos</strong></span>' : ''}
+            ${(inc.amendePayee||0)>0 ? '<span class="dc-incident-amount-paye">✅ '+Number(inc.amendePayee).toLocaleString('fr-FR')+' payés</span>' : ''}
+            ${incImpaye>0 ? '<span class="dc-incident-amount-impaye">❌ '+incImpaye.toLocaleString('fr-FR')+' restants</span>' : ''}
+          </div>
+        </div>`;
+      }).join('');
+
+  document.getElementById("vd-body").innerHTML = `${photoHTML}
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
       <div class="form-group" style="margin:0"><label class="form-label">Suspect</label><div style="font-weight:700;font-size:14px">${esc(d.nom)}</div></div>
       <div class="form-group" style="margin:0"><label class="form-label">Dangerosité</label><span class="badge ${dangerBadge(d.danger)}">${esc(d.danger)}</span></div>
       <div class="form-group" style="margin:0"><label class="form-label">Statut</label><span class="badge ${dossierStatutBadge(d.statut)}">${esc(d.statut)}</span></div>
       <div class="form-group" style="margin:0"><label class="form-label">Agent</label><div style="font-size:12px;font-weight:600">${esc(d.auteur||"—")}</div></div>
     </div>
-    <div class="form-group"><label class="form-label">Infractions</label><div style="font-size:12.5px;white-space:pre-wrap">${esc(d.infractions)}</div></div>
-    ${d.notes?`<div class="form-group"><label class="form-label">Notes</label><div style="font-size:12px;color:var(--muted);white-space:pre-wrap">${esc(d.notes)}</div></div>`:""}
-    ${(d.tags&&d.tags.length)?`<div class="form-group"><label class="form-label" style="color:rgba(109,40,217,0.85)">🏷 Tags</label><div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:4px">${d.tags.map(tid=>{const t=DOSSIER_TAGS.find(x=>x.id===tid);return t?`<span class="tag-pill" style="background:${t.bg};color:${t.color};border:1px solid ${t.border}">${t.label}</span>`:`<span class="tag-pill" style="background:rgba(109,40,217,0.08);color:#5b21b6;border:1px solid rgba(109,40,217,0.22)">${esc(tid)}</span>`;}).join('')}</div></div>`:""}
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-      ${(d.amendePayee||0)>0?`<div class="form-group" style="margin:0"><label class="form-label">Amende payée</label><div style="color:#166534;font-family:'Share Tech Mono',monospace;font-weight:700">✅ ${Number(d.amendePayee).toLocaleString()} Ryos</div></div>`:""}
-      ${(d.amendeImpayee||0)>0?`<div class="form-group" style="margin:0"><label class="form-label">Amende impayée</label><div style="color:#991b1b;font-family:'Share Tech Mono',monospace;font-weight:700">❌ ${Number(d.amendeImpayee).toLocaleString()} Ryos</div></div>`:""}
+    ${recapGlobalHTML}
+    <div class="form-group">
+      <label class="form-label">📋 Historique des incidents (${incidents.length})</label>
+      <div class="dc-incidents-list">${incidentsHTML}</div>
     </div>
+    ${d.notes ? `<div class="form-group"><label class="form-label">📝 Notes générales</label><div style="font-size:12px;color:var(--muted);white-space:pre-wrap">${esc(d.notes)}</div></div>` : ""}
+    ${(d.tags && d.tags.length) ? `<div class="form-group"><label class="form-label" style="color:rgba(109,40,217,0.85)">🏷 Tags</label><div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:4px">${d.tags.map(tid=>{const t=DOSSIER_TAGS.find(x=>x.id===tid);return t?`<span class="tag-pill" style="background:${t.bg};color:${t.color};border:1px solid ${t.border}">${t.label}</span>`:`<span class="tag-pill" style="background:rgba(109,40,217,0.08);color:#5b21b6;border:1px solid rgba(109,40,217,0.22)">${esc(tid)}</span>`;}).join('')}</div></div>` : ""}
     <div class="form-group" style="margin-top:8px"><label class="form-label">Créé le</label><div style="font-size:11px;color:var(--muted);font-family:'Share Tech Mono',monospace">${fmtDate(d.date)}</div></div>`;
   openModal("modal-view-dossier");
 }
@@ -21152,15 +21838,62 @@ function renderDossiers(){
   var tbody = el("dossiers-tbody");
   if(!tbody) return;
   tbody.innerHTML = list.map(function(d){
+    // Migration silencieuse au rendu : assure que d.incidents existe
+    dcEnsureIncidents(d);
     var photoCell = d.photo
       ? '<img alt="Photo" src="'+safeImgSrc(d.photo)+'" style="width:36px;height:44px;object-fit:cover;border-radius:5px;border:1px solid rgba(180,140,20,0.2);box-shadow:0 2px 6px rgba(0,0,0,0.12)">'
       : '<div style="width:36px;height:44px;border-radius:5px;border:1px dashed rgba(255,255,255,0.15);display:flex;align-items:center;justify-content:center;font-size:18px;opacity:0.35">👤</div>';
     var defuntStamp = d.defunt ? '<span class="dc-defunt-stamp" title="Suspect décédé">Défunt</span>' : '';
     var rowClass = d.defunt ? ' class="is-defunt"' : '';
+
+    // ─── Cellule "Infractions" CONDENSÉE ───
+    // L'utilisateur voit un résumé clair : nombre d'incidents/infractions + indicateurs prison/amende.
+    // Le détail complet est consultable via "👁 Voir le dossier".
+    var incidents = d.incidents || [];
+    var totalInfr = incidents.reduce(function(s,inc){
+      var nCp = (inc.infractions||[]).length;
+      var nLib = (inc.infractionsLibres||'').split(',').map(function(x){return x.trim();}).filter(Boolean).length;
+      return s + nCp + nLib;
+    }, 0);
+    var hasPrison = incidents.some(function(inc){
+      return (inc.infractions||[]).some(function(x){return x.prison;});
+    });
+    // Catégories présentes (pour pastilles colorées)
+    var cats = new Set();
+    incidents.forEach(function(inc){
+      (inc.infractions||[]).forEach(function(x){ if(x.cat) cats.add(x.cat); });
+    });
+    var catBadges = Array.from(cats).map(function(c){
+      var color = c==='rouge' ? '#ef4444' : c==='vert' ? '#22c55e' : c==='violet' ? '#a78bfa' : '#9ca3af';
+      return '<span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:'+color+';box-shadow:0 0 4px '+color+'66" title="'+esc(c)+'"></span>';
+    }).join('');
+    // Premier libellé d'infraction pour donner un aperçu
+    var firstInfr = '';
+    for(var ii=0; ii<incidents.length && !firstInfr; ii++){
+      if((incidents[ii].infractions||[]).length){
+        firstInfr = incidents[ii].infractions[0].nom;
+      } else {
+        var libs = (incidents[ii].infractionsLibres||'').split(',').map(function(s){return s.trim();}).filter(Boolean);
+        if(libs.length) firstInfr = libs[0];
+      }
+    }
+    // Si aucun incident structuré, fallback sur le champ legacy
+    if(!firstInfr && d.infractions) firstInfr = d.infractions.split(/[,|]/)[0].trim();
+
+    var nIncidents = incidents.length;
+    var infrCellHTML = '<div style="display:flex;align-items:center;gap:6px;line-height:1.3">'
+      + (catBadges ? '<span style="display:inline-flex;gap:3px;flex-shrink:0">'+catBadges+'</span>' : '')
+      + '<div style="min-width:0;flex:1">'
+      +   (firstInfr ? '<div style="font-size:11.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:200px" title="'+esc(firstInfr)+'">'+esc(firstInfr)+'</div>' : '<span style="color:var(--muted);font-size:10px;font-style:italic">— Aucune —</span>')
+      +   (totalInfr > 1 ? '<div style="font-size:9px;color:var(--muted);font-family:\'Share Tech Mono\',monospace;letter-spacing:0.5px;margin-top:1px">+'+(totalInfr-1)+' autre'+(totalInfr-1>1?'s':'')+(nIncidents>1?' · '+nIncidents+' incidents':'')+'</div>' : (nIncidents>1?'<div style="font-size:9px;color:var(--muted);font-family:\'Share Tech Mono\',monospace;letter-spacing:0.5px;margin-top:1px">'+nIncidents+' incidents</div>':''))
+      + '</div>'
+      + (hasPrison ? '<span title="Au moins une peine de prison" style="color:#fb923c;font-size:13px;flex-shrink:0">⛓</span>' : '')
+      + '</div>';
+
     return '<tr'+rowClass+'>'
       +'<td>'+photoCell+'</td>'
       +'<td><b>'+esc(d.nom)+'</b>'+defuntStamp+'</td>'
-      +'<td style="font-size:11.5px">'+esc(d.infractions)+'</td>'
+      +'<td style="font-size:11.5px;max-width:230px">'+infrCellHTML+'</td>'
       +'<td><span class="badge '+dangerBadge(d.danger)+'">'+esc(d.danger)+'</span></td>'
       +'<td><span class="badge '+dossierStatutBadge(d.statut)+'">'+esc(d.statut)+'</span></td>'
       +'<td style="font-size:11px;white-space:nowrap">'
@@ -21414,31 +22147,83 @@ function getAllTags(prefix){
 
 function saveDossier(force){
   if(typeof canModify === 'function' && !canModify()){ showToast('⛔ Action réservée aux modérateurs.','error'); return; }
-  const nom=v("d-nom");if(!nom)return;
+  const nom = v("d-nom"); if(!nom) return;
   // Vérification doublon — si des dossiers existent déjà et que force n'est pas activé, bloquer
   if(!force){
-    const matches=DB.dossiers.filter(d=>(d.nom||"").trim().toLowerCase()===nom.trim().toLowerCase());
-    if(matches.length>0){
+    const matches = DB.dossiers.filter(d => (d.nom||"").trim().toLowerCase() === nom.trim().toLowerCase());
+    if(matches.length > 0){
       // Mettre en surbrillance l'alerte
-      var alertEl=el("d-doublon-alert");
-      if(alertEl){alertEl.style.boxShadow="0 0 0 3px rgba(180,140,20,0.35)";setTimeout(function(){if(alertEl)alertEl.style.boxShadow="";},1200);}
+      var alertEl = el("d-doublon-alert");
+      if(alertEl){
+        alertEl.style.boxShadow = "0 0 0 3px rgba(180,140,20,0.35)";
+        setTimeout(function(){ if(alertEl) alertEl.style.boxShadow = ""; }, 1200);
+      }
       return;
     }
   }
-  const photo=el("d-photo-data")?el("d-photo-data").value:"";
-  const amendePayee=parseInt(el("d-amende-payee").value)||0;
-  const amendeImpayee=parseInt(el("d-amende-impayee").value)||0;
-  const defunt=!!(el("d-defunt") && el("d-defunt").checked);
-  DB.dossiers.push({id:Date.now(),nom,infractions:v("d-infractions"),danger:v("d-danger"),statut:v("d-statut"),notes:v("d-notes"),amendePayee,amendeImpayee,photo,defunt,auteur:currentUser.nom,date:now(),tags:getAllTags('d')});
-  addTimeline(`Dossier ouvert sur ${nom}`+(defunt?' (⚱ défunt)':''));
-  saveData(['dossiers','timeline']);closeModal("modal-dossier");renderDossiers();syncDashboard();
-  clearForm(["d-nom","d-infractions","d-notes","d-amende-payee","d-amende-impayee"]);
-  if(el("d-defunt")) el("d-defunt").checked=false;
-  buildTagPicker('d',[]);
+  const photo = el("d-photo-data") ? el("d-photo-data").value : "";
+  const defunt = !!(el("d-defunt") && el("d-defunt").checked);
+
+  // ─── Construction de l'incident initial à partir du formulaire ───
+  const selectedInfractions = (_dcSelectedInfractions['d'] || []).slice();
+  const totalAmende = selectedInfractions.reduce(function(s,x){return s + (x.amende||0);}, 0);
+  const amendePayeeRaw = parseInt(el("d-amende-payee").value, 10) || 0;
+  // Plafonner le payé au total (anti-fraude) — l'impayé ne peut jamais devenir négatif
+  const amendePayee = totalAmende > 0 ? Math.min(amendePayeeRaw, totalAmende) : amendePayeeRaw;
+  const incidentDate = (el("d-incident-date") && el("d-incident-date").value) || now();
+  const incident = {
+    id: Date.now(),
+    date: incidentDate,
+    auteur: currentUser.nom,
+    infractions: selectedInfractions,
+    infractionsLibres: v("d-infractions") || "",
+    notes: "",
+    amendeTotal: totalAmende,
+    amendePayee: amendePayee
+    // amendeImpayee n'est pas stocké : il est toujours calculé à la volée
+  };
+
+  // ─── Construction du dossier ───
+  // Champs legacy (infractions, amendePayee, amendeImpayee) gardés en synchro pour
+  // que les anciennes parties du code (recherche, stats, exports) continuent de fonctionner.
+  const legacyInfractionsTxt = (selectedInfractions.map(function(x){return x.nom;}).concat(
+    (incident.infractionsLibres||"").split(",").map(function(s){return s.trim();}).filter(Boolean)
+  )).join(", ");
+  DB.dossiers.push({
+    id: Date.now(),
+    nom: nom,
+    danger: v("d-danger"),
+    statut: v("d-statut"),
+    notes: v("d-notes"),
+    photo: photo,
+    defunt: defunt,
+    auteur: currentUser.nom,
+    date: now(),
+    tags: getAllTags('d'),
+    // Nouveau format
+    incidents: [incident],
+    // Legacy (pour rétrocompat des autres parties du code) — recalculés
+    infractions: legacyInfractionsTxt,
+    amendePayee: amendePayee,
+    amendeImpayee: defunt ? 0 : Math.max(0, totalAmende - amendePayee)
+  });
+
+  addTimeline(`Dossier ouvert sur ${nom}` + (defunt ? ' (⚱ défunt)' : ''));
+  saveData(['dossiers','timeline']);
+  closeModal("modal-dossier");
+  renderDossiers();
+  syncDashboard();
+  // Reset complet du formulaire
+  clearForm(["d-nom","d-infractions","d-notes","d-amende-payee","d-incident-date"]);
+  if(el("d-defunt")) el("d-defunt").checked = false;
+  if(el("d-amende-impayee-preview")) el("d-amende-impayee-preview").value = "0";
+  dcResetSelected('d');
+  buildTagPicker('d', []);
   clearDossierPhoto();
   // Reset alerte doublon
-  var alertEl=el("d-doublon-alert");if(alertEl)alertEl.style.display="none";
-  var btnF=el("d-btn-forcer");if(btnF)btnF.style.display="none";
+  var alertEl = el("d-doublon-alert"); if(alertEl) alertEl.style.display = "none";
+  var btnF = el("d-btn-forcer"); if(btnF) btnF.style.display = "none";
+  showToast("Dossier créé.", "success");
 }
 // Gestion photo dossier
 function loadDossierPhoto(input){
@@ -21492,49 +22277,281 @@ function deleteDossier(id){
 }
 
 function openEditDossier(id){
-  id=parseInt(id);
-  const d=DB.dossiers.find(x=>String(x.id)===String(id));if(!d)return;
-  el("ed-id").value=id;
-  el("ed-nom").value=d.nom||"";
-  el("ed-infractions").value=d.infractions||"";
-  el("ed-notes").value=d.notes||"";
-  el("ed-amende-payee").value=d.amendePayee||0;
-  el("ed-amende-impayee").value=d.amendeImpayee||0;
+  id = parseInt(id);
+  const d = DB.dossiers.find(x => String(x.id) === String(id));
+  if(!d) return;
+  // Migration auto vers le format multi-incidents si nécessaire
+  dcEnsureIncidents(d);
+  el("ed-id").value = id;
+  el("ed-nom").value = d.nom || "";
+  el("ed-notes").value = d.notes || "";
   if(el("ed-defunt")) el("ed-defunt").checked = !!d.defunt;
   // Sélectionner les bonnes options
-  const ds=el("ed-danger");for(let o of ds.options)o.selected=(o.value===d.danger||o.text===d.danger);
-  const ss=el("ed-statut");for(let o of ss.options)o.selected=(o.value===d.statut||o.text===d.statut);
+  const ds = el("ed-danger"); for(let o of ds.options) o.selected = (o.value === d.danger || o.text === d.danger);
+  const ss = el("ed-statut"); for(let o of ss.options) o.selected = (o.value === d.statut || o.text === d.statut);
   // Photo
-  el("ed-photo-data").value=d.photo||"";
-  const prev=el("ed-photo-preview");
+  el("ed-photo-data").value = d.photo || "";
+  const prev = el("ed-photo-preview");
   if(d.photo){
-    prev.innerHTML=`<img alt="Photo" src="${safeImgSrc(d.photo)}" style="width:100%;height:100%;object-fit:cover;border-radius:6px">`;
-    prev.style.border="2px solid rgba(180,140,20,0.5)";
-    el("ed-photo-clear").style.display="";
+    prev.innerHTML = `<img alt="Photo" src="${safeImgSrc(d.photo)}" style="width:100%;height:100%;object-fit:cover;border-radius:6px">`;
+    prev.style.border = "2px solid rgba(180,140,20,0.5)";
+    el("ed-photo-clear").style.display = "";
   } else {
-    prev.innerHTML='<span style="font-size:26px;opacity:0.3">👤</span><span style="font-size:9px;color:var(--muted);margin-top:4px;text-align:center;padding:0 4px">Cliquer ou coller</span>';
-    prev.style.border="2px dashed rgba(180,140,20,0.35)";
-    el("ed-photo-clear").style.display="none";
+    prev.innerHTML = '<span style="font-size:26px;opacity:0.3">👤</span><span style="font-size:9px;color:var(--muted);margin-top:4px;text-align:center;padding:0 4px">Cliquer ou coller</span>';
+    prev.style.border = "2px dashed rgba(180,140,20,0.35)";
+    el("ed-photo-clear").style.display = "none";
   }
+  // Render la liste des incidents existants
+  dcRenderIncidentsListInEdit(d);
+  // Récap global
+  dcUpdateRecapGlobal(d);
+  // Cacher le formulaire de nouvel incident (replié par défaut)
+  dcCancelNewIncident('ed');
   openModal("modal-edit-dossier");
-  buildTagPicker('ed', d.tags||[]);
+  buildTagPicker('ed', d.tags || []);
+}
+
+/* Rendu de la liste des incidents dans le modal d'édition.
+   Chaque incident peut être supprimé et son montant payé peut être ajusté individuellement. */
+function dcRenderIncidentsListInEdit(d){
+  var box = document.getElementById('ed-incidents-list');
+  if(!box) return;
+  var incidents = (d.incidents||[]).slice().sort(function(a,b){
+    return new Date(b.date||0).getTime() - new Date(a.date||0).getTime();
+  });
+  if(incidents.length === 0){
+    box.innerHTML = '<div style="text-align:center;padding:14px;color:var(--muted);font-style:italic;font-size:11.5px">— Aucun incident — cliquez sur « Ajouter un incident » ci-dessous —</div>';
+    return;
+  }
+  box.innerHTML = incidents.map(function(inc){
+    var status = dcIncidentPayStatus(inc, d.defunt);
+    var statusLabel = status === 'paid' ? '✅ Soldé' : status === 'partial' ? '⚠ Partiel' : '❌ Impayé';
+    var statusClass = status === 'paid' ? 'is-paid' : status === 'partial' ? 'is-partial' : '';
+    var infrChips = (inc.infractions||[]).map(function(it){
+      var amStr = it.amende > 0 ? it.amende.toLocaleString('fr-FR')+'R' : '';
+      return '<span class="dc-incident-infr-chip" data-cat="'+esc(it.cat||'')+'">'
+           + esc(it.nom||'')
+           + (amStr ? ' <strong style="margin-left:3px;font-size:9.5px">'+esc(amStr)+'</strong>' : '')
+           + (it.prison ? ' ⛓' : '')
+           + '</span>';
+    }).join('');
+    var libres = (inc.infractionsLibres||'').split(',').map(function(s){return s.trim();}).filter(Boolean);
+    var libresHTML = libres.map(function(s){
+      return '<span class="dc-incident-infr-chip">'+esc(s)+'</span>';
+    }).join('');
+    var totalInc = inc.amendeTotal || 0;
+    var payeInc  = inc.amendePayee || 0;
+    var impayeInc = d.defunt ? 0 : Math.max(0, totalInc - payeInc);
+    var canAddPay = !d.defunt && impayeInc > 0;
+    return `<div class="dc-incident-card ${status==='paid'?'is-paid':''}" data-incident-id="${inc.id}">
+      <div class="dc-incident-head">
+        <span class="dc-incident-date">📅 ${fmtDate(inc.date)}</span>
+        <span class="dc-incident-status-pill ${statusClass}">${statusLabel}</span>
+        <button class="dc-incident-rm" type="button" onclick="dcDeleteIncident(${d.id},${inc.id})" title="Supprimer cet incident">🗑</button>
+      </div>
+      ${(infrChips || libresHTML) ? `<div class="dc-incident-infractions">${infrChips}${libresHTML}</div>` : ''}
+      ${inc.notes ? `<div style="font-size:11px;color:var(--text2);margin-bottom:6px;padding:5px 8px;background:rgba(0,0,0,0.2);border-radius:4px;border-left:2px solid rgba(180,140,20,0.4);white-space:pre-wrap">${esc(inc.notes)}</div>` : ''}
+      <div class="dc-incident-amounts">
+        ${totalInc>0 ? '💰 <strong>'+totalInc.toLocaleString('fr-FR')+' Ryos</strong>' : ''}
+        ${payeInc>0 ? '<span class="dc-incident-amount-paye">✅ '+payeInc.toLocaleString('fr-FR')+'</span>' : ''}
+        ${impayeInc>0 ? '<span class="dc-incident-amount-impaye">❌ '+impayeInc.toLocaleString('fr-FR')+'</span>' : ''}
+      </div>
+      ${canAddPay ? `<div class="dc-incident-pay-row">
+        <label>+ Paiement</label>
+        <input type="number" id="ed-inc-pay-${inc.id}" placeholder="0" min="1" max="${impayeInc}">
+        <button class="dc-incident-pay-btn" type="button" onclick="dcAddIncidentPayment(${d.id},${inc.id})">✓ Encaisser</button>
+      </div>` : ''}
+    </div>`;
+  }).join('');
+}
+
+/* Ajoute un paiement (partiel ou total) à un incident.
+   Le total payé ne peut jamais dépasser le total dû (anti-fraude). */
+function dcAddIncidentPayment(dossierId, incidentId){
+  if(typeof canModify === 'function' && !canModify()){ showToast('⛔ Action réservée aux modérateurs.','error'); return; }
+  var d = DB.dossiers.find(function(x){return String(x.id)===String(dossierId);});
+  if(!d) return;
+  if(d.defunt){ showToast('Suspect défunt : pas d\'amende à encaisser.','info'); return; }
+  dcEnsureIncidents(d);
+  var inc = (d.incidents||[]).find(function(x){return String(x.id)===String(incidentId);});
+  if(!inc) return;
+  var inputEl = document.getElementById('ed-inc-pay-'+incidentId);
+  if(!inputEl) return;
+  var amount = parseInt(inputEl.value, 10) || 0;
+  if(amount <= 0){ showToast('Montant invalide.','error'); return; }
+  var totalInc = inc.amendeTotal || 0;
+  var alreadyPaid = inc.amendePayee || 0;
+  var maxPossible = Math.max(0, totalInc - alreadyPaid);
+  if(amount > maxPossible){
+    showToast('Maximum payable pour cet incident : '+maxPossible.toLocaleString('fr-FR')+' Ryos.','error');
+    return;
+  }
+  inc.amendePayee = alreadyPaid + amount;
+  // Resync legacy fields
+  d.amendePayee   = dcDossierTotalPaye(d);
+  d.amendeImpayee = dcDossierTotalImpaye(d);
+  addTimeline(`Paiement de ${amount.toLocaleString('fr-FR')} Ryos sur le dossier de ${d.nom}`);
+  saveData(['dossiers','timeline']);
+  // Re-render
+  dcRenderIncidentsListInEdit(d);
+  dcUpdateRecapGlobal(d);
+  renderDossiers();
+  syncDashboard();
+  showToast('Paiement encaissé.','success');
+}
+
+/* Supprime un incident d'un dossier. Si c'était le dernier, le dossier reste
+   mais sans incident → l'utilisateur peut soit en ajouter un autre, soit supprimer le dossier. */
+function dcDeleteIncident(dossierId, incidentId){
+  if(typeof canModify === 'function' && !canModify()){ showToast('⛔ Action réservée aux modérateurs.','error'); return; }
+  var d = DB.dossiers.find(function(x){return String(x.id)===String(dossierId);});
+  if(!d) return;
+  dcEnsureIncidents(d);
+  askDelete(
+    'Supprimer cet incident du dossier ?\n\nLes paiements associés seront également retirés.',
+    function(){
+      d.incidents = (d.incidents||[]).filter(function(x){return String(x.id)!==String(incidentId);});
+      // Resync legacy
+      d.amendePayee   = dcDossierTotalPaye(d);
+      d.amendeImpayee = dcDossierTotalImpaye(d);
+      d.infractions = (d.incidents||[]).map(function(inc){
+        var fromCp = (inc.infractions||[]).map(function(x){return x.nom;});
+        var libres = (inc.infractionsLibres||'').split(',').map(function(s){return s.trim();}).filter(Boolean);
+        return fromCp.concat(libres).join(', ');
+      }).filter(Boolean).join(' | ');
+      addTimeline(`Incident retiré du dossier de ${d.nom}`);
+      saveData(['dossiers','timeline']);
+      dcRenderIncidentsListInEdit(d);
+      dcUpdateRecapGlobal(d);
+      renderDossiers();
+      syncDashboard();
+      showToast('Incident supprimé.','success');
+    },
+    '🗑 Supprimer'
+  );
+}
+
+/* Met à jour le récap global (3 cases : total / payé / restant). */
+function dcUpdateRecapGlobal(d){
+  var total = dcDossierTotalAmende(d);
+  var paye  = dcDossierTotalPaye(d);
+  var impaye = dcDossierTotalImpaye(d);
+  var t = document.getElementById('ed-recap-total');
+  var p = document.getElementById('ed-recap-paye');
+  var i = document.getElementById('ed-recap-impaye');
+  if(t) t.textContent = total.toLocaleString('fr-FR') + ' Ryos';
+  if(p) p.textContent = paye.toLocaleString('fr-FR')  + ' Ryos';
+  if(i){
+    if(d.defunt && total > paye){
+      i.innerHTML = impaye.toLocaleString('fr-FR') + ' Ryos <span style="font-size:9px;font-weight:400;font-style:italic">(annulé : défunt)</span>';
+      i.style.color = 'rgba(255,255,255,0.4)';
+    } else {
+      i.textContent = impaye.toLocaleString('fr-FR') + ' Ryos';
+      i.style.color = '#f87171';
+    }
+  }
+}
+
+/* Affiche le formulaire d'ajout d'un nouvel incident (replié par défaut). */
+function dcAddIncidentForm(prefix){
+  var form = document.getElementById(prefix+'-incident-new-form');
+  if(!form) return;
+  form.style.display = '';
+  // Pré-remplir la date avec aujourd'hui
+  var dateEl = document.getElementById(prefix+'-incident-date');
+  if(dateEl && !dateEl.value){
+    var d = new Date();
+    dateEl.value = d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+  }
+  // Reset
+  dcResetSelected(prefix);
+  var notesEl = document.getElementById(prefix+'-incident-notes'); if(notesEl) notesEl.value = '';
+  var infrLibres = document.getElementById(prefix+'-infractions'); if(infrLibres) infrLibres.value = '';
+  var payeEl = document.getElementById(prefix+'-amende-payee'); if(payeEl) payeEl.value = '';
+  var impEl = document.getElementById(prefix+'-amende-impayee-preview'); if(impEl) impEl.value = '0';
+  // Scroll vers le formulaire
+  form.scrollIntoView({behavior:'smooth', block:'center'});
+}
+
+function dcCancelNewIncident(prefix){
+  var form = document.getElementById(prefix+'-incident-new-form');
+  if(form) form.style.display = 'none';
+  dcResetSelected(prefix);
+}
+
+/* Sauvegarde un nouvel incident dans le dossier en cours d'édition. */
+function dcSaveNewIncident(){
+  if(typeof canModify === 'function' && !canModify()){ showToast('⛔ Action réservée aux modérateurs.','error'); return; }
+  var id = parseInt(el("ed-id").value, 10);
+  var d = DB.dossiers.find(function(x){return String(x.id)===String(id);});
+  if(!d) return;
+  dcEnsureIncidents(d);
+  var selectedInfractions = (_dcSelectedInfractions['ed'] || []).slice();
+  var libres = (v("ed-infractions") || "").trim();
+  if(selectedInfractions.length === 0 && !libres){
+    showToast('Ajoutez au moins une infraction (code pénal ou saisie libre).','error');
+    return;
+  }
+  var totalAmende = selectedInfractions.reduce(function(s,x){return s + (x.amende||0);}, 0);
+  var amendePayeeRaw = parseInt((el("ed-amende-payee")||{}).value, 10) || 0;
+  var amendePayee = totalAmende > 0 ? Math.min(amendePayeeRaw, totalAmende) : amendePayeeRaw;
+  var dateEl = el("ed-incident-date");
+  var incidentDate = (dateEl && dateEl.value) || now();
+  var notesEl = el("ed-incident-notes");
+  var notes = notesEl ? notesEl.value.trim() : "";
+
+  d.incidents.push({
+    id: Date.now(),
+    date: incidentDate,
+    auteur: currentUser.nom,
+    infractions: selectedInfractions,
+    infractionsLibres: libres,
+    notes: notes,
+    amendeTotal: totalAmende,
+    amendePayee: amendePayee
+  });
+  // Resync legacy
+  d.amendePayee   = dcDossierTotalPaye(d);
+  d.amendeImpayee = dcDossierTotalImpaye(d);
+  d.infractions = (d.incidents||[]).map(function(inc){
+    var fromCp = (inc.infractions||[]).map(function(x){return x.nom;});
+    var libs = (inc.infractionsLibres||'').split(',').map(function(s){return s.trim();}).filter(Boolean);
+    return fromCp.concat(libs).join(', ');
+  }).filter(Boolean).join(' | ');
+
+  addTimeline(`Nouvel incident ajouté au dossier de ${d.nom} (${fmtDate(incidentDate)})`);
+  saveData(['dossiers','timeline']);
+  dcCancelNewIncident('ed');
+  dcRenderIncidentsListInEdit(d);
+  dcUpdateRecapGlobal(d);
+  renderDossiers();
+  syncDashboard();
+  showToast('Incident ajouté.', 'success');
 }
 
 function updateDossier(){
   if(typeof canModify === 'function' && !canModify()){ showToast('⛔ Action réservée aux modérateurs.','error'); return; }
-  const id=parseInt(el("ed-id").value);
-  const d=DB.dossiers.find(x=>String(x.id)===String(id));if(!d)return;
-  d.nom=el("ed-nom").value.trim();
-  d.infractions=el("ed-infractions").value.trim();
-  d.danger=el("ed-danger").value;
-  d.statut=el("ed-statut").value;
-  d.notes=el("ed-notes").value.trim();
-  d.amendePayee=parseInt(el("ed-amende-payee").value)||0;
-  d.amendeImpayee=parseInt(el("ed-amende-impayee").value)||0;
-  d.photo=el("ed-photo-data").value;
-  d.tags=getAllTags('ed');
+  const id = parseInt(el("ed-id").value);
+  const d = DB.dossiers.find(x => String(x.id) === String(id));
+  if(!d) return;
+  dcEnsureIncidents(d);
+  d.nom = el("ed-nom").value.trim();
+  d.danger = el("ed-danger").value;
+  d.statut = el("ed-statut").value;
+  d.notes = el("ed-notes").value.trim();
+  d.photo = el("ed-photo-data").value;
+  d.tags = getAllTags('ed');
   var prevDefunt = !!d.defunt;
   d.defunt = !!(el("ed-defunt") && el("ed-defunt").checked);
+  // Resync des champs legacy depuis les incidents (pas de saisie directe possible)
+  d.amendePayee   = dcDossierTotalPaye(d);
+  d.amendeImpayee = dcDossierTotalImpaye(d); // = 0 si défunt
+  d.infractions = (d.incidents||[]).map(function(inc){
+    var fromCp = (inc.infractions||[]).map(function(x){return x.nom;});
+    var libs = (inc.infractionsLibres||'').split(',').map(function(s){return s.trim();}).filter(Boolean);
+    return fromCp.concat(libs).join(', ');
+  }).filter(Boolean).join(' | ');
+
   if(d.defunt && !prevDefunt){
     addTimeline(`Suspect marqué défunt : ${d.nom}`);
   } else if(!d.defunt && prevDefunt){
@@ -21542,7 +22559,10 @@ function updateDossier(){
   } else {
     addTimeline(`Dossier de ${d.nom} modifié par ${currentUser.nom}`);
   }
-  saveData();renderDossiers();syncDashboard();closeModal("modal-edit-dossier");
+  saveData();
+  renderDossiers();
+  syncDashboard();
+  closeModal("modal-edit-dossier");
   showToast("Dossier mis à jour.","success");
 }
 
