@@ -8759,6 +8759,393 @@ document.addEventListener('error', function(e){
       #page-dossiers .dc-filter-grp .lbl{flex:1 0 100%;padding:4px 6px 6px}
     }
 
+    /* ═══════════════════════════════════════════════════════════════
+       TOGGLE VUE CARTES / TABLEAU
+       ═══════════════════════════════════════════════════════════════ */
+    #page-dossiers .dc-view-toggle{
+      display:inline-flex;
+      background:rgba(20,16,9,0.5);
+      border:1px solid rgba(180,140,20,0.25);
+      border-radius:8px;
+      padding:3px;
+      gap:2px;
+    }
+    #page-dossiers .dc-view-btn{
+      display:inline-flex;align-items:center;gap:6px;
+      padding:7px 12px;
+      background:transparent;border:none;cursor:pointer;
+      color:rgba(255,255,255,0.55);
+      font-family:'Barlow',sans-serif;
+      font-size:12px;font-weight:600;letter-spacing:0.5px;
+      border-radius:5px;
+      transition:all 0.18s ease;
+    }
+    #page-dossiers .dc-view-btn .dc-view-ico{font-size:13px;line-height:1}
+    #page-dossiers .dc-view-btn:hover{
+      color:rgba(255,255,255,0.85);
+      background:rgba(180,140,20,0.08);
+    }
+    #page-dossiers .dc-view-btn.active{
+      background:linear-gradient(135deg,rgba(212,180,74,0.22),rgba(180,140,20,0.18));
+      color:#f0d060;
+      box-shadow:inset 0 1px 0 rgba(255,255,255,0.08), 0 2px 6px rgba(0,0,0,0.18);
+    }
+    @media(max-width:768px){
+      #page-dossiers .dc-view-toggle{order:3;width:100%;justify-content:stretch}
+      #page-dossiers .dc-view-btn{flex:1;justify-content:center;padding:8px 6px}
+      #page-dossiers .dc-view-btn .dc-view-lbl{font-size:11.5px}
+    }
+
+    /* ═══════════════════════════════════════════════════════════════
+       VUE CARTES — fiches d'identité officielles
+       Inspirées de la maquette LP-2026-001 : sceau ID gauche,
+       contenu central avec photo + infos, badges, actions à droite.
+       ═══════════════════════════════════════════════════════════════ */
+    #page-dossiers .dc-cards{
+      display:flex;flex-direction:column;
+      gap:11px;
+    }
+    #page-dossiers .dc-cards:empty{display:none}
+
+    #page-dossiers .dc-card{
+      position:relative;
+      display:grid;
+      grid-template-columns:130px 1fr auto;
+      gap:18px;
+      align-items:stretch;
+      padding:16px 20px;
+      background:linear-gradient(135deg, rgba(26,20,16,0.92) 0%, rgba(34,28,19,0.88) 100%);
+      border:1px solid rgba(180,140,20,0.22);
+      border-radius:12px;
+      box-shadow:0 4px 18px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.04);
+      transition:transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
+      overflow:hidden;
+    }
+    /* Filet doré décoratif en haut */
+    #page-dossiers .dc-card::before{
+      content:'';
+      position:absolute;top:0;left:0;right:0;height:1px;
+      background:linear-gradient(90deg,
+        transparent 0%,
+        rgba(212,180,74,0.45) 20%,
+        rgba(212,180,74,0.55) 50%,
+        rgba(212,180,74,0.45) 80%,
+        transparent 100%);
+    }
+    #page-dossiers .dc-card:hover{
+      transform:translateY(-2px);
+      border-color:rgba(212,180,74,0.45);
+      box-shadow:0 8px 28px rgba(0,0,0,0.45), 0 0 0 1px rgba(212,180,74,0.15), inset 0 1px 0 rgba(255,255,255,0.06);
+    }
+
+    /* ─── Variante danger ─── */
+    #page-dossiers .dc-card[data-danger="Extrême"]{
+      border-color:rgba(220,38,38,0.35);
+    }
+    #page-dossiers .dc-card[data-danger="Extrême"]::before{
+      background:linear-gradient(90deg, transparent 0%, rgba(220,38,38,0.6) 50%, transparent 100%);
+    }
+    #page-dossiers .dc-card[data-danger="Élevé"]{
+      border-color:rgba(217,119,6,0.32);
+    }
+
+    /* ─── BANDEAU IDENTIFICATION (gauche) ─── */
+    #page-dossiers .dc-card-id{
+      display:flex;flex-direction:column;align-items:center;justify-content:center;
+      padding:8px 6px;
+      background:linear-gradient(180deg, rgba(212,180,74,0.10), rgba(212,180,74,0.04));
+      border:1px solid rgba(212,180,74,0.30);
+      border-radius:8px;
+      gap:6px;
+    }
+    #page-dossiers .dc-card-id-num{
+      font-family:'Share Tech Mono',monospace;
+      font-size:13px;font-weight:700;
+      letter-spacing:1.2px;
+      color:#f0d060;
+      text-shadow:0 0 8px rgba(212,180,74,0.4);
+    }
+    #page-dossiers .dc-card-id-photo{
+      width:64px;height:80px;
+      border-radius:6px;
+      overflow:hidden;
+      border:1px solid rgba(212,180,74,0.35);
+      background:rgba(0,0,0,0.4);
+      display:flex;align-items:center;justify-content:center;
+      flex-shrink:0;
+    }
+    #page-dossiers .dc-card-id-photo img{
+      width:100%;height:100%;object-fit:cover;display:block;
+    }
+    #page-dossiers .dc-card-id-photo .no-photo{
+      font-size:30px;opacity:0.3;
+    }
+    #page-dossiers .dc-card-id-tag{
+      font-family:'Share Tech Mono',monospace;
+      font-size:8px;letter-spacing:1.5px;
+      color:rgba(212,180,74,0.65);
+      text-transform:uppercase;
+      margin-top:2px;
+    }
+
+    /* ─── CONTENU CENTRAL ─── */
+    #page-dossiers .dc-card-body{
+      display:flex;flex-direction:column;
+      gap:7px;
+      min-width:0;
+      padding:2px 0;
+    }
+    #page-dossiers .dc-card-name{
+      display:flex;align-items:baseline;gap:10px;
+      flex-wrap:wrap;
+      margin-bottom:2px;
+    }
+    #page-dossiers .dc-card-name h3{
+      font-family:'Cinzel',serif;
+      font-size:18px;font-weight:700;
+      letter-spacing:1.5px;
+      color:#f0e8d0;
+      margin:0;
+      text-transform:uppercase;
+    }
+    #page-dossiers .dc-card-name .dc-defunt-stamp{margin-left:0}
+
+    #page-dossiers .dc-card-meta{
+      display:flex;flex-wrap:wrap;align-items:center;
+      gap:7px 14px;
+      font-family:'Share Tech Mono',monospace;
+      font-size:10.5px;
+      color:rgba(255,255,255,0.55);
+      letter-spacing:0.5px;
+    }
+    #page-dossiers .dc-card-meta .dc-meta-item{
+      display:inline-flex;align-items:center;gap:5px;
+    }
+    #page-dossiers .dc-card-meta .dc-meta-item svg,
+    #page-dossiers .dc-card-meta .dc-meta-item span.ico{
+      opacity:0.6;
+    }
+
+    /* Ligne badges : danger + statut + amendes */
+    #page-dossiers .dc-card-badges{
+      display:flex;flex-wrap:wrap;align-items:center;
+      gap:6px;
+      margin-top:1px;
+    }
+    #page-dossiers .dc-card-badges .badge{
+      font-size:10.5px;letter-spacing:0.8px;
+      padding:3px 9px;border-radius:4px;
+      font-family:'Barlow Condensed',sans-serif;
+      font-weight:700;text-transform:uppercase;
+    }
+
+    /* Pastille amendes : intégrée dans la carte plutôt qu'en colonne */
+    #page-dossiers .dc-card-amounts{
+      display:inline-flex;align-items:center;gap:8px;
+      padding:3px 10px;
+      background:rgba(0,0,0,0.35);
+      border:1px solid rgba(180,140,20,0.18);
+      border-radius:5px;
+      font-family:'Share Tech Mono',monospace;
+      font-size:10.5px;font-weight:700;
+    }
+    #page-dossiers .dc-amount-paye{color:#22c55e}
+    #page-dossiers .dc-amount-impaye{color:#f87171}
+    #page-dossiers .dc-amount-defunt{color:rgba(255,255,255,0.4);font-style:italic;font-weight:400}
+
+    /* Infractions condensées */
+    #page-dossiers .dc-card-infractions{
+      display:flex;align-items:center;gap:8px;
+      font-size:11.5px;color:var(--text2);
+      line-height:1.35;
+      max-width:100%;
+    }
+    #page-dossiers .dc-card-infractions .dc-cat-dots{
+      display:inline-flex;gap:3px;flex-shrink:0;
+    }
+    #page-dossiers .dc-card-infractions .dc-cat-dot{
+      width:7px;height:7px;border-radius:50%;
+    }
+    #page-dossiers .dc-card-infractions .dc-cat-dot[data-cat="violet"]{background:#a78bfa;box-shadow:0 0 5px rgba(168,140,247,0.55)}
+    #page-dossiers .dc-card-infractions .dc-cat-dot[data-cat="vert"]{background:#22c55e;box-shadow:0 0 5px rgba(34,197,94,0.55)}
+    #page-dossiers .dc-card-infractions .dc-cat-dot[data-cat="rouge"]{background:#ef4444;box-shadow:0 0 5px rgba(239,68,68,0.55)}
+    #page-dossiers .dc-card-infractions .dc-infr-main{
+      flex:1;min-width:0;
+      overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+    }
+    #page-dossiers .dc-card-infractions .dc-infr-extra{
+      flex-shrink:0;
+      font-family:'Share Tech Mono',monospace;
+      font-size:10px;color:var(--muted);
+      letter-spacing:0.5px;
+    }
+    #page-dossiers .dc-card-infractions .dc-prison-ico{
+      flex-shrink:0;
+      color:#fb923c;font-size:13px;
+    }
+    #page-dossiers .dc-card-infractions .dc-infr-empty{
+      color:var(--muted);font-style:italic;font-size:10.5px;
+    }
+
+    /* Tags */
+    #page-dossiers .dc-card-tags{
+      display:flex;flex-wrap:wrap;gap:4px;
+      margin-top:2px;
+    }
+    #page-dossiers .dc-card-tags .tag-pill{
+      font-size:9.5px !important;
+      padding:1px 7px !important;
+    }
+
+    /* Pied : agent + date */
+    #page-dossiers .dc-card-footer{
+      display:flex;align-items:center;
+      gap:14px;
+      font-family:'Share Tech Mono',monospace;
+      font-size:9.5px;letter-spacing:1px;
+      color:rgba(255,255,255,0.4);
+      text-transform:uppercase;
+      margin-top:3px;
+      padding-top:7px;
+      border-top:1px dashed rgba(180,140,20,0.18);
+    }
+    #page-dossiers .dc-card-footer .dc-foot-item{
+      display:inline-flex;align-items:center;gap:5px;
+    }
+
+    /* ─── ACTIONS (droite) ─── */
+    #page-dossiers .dc-card-actions{
+      display:flex;flex-direction:column;
+      gap:6px;
+      align-items:flex-end;
+      justify-content:space-between;
+    }
+    #page-dossiers .dc-card-actions-top{
+      display:flex;flex-direction:column;align-items:flex-end;gap:5px;
+    }
+    #page-dossiers .dc-card-actions-btns{
+      display:flex;gap:5px;
+      flex-wrap:nowrap;
+    }
+    #page-dossiers .dc-card-actions .dc-act-btn{
+      width:32px;height:32px;
+      display:inline-flex;align-items:center;justify-content:center;
+      border-radius:6px;
+      border:1px solid rgba(180,140,20,0.25);
+      background:rgba(20,16,9,0.6);
+      color:#d4b44a;
+      font-size:14px;
+      cursor:pointer;
+      transition:all 0.15s ease;
+    }
+    #page-dossiers .dc-card-actions .dc-act-btn:hover{
+      transform:translateY(-1px);
+      border-color:rgba(212,180,74,0.55);
+      background:rgba(212,180,74,0.10);
+      box-shadow:0 4px 10px rgba(0,0,0,0.3);
+    }
+    #page-dossiers .dc-card-actions .dc-act-btn.is-edit{color:#facc15}
+    #page-dossiers .dc-card-actions .dc-act-btn.is-archive{
+      border-color:rgba(99,99,99,0.35);color:#94a3b8;
+    }
+    #page-dossiers .dc-card-actions .dc-act-btn.is-archive:hover{
+      border-color:rgba(99,99,99,0.6);
+      background:rgba(99,99,99,0.12);
+    }
+    #page-dossiers .dc-card-actions .dc-act-btn.is-delete{
+      color:#f87171;border-color:rgba(220,38,38,0.30);
+    }
+    #page-dossiers .dc-card-actions .dc-act-btn.is-delete:hover{
+      border-color:rgba(220,38,38,0.6);background:rgba(220,38,38,0.10);
+    }
+    #page-dossiers .dc-card-actions .dc-act-btn.is-comments{position:relative}
+    #page-dossiers .dc-card-actions .dc-act-btn.is-comments .dc-act-badge{
+      position:absolute;top:-4px;right:-4px;
+      min-width:14px;height:14px;padding:0 3px;
+      background:#dc2626;color:#fff;
+      border-radius:7px;
+      font-family:'Share Tech Mono',monospace;
+      font-size:9px;font-weight:700;
+      display:inline-flex;align-items:center;justify-content:center;
+      border:1px solid rgba(0,0,0,0.4);
+    }
+
+    /* État ARCHIVÉ */
+    #page-dossiers .dc-card.is-archived{
+      opacity:0.55;
+      filter:grayscale(0.4);
+    }
+    #page-dossiers .dc-card.is-archived::after{
+      content:'ARCHIVÉ';
+      position:absolute;top:8px;right:14px;
+      font-family:'Share Tech Mono',monospace;
+      font-size:8.5px;letter-spacing:2px;
+      color:rgba(99,99,99,0.7);
+      padding:2px 7px;
+      background:rgba(99,99,99,0.12);
+      border-radius:3px;
+      pointer-events:none;
+    }
+
+    /* État DÉFUNT */
+    #page-dossiers .dc-card.is-defunt{
+      background:linear-gradient(135deg, rgba(40,15,15,0.85), rgba(28,18,18,0.82));
+      border-color:rgba(140,30,40,0.30);
+      filter:grayscale(0.35);
+    }
+    #page-dossiers .dc-card.is-defunt .dc-card-name h3{
+      color:rgba(240,232,208,0.7);
+    }
+
+    /* État vide */
+    #page-dossiers .dc-cards-empty{
+      padding:60px 30px;
+      text-align:center;
+      background:rgba(20,16,9,0.5);
+      border:1px dashed rgba(180,140,20,0.25);
+      border-radius:12px;
+      color:var(--muted);
+    }
+    #page-dossiers .dc-cards-empty-ico{
+      font-size:42px;opacity:0.35;margin-bottom:10px;
+    }
+    #page-dossiers .dc-cards-empty-msg{
+      font-family:'Share Tech Mono',monospace;
+      font-size:11.5px;letter-spacing:2px;
+      text-transform:uppercase;
+    }
+
+    /* ─── RESPONSIVE CARTES ─── */
+    @media(max-width:900px){
+      #page-dossiers .dc-card{
+        grid-template-columns:96px 1fr;
+        grid-template-rows:auto auto;
+        gap:14px;
+      }
+      #page-dossiers .dc-card-actions{
+        grid-column:1 / -1;
+        flex-direction:row;
+        align-items:center;justify-content:space-between;
+        padding-top:10px;
+        border-top:1px dashed rgba(180,140,20,0.15);
+      }
+      #page-dossiers .dc-card-actions-top{
+        flex-direction:row;align-items:center;gap:8px;
+      }
+      #page-dossiers .dc-card-id{padding:6px 4px;gap:4px}
+      #page-dossiers .dc-card-id-photo{width:54px;height:68px}
+      #page-dossiers .dc-card-id-num{font-size:11px}
+    }
+    @media(max-width:560px){
+      #page-dossiers .dc-card{padding:13px 14px;gap:11px}
+      #page-dossiers .dc-card-name h3{font-size:15px;letter-spacing:1px}
+      #page-dossiers .dc-card-meta{font-size:9.5px}
+      #page-dossiers .dc-card-id{padding:5px 3px}
+      #page-dossiers .dc-card-id-photo{width:48px;height:60px}
+      #page-dossiers .dc-card-id-num{font-size:10px;letter-spacing:1px}
+      #page-dossiers .dc-card-id-tag{font-size:7px}
+    }
+
     /* ═══ DOSSIER DÉFUNT — ligne grisée + tampon DÉFUNT ═══ */
     #page-dossiers .data-table tbody tr.is-defunt{
       background:rgba(140,20,30,0.04) !important;
@@ -8873,10 +9260,18 @@ document.addEventListener('error', function(e){
       <div class="dc-stat" style="--stat-c:#f59e0b"><div class="lbl">💰 Amendes dues</div><div class="val" id="dc-s-due">0<span class="ryos">RYOS</span></div></div>
     </div>
 
-    <!-- TOOLBAR : recherche + tri -->
+    <!-- TOOLBAR : recherche + tri + toggle vue -->
     <div class="dc-toolbar">
       <div class="dc-search-wrap">
         <input type="text" id="search-dossier" class="dc-search" placeholder="Nom, infraction, agent..." oninput="renderDossiers()">
+      </div>
+      <div class="dc-view-toggle" role="tablist" aria-label="Mode d'affichage">
+        <button type="button" class="dc-view-btn active" id="dc-view-cards" onclick="dcSetView('cards')" title="Vue cartes (fiches d'identité)" aria-pressed="true">
+          <span class="dc-view-ico">🃏</span><span class="dc-view-lbl">Cartes</span>
+        </button>
+        <button type="button" class="dc-view-btn" id="dc-view-table" onclick="dcSetView('table')" title="Vue tableau (compacte)" aria-pressed="false">
+          <span class="dc-view-ico">📋</span><span class="dc-view-lbl">Tableau</span>
+        </button>
       </div>
       <select class="dc-sort" id="dc-sort" onchange="renderDossiers()">
         <option value="recent">⌚ Récents en premier</option>
@@ -8910,8 +9305,10 @@ document.addEventListener('error', function(e){
       </div>
     </div>
 
-    <!-- TABLEAU PRINCIPAL -->
-    <div class="card" style="overflow:visible">
+    <!-- VUE CARTES — fiches d'identité -->
+    <div id="dossiers-cards" class="dc-cards"></div>
+    <!-- VUE TABLEAU PRINCIPAL -->
+    <div class="card dc-table-view" id="dc-table-wrapper" style="overflow:visible;display:none">
       <div class="table-scroll-wrapper">
         <table class="data-table">
           <thead><tr>
@@ -21944,7 +22341,216 @@ function renderDossiers(){
       +'</tr>';
   }).join('') || '<tr><td colspan="9" style="text-align:center;color:var(--muted);padding:40px;font-family:\'Share Tech Mono\',monospace;letter-spacing:1.5px;text-transform:uppercase;font-size:11px">— Aucun dossier ne correspond à ces filtres —</td></tr>';
   if(typeof restoreSortUI === 'function') restoreSortUI('dossiers');
+
+  // ─── RENDU CARTES (en parallèle du tableau, le toggle gère l'affichage) ───
+  dcRenderCards(list);
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   VUE CARTES — fiches d'identité officielles
+   Structure : [Sceau ID] · [Photo + Nom + meta + badges + infractions + tags + footer] · [Actions]
+   ═══════════════════════════════════════════════════════════════ */
+function dcRenderCards(list){
+  var box = document.getElementById('dossiers-cards');
+  if(!box) return;
+  // Filtre archives (cohérent avec le comportement du tableau).
+  // Si _showArchivedDossiers === true → on garde tout (vue archives ouverte).
+  // Sinon → on cache les archivés.
+  if(typeof _showArchivedDossiers !== 'undefined' && !_showArchivedDossiers){
+    list = (list || []).filter(function(d){ return !d.archived; });
+  }
+  if(!list || list.length === 0){
+    box.innerHTML = '<div class="dc-cards-empty">'
+                  +   '<div class="dc-cards-empty-ico">🗂️</div>'
+                  +   '<div class="dc-cards-empty-msg">— Aucun dossier ne correspond à ces filtres —</div>'
+                  + '</div>';
+    return;
+  }
+  // Pour le numéro de fiche LP-AAAA-NNN : on prend l'année du dossier + un compteur stable
+  // basé sur l'index trié par date de création (ASC) globalement.
+  var allSorted = (DB.dossiers||[]).slice().sort(function(a,b){
+    return (a.id||0) - (b.id||0);
+  });
+  var indexById = {};
+  allSorted.forEach(function(d, i){ indexById[d.id] = i + 1; });
+
+  box.innerHTML = list.map(function(d){
+    // Migration auto au rendu
+    if(typeof dcEnsureIncidents === 'function') dcEnsureIncidents(d);
+
+    // ID de fiche : LP-2026-001 (format année + compteur 3 chiffres)
+    var year = (function(){
+      try{ return new Date(d.date).getFullYear() || new Date().getFullYear(); }
+      catch(e){ return new Date().getFullYear(); }
+    })();
+    var idxStr = String(indexById[d.id] || 1).padStart(3, '0');
+    var fileNum = 'LP-' + year + '-' + idxStr;
+
+    // Photo
+    var photoHTML = d.photo
+      ? '<img alt="Photo du suspect" src="'+safeImgSrc(d.photo)+'">'
+      : '<span class="no-photo">👤</span>';
+
+    // Nom + tampon défunt
+    var defuntStamp = d.defunt ? '<span class="dc-defunt-stamp" title="Suspect décédé">Défunt</span>' : '';
+
+    // Meta : date d'émission + permanent + agent
+    var permanentTxt = d.statut === 'Recherché' || d.statut === 'Incarcéré' ? 'Permanent' : 'En cours';
+    var metaHTML = ''
+      + '<span class="dc-meta-item"><span class="ico">📅</span> Émis le ' + esc(fmtDate(d.date)) + '</span>'
+      + '<span class="dc-meta-item"><span class="ico">🔒</span> ' + esc(permanentTxt) + '</span>';
+
+    // Badges : danger, statut, amendes
+    var badgesHTML = ''
+      + '<span class="badge ' + dangerBadge(d.danger) + '">' + esc(d.danger) + '</span>'
+      + '<span class="badge ' + dossierStatutBadge(d.statut) + '">' + esc(d.statut) + '</span>';
+    var paye   = parseInt(d.amendePayee, 10)   || 0;
+    var impaye = parseInt(d.amendeImpayee, 10) || 0;
+    if(d.defunt && (paye > 0 || impaye > 0)){
+      badgesHTML += '<span class="dc-card-amounts" title="Amendes annulées (suspect défunt)">'
+                  +   '<span class="dc-amount-defunt">⚱ Amendes annulées</span>'
+                  + '</span>';
+    } else if(paye > 0 || impaye > 0){
+      var partsAm = [];
+      if(paye   > 0) partsAm.push('<span class="dc-amount-paye">✅ ' + paye.toLocaleString('fr-FR') + '</span>');
+      if(impaye > 0) partsAm.push('<span class="dc-amount-impaye">❌ ' + impaye.toLocaleString('fr-FR') + '</span>');
+      badgesHTML += '<span class="dc-card-amounts" title="Amendes en Ryos">' + partsAm.join('<span style="opacity:0.4">·</span>') + '</span>';
+    }
+
+    // Infractions : pastilles cat + 1er libellé + +N autres + ⛓
+    var incidents = d.incidents || [];
+    var totalInfr = incidents.reduce(function(s,inc){
+      var nCp  = (inc.infractions||[]).length;
+      var nLib = (inc.infractionsLibres||'').split(',').map(function(x){return x.trim();}).filter(Boolean).length;
+      return s + nCp + nLib;
+    }, 0);
+    var hasPrison = incidents.some(function(inc){
+      return (inc.infractions||[]).some(function(x){return x.prison;});
+    });
+    var cats = new Set();
+    incidents.forEach(function(inc){
+      (inc.infractions||[]).forEach(function(x){ if(x.cat) cats.add(x.cat); });
+    });
+    var catDots = Array.from(cats).map(function(c){
+      return '<span class="dc-cat-dot" data-cat="' + esc(c) + '" title="' + esc(c) + '"></span>';
+    }).join('');
+    var firstInfr = '';
+    for(var ii=0; ii<incidents.length && !firstInfr; ii++){
+      if((incidents[ii].infractions||[]).length){
+        firstInfr = incidents[ii].infractions[0].nom;
+      } else {
+        var libs = (incidents[ii].infractionsLibres||'').split(',').map(function(s){return s.trim();}).filter(Boolean);
+        if(libs.length) firstInfr = libs[0];
+      }
+    }
+    if(!firstInfr && d.infractions) firstInfr = d.infractions.split(/[,|]/)[0].trim();
+    var nIncidents = incidents.length;
+    var infractionsHTML = ''
+      + (catDots ? '<span class="dc-cat-dots">' + catDots + '</span>' : '')
+      + '<span class="dc-infr-main" title="' + esc(firstInfr || '') + '">'
+      +   (firstInfr ? esc(firstInfr) : '<span class="dc-infr-empty">— Aucune infraction —</span>')
+      + '</span>'
+      + (totalInfr > 1
+          ? '<span class="dc-infr-extra">+' + (totalInfr - 1) + ' autre' + (totalInfr - 1 > 1 ? 's' : '') + (nIncidents > 1 ? ' · ' + nIncidents + ' incidents' : '') + '</span>'
+          : (nIncidents > 1 ? '<span class="dc-infr-extra">' + nIncidents + ' incidents</span>' : ''))
+      + (hasPrison ? '<span class="dc-prison-ico" title="Au moins une peine de prison">⛓</span>' : '');
+
+    // Tags (max 4 visibles)
+    var tagsHTML = '';
+    if((d.tags||[]).length){
+      tagsHTML = '<div class="dc-card-tags">'
+               + (d.tags||[]).slice(0, 4).map(function(tid){
+                   var t = DOSSIER_TAGS.find(function(x){return x.id === tid});
+                   return t
+                     ? '<span class="tag-pill" style="background:' + t.bg + ';color:' + t.color + ';border:1px solid ' + t.border + '">' + t.label + '</span>'
+                     : '<span class="tag-pill" style="background:rgba(109,40,217,0.08);color:#a78bfa;border:1px solid rgba(109,40,217,0.2)">' + esc(tid) + '</span>';
+                 }).join('')
+               + ((d.tags||[]).length > 4 ? '<span class="tag-pill" style="background:rgba(255,255,255,0.06);color:var(--muted);border:1px solid rgba(255,255,255,0.1)">+' + ((d.tags||[]).length - 4) + '</span>' : '')
+               + '</div>';
+    }
+
+    // Footer : agent + nombre de commentaires
+    var nbComments = ((d.comments)||[]).length;
+    var footerHTML = '<div class="dc-card-footer">'
+                   +   '<span class="dc-foot-item">👤 Émis par ' + esc(d.auteur || '—') + '</span>'
+                   +   (nbComments > 0 ? '<span class="dc-foot-item">💬 ' + nbComments + ' commentaire' + (nbComments > 1 ? 's' : '') + '</span>' : '')
+                   + '</div>';
+
+    // Actions
+    var canMod = canModify();
+    var actionsHTML = '<div class="dc-card-actions">'
+      + '<div class="dc-card-actions-top">'
+      +   '<div class="dc-card-actions-btns">'
+      +     '<button class="dc-act-btn" onclick="viewDossier(' + d.id + ')" title="Voir le dossier">👁</button>'
+      +     (canMod ? '<button class="dc-act-btn is-edit" onclick="openEditDossier(' + d.id + ')" title="Modifier">✏️</button>' : '')
+      +     '<button class="dc-act-btn is-comments" onclick="openDossierComments(' + d.id + ')" title="Commentaires">💬'
+      +       (nbComments > 0 ? '<span class="dc-act-badge">' + nbComments + '</span>' : '')
+      +     '</button>'
+      +     '<button class="dc-act-btn" onclick="exportDossierPDF(' + d.id + ')" title="Exporter en PDF">📄</button>'
+      +     (canMod ? '<button class="dc-act-btn is-archive" onclick="archiveDossier(' + d.id + ')" title="' + (d.archived ? 'Désarchiver' : 'Archiver') + '">' + (d.archived ? '📂' : '📦') + '</button>' : '')
+      +     (canMod ? '<button class="dc-act-btn is-delete" onclick="deleteDossier(' + d.id + ')" title="Supprimer">🗑</button>' : '')
+      +   '</div>'
+      + '</div>'
+      + '</div>';
+
+    var classes = 'dc-card';
+    if(d.defunt)   classes += ' is-defunt';
+    if(d.archived) classes += ' is-archived';
+
+    return '<div class="' + classes + '" data-danger="' + esc(d.danger || '') + '">'
+      // ─── Sceau ID ───
+      + '<div class="dc-card-id">'
+      +   '<div class="dc-card-id-num">' + fileNum + '</div>'
+      +   '<div class="dc-card-id-photo">' + photoHTML + '</div>'
+      +   '<div class="dc-card-id-tag">№ Officiel</div>'
+      + '</div>'
+      // ─── Corps ───
+      + '<div class="dc-card-body">'
+      +   '<div class="dc-card-name"><h3>' + esc(d.nom) + '</h3>' + defuntStamp + '</div>'
+      +   '<div class="dc-card-meta">' + metaHTML + '</div>'
+      +   '<div class="dc-card-badges">' + badgesHTML + '</div>'
+      +   '<div class="dc-card-infractions">' + infractionsHTML + '</div>'
+      +   tagsHTML
+      +   footerHTML
+      + '</div>'
+      // ─── Actions ───
+      + actionsHTML
+      + '</div>';
+  }).join('');
+}
+
+/* Toggle entre vue cartes et vue tableau.
+   Les deux vues partagent les mêmes données filtrées : on les rend toujours
+   en parallèle, et le toggle ne fait que basculer la visibilité CSS. */
+var _dcView = (function(){
+  try{ return localStorage.getItem('suna_dc_view') || 'cards'; }
+  catch(e){ return 'cards'; }
+})();
+function dcSetView(mode){
+  if(mode !== 'cards' && mode !== 'table') mode = 'cards';
+  _dcView = mode;
+  try{ localStorage.setItem('suna_dc_view', mode); }catch(e){}
+  var cardsBox = document.getElementById('dossiers-cards');
+  var tableBox = document.getElementById('dc-table-wrapper');
+  var btnCards = document.getElementById('dc-view-cards');
+  var btnTable = document.getElementById('dc-view-table');
+  if(cardsBox) cardsBox.style.display = (mode === 'cards' ? '' : 'none');
+  if(tableBox) tableBox.style.display = (mode === 'table' ? '' : 'none');
+  if(btnCards){
+    btnCards.classList.toggle('active', mode === 'cards');
+    btnCards.setAttribute('aria-pressed', mode === 'cards' ? 'true' : 'false');
+  }
+  if(btnTable){
+    btnTable.classList.toggle('active', mode === 'table');
+    btnTable.setAttribute('aria-pressed', mode === 'table' ? 'true' : 'false');
+  }
+}
+// Appliquer le mode sauvegardé au chargement initial — mais seulement quand
+// la page est bien dans le DOM (les ids n'existent qu'après le rendu HTML).
+window.addEventListener('load', function(){
+  setTimeout(function(){ dcSetView(_dcView); }, 50);
+});
+
 function checkDoublonSuspect(){
   const nom=(el("d-nom").value||"").trim().toLowerCase();
   const alertEl=el("d-doublon-alert");
@@ -29008,65 +29614,10 @@ window.toggleDarkMode = function(){
   if(activePage&&activePage.id==='page-dashboard') setTimeout(renderDashboardCharts,150);
 };
 
-/* ─── 2. EXPORT CSV ────────────────────────────────────────────── */
-function exportCSV(type){
-  var rows=[], filename='export.csv';
-  if(type==='plaintes'){
-    filename='plaintes_'+new Date().toISOString().slice(0,10)+'.csv';
-    rows.push(['Réf.','Plaignant','Accusé','Type','Statut','Description','Date','Agent']);
-    (DB.plaintes||[]).forEach(function(p){
-      rows.push([p.ref||('#'+p.id),p.plaignant||'',p.accuse||'',p.type||'',p.statut||'',
-        (p.desc||'').replace(/"/g,'""'),p.date||'',p.agent||'']);
-    });
-  } else if(type==='recensement'){
-    filename='recensement_'+new Date().toISOString().slice(0,10)+'.csv';
-    rows.push(['Prénom','Nom','Âge','Sexe','Faction','Rang','Compétences','Natures','Notes','Date']);
-    (DB.recenses||[]).forEach(function(r){
-      rows.push([r.prenom||'',r.nom||'',r.age||'',r.sexe||'',r.faction||'',
-        r.rang||'',r.competences||'',(r.natures||[]).join(';'),
-        (r.notes||'').replace(/"/g,'""'),r.date||'']);
-    });
-  } else if(type==='dossiers'){
-    filename='dossiers_criminels_'+new Date().toISOString().slice(0,10)+'.csv';
-    rows.push(['Nom RP','Infractions','Dangerosité','Statut','Amende totale','Amende payée','Reste à payer','Nb incidents','Agent','Date']);
-    (DB.dossiers||[]).forEach(function(d){
-      // Les champs amendes étaient cassés (d.amendes / d.agent n'existent pas).
-      // On utilise les fonctions de récap qui agrègent les incidents.
-      var total = (typeof dcDossierTotalAmende === 'function') ? dcDossierTotalAmende(d) : (parseInt(d.amendePayee,10)||0)+(parseInt(d.amendeImpayee,10)||0);
-      var paye  = (typeof dcDossierTotalPaye === 'function')   ? dcDossierTotalPaye(d)   : parseInt(d.amendePayee,10)||0;
-      var imp   = (typeof dcDossierTotalImpaye === 'function') ? dcDossierTotalImpaye(d) : parseInt(d.amendeImpayee,10)||0;
-      var nbInc = Array.isArray(d.incidents) ? d.incidents.length : 1;
-      rows.push([d.nom||'',d.infractions||'',d.danger||'',d.statut||'',
-        total,paye,imp,nbInc,d.auteur||'',d.date||'']);
-    });
-  } else if(type==='candidatures'){
-    filename='candidatures_'+new Date().toISOString().slice(0,10)+'.csv';
-    rows.push(['ID','Nom RP','Âge','Discord','Motivation','Expérience','Statut','Date']);
-    (DB.candidatures||[]).forEach(function(c){
-      rows.push([c.id,c.nom||'',c.age||'',c.discord||'',
-        (c.motif||'').replace(/"/g,'""'),(c.exp||'').replace(/"/g,'""'),
-        c.statut||'',c.date||'']);
-    });
-  } else if(type==='sanctions'){
-    filename='sanctions_'+new Date().toISOString().slice(0,10)+'.csv';
-    rows.push(['ID','Type','Membre ciblé','Motif','Auteur','Date']);
-    (DB.sanctions||[]).forEach(function(s){
-      rows.push([s.id,s.type||'',s.cible||'',
-        (s.motif||'').replace(/"/g,'""'),s.auteur||'',s.date||'']);
-    });
-  }
-  if(!rows.length){showToast('Aucune donnée à exporter.','error');return;}
-  var csv = rows.map(function(r){
-    return r.map(function(v){ return '"'+String(v||'').replace(/"/g,'""')+'"'; }).join(',');
-  }).join('\n');
-  var bom = '\uFEFF'; // BOM pour Excel UTF-8
-  var blob = new Blob([bom+csv],{type:'text/csv;charset=utf-8;'});
-  var url = URL.createObjectURL(blob);
-  var a = document.createElement('a'); a.href=url; a.download=filename;
-  document.body.appendChild(a); a.click(); document.body.removeChild(a);
-  URL.revokeObjectURL(url);
-  showToast('Export CSV téléchargé !','success');
-}
+/* ─── 2. EXPORT CSV — supprimé ──────────────────────────────────
+   La fonction exportCSV a été retirée : l'export n'est plus exposé
+   dans l'UI. Si tu rétablis un déclencheur depuis le panel admin,
+   il faudra recréer la fonction (voir l'historique git). */
 
 /* ─── 3. MESSAGERIE INTERNE ────────────────────────────────────── */
 var _currentMsgContact = null;
