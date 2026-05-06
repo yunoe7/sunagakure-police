@@ -1,217 +1,154 @@
-# 🚔 Police Sunagakure — Portail Intranet
+# Sunagakure Intranet
 
-Portail intranet tout-en-un pour la gestion de la Police de Sunagakure (serveur RP).
-Application **100% front-end** en fichier HTML unique, synchronisée en temps réel via Firebase Realtime Database.
+Application web tout-en-un pour la gestion administrative et opérationnelle du village caché de Sunagakure (jeu de rôle Naruto). Couvre la Police, le Tribunal, le Cabinet d'avocats, les Missions, l'Hôpital et la Diplomatie dans une seule interface, avec sync multi-utilisateurs en temps réel via Firebase.
 
----
+## Architecture
 
-## 🚀 Déploiement
+Application monofichier en HTML/CSS/JS vanilla. Tout tient dans `index.html` (~1,75 Mo). Aucune compilation, aucune dépendance npm — il suffit d'ouvrir le fichier dans un navigateur ou de le servir en statique.
 
-L'application est un **fichier HTML auto-suffisant** (`index.html`). Aucune installation ni serveur back-end requis.
+Les données sont stockées dans `localStorage` côté client et synchronisées via Firebase Realtime Database pour les sessions multi-utilisateurs. Si Firebase est indisponible, l'application reste pleinement fonctionnelle en mode hors-ligne.
 
-### Hébergement recommandé
-| Plateforme | Méthode | Lien |
+## Sections
+
+### Police de Sunagakure
+- **Dossiers criminels** — fiches suspects avec infractions, dangerosité (Faible → Extrême), statut (Recherché, G.À.V., Incarcéré, Libéré, Surveillé), amendes payées/impayées, photo, tags personnalisables, marqueur défunt
+- **Plaintes** — système de plaintes avec référence auto au format `POL-2026-NNN`, transmission au Tribunal, photo de l'accusé
+- **Recensement** — registre des shinobis du village avec faction, nature de chakra, métier, clan, compétences, grade
+- **Sanctions disciplinaires** — promotions, félicitations, avertissements, exclusions
+- **Opérations** — planification d'arrestations, perquisitions, surveillance avec géolocalisation
+- **Bingo Book** — registre des criminels recherchés inter-villages avec primes
+- **Code pénal** — référentiel des infractions et peines
+
+### Tribunal
+- **Affaires** — dossiers judiciaires avec numéro auto `TRIB-2026-NNN`
+- **Délibérés collégiaux** — vote des juges (Acquitté / Coupable / Charges réduites) avec verdict majoritaire pré-sélectionné lors du jugement final
+- **Audiences** — calendrier des sessions
+- **Jugements rendus** — verdict, motifs juridiques, sanctions
+- **Jurisprudence** — création de précédents depuis n'importe quel jugement final (acquittement, culpabilité, charges réduites)
+
+### Cabinet d'avocats
+- Dossiers de défense, consultations, archives juridiques
+
+### Missions
+- Attribution de missions aux équipes, suivi de progression, comptes-rendus
+
+### Hôpital
+- **Patients** — admissions, chambres, pathologies
+- **Consultations** — fiches médicales avec compte-rendu
+- **Pharmacie** — inventaire, seuils d'alerte
+- **Psychologie** — suivi psychiatrique
+- **Don de sang** — banque de sang par groupe
+- **Études scientifiques** — recherches médicales
+- **Morgue & Légiste** — registre des décès
+- **Comptabilité** — actes facturés
+
+### Diplomatie
+- **Laissez-passer** — émission, révocation, suivi des autorisations de séjour
+- Relations inter-villages
+
+## Système de rôles
+
+Hiérarchie à 9 niveaux :
+
+| Rôle | Couleur | Permissions |
 |---|---|---|
-| **Netlify** | Glisser-déposer le fichier sur Netlify Drop | [netlify.com/drop](https://netlify.com/drop) |
-| **GitHub Pages** | Pousser le fichier sur un repo public | [pages.github.com](https://pages.github.com) |
-| Tout hébergeur statique | Upload via FTP/panel | — |
+| 🔴 Admin | Rouge | Accès total, dont panel admin |
+| 🎖️ Haut Commandement | Violet | Oversight transverse — voit toutes sections, peut modifier partout, **sauf** panel admin |
+| 🏛️ Gérant | Or | Direction d'une section, peut éditer grades/rôles |
+| 🥈 Co-Gérant | Cyan | Bras droit du Gérant |
+| ⚔️ Sergent | Orange | Commandement de terrain |
+| 🔵 Officier | Bleu | Agent opérationnel |
+| 👥 Membre | Vert | Lecture + actions de base |
+| 🌱 Stagiaire | Gris | Recrue en formation |
+| 👁 Visiteur | Gris | Lecture seule |
 
-> ⚠️ Le fichier doit être servi via **HTTPS** pour que Firebase et le hachage des mots de passe (`crypto.subtle`) fonctionnent correctement.
+**Garde-fous de sécurité :**
+- Seul un Admin peut promouvoir ou retirer le rôle Haut Commandement
+- Seuls Admin/Gérant peuvent modifier grades et rôles (avec vérification serveur)
+- Les rôles transversaux (admin, hautcommandement) ont un bypass propre dans la navigation
 
----
+## Système de grades shinobi
 
-## 🔑 Connexion par défaut
+Du junior au senior, chaque grade a sa propre couleur distinctive :
 
-| Identifiant | Mot de passe |
-|---|---|
-| `????` | `????` |
+1. Genin (gris ardoise)
+2. Genin Confirmé (vert)
+3. Chunin (cyan)
+4. Tokubetsu Chunin (teal)
+5. Kakunin (lime)
+6. Tokubetsu Jonin (indigo)
+7. Jonin (violet)
+8. **Sairin** (rose)
+9. Commandant Jonin (rouge écarlate)
+10. Kazekage (or doré, gradient sur la fiche détaillée)
 
-> Changer le mot de passe admin dès le premier déploiement via **Panel Admin → Modifier**.
+Chaque grade dispose d'un montant d'impôts par défaut, modifiable par les admins.
 
----
+## Fonctionnalités transverses
 
-## 📦 Stack technique
+### Messagerie interne
+Conversations privées 1-à-1 entre utilisateurs avec présence en temps réel, badges de notification, indicateur de lecture.
 
-- **Langage** : HTML / CSS / JavaScript vanilla (aucun framework)
-- **Base de données** : Firebase Realtime Database (`suna-police` project)
-- **Stockage local** : `localStorage` (clé `suna_v4`) — fallback hors-ligne
-- **Hachage MDP** : `crypto.subtle` SHA-256 (navigateur natif)
-- **Graphiques** : Chart.js 4.4 (CDN)
-- **Fonts** : Google Fonts (Cinzel, Barlow Condensed, Share Tech Mono)
+### Recherche unifiée
+- **Recensement** : recherche multi-mots (logique ET) sur nom, prénom, faction, nature, métier, clan, notes, âge, sexe — un seul champ remplace tous les filtres déroulants
+- **Tribunal "Plaintes reçues"** : recherche par référence (`POL-2026-001`), accusé, plaignant, type, description
+- **Dossiers, Plaintes, Candidatures** : recherche libre sur les champs principaux
 
----
+### Autocomplétion intelligente
+Le champ "Nom RP du suspect" lors de la création/édition d'un dossier criminel propose en autocomplétion les noms du recensement, avec rang et faction. Navigation clavier (↑/↓/Entrée/Échap) supportée. Détection automatique des doublons : si le suspect a déjà un dossier ouvert, une alerte propose d'aller le modifier au lieu d'en créer un nouveau.
 
-## 🗂️ Fonctionnalités
+### Tri des tableaux
+- **Tri par en-tête de colonne** : clic sur Réf., Nom, Date, Statut, Dangerosité, Amendes, etc. avec indicateur ↑/↓ persistant après re-render
+- **Tri logique des statuts** : "à traiter" en haut, "terminés" en bas (pas d'ordre alphabétique aveugle)
+- **Tri par amende** : impayés en premier (asc) ou payés en premier (desc), tri secondaire par montant
+- **Tri par défunts** : option dédiée dans le dropdown + cycle 3 états (Visibles → Masqués → En premier) sur le bouton dédié dans la page Dossiers
 
-### Accessibles à tous les membres
-| Section | Description |
-|---|---|
-| 📊 Tableau de bord | Vue d'ensemble : effectifs, recensés, plaintes actives, opérations + graphiques temps réel |
-| 📢 Annonces | Publication et lecture des communications officielles (épinglage possible) |
-| 📝 Recensement | Fiches de recensement des civils / suspects avec filtres actifs visibles |
-| 🎖️ Recrutement | Candidatures, suivi et intégration des recrues |
-| 📋 Plaintes | Dépôt et gestion des plaintes — lien automatique vers dossier criminel et fiche recensement |
-| 📜 Code Pénal | Consultation du code pénal par catégorie (délit → crime) |
+### Synchronisation Firebase
+Synchronisation temps réel entre tous les clients connectés : ajouts, modifications et suppressions sont propagés immédiatement. Garde-fous :
+- Détection des suppressions distantes (un dossier supprimé par un autre joueur disparaît chez tous)
+- Préservation des modifications locales en cours d'édition (re-render skippé tant qu'un modal est ouvert)
+- Backfill automatique des références plaintes pour les anciennes données
 
-### Réservées aux membres (non-visiteurs)
-| Section | Description |
-|---|---|
-| 🗂️ Dossiers criminels | Création et suivi des dossiers judiciaires |
-| 🚨 Opérations | Planification et suivi des opérations de terrain + vue calendrier |
-| 👮 Effectifs | Annuaire visuel des agents actifs avec photos + graphiques de répartition |
-| 🏛️ Hiérarchie | Organigramme officiel avec les 5 grades dans l'ordre, membres et postes vacants |
-| ⚖️ Sanctions / Promo | Historique des sanctions et promotions par agent |
-| 💬 Messagerie | Messagerie interne entre membres |
-| 👤 Mon profil | Statistiques personnelles, activité récente, changement de mot de passe |
+### Filtres rapides Dossiers
+Boutons de filtres en lignes :
+- **Dangerosité** : Tous / Faible / Modéré / Élevé / Extrême
+- **Statut** : Tous / Recherché / G.À.V. / Incarcéré / Libéré / Surveillé
+- **Défunts** : cycle 3 états
 
-### Réservées aux admins / gérants
-| Section | Description |
-|---|---|
-| ⚙️ Panel Admin | Gestion des comptes, grades, rôles, statistiques, journal d'audit exportable |
+## Stack technique
 
----
+- **HTML5** + **CSS3** (variables CSS, flexbox, grid, animations)
+- **JavaScript vanilla** (ES6+, sans framework)
+- **Firebase Realtime Database** pour la sync multi-utilisateurs
+- **Chart.js** pour les graphiques (effectifs, statistiques)
+- **Polices** : Cinzel (titres), Share Tech Mono (codes/IDs), Barlow (corps)
+- **Storage** : `localStorage` pour la persistance locale, Firebase pour la sync
 
-## 👥 Système de rôles
+## Installation
 
-| Rôle | Libellé | Accès |
-|---|---|---|
-| `admin` | 🔴 Admin | Toutes les sections + Panel Admin |
-| `gerant` | 🏛️ Gérant | Direction — modification + toutes sections membres |
-| `cogerant` | 🥈 Co-Gérant | Idem Gérant |
-| `sergent` | ⚔️ Sergent | Modification + toutes sections membres |
-| `officier` | 🔵 Officier | Membre opérationnel |
-| `stagiaire` | 🌱 Stagiaire | Membre en formation |
-| `visiteur` | 👁 Visiteur | Sections publiques uniquement (annonces, recensement, plaintes, code pénal) |
+```bash
+# Aucune installation requise — ouvrir directement le fichier
+open index.html
 
-> Les comptes créés via le formulaire d'inscription sont automatiquement attribués au rôle `visiteur`. Un admin peut ensuite les promouvoir.
-
-### Permissions de modification (`canModify`)
-Les rôles **admin**, **gérant**, **co-gérant** et **sergent** peuvent créer/modifier/supprimer des entrées (annonces, dossiers, opérations, sanctions, code pénal…). Les officiers et stagiaires ont un accès en lecture seule aux sections membres.
-
----
-
-## 🏛️ Hiérarchie & Organigramme
-
-La page **Hiérarchie** affiche l'organigramme officiel en temps réel :
-
-```
-🏛️ Gérant
-    ↓
-🥈 Co-Gérant
-    ↓
-⚔️ Sergent
-    ↓
-🔵 Officier
-    ↓
-🌱 Stagiaire
+# Ou servir en statique
+python3 -m http.server 8000
+# Puis http://localhost:8000
 ```
 
-Chaque grade affiche les membres actifs avec photo, grade RP et un indicateur de statut. Les postes vacants sont signalés automatiquement.
+Pour la sync multi-utilisateurs, configurer une base Firebase Realtime Database et renseigner les credentials dans le `<script>` de configuration Firebase en haut du fichier.
 
----
+## Sauvegarde et restauration
 
-## 🔒 Sécurité
+Le panel admin propose un export JSON complet (sans les mots de passe) et une restauration par import. Les exports peuvent aussi être faits en CSV pour les plaintes, recensement, sanctions, candidatures.
 
-- Les mots de passe sont **hachés en SHA-256** côté client avant stockage (jamais en clair dans Firebase).
-- La session "Se souvenir de moi" stocke uniquement `{id, hash}` en `localStorage`, **jamais dans Firebase**.
-- Un compte désactivé est automatiquement déconnecté à la prochaine synchronisation Firebase.
-- Il est impossible de supprimer ou désactiver le dernier admin actif.
-- Un utilisateur ne peut pas supprimer son propre compte.
-- Une **confirmation de déconnexion** est demandée pour éviter les déconnexions accidentelles.
+## Compatibilité
 
-### Reset d'urgence
-Si le mot de passe admin est perdu, un lien **"Réinitialiser les données"** apparaît sur l'écran de connexion après une tentative échouée avec l'identifiant `admin`. Cette action efface toutes les données et restaure les paramètres d'usine.
+Testé sur Chrome, Firefox, Safari (desktop et mobile). Mobile responsive avec adaptations spécifiques :
+- Sidebar latérale convertie en drawer
+- Tables converties en cards verticales
+- Modals plein écran
+- Bouton retour mobile dans la messagerie
 
----
+## Lore
 
-## 🔧 Configuration Firebase
-
-Le projet Firebase est déjà configuré dans le fichier. Pour utiliser votre propre base :
-
-1. Créer un projet sur [console.firebase.google.com](https://console.firebase.google.com)
-2. Activer **Realtime Database** (mode test ou avec règles adaptées)
-3. Remplacer le bloc `firebaseConfig` dans le fichier HTML :
-
-```js
-const firebaseConfig = {
-  apiKey: "VOTRE_API_KEY",
-  authDomain: "VOTRE_PROJECT.firebaseapp.com",
-  projectId: "VOTRE_PROJECT",
-  storageBucket: "VOTRE_PROJECT.firebasestorage.app",
-  messagingSenderId: "VOTRE_SENDER_ID",
-  appId: "VOTRE_APP_ID",
-  databaseURL: "https://VOTRE_PROJECT-default-rtdb.europe-west1.firebasedatabase.app"
-};
-```
-
-### Règles Realtime Database recommandées
-```json
-{
-  "rules": {
-    ".read": true,
-    ".write": true
-  }
-}
-```
-> Pour la production, restreindre l'accès selon vos besoins.
-
----
-
-## 🌙 Mode sombre
-
-Activable via le bouton 🌙 en haut à droite de l'interface. La préférence est sauvegardée en `localStorage`.
-
----
-
-## 📱 Compatibilité mobile
-
-Interface entièrement responsive avec :
-- Barre de navigation inférieure à 4 onglets
-- Drawer "Plus" pour les sections secondaires
-- Swipe horizontal entre les pages principales
-- Swipe vertical pour fermer les modales (bottom sheets)
-- Pull-to-refresh pour forcer la synchronisation Firebase
-- FAB contextuel (+) selon la page active
-- Suppression du délai 300ms iOS via `touch-action: manipulation`
-- Scroll-to-top automatique
-
----
-
-## 📊 Graphiques
-
-Deux types de graphiques propulsés par **Chart.js** :
-
-| Emplacement | Graphique |
-|---|---|
-| Tableau de bord | Plaintes sur les 30 derniers jours (courbe) |
-| Tableau de bord | Recensement par faction (donut) |
-| Effectifs | Répartition des agents par rôle (barres) |
-| Effectifs | Répartition des agents par grade (donut) |
-
-Les graphiques se mettent à jour automatiquement et supportent le mode sombre.
-
----
-
-## 📋 Journal d'audit
-
-Disponible dans le **Panel Admin**, le journal d'audit enregistre toutes les actions importantes (publications, modifications, sanctions, connexions…) avec horodatage. Exportable en CSV.
-
----
-
-## 🏷️ Filtres actifs
-
-Sur la page **Recensement**, les filtres appliqués (faction, nature, recherche texte) apparaissent sous forme de chips supprimables en un clic.
-
----
-
-## 🔗 Liaison plainte → dossier
-
-Lors de la consultation d'une plainte, si l'accusé possède un **dossier criminel** ou une **fiche de recensement**, des boutons de navigation directe apparaissent automatiquement dans la modale.
-
----
-
-## 📝 Notes de version
-
-- **v5** — Hiérarchie & organigramme, 5 rôles officiels (gérant/co-gérant/sergent/officier/stagiaire), graphiques effectifs, filtres chips recensement, confirmation déconnexion, journal d'audit, liaison plainte→dossier, corrections stabilité
-- **v4** — Synchronisation Firebase temps réel, hachage SHA-256, mode hors-ligne, session persistante, messagerie interne, profil, graphiques dashboard, calendrier opérations, pull-to-refresh, swipe mobile
-- Clé localStorage : `suna_v4`
+Au cœur du Pays du Vent, la Police de Sunagakure veille sur l'ordre du village caché du sable. *« Que nul individu fiché n'échappe à la mémoire du Désert. »*
