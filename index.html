@@ -23663,15 +23663,166 @@ function dcOpenNewDossier(){
   openModal('modal-dossier');
 }
 
+// ═══════════════════════════════════════════════════════════════════════════
+// PONT DOSSIER CRIMINEL → BINGO BOOK
+// Permet de créer une fiche BB pré-remplie à partir d'un dossier criminel.
+// Lien souple : on stocke d.bbFicheId mais on vérifie son existence à chaque
+// affichage (si la fiche a été supprimée du BB, on permet la recréation).
+// ═══════════════════════════════════════════════════════════════════════════
+
+// Vérifie si un dossier a une fiche BB associée et si elle existe encore
+function dcCheckBBLink(d){
+  var info = { exists: false, wasLinked: false, ficheId: null };
+  if(!d || !d.bbFicheId){ return info; }
+  info.wasLinked = true;
+  info.ficheId = d.bbFicheId;
+  // Vérifier que la fiche existe toujours dans le BB
+  if(typeof bbGetNinjas === 'function'){
+    try {
+      var list = bbGetNinjas();
+      if(Array.isArray(list)){
+        var found = list.find(function(n){ return n && n.id === d.bbFicheId; });
+        if(found) info.exists = true;
+      }
+    } catch(e){}
+  }
+  return info;
+}
+
+// Sépare nom complet en {nom, prenom}
+function dcSplitNom(full){
+  if(!full) return { nom:'', prenom:'' };
+  var parts = String(full).trim().split(/\s+/);
+  if(parts.length === 1) return { nom: parts[0], prenom: '' };
+  // Premier mot = nom de famille (convention naruto), le reste = prénom
+  return { nom: parts[0], prenom: parts.slice(1).join(' ') };
+}
+
+// Mappe le niveau de danger du dossier vers le niveau BB
+function dcMapDanger(dossierDanger){
+  var d = String(dossierDanger||'').toLowerCase();
+  if(d.indexOf('extrême') !== -1 || d.indexOf('extreme') !== -1 || d.indexOf('élevé') !== -1 || d.indexOf('eleve') !== -1) return 'eleve';
+  if(d.indexOf('modéré') !== -1 || d.indexOf('modere') !== -1 || d.indexOf('moyen') !== -1) return 'moyen';
+  return 'faible';
+}
+
+// Construit une description de signalement à partir des incidents du dossier
+function dcBuildBBDesc(d){
+  if(!d) return '';
+  var lines = [];
+  if(d.notes) lines.push(String(d.notes).trim());
+  var incidents = (d.incidents||[]).slice().sort(function(a,b){
+    return new Date(b.date||0).getTime() - new Date(a.date||0).getTime();
+  });
+  if(incidents.length){
+    lines.push(''); // ligne vide
+    lines.push('— Antécédents criminels (' + incidents.length + ' incident' + (incidents.length>1?'s':'') + ') —');
+    incidents.slice(0, 5).forEach(function(inc){
+      var infs = [];
+      (inc.infractions||[]).forEach(function(i){ if(i && i.nom) infs.push(i.nom); });
+      (inc.infractionsLibres||[]).forEach(function(i){ if(i) infs.push(String(i)); });
+      var dateStr = inc.date ? '['+fmtDate(inc.date)+'] ' : '';
+      var infStr = infs.length ? infs.join(', ') : '(non spécifié)';
+      lines.push('• ' + dateStr + infStr);
+    });
+    if(incidents.length > 5) lines.push('... et ' + (incidents.length - 5) + ' autre(s) incident(s).');
+  }
+  return lines.join('\n').trim();
+}
+
+// Lance le processus d'ajout au Bingo Book à partir d'un dossier
+function dcAddToBingoBook(dossierId){
+  if(typeof bbCanEdit !== 'function' || !bbCanEdit()){
+    if(typeof showToast === 'function') showToast('⛔ Action réservée aux administrateurs et diplomates','error');
+    return;
+  }
+  var d = (DB.dossiers||[]).find(function(x){ return String(x.id) === String(dossierId); });
+  if(!d){ if(typeof showToast === 'function') showToast('Dossier introuvable','error'); return; }
+
+  // Stocker l'ID du dossier source pour que bbSaveFiche puisse créer le lien après save
+  window._dcPendingDossierLink = dossierId;
+
+  // Fermer la modale dossier
+  if(typeof closeModal === 'function') closeModal('modal-view-dossier');
+
+  // Naviguer vers la page Bingo Book
+  if(typeof showPage === 'function') showPage('bingobook');
+
+  // Pré-remplir le formulaire (en différé pour laisser le temps au DOM de se monter)
+  setTimeout(function(){
+    // Ouvrir le panneau d'ajout (réinitialise tous les champs)
+    if(typeof bbToggleAddPanel === 'function'){
+      var panel = document.getElementById('bb-form-wrap');
+      // Forcer l'ouverture si fermé
+      if(!panel || panel.style.display === 'none'){
+        bbToggleAddPanel();
+      } else {
+        // Si déjà ouvert (édition en cours) : forcer le mode "nouveau"
+        bbToggleAddPanel(); // ferme
+        bbToggleAddPanel(); // rouvre en mode nouveau
+      }
+    }
+    // Pré-remplir
+    var split = dcSplitNom(d.nom);
+    var setVal = function(id, v){ var e = document.getElementById(id); if(e) e.value = v; };
+    setVal('bb-nom', split.nom);
+    setVal('bb-prenom', split.prenom);
+    setVal('bb-grade', 'Criminel recherché');
+    setVal('bb-danger', dcMapDanger(d.danger));
+    setVal('bb-village', 'Suna');  // par défaut, l'utilisateur ajustera si besoin
+    setVal('bb-status', 'actif');
+    setVal('bb-desc', dcBuildBBDesc(d));
+    // Pré-remplir aussi la photo si présente
+    if(d.photo && typeof window.bbHandlePrefilledPortrait === 'function'){
+      try { window.bbHandlePrefilledPortrait(d.photo); } catch(e){}
+    } else if(d.photo){
+      // Fallback simple : on alimente la variable interne du form BB
+      try {
+        if(typeof window._bbPortraitData !== 'undefined') window._bbPortraitData = d.photo;
+        var prev = document.getElementById('bb-portrait-preview');
+        if(prev && d.photo){ prev.src = d.photo; prev.style.display = 'block'; }
+        var lbl = document.getElementById('bb-upload-label');
+        if(lbl) lbl.textContent = '📷 Photo importée du dossier';
+      } catch(e){}
+    }
+    // Mettre à jour le titre du formulaire pour signaler la provenance
+    var ftitle = document.getElementById('bb-form-title');
+    if(ftitle) ftitle.textContent = 'Nouvelle fiche ninja — Importée depuis dossier #' + d.id;
+    // Faire défiler vers le formulaire
+    var panel = document.getElementById('bb-form-wrap');
+    if(panel) panel.scrollIntoView({ behavior:'smooth', block:'start' });
+    if(typeof showToast === 'function') showToast('Formulaire pré-rempli depuis le dossier — vérifie et enregistre','success');
+  }, 250);
+}
+
+// Va directement à la fiche BB liée à un dossier
+function dcGoToBingoBook(dossierId){
+  var d = (DB.dossiers||[]).find(function(x){ return String(x.id) === String(dossierId); });
+  if(!d || !d.bbFicheId){ if(typeof showToast === 'function') showToast('Pas de fiche BB associée','error'); return; }
+  if(typeof closeModal === 'function') closeModal('modal-view-dossier');
+  if(typeof showPage === 'function') showPage('bingobook');
+  // Ouvrir la fiche BB après navigation
+  setTimeout(function(){
+    if(typeof bbOpenDossier === 'function') bbOpenDossier(d.bbFicheId);
+  }, 250);
+}
+
+window.dcCheckBBLink = dcCheckBBLink;
+window.dcAddToBingoBook = dcAddToBingoBook;
+window.dcGoToBingoBook = dcGoToBingoBook;
+
 function viewDossier(id){
   id=parseInt(id);
   const d=DB.dossiers.find(x=>String(x.id)===String(id));if(!d)return;
   // Migration auto vers le format multi-incidents
   dcEnsureIncidents(d);
+  // Vérifier si le dossier a déjà une fiche BB associée (lien souple : on vérifie qu'elle existe vraiment)
+  var bbLinkInfo = dcCheckBBLink(d);
+
   var m=document.getElementById("modal-view-dossier");
   if(!m){
     m=document.createElement("div");m.className="modal-overlay";m.id="modal-view-dossier";
-    m.innerHTML='<div class="modal"><div class="modal-header"><h3 id="vd-title">Dossier</h3><span class="modal-close" aria-label="Fermer" onclick="closeModal(\'modal-view-dossier\')">✕</span></div><div class="modal-body" id="vd-body"></div><div class="modal-footer"><button class="btn btn-outline" onclick="closeModal(\'modal-view-dossier\')">Fermer</button></div></div>';
+    m.innerHTML='<div class="modal"><div class="modal-header"><h3 id="vd-title">Dossier</h3><span class="modal-close" aria-label="Fermer" onclick="closeModal(\'modal-view-dossier\')">✕</span></div><div class="modal-body" id="vd-body"></div><div class="modal-footer" id="vd-footer"></div></div>';
     document.body.appendChild(m);
     m.addEventListener("click",function(e){if(e.target===m)m.classList.remove("open");});
   }
@@ -23762,6 +23913,27 @@ function viewDossier(id){
     ${d.notes ? `<div class="form-group"><label class="form-label">📝 Notes générales</label><div style="font-size:12px;color:var(--muted);white-space:pre-wrap">${esc(d.notes)}</div></div>` : ""}
     ${(d.tags && d.tags.length) ? `<div class="form-group"><label class="form-label" style="color:rgba(109,40,217,0.85)">🏷 Tags</label><div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:4px">${d.tags.map(tid=>{const t=DOSSIER_TAGS.find(x=>x.id===tid);return t?`<span class="tag-pill" style="background:${t.bg};color:${t.color};border:1px solid ${t.border}">${t.label}</span>`:`<span class="tag-pill" style="background:rgba(109,40,217,0.08);color:#5b21b6;border:1px solid rgba(109,40,217,0.22)">${esc(tid)}</span>`;}).join('')}</div></div>` : ""}
     <div class="form-group" style="margin-top:8px"><label class="form-label">Créé le</label><div style="font-size:11px;color:var(--muted);font-family:'Share Tech Mono',monospace">${fmtDate(d.date)}</div></div>`;
+
+  // ─── Footer dynamique : Fermer + bouton Bingo Book (si éligible) ───
+  var footerEl = document.getElementById("vd-footer");
+  if(footerEl){
+    var bbBtnHTML = '';
+    if(typeof bbCanEdit === 'function' && bbCanEdit()){
+      // Adapter le bouton selon l'état du lien BB
+      if(bbLinkInfo.exists){
+        // Fiche BB déjà présente : bouton qui mène vers la fiche
+        bbBtnHTML = '<button class="btn btn-outline" onclick="dcGoToBingoBook('+d.id+')" title="Voir la fiche dans le Bingo Book" style="border-color:rgba(34,197,94,0.45);color:#86efac">✓ Au Bingo Book</button>';
+      } else if(bbLinkInfo.wasLinked){
+        // Avait un lien mais la fiche a été supprimée : permettre la recréation
+        bbBtnHTML = '<button class="btn btn-outline" onclick="dcAddToBingoBook('+d.id+')" title="Recréer une fiche au Bingo Book" style="border-color:rgba(217,119,6,0.45);color:#fbbf24">↻ Recréer fiche BB</button>';
+      } else {
+        // Pas de lien : proposer l'ajout
+        bbBtnHTML = '<button class="btn" onclick="dcAddToBingoBook('+d.id+')" title="Créer une fiche dans le Bingo Book à partir de ce dossier" style="background:linear-gradient(135deg,#dc2626,#991b1b);color:#fff;border:0">📕 Ajouter au Bingo Book</button>';
+      }
+    }
+    footerEl.innerHTML = bbBtnHTML + '<button class="btn btn-outline" onclick="closeModal(\'modal-view-dossier\')">Fermer</button>';
+  }
+
   openModal("modal-view-dossier");
 }
 
@@ -35080,6 +35252,19 @@ function bbSaveFiche() {
     bbNextId = data.id + 1;
     list.unshift(data);
     if(typeof showToast==='function') showToast('✅ Fiche ajoutée au Bingo Book', 'success');
+    // ─── Pont dossier ↔ BB : si la fiche vient d'un dossier criminel, créer le lien ───
+    if(window._dcPendingDossierLink){
+      try {
+        var sourceDossier = (DB.dossiers||[]).find(function(x){ return String(x.id) === String(window._dcPendingDossierLink); });
+        if(sourceDossier){
+          sourceDossier.bbFicheId = data.id;
+          sourceDossier.bbLinkedAt = Date.now();
+          if(typeof saveData === 'function') saveData();
+          if(typeof showToast === 'function') showToast('🔗 Dossier lié à la nouvelle fiche du Bingo Book','success');
+        }
+      } catch(e){ /* lien échoué, pas critique */ }
+      window._dcPendingDossierLink = null;
+    }
   }
   bbSaveNinjas(list);
   bbCancelForm();
@@ -35109,6 +35294,8 @@ function bbCancelForm() {
   // Reset l'input file pour permettre un nouvel upload propre la prochaine fois
   var fileInput = document.getElementById('bb-portrait-file');
   if(fileInput) fileInput.value = '';
+  // Nettoyer aussi le lien dossier en attente : on n'a pas créé la fiche, donc pas de lien
+  if(window._dcPendingDossierLink) window._dcPendingDossierLink = null;
 }
 
 /* ═══════════════════════════════════════════════════════════════════════
