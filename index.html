@@ -21211,7 +21211,7 @@ const PAGES={dashboard:"Tableau de bord",annonces:"Annonces",recensement:"Recens
   "sci-rapports":"Salon scientifique","sci-morgue":"Morgue",
   "compta-paiements":"Paiements (Ryōs)",
   // Diplomatie
-  "diplo-villages":"Villages alliés","diplo-traites":"Traités","diplo-communications":"Communications","diplo-laissezpasse":"Laissez-passer"
+  "diplo-villages":"Villages alliés","diplo-traites":"Traités","diplo-communications":"Communications","diplo-laissezpasse":"Laissez-passer","diplo-comptabilite":"Comptabilité"
 };
 const VISITOR_PAGES=["dashboard","annonces","recensement","recrutement","plaintes","codepenal","histoire","profil","bingobook",
   // Pages des sections : visibles par les visiteurs de leur section (les visiteurs des autres sections ne pourront pas y accéder via _applySectionUI)
@@ -34409,12 +34409,26 @@ function dcEditEntry(id){
 }
 function dcDeleteEntry(id){
   if(!dcCanAccess()){ if(typeof showToast==='function') showToast('⛔ Action réservée aux diplomates','error'); return; }
-  if(!confirm('Supprimer cette transaction ? Cette action est irréversible.')) return;
   dcInitDB();
-  DB.diploComptabilite.transactions = (DB.diploComptabilite.transactions||[]).filter(function(t){ return t.id !== id; });
-  if(typeof saveData === 'function') saveData();
-  dcRender();
-  if(typeof showToast==='function') showToast('Transaction supprimée','success');
+  // Cherche la transaction pour personnaliser le message de confirmation
+  var tx = (DB.diploComptabilite.transactions||[]).find(function(t){ return t.id === id; });
+  if(!tx){ if(typeof showToast==='function') showToast('Transaction introuvable','error'); return; }
+  var typeLbl = tx.type === 'entree' ? "l'entrée" : "le retrait";
+  var amountStr = dcFmtMoney(tx.amount) + ' Ryōs';
+  var msg = 'Supprimer ' + typeLbl + ' de ' + amountStr + ' ?\n\nCette action est irréversible.';
+  var doDelete = function(){
+    DB.diploComptabilite.transactions = (DB.diploComptabilite.transactions||[]).filter(function(t){ return t.id !== id; });
+    if(typeof saveData === 'function') saveData();
+    dcRender();
+    if(typeof showToast==='function') showToast('Transaction supprimée','success');
+  };
+  // Utiliser le système de modale stylé au lieu du confirm() natif
+  if(typeof askDelete === 'function'){
+    askDelete(msg, doDelete, '🗑 Supprimer');
+  } else {
+    // Fallback safe si askDelete n'est pas chargé
+    if(confirm(msg)) doDelete();
+  }
 }
 function dcToggleTaxPaid(id){
   if(!dcCanAccess()){ if(typeof showToast==='function') showToast('⛔ Action réservée aux diplomates','error'); return; }
