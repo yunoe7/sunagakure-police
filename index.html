@@ -7376,6 +7376,7 @@ document.addEventListener('error', function(e){
     <div class="nav-item" role="button" tabindex="0" onclick="showPage('diplo-villages')" data-page="diplo-villages" data-sec="diplomatie"><span class="icon">🏯</span> Villages alliés</div>
     <div class="nav-item" role="button" tabindex="0" onclick="showPage('diplo-traites')" data-page="diplo-traites" data-sec="diplomatie"><span class="icon">📜</span> Traités</div>
     <div class="nav-item" role="button" tabindex="0" onclick="showPage('diplo-communications')" data-page="diplo-communications" data-sec="diplomatie"><span class="icon">✉️</span> Communications</div>
+    <div class="nav-item" role="button" tabindex="0" onclick="showPage('diplo-comptabilite')" data-page="diplo-comptabilite" data-sec="diplomatie"><span class="icon">💰</span> Comptabilité</div>
 
     <div class="nav-section" data-member-only="true" data-sec="all">Administration</div>
     <div class="nav-item" role="button" tabindex="0" id="nav-admin" onclick="showPage('admin')" style="display:none" data-sec="all"><span class="icon">⚙️</span> Panel Admin</div>
@@ -12661,6 +12662,418 @@ document.addEventListener('error', function(e){
       </div>
     </div>
     <div class="card" data-sec-card="diplomatie:communications"></div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════════════════
+       DIPLOMATIE — COMPTABILITÉ
+       Caisse commune (visible/éditable par tous diplomates non-visiteurs)
+       + Caisse personnelle (visible/éditable seulement par son propriétaire,
+                              + admins en lecture pour audit)
+       ═══════════════════════════════════════════════════════════════════════ -->
+  <div class="page-content" id="page-diplo-comptabilite" data-sec-page="diplomatie">
+    <style>
+    /* ─── Hero ─── */
+    #page-diplo-comptabilite .dc-hero{
+      background:linear-gradient(135deg, #15110b 0%, #1f1610 100%);
+      border:1px solid rgba(180,140,20,0.30);
+      border-radius:14px;
+      padding:22px 26px;margin-bottom:14px;
+      position:relative;overflow:hidden;
+    }
+    #page-diplo-comptabilite .dc-hero::before{
+      content:'';position:absolute;top:0;left:0;right:0;height:1px;
+      background:linear-gradient(90deg, transparent, rgba(212,180,74,0.55), transparent);
+    }
+    #page-diplo-comptabilite .dc-hero-inner{
+      display:flex;align-items:center;gap:18px;flex-wrap:wrap;
+    }
+    #page-diplo-comptabilite .dc-hero-icon{
+      width:56px;height:56px;border-radius:12px;
+      background:linear-gradient(135deg, rgba(212,180,74,0.20), rgba(192,65,14,0.15));
+      border:1px solid rgba(212,180,74,0.35);
+      display:flex;align-items:center;justify-content:center;
+      font-size:28px;flex-shrink:0;
+    }
+    #page-diplo-comptabilite .dc-hero-text{flex:1;min-width:200px}
+    #page-diplo-comptabilite .dc-hero-tag{
+      font-family:'Share Tech Mono',monospace;
+      font-size:10px;letter-spacing:2.5px;
+      color:rgba(212,180,74,0.65);text-transform:uppercase;
+    }
+    #page-diplo-comptabilite .dc-hero-title{
+      font-family:'Cinzel',serif;font-size:26px;font-weight:700;
+      letter-spacing:2px;color:#f0e8d0;margin:2px 0 4px;
+    }
+    #page-diplo-comptabilite .dc-hero-sub{
+      font-size:12.5px;color:var(--muted);
+    }
+
+    /* ─── Stats panel ─── */
+    #page-diplo-comptabilite .dc-stats{
+      display:grid;grid-template-columns:repeat(auto-fit, minmax(170px, 1fr));
+      gap:11px;margin-bottom:14px;
+    }
+    #page-diplo-comptabilite .dc-stat{
+      background:linear-gradient(135deg, rgba(26,20,16,0.92) 0%, rgba(34,28,19,0.88) 100%);
+      border:1px solid rgba(180,140,20,0.22);
+      border-radius:10px;
+      padding:13px 16px;
+      position:relative;overflow:hidden;
+    }
+    #page-diplo-comptabilite .dc-stat::before{
+      content:'';position:absolute;top:0;left:0;right:0;height:1px;
+      background:linear-gradient(90deg, transparent, rgba(212,180,74,0.4), transparent);
+    }
+    #page-diplo-comptabilite .dc-stat-lbl{
+      font-family:'Share Tech Mono',monospace;
+      font-size:9px;letter-spacing:2px;
+      color:rgba(212,180,74,0.7);
+      text-transform:uppercase;margin-bottom:4px;
+    }
+    #page-diplo-comptabilite .dc-stat-val{
+      font-family:'Cinzel',serif;font-size:22px;font-weight:700;
+      color:#f0e8d0;letter-spacing:0.5px;
+    }
+    #page-diplo-comptabilite .dc-stat-val .unit{
+      font-size:11px;color:var(--muted);
+      letter-spacing:1px;font-weight:400;margin-left:3px;
+    }
+    #page-diplo-comptabilite .dc-stat[data-tone="green"] .dc-stat-val{color:#86efac}
+    #page-diplo-comptabilite .dc-stat[data-tone="red"] .dc-stat-val{color:#fca5a5}
+    #page-diplo-comptabilite .dc-stat[data-tone="gold"] .dc-stat-val{color:#f0d060}
+    #page-diplo-comptabilite .dc-stat[data-tone="blue"] .dc-stat-val{color:#93c5fd}
+    #page-diplo-comptabilite .dc-stat[data-tone="orange"] .dc-stat-val{color:#fbbf24}
+
+    /* ─── Bandeau action (boutons + filtre) ─── */
+    #page-diplo-comptabilite .dc-actions-bar{
+      display:flex;flex-wrap:wrap;gap:10px;align-items:center;
+      padding:12px 16px;
+      background:linear-gradient(135deg, rgba(26,20,16,0.92) 0%, rgba(34,28,19,0.88) 100%);
+      border:1px solid rgba(180,140,20,0.22);
+      border-radius:10px;margin-bottom:14px;
+    }
+    #page-diplo-comptabilite .dc-actions-bar .btn-add-entry{
+      background:linear-gradient(135deg, #16a34a, #15803d);
+      color:#fff;border:0;padding:8px 16px;border-radius:6px;
+      font-family:'Cinzel',serif;font-weight:600;letter-spacing:1px;
+      cursor:pointer;text-transform:uppercase;font-size:11.5px;
+      transition:transform 0.15s, box-shadow 0.15s;
+    }
+    #page-diplo-comptabilite .dc-actions-bar .btn-add-entry:hover{
+      transform:translateY(-1px);
+      box-shadow:0 4px 14px rgba(22,163,74,0.35);
+    }
+    #page-diplo-comptabilite .dc-actions-bar .btn-add-out{
+      background:linear-gradient(135deg, #dc2626, #b91c1c);
+      color:#fff;border:0;padding:8px 16px;border-radius:6px;
+      font-family:'Cinzel',serif;font-weight:600;letter-spacing:1px;
+      cursor:pointer;text-transform:uppercase;font-size:11.5px;
+      transition:transform 0.15s, box-shadow 0.15s;
+    }
+    #page-diplo-comptabilite .dc-actions-bar .btn-add-out:hover{
+      transform:translateY(-1px);
+      box-shadow:0 4px 14px rgba(220,38,38,0.35);
+    }
+    #page-diplo-comptabilite .dc-actions-bar input,
+    #page-diplo-comptabilite .dc-actions-bar select{
+      background:rgba(20,16,9,0.6);
+      border:1px solid rgba(180,140,20,0.25);
+      color:var(--text);
+      padding:7px 11px;border-radius:6px;
+      font-family:'Share Tech Mono',monospace;font-size:11.5px;
+    }
+    #page-diplo-comptabilite .dc-tax-config{
+      display:inline-flex;align-items:center;gap:6px;
+      padding:7px 12px;
+      background:rgba(212,180,74,0.08);
+      border:1px solid rgba(212,180,74,0.30);
+      border-radius:6px;
+    }
+    #page-diplo-comptabilite .dc-tax-config-lbl{
+      font-family:'Share Tech Mono',monospace;
+      font-size:10px;letter-spacing:1.5px;
+      color:rgba(212,180,74,0.85);
+      text-transform:uppercase;
+    }
+    #page-diplo-comptabilite .dc-tax-config input{
+      width:60px;text-align:center;padding:4px 6px;
+      background:rgba(0,0,0,0.4);
+      border:1px solid rgba(212,180,74,0.4);
+      color:#f0d060;font-weight:700;
+    }
+
+    /* ─── Cartes transactions ─── */
+    #page-diplo-comptabilite .dc-list{display:flex;flex-direction:column;gap:11px}
+    #page-diplo-comptabilite .dc-list:empty{display:none}
+    #page-diplo-comptabilite .dc-card{
+      position:relative;display:grid;
+      grid-template-columns:130px 1fr auto;
+      gap:18px;align-items:stretch;
+      padding:16px 20px;
+      background:linear-gradient(135deg, rgba(26,20,16,0.92) 0%, rgba(34,28,19,0.88) 100%);
+      border:1px solid rgba(180,140,20,0.22);
+      border-radius:12px;
+      box-shadow:0 4px 18px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.04);
+      transition:transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
+      overflow:hidden;
+    }
+    #page-diplo-comptabilite .dc-card::before{
+      content:'';position:absolute;top:0;left:0;right:0;height:1px;
+      background:linear-gradient(90deg, transparent, rgba(212,180,74,0.55), transparent);
+    }
+    #page-diplo-comptabilite .dc-card:hover{
+      transform:translateY(-2px);
+      border-color:rgba(212,180,74,0.45);
+      box-shadow:0 8px 28px rgba(0,0,0,0.45), 0 0 0 1px rgba(212,180,74,0.15), inset 0 1px 0 rgba(255,255,255,0.06);
+    }
+    #page-diplo-comptabilite .dc-card[data-type="entree"]{border-color:rgba(34,197,94,0.32)}
+    #page-diplo-comptabilite .dc-card[data-type="entree"]::before{
+      background:linear-gradient(90deg, transparent, rgba(34,197,94,0.6), transparent);
+    }
+    #page-diplo-comptabilite .dc-card[data-type="entree"]:hover{border-color:rgba(34,197,94,0.55)}
+
+    #page-diplo-comptabilite .dc-card[data-type="sortie"]{border-color:rgba(239,68,68,0.32)}
+    #page-diplo-comptabilite .dc-card[data-type="sortie"]::before{
+      background:linear-gradient(90deg, transparent, rgba(239,68,68,0.6), transparent);
+    }
+    #page-diplo-comptabilite .dc-card[data-type="sortie"]:hover{border-color:rgba(239,68,68,0.55)}
+
+    #page-diplo-comptabilite .dc-card-id{
+      display:flex;flex-direction:column;align-items:center;justify-content:center;
+      padding:8px 6px;gap:6px;
+      background:linear-gradient(180deg, rgba(212,180,74,0.10), rgba(212,180,74,0.04));
+      border:1px solid rgba(212,180,74,0.30);
+      border-radius:8px;
+    }
+    #page-diplo-comptabilite .dc-card-id-num{
+      font-family:'Share Tech Mono',monospace;
+      font-size:13px;font-weight:700;letter-spacing:1.2px;
+      color:#f0d060;text-shadow:0 0 8px rgba(212,180,74,0.4);
+      text-align:center;line-height:1.2;
+    }
+    #page-diplo-comptabilite .dc-card-id-icon{
+      width:64px;height:80px;border-radius:6px;
+      border:1px solid rgba(212,180,74,0.35);
+      display:flex;align-items:center;justify-content:center;
+      flex-shrink:0;font-size:36px;
+      filter:drop-shadow(0 1px 2px rgba(0,0,0,0.5));
+    }
+    #page-diplo-comptabilite .dc-card[data-type="entree"] .dc-card-id-icon{
+      background:linear-gradient(135deg, rgba(34,197,94,0.18), rgba(22,163,74,0.10));
+    }
+    #page-diplo-comptabilite .dc-card[data-type="sortie"] .dc-card-id-icon{
+      background:linear-gradient(135deg, rgba(239,68,68,0.18), rgba(185,28,28,0.10));
+    }
+    #page-diplo-comptabilite .dc-card-id-tag{
+      font-family:'Share Tech Mono',monospace;
+      font-size:8px;letter-spacing:1.5px;
+      color:rgba(212,180,74,0.65);
+      text-transform:uppercase;margin-top:2px;
+    }
+
+    #page-diplo-comptabilite .dc-card-body{
+      display:flex;flex-direction:column;gap:7px;min-width:0;padding:2px 0;
+    }
+    #page-diplo-comptabilite .dc-card-amount{
+      font-family:'Cinzel',serif;font-size:24px;font-weight:700;
+      letter-spacing:1px;
+    }
+    #page-diplo-comptabilite .dc-card[data-type="entree"] .dc-card-amount{color:#86efac}
+    #page-diplo-comptabilite .dc-card[data-type="sortie"] .dc-card-amount{color:#fca5a5}
+    #page-diplo-comptabilite .dc-card-amount .sign{font-weight:400;margin-right:2px;opacity:0.7}
+    #page-diplo-comptabilite .dc-card-amount .unit{
+      font-size:13px;color:var(--muted);
+      font-weight:400;margin-left:5px;letter-spacing:1px;
+    }
+    #page-diplo-comptabilite .dc-card-meta{
+      display:flex;flex-wrap:wrap;align-items:center;gap:7px 14px;
+      font-family:'Share Tech Mono',monospace;
+      font-size:10.5px;color:rgba(255,255,255,0.55);letter-spacing:0.5px;
+    }
+    #page-diplo-comptabilite .dc-card-meta .ico{opacity:0.6}
+    #page-diplo-comptabilite .dc-card-badges{
+      display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-top:1px;
+    }
+    #page-diplo-comptabilite .dc-card-badges .badge{
+      font-size:10.5px;letter-spacing:0.8px;padding:3px 9px;border-radius:4px;
+      font-family:'Barlow Condensed',sans-serif;font-weight:700;text-transform:uppercase;
+    }
+    #page-diplo-comptabilite .dc-card-pill{
+      display:inline-flex;align-items:center;gap:6px;
+      padding:3px 10px;
+      background:rgba(0,0,0,0.35);
+      border:1px solid rgba(180,140,20,0.18);
+      border-radius:5px;
+      font-family:'Share Tech Mono',monospace;
+      font-size:10.5px;color:var(--text2);
+    }
+    #page-diplo-comptabilite .dc-card-pill .lbl{
+      color:rgba(212,180,74,0.7);
+      font-weight:700;letter-spacing:1px;
+    }
+    #page-diplo-comptabilite .dc-card-pill.tax-due{
+      background:rgba(217,119,6,0.10);
+      border-color:rgba(217,119,6,0.35);
+      color:#fbbf24;
+    }
+    #page-diplo-comptabilite .dc-card-pill.tax-paid{
+      background:rgba(34,197,94,0.10);
+      border-color:rgba(34,197,94,0.35);
+      color:#86efac;
+    }
+    #page-diplo-comptabilite .dc-card-justif{
+      font-family:'EB Garamond',Georgia,serif;
+      font-style:italic;font-size:12.5px;
+      color:rgba(240,232,208,0.72);line-height:1.5;
+      max-width:100%;overflow:hidden;text-overflow:ellipsis;
+      display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;
+      padding:6px 12px;background:rgba(0,0,0,0.18);
+      border-left:2px solid rgba(212,180,74,0.3);border-radius:0 4px 4px 0;
+    }
+    #page-diplo-comptabilite .dc-card-justif::before{content:'« ';color:rgba(212,180,74,0.5);font-size:14px}
+    #page-diplo-comptabilite .dc-card-justif::after{content:' »';color:rgba(212,180,74,0.5);font-size:14px}
+    #page-diplo-comptabilite .dc-card-footer{
+      display:flex;align-items:center;gap:14px;flex-wrap:wrap;
+      font-family:'Share Tech Mono',monospace;
+      font-size:9.5px;letter-spacing:1px;
+      color:rgba(255,255,255,0.4);text-transform:uppercase;
+      margin-top:3px;padding-top:7px;
+      border-top:1px dashed rgba(180,140,20,0.18);
+    }
+    #page-diplo-comptabilite .dc-card-actions{
+      display:flex;flex-direction:column;gap:6px;
+      align-items:flex-end;justify-content:center;
+    }
+    #page-diplo-comptabilite .dc-card-actions-btns{display:flex;gap:5px;flex-wrap:wrap;justify-content:flex-end}
+    #page-diplo-comptabilite .dc-act-btn{
+      width:32px;height:32px;
+      display:inline-flex;align-items:center;justify-content:center;
+      border-radius:6px;
+      border:1px solid rgba(180,140,20,0.25);
+      background:rgba(20,16,9,0.6);
+      color:#d4b44a;font-size:14px;
+      cursor:pointer;transition:all 0.15s ease;
+    }
+    #page-diplo-comptabilite .dc-act-btn:hover{
+      transform:translateY(-1px);
+      border-color:rgba(212,180,74,0.55);
+      background:rgba(212,180,74,0.10);
+    }
+    #page-diplo-comptabilite .dc-act-btn.is-paid{color:#86efac;border-color:rgba(34,197,94,0.30)}
+    #page-diplo-comptabilite .dc-act-btn.is-paid:hover{background:rgba(34,197,94,0.10)}
+    #page-diplo-comptabilite .dc-act-btn.is-delete{color:#f87171;border-color:rgba(220,38,38,0.30)}
+    #page-diplo-comptabilite .dc-act-btn.is-delete:hover{border-color:rgba(220,38,38,0.6);background:rgba(220,38,38,0.10)}
+
+    #page-diplo-comptabilite .dc-empty{
+      padding:60px 30px;text-align:center;
+      background:rgba(20,16,9,0.5);
+      border:1px dashed rgba(180,140,20,0.25);
+      border-radius:12px;color:var(--muted);
+    }
+    #page-diplo-comptabilite .dc-empty-ico{font-size:42px;opacity:0.35;margin-bottom:10px}
+    #page-diplo-comptabilite .dc-empty-msg{
+      font-family:'Share Tech Mono',monospace;
+      font-size:11.5px;letter-spacing:2px;text-transform:uppercase;
+    }
+
+    @media(max-width:900px){
+      #page-diplo-comptabilite .dc-card{
+        grid-template-columns:96px 1fr;grid-template-rows:auto auto;gap:14px;
+      }
+      #page-diplo-comptabilite .dc-card-actions{
+        grid-column:1 / -1;flex-direction:row;
+        align-items:center;justify-content:flex-end;
+        padding-top:10px;border-top:1px dashed rgba(180,140,20,0.15);
+      }
+      #page-diplo-comptabilite .dc-card-id{padding:6px 4px;gap:4px}
+      #page-diplo-comptabilite .dc-card-id-icon{width:54px;height:68px;font-size:28px}
+      #page-diplo-comptabilite .dc-card-id-num{font-size:11px}
+      #page-diplo-comptabilite .dc-card-amount{font-size:20px}
+    }
+    @media(max-width:560px){
+      #page-diplo-comptabilite .dc-card{padding:13px 14px;gap:11px}
+      #page-diplo-comptabilite .dc-card-amount{font-size:18px}
+    }
+    </style>
+
+    <!-- Hero -->
+    <div class="dc-hero">
+      <div class="dc-hero-inner">
+        <div class="dc-hero-icon">💰</div>
+        <div class="dc-hero-text">
+          <div class="dc-hero-tag">Service diplomatique</div>
+          <div class="dc-hero-title">Comptabilité</div>
+          <div class="dc-hero-sub">Suivi des entrées, sorties et taxes du service</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Stats -->
+    <div class="dc-stats">
+      <div class="dc-stat" data-tone="gold"><div class="dc-stat-lbl">Solde actuel</div><div class="dc-stat-val" id="dc-com-solde">0<span class="unit">Ryōs</span></div></div>
+      <div class="dc-stat" data-tone="green"><div class="dc-stat-lbl">Total entrées</div><div class="dc-stat-val" id="dc-com-entrees">0<span class="unit">Ryōs</span></div></div>
+      <div class="dc-stat" data-tone="red"><div class="dc-stat-lbl">Total retraits</div><div class="dc-stat-val" id="dc-com-sorties">0<span class="unit">Ryōs</span></div></div>
+      <div class="dc-stat" data-tone="orange"><div class="dc-stat-lbl">Taxes dues</div><div class="dc-stat-val" id="dc-com-tax-due">0<span class="unit">Ryōs</span></div></div>
+      <div class="dc-stat" data-tone="green"><div class="dc-stat-lbl">Taxes payées</div><div class="dc-stat-val" id="dc-com-tax-paid">0<span class="unit">Ryōs</span></div></div>
+    </div>
+
+    <!-- Bandeau d'actions -->
+    <div class="dc-actions-bar">
+      <button class="btn-add-entry" id="dc-com-add-entry-btn" onclick="dcOpenForm('entree')">+ Entrée d'argent</button>
+      <button class="btn-add-out" id="dc-com-add-out-btn" onclick="dcOpenForm('sortie')">− Retrait / Dépense</button>
+      <span class="dc-tax-config" id="dc-com-tax-config">
+        <span class="dc-tax-config-lbl">Taxe :</span>
+        <input type="number" id="dc-com-tax-rate" min="0" max="100" step="0.5" value="10" onchange="dcSetTaxRate(this.value)">
+        <span class="dc-tax-config-lbl">%</span>
+      </span>
+      <input type="text" id="dc-com-search" placeholder="🔍 Rechercher..." style="flex:1;min-width:160px" oninput="dcRender()">
+      <select id="dc-com-filter" onchange="dcRender()">
+        <option value="all">Tout</option>
+        <option value="entree">Entrées</option>
+        <option value="sortie">Sorties</option>
+        <option value="tax-due">Taxes dues</option>
+      </select>
+    </div>
+
+    <!-- Liste des transactions -->
+    <div class="dc-list" id="dc-com-list"></div>
+  </div>
+
+  <!-- Modal saisie d'une transaction (entrée ou sortie) -->
+  <div class="modal-overlay" id="modal-dc-entry">
+    <div class="modal" style="max-width:520px">
+      <div class="modal-header">
+        <h3 id="dc-modal-title">Nouvelle entrée</h3>
+        <span class="modal-close" onclick="closeModal('modal-dc-entry')">✕</span>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="dc-form-type" value="">
+        <input type="hidden" id="dc-form-edit-id" value="">
+        <div class="form-group">
+          <label class="form-label">Montant (Ryōs) *</label>
+          <input type="number" id="dc-form-amount" class="form-control" min="1" step="1" placeholder="Ex: 5000" oninput="dcUpdateTaxPreview()">
+        </div>
+        <div class="form-group">
+          <label class="form-label" id="dc-form-passeur-lbl">Qui a passé l'argent ? *</label>
+          <input type="text" id="dc-form-passeur" class="form-control" placeholder="Nom de la personne / source">
+        </div>
+        <div class="form-group">
+          <label class="form-label" id="dc-form-justif-lbl">Justificatif / Raison *</label>
+          <textarea id="dc-form-justif" class="form-control" rows="3" placeholder="Pour quoi cet argent a-t-il été reçu / dépensé ?"></textarea>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Date</label>
+          <input type="date" id="dc-form-date" class="form-control">
+        </div>
+        <div id="dc-form-tax-preview" style="padding:9px 12px;background:rgba(217,119,6,0.08);border:1px solid rgba(217,119,6,0.30);border-radius:6px;margin-top:8px;font-family:'Share Tech Mono',monospace;font-size:11px;color:#fbbf24;display:none">
+          <span id="dc-form-tax-preview-text"></span>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline" onclick="closeModal('modal-dc-entry')">Annuler</button>
+        <button class="btn btn-primary" onclick="dcSaveEntry()">💾 Enregistrer</button>
+      </div>
+    </div>
   </div>
 
   <!-- DIPLOMATIE — Laissez-passer (visible par TOUS, modifiable par diplomates+admin) -->
@@ -20949,12 +21362,16 @@ function renderPage(name){
   if(name === 'diplo-laissezpasse'){
     if(typeof renderLaissezPasse === 'function') renderLaissezPasse();
   }
+  // Diplomatie — Comptabilité : page custom (caisse commune)
+  if(name === 'diplo-comptabilite'){
+    if(typeof dcRender === 'function') dcRender();
+  }
   // Pages du Tribunal : système dédié riche (affaires, audiences, jugements, procédure, jurisprudence)
   if(typeof tribRenderPage === 'function' && /^juge-/.test(name)){
     tribRenderPage(name);
   }
   // Pages des AUTRES sections (avocat, mission, médical, diplomatie) : système générique
-  else if(typeof renderSectionPage === 'function' && /^(avocat|mission|medical|diplo)-/.test(name) && name !== 'diplo-laissezpasse'){
+  else if(typeof renderSectionPage === 'function' && /^(avocat|mission|medical|diplo)-/.test(name) && name !== 'diplo-laissezpasse' && name !== 'diplo-comptabilite'){
     renderSectionPage(name);
   }
   if(name==="messagerie"){
@@ -33833,6 +34250,327 @@ function _lpFmtDate(iso){
 
 // Échappe le HTML
 function _lpEsc(s){ return (typeof esc === 'function') ? esc(s) : String(s||'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]); }
+
+// ═══════════════════════════════════════════════════════════════════════════
+// COMPTABILITÉ DIPLOMATIQUE — Caisse commune
+// Stockage : DB.diploComptabilite = { taxRate: 10, transactions: [...] }
+// Permissions : tous les diplomates non-visiteurs peuvent lire/écrire
+// ═══════════════════════════════════════════════════════════════════════════
+function dcEsc(s){ return (typeof esc === 'function') ? esc(s) : String(s==null?'':s).replace(/[&<>"']/g,function(c){return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]}); }
+function dcInitDB(){
+  if(!DB.diploComptabilite || typeof DB.diploComptabilite !== 'object'){
+    DB.diploComptabilite = { taxRate: 10, transactions: [] };
+  }
+  if(typeof DB.diploComptabilite.taxRate !== 'number') DB.diploComptabilite.taxRate = 10;
+  if(!Array.isArray(DB.diploComptabilite.transactions)) DB.diploComptabilite.transactions = [];
+}
+function dcCanAccess(){
+  // Tous les diplomates non-visiteurs + tous les admins/police-modos
+  if(typeof currentUser === 'undefined' || !currentUser) return false;
+  if(typeof isAdmin === 'function' && isAdmin()) return true;
+  if(typeof canModify === 'function' && canModify()) return true;
+  // Diplomate non-visiteur
+  var role = (currentUser.diplomatieRole || currentUser.diplomatie || '').toLowerCase();
+  if(role && role !== 'visiteur') return true;
+  // Section diplomatie active
+  var sec = currentUser.section || currentUser.sections;
+  if(sec && (sec === 'diplomatie' || (Array.isArray(sec) && sec.indexOf('diplomatie') !== -1) || sec === 'all')){
+    var grade = (currentUser.grade || '').toLowerCase();
+    return grade !== 'visiteur';
+  }
+  return false;
+}
+function dcFmtMoney(n){
+  n = parseInt(n,10) || 0;
+  return n.toLocaleString('fr-FR');
+}
+function dcFmtDate(ts){
+  if(!ts) return '—';
+  try{
+    var d = new Date(ts);
+    return d.toLocaleDateString('fr-FR');
+  }catch(e){ return '—'; }
+}
+function dcSetTaxRate(val){
+  if(!dcCanAccess()){ if(typeof showToast==='function') showToast('⛔ Action réservée aux diplomates','error'); return; }
+  dcInitDB();
+  var r = parseFloat(val);
+  if(isNaN(r) || r < 0) r = 0;
+  if(r > 100) r = 100;
+  DB.diploComptabilite.taxRate = r;
+  if(typeof saveData === 'function') saveData();
+  dcRender();
+  if(typeof showToast==='function') showToast('Taux de taxe mis à jour : '+r+'%','success');
+}
+function dcUpdateTaxPreview(){
+  dcInitDB();
+  var type = document.getElementById('dc-form-type').value;
+  var amount = parseInt(document.getElementById('dc-form-amount').value,10) || 0;
+  var preview = document.getElementById('dc-form-tax-preview');
+  var txt = document.getElementById('dc-form-tax-preview-text');
+  if(!preview || !txt) return;
+  if(type === 'entree' && amount > 0 && DB.diploComptabilite.taxRate > 0){
+    var taxAmount = Math.round(amount * DB.diploComptabilite.taxRate / 100);
+    txt.innerHTML = '⚠️ Taxe due sur cette entrée : <strong>'+dcFmtMoney(taxAmount)+' Ryōs</strong> ('+DB.diploComptabilite.taxRate+'% de '+dcFmtMoney(amount)+')';
+    preview.style.display = 'block';
+  } else {
+    preview.style.display = 'none';
+  }
+}
+function dcOpenForm(type, editId){
+  if(!dcCanAccess()){ if(typeof showToast==='function') showToast('⛔ Action réservée aux diplomates','error'); return; }
+  dcInitDB();
+  document.getElementById('dc-form-type').value = type;
+  document.getElementById('dc-form-edit-id').value = editId || '';
+  document.getElementById('dc-modal-title').textContent = (editId ? 'Modifier' : 'Nouvelle') + ' ' + (type==='entree' ? 'entrée d\'argent' : 'sortie d\'argent');
+  // Adapter les libellés selon entrée/sortie
+  document.getElementById('dc-form-passeur-lbl').textContent = type==='entree' ? "Qui a apporté l'argent ? *" : "Qui a retiré l'argent ? *";
+  document.getElementById('dc-form-justif-lbl').textContent = type==='entree' ? "Origine / Justificatif *" : "Motif du retrait / Justificatif *";
+
+  // Pré-remplir si édition
+  if(editId){
+    var tx = (DB.diploComptabilite.transactions||[]).find(function(t){ return t.id === editId; });
+    if(tx){
+      document.getElementById('dc-form-amount').value = tx.amount || '';
+      document.getElementById('dc-form-passeur').value = tx.passeur || '';
+      document.getElementById('dc-form-justif').value = tx.justif || '';
+      document.getElementById('dc-form-date').value = tx.date || new Date().toISOString().slice(0,10);
+    }
+  } else {
+    document.getElementById('dc-form-amount').value = '';
+    document.getElementById('dc-form-passeur').value = '';
+    document.getElementById('dc-form-justif').value = '';
+    document.getElementById('dc-form-date').value = new Date().toISOString().slice(0,10);
+  }
+  dcUpdateTaxPreview();
+  if(typeof openModal === 'function') openModal('modal-dc-entry');
+  else document.getElementById('modal-dc-entry').classList.add('open');
+}
+function dcSaveEntry(){
+  if(!dcCanAccess()){ if(typeof showToast==='function') showToast('⛔ Action réservée aux diplomates','error'); return; }
+  dcInitDB();
+  var type = document.getElementById('dc-form-type').value;
+  var editId = document.getElementById('dc-form-edit-id').value;
+  var amount = parseInt(document.getElementById('dc-form-amount').value,10);
+  var passeur = (document.getElementById('dc-form-passeur').value||'').trim();
+  var justif = (document.getElementById('dc-form-justif').value||'').trim();
+  var date = document.getElementById('dc-form-date').value || new Date().toISOString().slice(0,10);
+
+  if(!amount || amount <= 0){ if(typeof showToast==='function') showToast('Montant invalide','error'); return; }
+  if(!passeur){ if(typeof showToast==='function') showToast('Le nom de la personne est requis','error'); return; }
+  if(!justif){ if(typeof showToast==='function') showToast('Le justificatif est requis','error'); return; }
+  if(type !== 'entree' && type !== 'sortie'){ if(typeof showToast==='function') showToast('Type invalide','error'); return; }
+
+  if(editId){
+    var idx = DB.diploComptabilite.transactions.findIndex(function(t){ return t.id === editId; });
+    if(idx === -1){ if(typeof showToast==='function') showToast('Transaction introuvable','error'); return; }
+    var existing = DB.diploComptabilite.transactions[idx];
+    DB.diploComptabilite.transactions[idx] = Object.assign({}, existing, {
+      type: type, amount: amount, passeur: passeur, justif: justif, date: date,
+      editedAt: Date.now(), editedBy: (currentUser && currentUser.nom) || '?'
+    });
+    if(typeof showToast==='function') showToast('Transaction mise à jour','success');
+  } else {
+    var taxAmount = (type === 'entree' && DB.diploComptabilite.taxRate > 0)
+      ? Math.round(amount * DB.diploComptabilite.taxRate / 100)
+      : 0;
+    DB.diploComptabilite.transactions.push({
+      id: 'TX-' + Date.now() + '-' + Math.random().toString(36).slice(2,7),
+      type: type,
+      amount: amount,
+      passeur: passeur,
+      justif: justif,
+      date: date,
+      taxRateAtCreation: DB.diploComptabilite.taxRate,
+      taxAmount: taxAmount,
+      taxPaid: false,
+      createdAt: Date.now(),
+      createdBy: (currentUser && currentUser.nom) || '?'
+    });
+    if(typeof showToast==='function') showToast((type==='entree'?'Entrée':'Sortie')+' enregistrée'+(taxAmount>0?' (taxe due : '+dcFmtMoney(taxAmount)+' Ryōs)':''),'success');
+  }
+  if(typeof saveData === 'function') saveData();
+  if(typeof closeModal === 'function') closeModal('modal-dc-entry');
+  else document.getElementById('modal-dc-entry').classList.remove('open');
+  dcRender();
+}
+function dcEditEntry(id){
+  if(!dcCanAccess()){ if(typeof showToast==='function') showToast('⛔ Action réservée aux diplomates','error'); return; }
+  dcInitDB();
+  var tx = (DB.diploComptabilite.transactions||[]).find(function(t){ return t.id === id; });
+  if(!tx){ if(typeof showToast==='function') showToast('Transaction introuvable','error'); return; }
+  // Ouvre le formulaire pré-rempli avec le bon type (lu sur la transaction)
+  dcOpenForm(tx.type || 'entree', id);
+}
+function dcDeleteEntry(id){
+  if(!dcCanAccess()){ if(typeof showToast==='function') showToast('⛔ Action réservée aux diplomates','error'); return; }
+  if(!confirm('Supprimer cette transaction ? Cette action est irréversible.')) return;
+  dcInitDB();
+  DB.diploComptabilite.transactions = (DB.diploComptabilite.transactions||[]).filter(function(t){ return t.id !== id; });
+  if(typeof saveData === 'function') saveData();
+  dcRender();
+  if(typeof showToast==='function') showToast('Transaction supprimée','success');
+}
+function dcToggleTaxPaid(id){
+  if(!dcCanAccess()){ if(typeof showToast==='function') showToast('⛔ Action réservée aux diplomates','error'); return; }
+  dcInitDB();
+  var tx = (DB.diploComptabilite.transactions||[]).find(function(t){ return t.id === id; });
+  if(!tx){ return; }
+  tx.taxPaid = !tx.taxPaid;
+  tx.taxPaidAt = tx.taxPaid ? Date.now() : null;
+  tx.taxPaidBy = tx.taxPaid ? ((currentUser && currentUser.nom) || '?') : null;
+  if(typeof saveData === 'function') saveData();
+  dcRender();
+  if(typeof showToast==='function') showToast(tx.taxPaid ? 'Taxe marquée comme payée' : 'Taxe remise en attente','success');
+}
+function dcRender(){
+  dcInitDB();
+  var page = document.getElementById('page-diplo-comptabilite');
+  if(!page) return;
+
+  // Synchronise le champ de taux de taxe avec la valeur stockée
+  var rateInput = document.getElementById('dc-com-tax-rate');
+  if(rateInput && document.activeElement !== rateInput){
+    rateInput.value = DB.diploComptabilite.taxRate;
+  }
+
+  var transactions = DB.diploComptabilite.transactions || [];
+
+  // ─── Calculs des stats ───
+  var totalEntrees = 0, totalSorties = 0, totalTaxDue = 0, totalTaxPaid = 0;
+  transactions.forEach(function(t){
+    var amt = parseInt(t.amount,10) || 0;
+    if(t.type === 'entree') totalEntrees += amt;
+    else if(t.type === 'sortie') totalSorties += amt;
+    var tax = parseInt(t.taxAmount,10) || 0;
+    if(tax > 0){
+      if(t.taxPaid) totalTaxPaid += tax;
+      else totalTaxDue += tax;
+    }
+  });
+  var solde = totalEntrees - totalSorties;
+
+  // Maj des stats
+  var setStat = function(id, val){
+    var e = document.getElementById(id);
+    if(e) e.innerHTML = dcFmtMoney(val) + '<span class="unit">Ryōs</span>';
+  };
+  setStat('dc-com-solde', solde);
+  setStat('dc-com-entrees', totalEntrees);
+  setStat('dc-com-sorties', totalSorties);
+  setStat('dc-com-tax-due', totalTaxDue);
+  setStat('dc-com-tax-paid', totalTaxPaid);
+
+  // ─── Filtre + recherche ───
+  var q = ((document.getElementById('dc-com-search')||{}).value||'').toLowerCase();
+  var f = (document.getElementById('dc-com-filter')||{}).value || 'all';
+
+  var filtered = transactions.slice();
+  if(f === 'entree') filtered = filtered.filter(function(t){ return t.type === 'entree'; });
+  else if(f === 'sortie') filtered = filtered.filter(function(t){ return t.type === 'sortie'; });
+  else if(f === 'tax-due') filtered = filtered.filter(function(t){ return (t.taxAmount||0) > 0 && !t.taxPaid; });
+  if(q){
+    filtered = filtered.filter(function(t){
+      return ((t.passeur||'')+(t.justif||'')+(t.amount||'')+(t.createdBy||'')).toLowerCase().indexOf(q) !== -1;
+    });
+  }
+
+  // Tri par date décroissante (plus récent en haut)
+  filtered.sort(function(a,b){
+    var da = new Date(a.date||0).getTime();
+    var db = new Date(b.date||0).getTime();
+    if(db !== da) return db - da;
+    return (b.createdAt||0) - (a.createdAt||0);
+  });
+
+  // ─── Affichage ───
+  var box = document.getElementById('dc-com-list');
+  if(!box) return;
+
+  // Cacher boutons d'actions si pas le droit
+  var canAccess = dcCanAccess();
+  ['dc-com-add-entry-btn','dc-com-add-out-btn'].forEach(function(id){
+    var b = document.getElementById(id);
+    if(b) b.style.display = canAccess ? '' : 'none';
+  });
+  if(rateInput) rateInput.disabled = !canAccess;
+
+  if(!filtered.length){
+    box.innerHTML = '<div class="dc-empty">'
+                  +   '<div class="dc-empty-ico">💰</div>'
+                  +   '<div class="dc-empty-msg">— Aucune transaction enregistrée —</div>'
+                  + '</div>';
+    return;
+  }
+
+  // Numérotation : COM-AAAA-NNN par ordre de création
+  var allSorted = transactions.slice().sort(function(a,b){ return (a.createdAt||0) - (b.createdAt||0); });
+  var indexById = {};
+  allSorted.forEach(function(t, i){ indexById[t.id] = i + 1; });
+
+  box.innerHTML = filtered.map(function(t){
+    var idx = indexById[t.id] || 1;
+    var year = (function(){ try{ return new Date(t.date).getFullYear() || new Date().getFullYear(); } catch(e){ return new Date().getFullYear(); } })();
+    var fileNum = 'COM-' + year + '-' + String(idx).padStart(3,'0');
+    var isEntree = t.type === 'entree';
+    var ico = isEntree ? '💵' : '💸';
+    var sign = isEntree ? '+' : '−';
+    var label = isEntree ? 'Entrée' : 'Retrait';
+    var badgeCls = isEntree ? 'badge-green' : 'badge-red';
+    var hasTax = (t.taxAmount||0) > 0;
+
+    var actionsBtns = '';
+    if(canAccess){
+      // Bouton "marquer payée/non payée" uniquement pour les entrées avec taxe
+      if(hasTax){
+        actionsBtns += '<button class="dc-act-btn '+(t.taxPaid?'is-paid':'')+'" onclick="dcToggleTaxPaid(\''+t.id+'\')" title="'+(t.taxPaid?'Marquer la taxe comme NON payée':'Marquer la taxe comme PAYÉE')+'">'+(t.taxPaid?'✅':'💰')+'</button>';
+      }
+      actionsBtns += '<button class="dc-act-btn" onclick="dcEditEntry(\''+t.id+'\')" title="Modifier">✏️</button>';
+      actionsBtns += '<button class="dc-act-btn is-delete" onclick="dcDeleteEntry(\''+t.id+'\')" title="Supprimer">🗑</button>';
+    }
+
+    return '<div class="dc-card" data-type="'+t.type+'">'
+      + '<div class="dc-card-id">'
+      +   '<div class="dc-card-id-num">'+fileNum+'</div>'
+      +   '<div class="dc-card-id-icon">'+ico+'</div>'
+      +   '<div class="dc-card-id-tag">'+(isEntree?'Entrée':'Retrait')+'</div>'
+      + '</div>'
+      + '<div class="dc-card-body">'
+      +   '<div class="dc-card-amount"><span class="sign">'+sign+'</span>'+dcFmtMoney(t.amount)+'<span class="unit">Ryōs</span></div>'
+      +   '<div class="dc-card-meta">'
+      +     '<span><span class="ico">📅</span> '+dcFmtDate(t.date)+'</span>'
+      +     '<span><span class="ico">'+(isEntree?'👤':'🧾')+'</span> '+dcEsc(t.passeur||'—')+'</span>'
+      +   '</div>'
+      +   '<div class="dc-card-badges">'
+      +     '<span class="badge '+badgeCls+'">'+ico+' '+label+'</span>'
+      +     (hasTax
+          ? (t.taxPaid
+              ? '<span class="dc-card-pill tax-paid"><span class="lbl">Taxe</span> ✅ Payée — '+dcFmtMoney(t.taxAmount)+' Ryōs</span>'
+              : '<span class="dc-card-pill tax-due"><span class="lbl">Taxe due</span> ⚠️ '+dcFmtMoney(t.taxAmount)+' Ryōs ('+(t.taxRateAtCreation||0)+'%)</span>')
+          : '')
+      +   '</div>'
+      +   (t.justif
+            ? '<div class="dc-card-justif" title="'+dcEsc(t.justif)+'">'+dcEsc(t.justif)+'</div>'
+            : '')
+      +   '<div class="dc-card-footer">'
+      +     '<span>📝 Saisie par '+dcEsc(t.createdBy||'?')+'</span>'
+      +     (t.editedAt ? '<span>✏️ Modifiée le '+dcFmtDate(t.editedAt)+'</span>' : '')
+      +     (t.taxPaid && t.taxPaidAt ? '<span>💰 Taxe payée le '+dcFmtDate(t.taxPaidAt)+(t.taxPaidBy?' par '+dcEsc(t.taxPaidBy):'')+'</span>' : '')
+      +   '</div>'
+      + '</div>'
+      + (actionsBtns ? '<div class="dc-card-actions"><div class="dc-card-actions-btns">'+actionsBtns+'</div></div>' : '<div class="dc-card-actions"></div>')
+      + '</div>';
+  }).join('');
+}
+// Expose globalement pour les onclick inline et navigation
+window.dcOpenForm = dcOpenForm;
+window.dcSaveEntry = dcSaveEntry;
+window.dcEditEntry = dcEditEntry;
+window.dcDeleteEntry = dcDeleteEntry;
+window.dcToggleTaxPaid = dcToggleTaxPaid;
+window.dcSetTaxRate = dcSetTaxRate;
+window.dcUpdateTaxPreview = dcUpdateTaxPreview;
+window.dcRender = dcRender;
 
 // Rendu principal de la page
 function renderLaissezPasse(){
