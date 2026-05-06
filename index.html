@@ -22934,9 +22934,10 @@ function dcAddIncidentForm(prefix){
   var form = document.getElementById(prefix+'-incident-new-form');
   if(!form) return;
   form.style.display = '';
-  // Pré-remplir la date avec aujourd'hui
+  // Pré-remplir la date avec aujourd'hui (toujours, même si l'utilisateur avait
+  // changé la date lors d'une précédente ouverture qui aurait été annulée).
   var dateEl = document.getElementById(prefix+'-incident-date');
-  if(dateEl && !dateEl.value){
+  if(dateEl){
     var d = new Date();
     dateEl.value = d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
   }
@@ -31288,13 +31289,11 @@ document.addEventListener('keydown', function(e) {
   function rePaginate(key) {
     var tbodyIds = {
       plaintes: 'plaintes-tbody',
-      dossiers: 'dossiers-tbody',
       candidatures: 'candidatures-tbody',
       sanctions: 'sanctions-tbody'
     };
     var cardIds = {
       plaintes: 'page-plaintes',
-      dossiers: 'page-dossiers',
       candidatures: 'page-recrutement',
       sanctions: 'page-sanctions'
     };
