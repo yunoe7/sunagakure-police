@@ -21555,23 +21555,43 @@ function dcResetSelected(prefix){
    Idempotent : si le dossier a déjà un tableau .incidents non vide, ne fait rien. */
 function dcEnsureIncidents(d){
   if(!d) return d;
-  if(Array.isArray(d.incidents) && d.incidents.length > 0) return d;
-  // Construire un incident à partir des données legacy
-  var legacyAmendePayee   = parseInt(d.amendePayee, 10)   || 0;
-  var legacyAmendeImpayee = parseInt(d.amendeImpayee, 10) || 0;
-  var legacyTotal = legacyAmendePayee + legacyAmendeImpayee;
-  d.incidents = [{
-    id: (d.id || Date.now()),
-    date: d.date || now(),
-    auteur: d.auteur || '',
-    infractions: [],  // pas d'entrées de code pénal pour les anciens dossiers
-    infractionsLibres: d.infractions || '',
-    notes: '',
-    // L'amende totale en legacy = payée + impayée (si l'utilisateur avait saisi les deux)
-    amendeTotal: legacyTotal,
-    amendePayee: legacyAmendePayee
-    // amendeImpayee est calculé dynamiquement → pas stocké
-  }];
+  if(!Array.isArray(d.incidents) || d.incidents.length === 0){
+    // Construire un incident à partir des données legacy
+    var legacyAmendePayee   = parseInt(d.amendePayee, 10)   || 0;
+    var legacyAmendeImpayee = parseInt(d.amendeImpayee, 10) || 0;
+    var legacyTotal = legacyAmendePayee + legacyAmendeImpayee;
+    // Cas spécial : si tout est à 0 et qu'il n'y a pas non plus d'infractions textuelles,
+    // on crée quand même un incident vide (pour que dcEnsureIncidents soit idempotent
+    // au prochain appel et qu'on puisse y ajouter des incidents en édition).
+    d.incidents = [{
+      id: (d.id || Date.now()),
+      date: d.date || now(),
+      auteur: d.auteur || '',
+      infractions: [],  // pas d'entrées de code pénal pour les anciens dossiers
+      infractionsLibres: d.infractions || '',
+      notes: '',
+      // L'amende totale en legacy = payée + impayée (si l'utilisateur avait saisi les deux)
+      amendeTotal: legacyTotal,
+      amendePayee: legacyAmendePayee
+      // amendeImpayee est calculé dynamiquement → pas stocké
+    }];
+  }
+  // Resync systématique des champs legacy à partir des incidents.
+  // Important pour les dossiers reçus de Firebase qui auraient incidents mais
+  // amendePayee/amendeImpayee absents ou désynchronisés.
+  // Calcul direct sans repasser par les fonctions Total* (qui appellent dcEnsureIncidents → boucle).
+  var totalPayeFromIncidents = (d.incidents||[]).reduce(function(s,inc){return s + (parseInt(inc.amendePayee,10)||0);}, 0);
+  var totalAmendeFromIncidents = (d.incidents||[]).reduce(function(s,inc){return s + (parseInt(inc.amendeTotal,10)||0);}, 0);
+  d.amendePayee   = totalPayeFromIncidents;
+  d.amendeImpayee = d.defunt ? 0 : Math.max(0, totalAmendeFromIncidents - totalPayeFromIncidents);
+  // Resync infractions texte legacy aussi, pour la recherche / exports
+  var infractionsFromIncidents = (d.incidents||[]).map(function(inc){
+    var fromCp = (inc.infractions||[]).map(function(x){return x.nom;});
+    var libs = (inc.infractionsLibres||'').split(',').map(function(s){return s.trim();}).filter(Boolean);
+    return fromCp.concat(libs).join(', ');
+  }).filter(Boolean).join(' | ');
+  // Ne pas écraser un d.infractions plus riche par un texte vide reconstruit
+  if(infractionsFromIncidents) d.infractions = infractionsFromIncidents;
   return d;
 }
 
@@ -22167,7 +22187,7 @@ function saveDossier(force){
   // ─── Construction de l'incident initial à partir du formulaire ───
   const selectedInfractions = (_dcSelectedInfractions['d'] || []).slice();
   const totalAmende = selectedInfractions.reduce(function(s,x){return s + (x.amende||0);}, 0);
-  const amendePayeeRaw = parseInt(el("d-amende-payee").value, 10) || 0;
+  const amendePayeeRaw = (function(){var e=el("d-amende-payee");return e?(parseInt(e.value,10)||0):0;})();
   // Plafonner le payé au total (anti-fraude) — l'impayé ne peut jamais devenir négatif
   const amendePayee = totalAmende > 0 ? Math.min(amendePayeeRaw, totalAmende) : amendePayeeRaw;
   const incidentDate = (el("d-incident-date") && el("d-incident-date").value) || now();
@@ -29008,10 +29028,16 @@ function exportCSV(type){
     });
   } else if(type==='dossiers'){
     filename='dossiers_criminels_'+new Date().toISOString().slice(0,10)+'.csv';
-    rows.push(['Nom RP','Infractions','Dangerosité','Statut','Amendes totales','Agent','Date']);
+    rows.push(['Nom RP','Infractions','Dangerosité','Statut','Amende totale','Amende payée','Reste à payer','Nb incidents','Agent','Date']);
     (DB.dossiers||[]).forEach(function(d){
+      // Les champs amendes étaient cassés (d.amendes / d.agent n'existent pas).
+      // On utilise les fonctions de récap qui agrègent les incidents.
+      var total = (typeof dcDossierTotalAmende === 'function') ? dcDossierTotalAmende(d) : (parseInt(d.amendePayee,10)||0)+(parseInt(d.amendeImpayee,10)||0);
+      var paye  = (typeof dcDossierTotalPaye === 'function')   ? dcDossierTotalPaye(d)   : parseInt(d.amendePayee,10)||0;
+      var imp   = (typeof dcDossierTotalImpaye === 'function') ? dcDossierTotalImpaye(d) : parseInt(d.amendeImpayee,10)||0;
+      var nbInc = Array.isArray(d.incidents) ? d.incidents.length : 1;
       rows.push([d.nom||'',d.infractions||'',d.danger||'',d.statut||'',
-        d.amendes||'',d.agent||'',d.date||'']);
+        total,paye,imp,nbInc,d.auteur||'',d.date||'']);
     });
   } else if(type==='candidatures'){
     filename='candidatures_'+new Date().toISOString().slice(0,10)+'.csv';
@@ -29759,7 +29785,7 @@ function renderProfil(){
   if(rb){var roleColors={admin:'badge-red',hautcommandement:'badge-purple',gerant:'badge-gold',cogerant:'badge-gold',officier:'badge-blue',sergent:'badge-orange',membre:'badge-green',stagiaire:'badge-gray',visiteur:'badge-gray'};rb.innerHTML='<span class="badge '+(roleColors[u.role]||'badge-gray')+'">'+roleLabel(u.role, u.section)+'</span>';}
   // Stats
   var myPlaintes=(DB.plaintes||[]).filter(function(p){return p.agent===u.nom||p.plaignant===u.nom;});
-  var myDossiers=(DB.dossiers||[]).filter(function(d){return d.agent===u.nom;});
+  var myDossiers=(DB.dossiers||[]).filter(function(d){return d.auteur===u.nom||d.agent===u.nom;});
   var myOps=(DB.operations||[]).filter(function(o){return o.resp===u.nom||(o.membres||[]).includes(u.nom);});
   var mySanctions=(DB.sanctions||[]).filter(function(s){return s.cible===u.nom;});
   var setVal=function(id,v){var e=document.getElementById(id);if(e)e.textContent=v;};
@@ -31411,7 +31437,7 @@ function exportDossierPDF(id) {
     +(d.rang ? '<div class="id-row"><span class="id-key">Rang shinobi</span><span class="id-val">'+esc(d.rang)+'</span></div>' : '')
     +'<div class="id-row"><span class="id-key">Statut judiciaire</span><span class="id-val" style="color:'+statutInfo.color+'">'+esc(statutInfo.label)+'</span></div>'
     +'<div class="id-row"><span class="id-key">Niveau de menace</span><span class="id-val" style="color:'+dangerInfo.color+'">'+esc(dangerInfo.label)+'</span></div>'
-    +'<div class="id-row"><span class="id-key">Agent en charge</span><span class="id-val">'+esc(d.agent || (currentUser && currentUser.nom) || '—')+'</span></div>'
+    +'<div class="id-row"><span class="id-key">Agent en charge</span><span class="id-val">'+esc(d.auteur || d.agent || (currentUser && currentUser.nom) || '—')+'</span></div>'
     +'<div class="id-row"><span class="id-key">Date d\'ouverture</span><span class="id-val">'+esc(fmtDate(d.dateCreation || d.date))+'</span></div>'
     +'</div>'
     +(tagsHtml ? '<div style="margin-top:14px"><div style="font-family:\'Share Tech Mono\',monospace;font-size:8.5px;letter-spacing:2px;color:#6b7280;text-transform:uppercase;margin-bottom:6px;font-weight:700">Tags / Étiquettes</div>'+tagsHtml+'</div>' : '')
@@ -31419,35 +31445,71 @@ function exportDossierPDF(id) {
 
     +'</div>' /* /body-grid */
 
-    /* Section infractions */
-    +'<div class="section">'
-    +'<div class="section-head">'
-    +'<h2>Faits reprochés</h2>'
-    +'<span class="num">§ I</span>'
-    +'</div>'
-    +'<div class="crime-box">'
-    +'<div class="label">⚠ Chef d\'accusation principal</div>'
-    +'<div class="text">'+esc(d.infractions || d.faits || 'Aucune information disponible.')+'</div>'
-    +'</div>'
-    +'</div>'
+    /* Section infractions — timeline des incidents si format multi-incidents */
+    +(function(){
+      // Migration auto pour PDF : s'assurer qu'on a bien des incidents structurés
+      if(typeof dcEnsureIncidents === 'function') dcEnsureIncidents(d);
+      var incidents = (d.incidents||[]).slice().sort(function(a,b){
+        return new Date(b.date||0).getTime() - new Date(a.date||0).getTime();
+      });
+      var hasStructured = incidents.some(function(inc){
+        return (inc.infractions||[]).length > 0;
+      });
+      var inner = '';
+      if(hasStructured){
+        // Affichage timeline détaillée
+        inner = incidents.map(function(inc){
+          var infrChips = (inc.infractions||[]).map(function(it){
+            var amStr = it.amende > 0 ? it.amende.toLocaleString('fr-FR')+' Ryos' : '';
+            return '<div style="padding:6px 10px;background:#fff;border-left:3px solid '+(it.cat==='rouge'?'#dc2626':it.cat==='vert'?'#16a34a':it.cat==='violet'?'#7c3aed':'#9ca3af')+';margin-bottom:4px;font-size:11.5px;color:#1f2937">'
+                 + '<strong>'+esc(it.nom)+'</strong>'
+                 + (amStr ? ' <span style="color:#92400e;font-family:\'Share Tech Mono\',monospace;font-size:10px;margin-left:6px">'+esc(amStr)+'</span>' : '')
+                 + (it.prison ? ' <span style="color:#dc2626;font-weight:700">⛓ Prison</span>' : '')
+                 + '</div>';
+          }).join('');
+          var libres = (inc.infractionsLibres||'').split(',').map(function(s){return s.trim();}).filter(Boolean);
+          var libresHTML = libres.length
+            ? libres.map(function(s){return '<div style="padding:6px 10px;background:#fff;border-left:3px solid #9ca3af;margin-bottom:4px;font-size:11.5px;color:#1f2937"><em>'+esc(s)+'</em></div>';}).join('')
+            : '';
+          return '<div style="margin-bottom:12px;padding:10px 12px;background:#f9fafb;border:1px solid #e5e7eb;border-radius:4px">'
+               + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;font-family:\'Share Tech Mono\',monospace;font-size:10px;letter-spacing:1.2px;color:#6b7280;text-transform:uppercase"><span>📅 Incident du '+esc(fmtDate(inc.date))+'</span><span>'+esc(inc.auteur||'—')+'</span></div>'
+               + (infrChips || libresHTML ? infrChips + libresHTML : '<div style="color:#9ca3af;font-style:italic;font-size:11px">Aucune infraction listée</div>')
+               + (inc.notes ? '<div style="margin-top:6px;padding:6px 10px;background:#fff;font-size:11px;color:#4b5563;border-radius:3px;border:1px dashed #d1d5db">'+esc(inc.notes)+'</div>' : '')
+               + '</div>';
+        }).join('');
+      } else {
+        // Fallback : ancien format texte libre
+        inner = '<div class="crime-box">'
+              + '<div class="label">⚠ Chef d\'accusation principal</div>'
+              + '<div class="text">'+esc(d.infractions || d.faits || 'Aucune information disponible.')+'</div>'
+              + '</div>';
+      }
+      return '<div class="section">'
+           + '<div class="section-head"><h2>Faits reprochés</h2><span class="num">§ I</span></div>'
+           + inner
+           + '</div>';
+    })()
 
-    /* Section financière */
-    +'<div class="section">'
-    +'<div class="section-head">'
-    +'<h2>Situation financière</h2>'
-    +'<span class="num">§ II</span>'
-    +'</div>'
-    +'<div class="fin-grid">'
-    +'<div class="fin-card paid">'
-    +'<div class="fin-label">Amende payée</div>'
-    +'<div class="fin-value">'+esc((d.amendePayee||0).toLocaleString('fr-FR'))+'<span class="fin-unit">RYOS</span></div>'
-    +'</div>'
-    +'<div class="fin-card due">'
-    +'<div class="fin-label">Amende restant due</div>'
-    +'<div class="fin-value">'+esc((d.amendeDue||0).toLocaleString('fr-FR'))+'<span class="fin-unit">RYOS</span></div>'
-    +'</div>'
-    +'</div>'
-    +'</div>'
+    /* Section financière — utilise les fonctions de récap multi-incidents */
+    +(function(){
+      var totalAmende = (typeof dcDossierTotalAmende === 'function') ? dcDossierTotalAmende(d) : ((parseInt(d.amendePayee,10)||0)+(parseInt(d.amendeImpayee,10)||0));
+      var totalPaye   = (typeof dcDossierTotalPaye === 'function')   ? dcDossierTotalPaye(d)   : (parseInt(d.amendePayee,10)||0);
+      var totalImpaye = (typeof dcDossierTotalImpaye === 'function') ? dcDossierTotalImpaye(d) : (parseInt(d.amendeImpayee,10)||0);
+      return '<div class="section">'
+        + '<div class="section-head"><h2>Situation financière</h2><span class="num">§ II</span></div>'
+        + '<div class="fin-grid">'
+        +   '<div class="fin-card paid">'
+        +     '<div class="fin-label">Amende payée</div>'
+        +     '<div class="fin-value">'+esc(totalPaye.toLocaleString('fr-FR'))+'<span class="fin-unit">RYOS</span></div>'
+        +   '</div>'
+        +   '<div class="fin-card due">'
+        +     '<div class="fin-label">Amende restant due'+(d.defunt?' (annulée — défunt)':'')+'</div>'
+        +     '<div class="fin-value">'+esc(totalImpaye.toLocaleString('fr-FR'))+'<span class="fin-unit">RYOS</span></div>'
+        +   '</div>'
+        + '</div>'
+        + (totalAmende > 0 ? '<div style="margin-top:8px;padding:6px 10px;background:#f9fafb;border-radius:3px;font-size:10.5px;color:#6b7280;font-family:\'Share Tech Mono\',monospace;letter-spacing:0.5px;text-align:center">Total amendes encourues : <strong style="color:#1f2937">'+totalAmende.toLocaleString('fr-FR')+' RYOS</strong></div>' : '')
+        + '</div>';
+    })()
 
     /* Section sanctions */
     +'<div class="section">'
