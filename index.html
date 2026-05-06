@@ -8744,6 +8744,7 @@ document.addEventListener('error', function(e){
         <option value="ancien">⌚ Anciens en premier</option>
         <option value="danger">⚠️ Dangerosité ↓</option>
         <option value="due">💰 Amende due ↓</option>
+        <option value="defunt">⚱ Défunts en premier</option>
         <option value="nom">🅰 Nom A-Z</option>
       </select>
     </div>
@@ -20324,6 +20325,11 @@ function renderCandidatures(){
   var sAc=el("pgv2-cand-acceptees");if(sAc)sAc.textContent=allCand.filter(c=>c.statut==="acceptee").length;
   var sR=el("pgv2-cand-refusees");if(sR)sR.textContent=allCand.filter(c=>c.statut==="refusee").length;
 
+  // Tri par en-tête de colonne (clic sur ID, Nom, Âge, etc.)
+  if(_sortState && _sortState['candidatures'] && _sortState['candidatures'].field){
+    list = applySortToArray(list, 'candidatures');
+  }
+
   el("candidatures-tbody").innerHTML=list.map(c=>{
     const isOwn=currentUser&&c.authorId===currentUser.id;
     let actions='—';
@@ -20339,6 +20345,7 @@ function renderCandidatures(){
     }
     return `<tr><td class="mono">#${candNumero(c.id)}</td><td><b>${esc(c.nom)}</b></td><td>${esc(c.age)} ans</td><td style="font-size:11px;max-width:150px">${esc((c.motif||"").substring(0,50))}…</td><td><span class="badge ${statutCand(c.statut)}">${fmtCand(c.statut)}</span></td><td class="mono">${fmtDate(c.date)}</td><td style="white-space:nowrap"><button class="btn btn-outline btn-sm" onclick="viewCandidature(${c.id})" title="Voir les détails">👁</button> ${actions}</td></tr>`;
   }).join("")||`<tr><td colspan="7" style="text-align:center;color:var(--muted);padding:18px">Aucune candidature</td></tr>`;
+  if(typeof restoreSortUI === 'function') restoreSortUI('candidatures');
 }
 
 function openEditCandidature(id){
@@ -20520,7 +20527,13 @@ function renderPlaintes(){
   var sO=el("pgv2-pl-ouvertes");if(sO)sO.textContent=allP.filter(p=>p.statut==="ouverte").length;
   var sC=el("pgv2-pl-cours");if(sC)sC.textContent=allP.filter(p=>p.statut==="en_cours").length;
 
+  // Tri par en-tête de colonne (clic sur Réf., Plaignant, etc.)
+  if(_sortState && _sortState['plaintes'] && _sortState['plaintes'].field){
+    list = applySortToArray(list, 'plaintes');
+  }
+
   el("plaintes-tbody").innerHTML=list.map(p=>`<tr><td class="mono">${esc(p.ref||('#'+p.id))}</td><td>${esc(p.plaignant)}</td><td>${esc(p.accuse)}</td><td>${esc(p.type)}</td><td><span class="badge ${statutPlainte(p.statut)}">${fmtStatut(p.statut)}</span></td><td class="mono">${fmtDate(p.date)}</td><td><button class="btn btn-outline btn-sm" onclick="viewPlainte(${p.id})">👁</button>${canModify()?` <button class="btn btn-gold btn-sm" onclick="openEditPlainte(${p.id})" title="Modifier">✏️</button> <button class="btn btn-danger btn-sm" onclick="deletePlainte(${p.id})">🗑</button>`:""}</td></tr>`).join("")||`<tr><td colspan="7" style="text-align:center;color:var(--muted);padding:18px">Aucune plainte</td></tr>`;
+  if(typeof restoreSortUI === 'function') restoreSortUI('plaintes');
 }
 let _plaintePhoto="";
 function loadPlaintePhoto(input){
@@ -20782,15 +20795,35 @@ function renderDossiers(){
   if(_dcHideDefunt) list = list.filter(function(d){return !d.defunt});
 
   // ─── TRI ───
+  // Priorité de tri :
+  // 1. Si l'utilisateur a cliqué sur une colonne triable (en-tête), on utilise CE tri
+  //    via _sortState['dossiers']. Sinon on retombe sur le dropdown dc-sort.
+  // 2. Dans tous les cas, les défunts apparaissent en BAS de leur catégorie de tri
+  //    (les "vivants" en premier, comme ça les dossiers actifs restent visibles en haut).
+  //    Si l'utilisateur veut voir les défunts en premier, il peut décocher "Masquer défunts"
+  //    qui était déjà l'option par défaut, ou trier par nom.
   var sortMode = (document.getElementById('dc-sort')||{}).value || 'recent';
-  list.sort(function(a,b){
-    if(sortMode === 'recent')  return (b.id||0) - (a.id||0);
-    if(sortMode === 'ancien')  return (a.id||0) - (b.id||0);
-    if(sortMode === 'danger')  return _dcDangerWeight(b.danger) - _dcDangerWeight(a.danger);
-    if(sortMode === 'due')     return ((b.amendeImpayee||0) - (a.amendeImpayee||0));
-    if(sortMode === 'nom')     return (a.nom||'').localeCompare(b.nom||'');
-    return 0;
-  });
+  var headerSort = _sortState && _sortState['dossiers'];
+  if(headerSort && headerSort.field){
+    // Tri par en-tête de colonne : on utilise applySortToArray
+    list = applySortToArray(list, 'dossiers');
+  } else {
+    list.sort(function(a,b){
+      if(sortMode === 'recent')  return (b.id||0) - (a.id||0);
+      if(sortMode === 'ancien')  return (a.id||0) - (b.id||0);
+      if(sortMode === 'danger')  return _dcDangerWeight(b.danger) - _dcDangerWeight(a.danger);
+      if(sortMode === 'due')     return ((b.amendeImpayee||0) - (a.amendeImpayee||0));
+      if(sortMode === 'nom')     return (a.nom||'').localeCompare(b.nom||'');
+      if(sortMode === 'defunt'){
+        // Défunts en premier ; tri secondaire : récents d'abord
+        var ad = a.defunt ? 1 : 0;
+        var bd = b.defunt ? 1 : 0;
+        if(ad !== bd) return bd - ad; // défunts (1) avant vivants (0)
+        return (b.id||0) - (a.id||0); // récents d'abord à l'intérieur
+      }
+      return 0;
+    });
+  }
 
   // ─── RENDU TABLEAU ───
   var tbody = el("dossiers-tbody");
@@ -20834,6 +20867,7 @@ function renderDossiers(){
       +'</td>'
       +'</tr>';
   }).join('') || '<tr><td colspan="9" style="text-align:center;color:var(--muted);padding:40px;font-family:\'Share Tech Mono\',monospace;letter-spacing:1.5px;text-transform:uppercase;font-size:11px">— Aucun dossier ne correspond à ces filtres —</td></tr>';
+  if(typeof restoreSortUI === 'function') restoreSortUI('dossiers');
 }
 function checkDoublonSuspect(){
   const nom=(el("d-nom").value||"").trim().toLowerCase();
@@ -28498,6 +28532,40 @@ setTimeout(function(){
 /* ── 1. TRI DES COLONNES ─────────────────────────────────────── */
 var _sortState = {}; // { table: { field, dir } }
 
+// Mappings de statut par table : ordre LOGIQUE et non alphabétique
+// (les statuts "à traiter" en haut en mode asc, les "terminés" en bas)
+var _SORT_STATUT_ORDER = {
+  plaintes: { ouverte:0, en_cours:1, transmise_tribunal:2, fermee:3 },
+  dossiers: { 'Recherché':0, 'En garde à vue':1, 'Surveillé':2, 'Incarcéré':3, 'Libéré':4 },
+  candidatures: { en_attente:0, acceptee:1, refusee:2 }
+};
+
+// Restaure l'UI de tri (icône ↑/↓ et classe .sort-asc/.sort-desc) après un re-render
+// de table. Sans ça, les renders déclenchés par sync Firebase ou fermeture de modal
+// effacent l'indicateur visuel alors que le tri reste appliqué dans _sortState.
+function restoreSortUI(table){
+  var st = _sortState[table];
+  if(!st || !st.field) return;
+  // Cible les en-têtes de la table concernée via leurs onclick
+  var headers = document.querySelectorAll('.sortable-th');
+  headers.forEach(function(h){
+    var oc = h.getAttribute('onclick') || '';
+    // Match sur "sortTable('<table>',<field>"
+    var m = oc.match(/sortTable\(['"]([^'"]+)['"],['"]([^'"]+)['"]/);
+    if(!m) return;
+    if(m[1] !== table) return;
+    h.classList.remove('sort-asc','sort-desc');
+    h.setAttribute('aria-sort','none');
+    var icon = h.querySelector('.sort-icon');
+    if(icon) icon.textContent = '⇅';
+    if(m[2] === st.field){
+      h.classList.add(st.dir === 'asc' ? 'sort-asc' : 'sort-desc');
+      h.setAttribute('aria-sort', st.dir === 'asc' ? 'ascending' : 'descending');
+      if(icon) icon.textContent = st.dir === 'asc' ? '↑' : '↓';
+    }
+  });
+}
+
 function sortTable(table, field, thEl) {
   var prev = _sortState[table] || {};
   var dir = (prev.field === field && prev.dir === 'asc') ? 'desc' : 'asc';
@@ -28528,27 +28596,36 @@ function applySortToArray(arr, table) {
   var st = _sortState[table]; if (!st) return arr;
   var field = st.field, dir = st.dir;
   return arr.slice().sort(function(a, b) {
-    var va = a[field] || '', vb = b[field] || '';
+    // Le champ "agent" en tableau dossiers correspond au champ DB "auteur"
+    var realField = (table === 'dossiers' && field === 'agent') ? 'auteur' : field;
+    var va = a[realField] || '', vb = b[realField] || '';
     // Tri numérique pour les IDs et amendes
-    if (field === 'id' || field === 'age') {
+    if (realField === 'id' || realField === 'age') {
       va = parseFloat(va) || 0; vb = parseFloat(vb) || 0;
       return dir === 'asc' ? va - vb : vb - va;
     }
     // Tri date ISO
-    if (field === 'date') {
+    if (realField === 'date') {
       var da = new Date(va).getTime() || 0;
       var db = new Date(vb).getTime() || 0;
       return dir === 'asc' ? da - db : db - da;
     }
     // Tri ordre dangerosité
-    if (field === 'danger') {
+    if (realField === 'danger') {
       var dmap = { Faible:0, Modéré:1, Élevé:2, Extrême:3 };
       va = dmap[va] !== undefined ? dmap[va] : 99;
       vb = dmap[vb] !== undefined ? dmap[vb] : 99;
       return dir === 'asc' ? va - vb : vb - va;
     }
+    // Tri statut : utiliser l'ordre LOGIQUE défini par table
+    if (realField === 'statut' && _SORT_STATUT_ORDER[table]) {
+      var smap = _SORT_STATUT_ORDER[table];
+      var sa = smap[va] !== undefined ? smap[va] : 99;
+      var sb = smap[vb] !== undefined ? smap[vb] : 99;
+      return dir === 'asc' ? sa - sb : sb - sa;
+    }
     // Tri amendes : asc = impayés en premier, desc = payés en premier
-    if (field === 'amendes') {
+    if (realField === 'amendes') {
       var aPaye = parseFloat(a.amendePayee) || 0;
       var aImp  = parseFloat(a.amendeImpayee) || 0;
       var bPaye = parseFloat(b.amendePayee) || 0;
