@@ -12302,31 +12302,61 @@ document.addEventListener('error', function(e){
     /* ═══ Sous-onglets pour Mes missions ═══ */
     [id^="page-mission-"] .ms-subtabs{
       display:flex;gap:0;margin-bottom:14px;
-      border-bottom:1px solid rgba(180,140,20,0.18);
+      border-bottom:1px solid rgba(139,105,20,0.35);
       flex-wrap:wrap;
     }
     [id^="page-mission-"] .ms-subtab{
-      padding:9px 18px;
-      font-family:'Cinzel',serif;font-size:12px;letter-spacing:1.3px;
-      color:rgba(255,255,255,0.4);
+      padding:10px 20px;
+      font-family:'Cinzel',serif;font-size:12.5px;letter-spacing:1.3px;
+      color:#7a5a08;
       background:transparent;border:0;cursor:pointer;
       border-bottom:2px solid transparent;
-      text-transform:uppercase;font-weight:600;
+      text-transform:uppercase;font-weight:700;
       transition:all 0.18s ease;
+      position:relative;
     }
-    [id^="page-mission-"] .ms-subtab:hover{color:#f0e8d0}
+    [id^="page-mission-"] .ms-subtab:hover{
+      color:#5c4308;
+      background:rgba(212,180,74,0.08);
+    }
     [id^="page-mission-"] .ms-subtab.active{
-      color:#f0d060;
-      border-bottom-color:#d4b44a;
-      text-shadow:0 0 8px rgba(212,180,74,0.3);
+      color:#3a1f06;
+      border-bottom-color:#8b6914;
+      background:rgba(212,180,74,0.14);
+      text-shadow:0 1px 0 rgba(255,255,255,0.4);
     }
     [id^="page-mission-"] .ms-subtab .badge-count{
-      display:inline-block;margin-left:6px;
-      padding:1px 7px;border-radius:10px;
-      background:rgba(212,180,74,0.18);
+      display:inline-block;margin-left:7px;
+      padding:2px 9px;border-radius:10px;
+      background:#8b6914;color:#fff8e0;
       font-family:'Share Tech Mono',monospace;
-      font-size:10px;color:#f0d060;
+      font-size:10px;font-weight:700;
       vertical-align:middle;
+      box-shadow:0 1px 2px rgba(0,0,0,0.15);
+    }
+    [id^="page-mission-"] .ms-subtab.active .badge-count{
+      background:#5c4308;
+    }
+    /* Mode sombre : palette inversée pour rester lisible */
+    body.dark [id^="page-mission-"] .ms-subtab{
+      color:rgba(212,180,74,0.65);
+    }
+    body.dark [id^="page-mission-"] .ms-subtab:hover{
+      color:#f0e8d0;
+      background:rgba(212,180,74,0.06);
+    }
+    body.dark [id^="page-mission-"] .ms-subtab.active{
+      color:#f0d060;
+      border-bottom-color:#d4b44a;
+      background:rgba(212,180,74,0.10);
+      text-shadow:0 0 8px rgba(212,180,74,0.3);
+    }
+    body.dark [id^="page-mission-"] .ms-subtab .badge-count{
+      background:rgba(212,180,74,0.20);color:#f0d060;
+      box-shadow:none;
+    }
+    body.dark [id^="page-mission-"] .ms-subtab.active .badge-count{
+      background:#d4b44a;color:#1a140e;
     }
 
     /* ═══ Cartes mission ═══ */
