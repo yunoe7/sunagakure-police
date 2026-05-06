@@ -107,6 +107,8 @@ body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:9997;
 .topbar-title{font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--gold2)}
 .topbar-path{color:var(--muted);font-size:10px;font-family:'Share Tech Mono',monospace;margin-left:auto}
 .status-dot{width:7px;height:7px;border-radius:50%;background:var(--green);animation:blink 2s infinite;flex-shrink:0;box-shadow:0 0 6px rgba(22,163,74,0.5)}
+/* État hors-ligne : passage en orange + animation plus rapide pour signaler l'anomalie */
+.status-dot.is-offline{background:#f59e0b;box-shadow:0 0 8px rgba(245,158,11,0.7);animation:blink 0.9s infinite}
 @keyframes blink{0%,100%{opacity:1}50%{opacity:0.4}}
 
 .page-content{padding:24px;display:none;animation:fadeIn 0.25s ease}
@@ -7378,7 +7380,7 @@ document.addEventListener('error', function(e){
     <div id="hamburger" onclick="toggleSidebar()" aria-label="Ouvrir le menu" aria-expanded="false">☰</div>
     <div class="topbar-title" id="topbar-title">Tableau de bord</div>
     <div class="topbar-path" id="topbar-path">Police Sunagakure / Dashboard</div>
-    <div class="status-dot" aria-label="Connexion active" title="Connexion active"></div>
+    <div class="status-dot" id="connection-status-dot" aria-label="Connexion active" title="Connexion active"></div>
   </div>
 
   <!-- DASHBOARD -->
@@ -16099,7 +16101,7 @@ function plv2SelectCible(el,val){
 <!-- Firebase SDK -->
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-  import { getDatabase, ref, set, update, onValue, push, serverTimestamp, get } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+  import { getDatabase, ref, set, update, onValue, push, serverTimestamp, get, goOnline, goOffline, onDisconnect } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
   import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
   const firebaseConfig = {
@@ -16126,7 +16128,10 @@ function plv2SelectCible(el,val){
     // Affiche un message à l'utilisateur si l'auth anonyme n'est pas activée dans la console
     if(err.code === 'auth/admin-restricted-operation' || err.code === 'auth/operation-not-allowed'){
       setTimeout(function(){
-        alert('⚠️ Configuration Firebase incomplète : activez la connexion "Anonyme" dans la Console Firebase → Authentication → Sign-in method.');
+        // Le module Firebase peut s'exécuter avant que showToast soit défini → on attend si besoin.
+        var msg = '⚠️ Firebase : activez la connexion "Anonyme" dans la console (Authentication → Sign-in method).';
+        if(typeof window.showToast === 'function'){ window.showToast(msg, 'error'); }
+        else { setTimeout(function(){ if(typeof window.showToast === 'function') window.showToast(msg, 'error'); }, 600); }
       }, 1500);
     }
   });
@@ -16145,6 +16150,48 @@ function plv2SelectCible(el,val){
       window._fbPush = push;
       window._fbServerTimestamp = serverTimestamp;
       window._fbGet = get;
+      // Expose aussi les contrôles online/offline pour la gestion de la connexion
+      window._fbGoOnline = function(){ try{ goOnline(fbDB); }catch(e){} };
+      window._fbGoOffline = function(){ try{ goOffline(fbDB); }catch(e){} };
+
+      /* ─── MODE HORS-LIGNE ───
+         Note : le SDK Firebase RTDB pour le web n'a pas de persistance disque
+         (contrairement à Firestore ou aux SDK mobiles). MAIS il a un cache
+         mémoire actif par défaut qui :
+         - Garde les dernières données reçues même quand le réseau tombe
+         - Met en file d'attente les écritures faites hors ligne
+         - Re-synchronise automatiquement au retour de la connexion
+         La couche localStorage déjà en place (suna_v4, bb_ninjas, etc.) sert
+         de cache disque pour les rechargements de page hors-ligne.
+         Ici on se contente d'écouter l'état de connexion et d'en informer
+         l'utilisateur via un indicateur visuel + toasts. */
+      const connRef = ref(fbDB, '.info/connected');
+      var _wasConnected = null; // null = état initial inconnu
+      onValue(connRef, function(snap){
+        const isConnected = !!snap.val();
+        // Premier événement : on initialise sans toast
+        if(_wasConnected === null){
+          _wasConnected = isConnected;
+          if(typeof window._updateConnectionIndicator === 'function'){
+            window._updateConnectionIndicator(isConnected);
+          }
+          return;
+        }
+        // Changement d'état → toast + indicateur
+        if(isConnected !== _wasConnected){
+          _wasConnected = isConnected;
+          if(typeof window._updateConnectionIndicator === 'function'){
+            window._updateConnectionIndicator(isConnected);
+          }
+          if(typeof window.showToast === 'function'){
+            if(isConnected){
+              window.showToast('🟢 Connexion rétablie — synchronisation en cours…', 'success');
+            } else {
+              window.showToast('🟡 Mode hors-ligne — vos modifications seront synchronisées au retour de la connexion.', 'info');
+            }
+          }
+        }
+      });
     }
   });
 </script>
@@ -18527,22 +18574,22 @@ async function emergencyReset(){
   const code=prompt("🔒 Accès restreint — Entrez le mot de passe administrateur actuel :");
   if(code===null)return;
   const adminAcc=DB.users.find(u=>u.role==="admin");
-  if(!adminAcc){alert("❌ Aucun compte admin trouvé.");return;}
+  if(!adminAcc){showToast("❌ Aucun compte admin trouvé.","error");return;}
   let ok = false;
   try{ ok = await verifyPass(code, adminAcc.pass); }
-  catch(e){ alert("❌ Erreur de vérification (crypto indisponible). Vérifiez que vous êtes sur HTTPS."); return; }
-  if(!ok){alert("❌ Mot de passe incorrect. Accès refusé.");return;}
+  catch(e){ showToast("❌ Erreur de vérification (crypto indisponible). Vérifiez que vous êtes sur HTTPS.","error"); return; }
+  if(!ok){showToast("❌ Mot de passe incorrect. Accès refusé.","error");return;}
 
   // Demander un nouveau mot de passe
   const newPass = prompt("🔑 Choisissez le NOUVEAU mot de passe admin (8 caractères minimum) :");
   if(newPass === null) return;
   if(typeof newPass !== 'string' || newPass.length < 8){
-    alert("❌ Mot de passe trop court (8 caractères minimum).");
+    showToast("❌ Mot de passe trop court (8 caractères minimum).","error");
     return;
   }
   const newPass2 = prompt("🔑 Confirmez le nouveau mot de passe :");
   if(newPass !== newPass2){
-    alert("❌ Les mots de passe ne correspondent pas.");
+    showToast("❌ Les mots de passe ne correspondent pas.","error");
     return;
   }
 
@@ -18552,7 +18599,7 @@ async function emergencyReset(){
     async ()=>{
       let h;
       try{ h = await hashPass(newPass); }
-      catch(e){ alert("❌ Erreur de chiffrement. Réessayez."); return; }
+      catch(e){ showToast("❌ Erreur de chiffrement. Réessayez.","error"); return; }
       const a = DB.users.find(u=>u.role==="admin");
       if(a){
         a.pass = h;
@@ -18572,20 +18619,20 @@ async function resetAllData(){
   const code=prompt("⚠️ ATTENTION — RESET TOTAL DES DONNÉES\n\nCela effacera TOUS les comptes, plaintes, dossiers, etc.\nLes données seront perdues définitivement (sauf si tu as une sauvegarde JSON).\n\nEntrez le mot de passe admin pour confirmer :");
   if(code===null)return;
   const adminAcc=DB.users.find(u=>u.role==="admin");
-  if(!adminAcc){alert("❌ Aucun compte admin trouvé.");return;}
+  if(!adminAcc){showToast("❌ Aucun compte admin trouvé.","error");return;}
   let ok = false;
   try{ ok = await verifyPass(code, adminAcc.pass); }
-  catch(e){ alert("❌ Erreur de vérification (crypto indisponible). Vérifiez que vous êtes sur HTTPS."); return; }
-  if(!ok){alert("❌ Mot de passe incorrect.");return;}
+  catch(e){ showToast("❌ Erreur de vérification (crypto indisponible). Vérifiez que vous êtes sur HTTPS.","error"); return; }
+  if(!ok){showToast("❌ Mot de passe incorrect.","error");return;}
 
   const confirm1 = prompt('Tapez "RESET TOTAL" pour confirmer la suppression de TOUTES les données :');
   if(confirm1 !== "RESET TOTAL"){
-    alert("Reset annulé (mauvaise confirmation).");
+    showToast("Reset annulé (mauvaise confirmation).","info");
     return;
   }
 
   const newPass = prompt("🔑 Nouveau mot de passe admin (8 caractères minimum) :");
-  if(!newPass || newPass.length < 8){alert("Mot de passe trop court."); return;}
+  if(!newPass || newPass.length < 8){showToast("Mot de passe trop court.","error"); return;}
 
   askDelete(
     "⚠️ DERNIÈRE CONFIRMATION : effacer toutes les données ?",
@@ -25444,6 +25491,80 @@ function showToast(msg,type="info"){
   t.appendChild(d);
   setTimeout(()=>{d.style.opacity="0";d.style.transform="translateY(-6px)";d.style.transition="opacity 0.3s,transform 0.3s";setTimeout(()=>d.remove(),300)},3200);
 }
+// Expose pour que le module Firebase (chargé en parallèle) puisse l'appeler.
+try{ window.showToast = showToast; }catch(e){}
+
+/* ─── Indicateur visuel de connexion réseau ───
+   Mis à jour par le listener .info/connected du module Firebase. */
+window._updateConnectionIndicator = function(isConnected){
+  const dot = document.getElementById('connection-status-dot');
+  if(!dot) return;
+  if(isConnected){
+    dot.classList.remove('is-offline');
+    dot.setAttribute('aria-label','Connexion active');
+    dot.setAttribute('title','Connexion active — synchronisé avec le serveur');
+  } else {
+    dot.classList.add('is-offline');
+    dot.setAttribute('aria-label','Hors-ligne');
+    dot.setAttribute('title','Hors-ligne — vos modifications seront synchronisées au retour de la connexion');
+  }
+};
+
+/* ─── Modale persistante pour le mot de passe admin temporaire ───
+   Cas critique : ce mot de passe est généré une seule fois au premier setup
+   et n'est plus jamais ré-affichable. Un toast (3,2s) serait dangereux car
+   l'admin pourrait passer à côté. → vraie modale qu'il faut fermer manuellement. */
+function showFirstAdminPassModal(tempPass){
+  // Si déjà affichée, ne pas dupliquer
+  if(document.getElementById("first-admin-pass-modal")) return;
+  const ov = document.createElement("div");
+  ov.id = "first-admin-pass-modal";
+  ov.style.cssText = "position:fixed;inset:0;background:rgba(0,0,0,0.78);backdrop-filter:blur(6px);z-index:99999;display:flex;align-items:center;justify-content:center;padding:18px;animation:fadeIn 0.2s ease";
+  ov.innerHTML =
+    '<div style="max-width:480px;width:100%;background:linear-gradient(180deg,#2a1f12,#1a1510);border:2px solid rgba(212,180,74,0.55);border-radius:14px;padding:26px;box-shadow:0 24px 80px rgba(0,0,0,0.7),0 0 30px rgba(212,180,74,0.18);font-family:\'Barlow\',sans-serif;color:#f0e8d0">'
+    +   '<div style="font-family:\'Cinzel\',serif;font-size:18px;font-weight:700;color:#f0d060;text-align:center;letter-spacing:2px;margin-bottom:6px">⚠️ MOT DE PASSE ADMIN</div>'
+    +   '<div style="font-family:\'Share Tech Mono\',monospace;font-size:10px;letter-spacing:2px;color:rgba(240,232,208,0.55);text-align:center;margin-bottom:16px">AFFICHÉ UNE SEULE FOIS — NOTEZ-LE</div>'
+    +   '<div style="background:rgba(0,0,0,0.45);border:1px solid rgba(212,180,74,0.3);border-radius:8px;padding:14px 16px;margin-bottom:14px">'
+    +     '<div style="font-size:11px;color:rgba(240,232,208,0.6);margin-bottom:4px">Identifiant</div>'
+    +     '<div style="font-family:\'Share Tech Mono\',monospace;font-size:15px;color:#f0e8d0;margin-bottom:10px">admin</div>'
+    +     '<div style="font-size:11px;color:rgba(240,232,208,0.6);margin-bottom:4px">Mot de passe</div>'
+    +     '<div id="fap-pass" style="font-family:\'Share Tech Mono\',monospace;font-size:17px;color:#f0d060;font-weight:700;letter-spacing:1px;word-break:break-all;user-select:all">'+esc(tempPass)+'</div>'
+    +   '</div>'
+    +   '<div style="font-size:12.5px;color:rgba(240,232,208,0.78);line-height:1.5;margin-bottom:18px;padding:10px 12px;background:rgba(192,65,14,0.10);border-left:3px solid #c0410e;border-radius:4px">Connectez-vous <strong>immédiatement</strong> et changez ce mot de passe via :<br><span style="color:#d4b44a;font-weight:600">Admin → Membres → Modifier mon compte</span></div>'
+    +   '<div style="display:flex;gap:10px;justify-content:flex-end">'
+    +     '<button id="fap-copy" style="cursor:pointer;background:rgba(212,180,74,0.15);border:1px solid rgba(212,180,74,0.4);color:#f0d060;padding:9px 16px;border-radius:6px;font-family:\'Barlow\',sans-serif;font-size:13px;font-weight:600">📋 Copier</button>'
+    +     '<button id="fap-close" style="cursor:pointer;background:linear-gradient(135deg,#c0410e,#8b2f0a);border:none;color:#fff;padding:9px 18px;border-radius:6px;font-family:\'Barlow\',sans-serif;font-size:13px;font-weight:700;letter-spacing:0.5px">J\'ai noté ✓</button>'
+    +   '</div>'
+    + '</div>';
+  document.body.appendChild(ov);
+  // Bouton copier
+  const btnCopy = ov.querySelector("#fap-copy");
+  if(btnCopy){
+    btnCopy.addEventListener("click", function(){
+      try{
+        if(navigator.clipboard && navigator.clipboard.writeText){
+          navigator.clipboard.writeText(tempPass).then(function(){
+            btnCopy.textContent = "✓ Copié !";
+            setTimeout(function(){ btnCopy.textContent = "📋 Copier"; }, 1800);
+          });
+        } else {
+          // Fallback : sélection manuelle
+          const range = document.createRange();
+          range.selectNodeContents(document.getElementById("fap-pass"));
+          const sel = window.getSelection(); sel.removeAllRanges(); sel.addRange(range);
+          btnCopy.textContent = "✓ Sélectionné — Ctrl+C";
+        }
+      }catch(e){
+        btnCopy.textContent = "❌ Échec";
+      }
+    });
+  }
+  // Bouton fermer (seul moyen de fermer — pas de clic-overlay pour éviter fermeture accidentelle)
+  const btnClose = ov.querySelector("#fap-close");
+  if(btnClose){
+    btnClose.addEventListener("click", function(){ ov.remove(); });
+  }
+}
 
 // HOSTING INFO
 // Pour héberger ce site : uploadez ce fichier HTML sur Netlify Drop (netlify.com/drop),
@@ -25509,12 +25630,9 @@ window.addEventListener("load",()=>{
     // premier setup, on l'affiche UNE FOIS via une popup persistante (à noter !).
     if(_firstAdminTempPass){
       setTimeout(function(){
-        var msg = "⚠️ NOTEZ CE MOT DE PASSE — il est affiché UNE SEULE FOIS\n\n"
-                + "Identifiant : admin\n"
-                + "Mot de passe : " + _firstAdminTempPass + "\n\n"
-                + "Connectez-vous immédiatement et changez-le via :\n"
-                + "Admin → Membres → Modifier mon compte.";
-        try{ alert(msg); }catch(e){}
+        // ⚠ Cas critique : le mot de passe temporaire est affiché UNE SEULE FOIS.
+        // Un toast disparaîtrait — on construit une modale persistante avec bouton copier.
+        showFirstAdminPassModal(_firstAdminTempPass);
         _firstAdminTempPass = null; // ne plus l'afficher au prochain rendu
       }, 1500);
     }
