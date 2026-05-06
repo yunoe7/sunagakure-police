@@ -23719,8 +23719,17 @@ function dcBuildBBDesc(d){
     lines.push('— Antécédents criminels (' + incidents.length + ' incident' + (incidents.length>1?'s':'') + ') —');
     incidents.slice(0, 5).forEach(function(inc){
       var infs = [];
-      (inc.infractions||[]).forEach(function(i){ if(i && i.nom) infs.push(i.nom); });
-      (inc.infractionsLibres||[]).forEach(function(i){ if(i) infs.push(String(i)); });
+      // infractions : tableau d'objets { nom, ... }
+      var arrInfractions = Array.isArray(inc.infractions) ? inc.infractions : [];
+      arrInfractions.forEach(function(i){ if(i && i.nom) infs.push(i.nom); });
+      // infractionsLibres : peut être un tableau OU une string (ancien format)
+      var libres = inc.infractionsLibres;
+      if(Array.isArray(libres)){
+        libres.forEach(function(i){ if(i) infs.push(String(i)); });
+      } else if(typeof libres === 'string' && libres.trim()){
+        // Format string : on pousse tel quel (probablement déjà séparé par des virgules ou retours)
+        infs.push(libres.trim());
+      }
       var dateStr = inc.date ? '['+fmtDate(inc.date)+'] ' : '';
       var infStr = infs.length ? infs.join(', ') : '(non spécifié)';
       lines.push('• ' + dateStr + infStr);
@@ -34045,6 +34054,14 @@ function bbSaveNinjas(list) {
   } catch(e) {
     if(typeof showToast==='function') showToast('Stockage local plein — réduisez la taille des images', 'error');
   }
+  // Verrou anti-écrasement : on note qu'on vient d'écrire localement et on mémorise
+  // le set d'IDs présents dans NOTRE version. Le listener Firebase pourra refuser
+  // pendant 3s les snapshots qui ne contiennent pas tous nos IDs (= snapshot fantôme
+  // pré-écriture qui annulerait la création qu'on vient de faire).
+  try {
+    window._bbLastWriteAt = Date.now();
+    window._bbLastWriteIds = (Array.isArray(list) ? list : []).map(function(n){ return n && n.id; }).filter(function(x){return x!=null;});
+  } catch(e){}
   if (window._fbDB && window._fbRef && window._fbSet) {
     try {
       var r = window._fbRef(window._fbDB, 'sunagakure/bingobook');
@@ -38111,6 +38128,25 @@ document.addEventListener('DOMContentLoaded', function(){
           // L'ancienne condition "&& val.length" laissait les anciennes fiches
           // affichées sur les autres appareils → bug bien réel.
           if (Array.isArray(val)) {
+            // ─── Garde anti-snapshot-fantôme ───
+            // Si on vient juste d'écrire localement (< 3s) et que le snapshot reçu
+            // ne contient PAS tous les IDs qu'on a écrits, c'est un snapshot fantôme
+            // pré-écriture qui annulerait notre ajout. On l'ignore.
+            try {
+              var lastWrite = window._bbLastWriteAt || 0;
+              var lastIds = window._bbLastWriteIds || [];
+              if (lastWrite && (Date.now() - lastWrite) < 3000 && lastIds.length > 0) {
+                var snapIds = val.map(function(n){ return n && n.id; }).filter(function(x){return x!=null;});
+                var snapIdSet = {};
+                snapIds.forEach(function(id){ snapIdSet[String(id)] = 1; });
+                var missingCount = 0;
+                lastIds.forEach(function(id){ if(!snapIdSet[String(id)]) missingCount++; });
+                if (missingCount > 0) {
+                  // Snapshot incomplet → on ignore et on garde notre version locale
+                  return;
+                }
+              }
+            } catch(e){}
             try { localStorage.setItem('bb_ninjas', JSON.stringify(val)); } catch(e){}
             if(typeof bbRender === 'function') bbRender();
             if(typeof lgRenderBingoBook === 'function') lgRenderBingoBook();
