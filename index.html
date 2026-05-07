@@ -11124,6 +11124,191 @@ document.addEventListener('error', function(e){
       background:rgba(34,197,94,0.10);border-color:rgba(34,197,94,0.30);color:#86efac;
     }
     #page-adoptions .ad-act-btn.print:hover{background:rgba(34,197,94,0.22)}
+    #page-adoptions .ad-act-btn.view{
+      background:rgba(59,130,246,0.10);border-color:rgba(59,130,246,0.30);color:#93c5fd;
+    }
+    #page-adoptions .ad-act-btn.view:hover{background:rgba(59,130,246,0.22)}
+    #page-adoptions .ad-act-btn.save{
+      background:rgba(168,85,247,0.10);border-color:rgba(168,85,247,0.30);color:#d8b4fe;
+    }
+    #page-adoptions .ad-act-btn.save:hover{background:rgba(168,85,247,0.22)}
+
+    /* ─── MODAL DE VISUALISATION ─── */
+    #ad-view-overlay{
+      position:fixed;inset:0;
+      background:rgba(0,0,0,0.78);
+      backdrop-filter:blur(8px);
+      z-index:9999;
+      display:none;
+      align-items:flex-start;justify-content:center;
+      padding:30px 20px;overflow-y:auto;
+      animation:adFadeIn .2s ease;
+    }
+    #ad-view-overlay.visible{display:flex}
+    @keyframes adFadeIn{from{opacity:0}to{opacity:1}}
+    .ad-view-modal{
+      background:linear-gradient(135deg, #1a1410 0%, #221c13 100%);
+      border:1px solid rgba(212,180,74,0.35);
+      border-radius:14px;
+      max-width:900px;width:100%;
+      box-shadow:0 24px 80px rgba(0,0,0,0.7), 0 0 0 1px rgba(212,180,74,0.1) inset;
+      overflow:hidden;position:relative;
+      animation:adSlideUp .3s ease;
+    }
+    @keyframes adSlideUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+    .ad-view-modal::before{
+      content:'';position:absolute;top:0;left:0;right:0;height:3px;
+      background:linear-gradient(90deg,transparent 0%,#c9a227 30%,#c0410e 50%,#c9a227 70%,transparent 100%);
+    }
+    .ad-view-header{
+      padding:20px 26px 18px;
+      border-bottom:1px solid rgba(212,180,74,0.18);
+      display:flex;align-items:center;justify-content:space-between;gap:14px;
+      background:linear-gradient(90deg, rgba(212,180,74,0.06), transparent);
+    }
+    .ad-view-header-left{display:flex;align-items:center;gap:12px;flex:1;min-width:0}
+    .ad-view-header-icon{
+      font-size:22px;flex-shrink:0;
+      filter:drop-shadow(0 0 8px rgba(212,180,74,0.4));
+    }
+    .ad-view-header-text{flex:1;min-width:0}
+    .ad-view-header-overline{
+      font-family:'Share Tech Mono',monospace;font-size:9px;letter-spacing:2.5px;
+      color:rgba(212,180,74,0.65);text-transform:uppercase;
+    }
+    .ad-view-header-title{
+      font-family:'Cinzel',serif;font-size:18px;font-weight:700;
+      color:var(--gold2);margin-top:3px;letter-spacing:1px;
+      overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+    }
+    .ad-view-close{
+      width:34px;height:34px;border-radius:50%;
+      background:rgba(239,68,68,0.10);border:1px solid rgba(239,68,68,0.28);
+      color:#f87171;cursor:pointer;font-size:14px;
+      display:flex;align-items:center;justify-content:center;
+      transition:all .15s ease;flex-shrink:0;
+    }
+    .ad-view-close:hover{background:rgba(239,68,68,0.22);transform:rotate(90deg)}
+    .ad-view-body{padding:22px 26px;max-height:calc(100vh - 240px);overflow-y:auto}
+    .ad-view-body::-webkit-scrollbar{width:6px}
+    .ad-view-body::-webkit-scrollbar-thumb{background:rgba(212,180,74,0.3);border-radius:3px}
+    .ad-view-grid{
+      display:grid;grid-template-columns:240px 1fr;gap:24px;margin-bottom:18px;
+    }
+    @media(max-width:680px){
+      .ad-view-grid{grid-template-columns:1fr}
+    }
+    .ad-view-photo{
+      width:100%;aspect-ratio:3/4;
+      background:rgba(20,16,9,0.7);
+      border:2px solid rgba(212,180,74,0.4);
+      border-radius:8px;overflow:hidden;
+      display:flex;align-items:center;justify-content:center;
+      font-size:64px;color:rgba(212,180,74,0.3);
+      box-shadow:0 4px 18px rgba(0,0,0,0.4);position:relative;
+    }
+    .ad-view-photo img{width:100%;height:100%;object-fit:cover}
+    .ad-view-photo-corner{position:absolute;width:18px;height:18px;border:2px solid rgba(212,180,74,0.6)}
+    .ad-view-photo-corner.tl{top:6px;left:6px;border-right:none;border-bottom:none}
+    .ad-view-photo-corner.tr{top:6px;right:6px;border-left:none;border-bottom:none}
+    .ad-view-photo-corner.bl{bottom:6px;left:6px;border-right:none;border-top:none}
+    .ad-view-photo-corner.br{bottom:6px;right:6px;border-left:none;border-top:none}
+    .ad-view-info{}
+    .ad-view-info-grid{
+      display:grid;grid-template-columns:repeat(2,1fr);gap:14px 18px;margin-bottom:18px;
+    }
+    @media(max-width:680px){
+      .ad-view-info-grid{grid-template-columns:1fr}
+    }
+    .ad-view-field{
+      background:rgba(20,16,9,0.55);
+      border:1px solid rgba(212,180,74,0.15);
+      border-left:3px solid rgba(212,180,74,0.5);
+      border-radius:0 6px 6px 0;
+      padding:10px 14px;
+    }
+    .ad-view-field-label{
+      font-family:'Share Tech Mono',monospace;font-size:8.5px;letter-spacing:1.8px;
+      color:rgba(212,180,74,0.65);text-transform:uppercase;font-weight:700;
+      margin-bottom:4px;
+    }
+    .ad-view-field-value{
+      font-family:'Cinzel',serif;font-size:14px;font-weight:600;color:var(--text);
+      line-height:1.4;word-wrap:break-word;
+    }
+    .ad-view-field-value.empty{color:rgba(240,232,208,0.35);font-style:italic;font-weight:400;font-family:'EB Garamond',Georgia,serif}
+    .ad-view-section{
+      margin-top:14px;padding:14px 16px;
+      background:rgba(20,16,9,0.55);
+      border:1px solid rgba(212,180,74,0.15);
+      border-radius:8px;
+    }
+    .ad-view-section-title{
+      font-family:'Share Tech Mono',monospace;font-size:9px;letter-spacing:2.5px;
+      color:rgba(212,180,74,0.7);text-transform:uppercase;font-weight:700;
+      margin-bottom:10px;padding-bottom:8px;
+      border-bottom:1px dashed rgba(212,180,74,0.2);
+      display:flex;align-items:center;gap:8px;
+    }
+    .ad-view-section-content{
+      font-family:'EB Garamond',Georgia,serif;font-size:13.5px;line-height:1.65;
+      color:rgba(240,232,208,0.85);white-space:pre-wrap;word-wrap:break-word;
+    }
+    .ad-view-section-content.empty{color:rgba(240,232,208,0.4);font-style:italic}
+    .ad-view-temoins-list{
+      list-style:none;padding:0;margin:0;
+    }
+    .ad-view-temoins-list li{
+      padding:6px 0 6px 22px;position:relative;
+      font-family:'EB Garamond',Georgia,serif;font-size:13px;
+      color:rgba(240,232,208,0.85);
+      border-bottom:1px dotted rgba(212,180,74,0.15);
+    }
+    .ad-view-temoins-list li:last-child{border-bottom:none}
+    .ad-view-temoins-list li::before{
+      content:'⚜';position:absolute;left:0;top:6px;
+      color:rgba(212,180,74,0.6);font-size:12px;
+    }
+    .ad-view-meta{
+      margin-top:14px;padding:10px 14px;
+      background:rgba(0,0,0,0.25);border-radius:6px;
+      font-family:'Share Tech Mono',monospace;font-size:9.5px;letter-spacing:1.2px;
+      color:rgba(240,232,208,0.45);
+      display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;
+    }
+    /* Pied du modal avec actions */
+    .ad-view-footer{
+      padding:16px 26px;
+      border-top:1px solid rgba(212,180,74,0.18);
+      background:rgba(0,0,0,0.25);
+      display:flex;gap:10px;flex-wrap:wrap;justify-content:flex-end;
+    }
+    .ad-view-btn{
+      padding:9px 18px;
+      border:1px solid rgba(212,180,74,0.3);
+      background:rgba(212,180,74,0.1);
+      color:var(--gold2);
+      border-radius:6px;cursor:pointer;
+      font-family:'Cinzel',serif;font-size:12px;font-weight:600;letter-spacing:1px;
+      transition:all .15s ease;
+      display:inline-flex;align-items:center;gap:7px;
+    }
+    .ad-view-btn:hover{background:rgba(212,180,74,0.22);transform:translateY(-1px)}
+    .ad-view-btn.print{background:rgba(34,197,94,0.12);border-color:rgba(34,197,94,0.32);color:#86efac}
+    .ad-view-btn.print:hover{background:rgba(34,197,94,0.25)}
+    .ad-view-btn.save{background:rgba(168,85,247,0.12);border-color:rgba(168,85,247,0.32);color:#d8b4fe}
+    .ad-view-btn.save:hover{background:rgba(168,85,247,0.25)}
+    .ad-view-btn.close{background:rgba(107,114,128,0.12);border-color:rgba(107,114,128,0.3);color:rgba(240,232,208,0.7)}
+    .ad-view-btn.close:hover{background:rgba(107,114,128,0.22)}
+
+    @media(max-width:600px){
+      .ad-view-modal{border-radius:10px}
+      .ad-view-header{padding:16px 18px 14px}
+      .ad-view-header-title{font-size:16px}
+      .ad-view-body{padding:16px 18px}
+      .ad-view-footer{padding:14px 18px}
+      .ad-view-btn{font-size:11px;padding:8px 14px}
+    }
 
     /* ÉTAT VIDE */
     #page-adoptions .ad-empty{
@@ -30802,6 +30987,7 @@ function renderAdoptions(){
       ? '<img src="'+a.photo+'" alt="Photo">'
       : '<span>👶</span>';
     var actions = '';
+    actions += '<button class="ad-act-btn view" onclick="openAdoptionView(\''+a.id+'\')" title="Voir le détail">👁 Voir</button>';
     actions += '<button class="ad-act-btn print" onclick="printAdoptionFiche(\''+a.id+'\')" title="Télécharger / imprimer la fiche">📄 Fiche</button>';
     if(canEdit){
       actions += '<button class="ad-act-btn" onclick="editAdoption(\''+a.id+'\')" title="Modifier">✏ Modifier</button>';
@@ -30828,20 +31014,17 @@ function renderAdoptions(){
 }
 
 /* ─── FICHE IMPRIMABLE / TÉLÉCHARGEABLE (PDF via window.print) ─── */
-function printAdoptionFiche(id){
-  _adInit();
-  var a = DB.adoptions.find(function(x){ return String(x.id) === String(id); });
-  if(!a){
-    if(typeof showToast === 'function') showToast('Adoption introuvable.','error');
-    return;
-  }
+/* Construit le HTML COMPLET (page autonome) de la fiche d'adoption,
+   réutilisable pour : impression (window.open), enregistrement (Blob → download). */
+function _buildAdoptionFicheHTML(a, opts){
+  opts = opts || {};
+  var withToolbar = opts.withToolbar !== false; // par défaut true (utile pour print preview)
 
   var ref = '#'+String(a.id||'').slice(-6).toUpperCase();
   var photoBlock = a.photo
     ? '<img src="'+a.photo+'" alt="Photo de l\'adopté">'
     : '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#9ca3af;font-family:\'Share Tech Mono\',monospace;font-size:10px;letter-spacing:2px">PHOTO NON FOURNIE</div>';
 
-  // Mise en page : témoins listés
   var temoinsList = (a.temoins||'').split(/\r?\n/).map(function(t){return t.trim();}).filter(Boolean);
   var temoinsHtml = temoinsList.length
     ? '<ul style="margin:0;padding-left:20px;font-family:\'EB Garamond\',Georgia,serif;font-size:13px;line-height:1.7;color:#1f2937">'
@@ -30861,7 +31044,14 @@ function printAdoptionFiche(id){
   var auteur = a.auteur || '—';
   var todayStr = (new Date()).toLocaleDateString('fr-FR',{day:'numeric',month:'long',year:'numeric'});
 
-  var html = ''
+  var toolbarHtml = withToolbar
+    ? '<div class="no-print-toolbar no-print">'
+      +   '<button class="primary" onclick="window.print()">🖨 Imprimer / PDF</button>'
+      +   '<button onclick="window.close()">✕ Fermer</button>'
+      + '</div>'
+    : '';
+
+  return ''
     + '<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8">'
     + '<title>Acte d\'adoption — '+_adEsc(a.adopte||'Inconnu')+'</title>'
     + '<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;900&family=Barlow:wght@300;400;500;600;700&family=Share+Tech+Mono&family=EB+Garamond:ital@0;1&display=swap" rel="stylesheet">'
@@ -30876,9 +31066,7 @@ function printAdoptionFiche(id){
     + '.no-print-toolbar button:hover{background:#374151}'
     + '.no-print-toolbar button.primary{background:#c0410e}'
     + '.no-print-toolbar button.primary:hover{background:#dc4f15}'
-    /* Bandeau or */
     + '.header-bar{background:linear-gradient(90deg,#a16207 0%,#d4b44a 50%,#a16207 100%);height:8px;width:100%}'
-    /* Sceau / entête */
     + '.header{padding:30px 40px 22px;border-bottom:2px solid #1f2937;background:#fdfcf7;position:relative}'
     + '.header::after{content:"";position:absolute;left:0;right:0;bottom:-2px;height:2px;background:repeating-linear-gradient(90deg,#1f2937 0,#1f2937 8px,transparent 8px,transparent 12px)}'
     + '.header-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:18px}'
@@ -30890,12 +31078,10 @@ function printAdoptionFiche(id){
     + '.refbox{text-align:right}'
     + '.refbox .lbl{font-family:"Share Tech Mono",monospace;font-size:8.5px;letter-spacing:2px;color:#6b7280;text-transform:uppercase;margin-bottom:3px}'
     + '.refbox .val{font-family:"Share Tech Mono",monospace;font-size:13px;color:#a16207;font-weight:700;letter-spacing:1.5px}'
-    /* Titre */
     + '.title-block{text-align:center;padding:8px 0 4px}'
     + '.title-block .overline{font-family:"Share Tech Mono",monospace;font-size:9.5px;letter-spacing:5px;color:#a16207;text-transform:uppercase;font-weight:700;margin-bottom:8px}'
     + '.title-block h1{font-family:"Cinzel",serif;font-size:36px;font-weight:900;color:#1f2937;letter-spacing:3px;line-height:1.05;text-transform:uppercase}'
     + '.title-block .subtitle{font-family:"EB Garamond",Georgia,serif;font-size:14px;color:#6b7280;font-style:italic;margin-top:6px}'
-    /* Corps */
     + '.body{padding:28px 40px}'
     + '.preamble{font-family:"EB Garamond",Georgia,serif;font-size:13.5px;line-height:1.75;color:#1f2937;text-align:justify;margin-bottom:24px;font-style:italic;padding:14px 18px;background:#faf6e8;border-left:3px solid #d4b44a;border-radius:0 4px 4px 0}'
     + '.body-grid{display:grid;grid-template-columns:200px 1fr;gap:30px;margin-bottom:24px}'
@@ -30908,31 +31094,23 @@ function printAdoptionFiche(id){
     + '.photo-corner.bl{bottom:6px;left:6px;border-right:none;border-top:none}'
     + '.photo-corner.br{bottom:6px;right:6px;border-left:none;border-top:none}'
     + '.photo-stamp{font-family:"Share Tech Mono",monospace;font-size:8.5px;letter-spacing:2px;color:#6b7280;text-align:center;text-transform:uppercase;padding:6px 0;border-top:1px solid #e5e7eb;background:#f9fafb}'
-    /* Carte d'identité */
     + '.id-card{background:#fdf9ec;border:1px solid #e5d6a8;border-radius:6px;padding:18px}'
     + '.id-card-title{font-family:"Share Tech Mono",monospace;font-size:9px;letter-spacing:2px;color:#a16207;text-transform:uppercase;margin-bottom:14px;padding-bottom:8px;border-bottom:1px solid #e5d6a8;font-weight:700}'
     + '.id-row{display:flex;flex-direction:column;padding:8px 0;border-bottom:1px dotted #d1c282}'
     + '.id-row:last-child{border-bottom:none}'
     + '.id-row .k{font-family:"Share Tech Mono",monospace;font-size:8.5px;letter-spacing:1.5px;color:#92400e;text-transform:uppercase;margin-bottom:3px;font-weight:700}'
     + '.id-row .v{font-family:"Cinzel",serif;font-size:14px;color:#1f2937;font-weight:600}'
-    /* Sections */
     + '.section{margin-bottom:22px}'
     + '.section-title{font-family:"Cinzel",serif;font-size:13px;letter-spacing:3px;color:#92400e;text-transform:uppercase;font-weight:700;margin-bottom:10px;padding-bottom:5px;border-bottom:1px solid #e5d6a8}'
-    /* Signatures */
     + '.signatures{display:grid;grid-template-columns:1fr 1fr 1fr;gap:24px;margin-top:36px;padding-top:22px;border-top:1px solid #d4b44a}'
     + '.sig-box{text-align:center}'
     + '.sig-line{height:50px;border-bottom:1px solid #1f2937;margin-bottom:6px}'
     + '.sig-label{font-family:"Share Tech Mono",monospace;font-size:8.5px;letter-spacing:2px;color:#6b7280;text-transform:uppercase;font-weight:700}'
     + '.sig-name{font-family:"Cinzel",serif;font-size:11px;color:#1f2937;margin-top:3px;font-weight:600}'
-    /* Pied */
     + '.footer{padding:18px 40px;background:#faf6e8;border-top:2px solid #d4b44a;font-family:"Share Tech Mono",monospace;font-size:9px;letter-spacing:1.5px;color:#6b7280;text-transform:uppercase;display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px}'
-    /* Sceau cire */
     + '.wax-seal{position:absolute;bottom:90px;right:50px;width:90px;height:90px;border-radius:50%;background:radial-gradient(circle at 35% 35%,#dc2626,#7f1d1d 70%,#450a0a);display:flex;align-items:center;justify-content:center;color:#fef2f2;font-family:"Cinzel",serif;font-size:9px;font-weight:900;letter-spacing:2px;text-align:center;line-height:1.2;text-transform:uppercase;box-shadow:0 4px 12px rgba(127,29,29,0.5),inset 0 -8px 16px rgba(0,0,0,0.4),inset 0 4px 8px rgba(255,255,255,0.15);transform:rotate(-8deg);border:2px solid #450a0a}'
     + '</style></head><body>'
-    + '<div class="no-print-toolbar no-print">'
-    +   '<button class="primary" onclick="window.print()">🖨 Imprimer / PDF</button>'
-    +   '<button onclick="window.close()">✕ Fermer</button>'
-    + '</div>'
+    + toolbarHtml
     + '<div class="page">'
     +   '<div class="header-bar"></div>'
     +   '<div class="header">'
@@ -31008,7 +31186,17 @@ function printAdoptionFiche(id){
     +   '</div>'
     + '</div>'
     + '</body></html>';
+}
 
+/* ─── FICHE IMPRIMABLE / TÉLÉCHARGEABLE (PDF via window.print) ─── */
+function printAdoptionFiche(id){
+  _adInit();
+  var a = DB.adoptions.find(function(x){ return String(x.id) === String(id); });
+  if(!a){
+    if(typeof showToast === 'function') showToast('Adoption introuvable.','error');
+    return;
+  }
+  var html = _buildAdoptionFicheHTML(a, {withToolbar:true});
   var w = window.open('', '_blank');
   if(!w){
     if(typeof showToast === 'function') showToast('Veuillez autoriser les pop-ups pour générer la fiche.','error');
@@ -31018,6 +31206,167 @@ function printAdoptionFiche(id){
   w.document.write(html);
   w.document.close();
 }
+
+/* ─── ENREGISTRER LA FICHE EN HTML AUTONOME (téléchargement direct) ─── */
+function _adDownloadAdoption(a){
+  // Génère la fiche sans la barre d'outils (puisqu'elle s'ouvrirait dans le navigateur du destinataire)
+  var html = _buildAdoptionFicheHTML(a, {withToolbar:false});
+  // Construire un nom de fichier sûr
+  var safe = function(s){
+    return String(s||'')
+      .normalize('NFD').replace(/[\u0300-\u036f]/g,'')        // retirer accents
+      .replace(/[^a-zA-Z0-9\-_ ]/g,'').trim().replace(/\s+/g,'_');
+  };
+  var nameAdopt = safe(a.adoptant||'inconnu');
+  var nameAdop  = safe(a.adopte||'inconnu');
+  var ref = String(a.id||'').slice(-6).toUpperCase();
+  var fname = 'Acte_adoption_' + nameAdopt + '_' + nameAdop + '_' + ref + '.html';
+  // Créer un Blob et déclencher le téléchargement
+  try{
+    var blob = new Blob([html], {type:'text/html;charset=utf-8'});
+    var url = URL.createObjectURL(blob);
+    var a2 = document.createElement('a');
+    a2.href = url;
+    a2.download = fname;
+    document.body.appendChild(a2);
+    a2.click();
+    document.body.removeChild(a2);
+    setTimeout(function(){ URL.revokeObjectURL(url); }, 1000);
+    if(typeof showToast === 'function') showToast('💾 Fichier enregistré : ' + fname, 'success');
+  }catch(e){
+    if(typeof showToast === 'function') showToast('Impossible d\'enregistrer le fichier.','error');
+  }
+}
+
+/* ─── MODAL DE VISUALISATION ─── */
+var _adCurrentViewId = null; // id de l'adoption affichée dans le modal
+
+function openAdoptionView(id){
+  _adInit();
+  var a = DB.adoptions.find(function(x){ return String(x.id) === String(id); });
+  if(!a){
+    if(typeof showToast === 'function') showToast('Adoption introuvable.','error');
+    return;
+  }
+  _adCurrentViewId = String(id);
+
+  // Mettre à jour l'en-tête du modal
+  var ref = '#'+String(a.id||'').slice(-6).toUpperCase();
+  var refEl = document.getElementById('ad-view-ref');
+  var titleEl = document.getElementById('ad-view-title');
+  if(refEl) refEl.textContent = 'RÉF. '+ref+' · '+_adFmtDate(a.date);
+  if(titleEl) titleEl.textContent = (a.adoptant||'—') + ' → ' + (a.adopte||'—');
+
+  // Construire le corps du modal
+  var body = document.getElementById('ad-view-body');
+  if(!body) return;
+
+  var photoHtml = a.photo
+    ? '<img src="'+_adEsc(a.photo)+'" alt="Photo de l\'adopté·e">'
+    : '<span>👶</span>';
+
+  var temoinsList = (a.temoins||'').split(/\r?\n/).map(function(t){return t.trim();}).filter(Boolean);
+  var temoinsHtml = temoinsList.length
+    ? '<ul class="ad-view-temoins-list">'+temoinsList.map(function(t){return '<li>'+_adEsc(t)+'</li>';}).join('')+'</ul>'
+    : '<div class="ad-view-section-content empty">Aucun témoin déclaré.</div>';
+
+  var raisonHtml = a.raison
+    ? '<div class="ad-view-section-content">'+_adEsc(a.raison)+'</div>'
+    : '<div class="ad-view-section-content empty">Aucune raison spécifiée.</div>';
+
+  var notesHtml = a.notes
+    ? '<div class="ad-view-section">'
+      + '<div class="ad-view-section-title">📝 Notes complémentaires</div>'
+      + '<div class="ad-view-section-content">'+_adEsc(a.notes)+'</div>'
+      + '</div>'
+    : '';
+
+  var fieldHTML = function(label, value, isEmpty){
+    return '<div class="ad-view-field">'
+         + '<div class="ad-view-field-label">'+_adEsc(label)+'</div>'
+         + '<div class="ad-view-field-value'+(isEmpty?' empty':'')+'">'+_adEsc(value||'—')+'</div>'
+         + '</div>';
+  };
+
+  body.innerHTML = ''
+    + '<div class="ad-view-grid">'
+    +   '<div class="ad-view-photo">'
+    +     '<div class="ad-view-photo-corner tl"></div>'
+    +     '<div class="ad-view-photo-corner tr"></div>'
+    +     '<div class="ad-view-photo-corner bl"></div>'
+    +     '<div class="ad-view-photo-corner br"></div>'
+    +     photoHtml
+    +   '</div>'
+    +   '<div class="ad-view-info">'
+    +     '<div class="ad-view-info-grid">'
+    +       fieldHTML('Adoptant·e', a.adoptant, !a.adoptant)
+    +     +     fieldHTML('Adopté·e', a.adopte, !a.adopte)
+    +     +     fieldHTML('Clan / Famille', a.clan || 'Sans clan', !a.clan)
+    +     +     fieldHTML('Date d\'adoption', _adFmtDateLong(a.date), !a.date)
+    +     '</div>'
+    +   '</div>'
+    + '</div>'
+    + '<div class="ad-view-section">'
+    +   '<div class="ad-view-section-title">⚖ Motif & Circonstances</div>'
+    +   raisonHtml
+    + '</div>'
+    + '<div class="ad-view-section">'
+    +   '<div class="ad-view-section-title">⚜ Témoins ('+temoinsList.length+')</div>'
+    +   temoinsHtml
+    + '</div>'
+    + notesHtml
+    + '<div class="ad-view-meta">'
+    +   '<span>Enregistré par : <strong>'+_adEsc(a.auteur||'—')+'</strong></span>'
+    +   '<span>'+(a.createdAt ? 'Créé le ' + new Date(a.createdAt).toLocaleDateString('fr-FR') : '')+'</span>'
+    +   '<span>'+(a.editedAt ? 'Modifié le ' + new Date(a.editedAt).toLocaleDateString('fr-FR') : '')+'</span>'
+    + '</div>';
+
+  // Afficher
+  var ov = document.getElementById('ad-view-overlay');
+  if(ov){
+    ov.classList.add('visible');
+    document.body.style.overflow = 'hidden'; // empêcher le scroll du fond
+  }
+}
+
+function closeAdoptionView(){
+  var ov = document.getElementById('ad-view-overlay');
+  if(ov) ov.classList.remove('visible');
+  document.body.style.overflow = '';
+  _adCurrentViewId = null;
+}
+
+function printCurrentAdoption(){
+  if(!_adCurrentViewId) return;
+  printAdoptionFiche(_adCurrentViewId);
+}
+
+function saveAdoptionFile(){
+  // Si appelé depuis le modal → on prend l'id en cours, sinon on attend un id passé.
+  var id = _adCurrentViewId;
+  if(arguments.length > 0 && arguments[0]) id = arguments[0];
+  if(!id){
+    if(typeof showToast === 'function') showToast('Aucune adoption sélectionnée.','error');
+    return;
+  }
+  _adInit();
+  var a = DB.adoptions.find(function(x){ return String(x.id) === String(id); });
+  if(!a){
+    if(typeof showToast === 'function') showToast('Adoption introuvable.','error');
+    return;
+  }
+  _adDownloadAdoption(a);
+}
+
+// Fermer le modal avec Échap
+document.addEventListener('keydown', function(ev){
+  if(ev.key === 'Escape'){
+    var ov = document.getElementById('ad-view-overlay');
+    if(ov && ov.classList.contains('visible')){
+      closeAdoptionView();
+    }
+  }
+});
 
 /* Sync Firebase pour DB.adoptions (alignée sur le pattern bingobook/sectionData) */
 document.addEventListener('DOMContentLoaded', function(){
@@ -41964,6 +42313,28 @@ document.addEventListener('DOMContentLoaded', function(){
       <span class="modal-close" onclick="bbCloseModal()" style="color:rgba(200,160,80,0.5)">✕</span>
     </div>
     <div id="bb-modal-body"></div>
+  </div>
+</div>
+
+<!-- ADOPTIONS — Modal de visualisation (hors page-content pour éviter les bugs de position:fixed) -->
+<div id="ad-view-overlay" onclick="if(event.target===this)closeAdoptionView()">
+  <div class="ad-view-modal" id="ad-view-modal">
+    <div class="ad-view-header">
+      <div class="ad-view-header-left">
+        <div class="ad-view-header-icon">📜</div>
+        <div class="ad-view-header-text">
+          <div class="ad-view-header-overline" id="ad-view-ref">RÉF. —</div>
+          <div class="ad-view-header-title" id="ad-view-title">—</div>
+        </div>
+      </div>
+      <button type="button" class="ad-view-close" onclick="closeAdoptionView()" title="Fermer (Échap)" aria-label="Fermer">✕</button>
+    </div>
+    <div class="ad-view-body" id="ad-view-body"></div>
+    <div class="ad-view-footer">
+      <button type="button" class="ad-view-btn save" onclick="saveAdoptionFile()" title="Enregistrer la fiche au format HTML">💾 Enregistrer le fichier</button>
+      <button type="button" class="ad-view-btn print" onclick="printCurrentAdoption()" title="Ouvrir la fiche imprimable">🖨 Ouvrir la fiche imprimable</button>
+      <button type="button" class="ad-view-btn close" onclick="closeAdoptionView()">Fermer</button>
+    </div>
   </div>
 </div>
 
