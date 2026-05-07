@@ -12091,6 +12091,36 @@ document.addEventListener('error', function(e){
       margin-bottom:14px;
       display:flex;flex-wrap:wrap;gap:10px;align-items:center;
     }
+    #page-casiers .hc-search-wrap{
+      flex:1;min-width:240px;position:relative;
+    }
+    #page-casiers .hc-search-wrap::before{
+      content:'🔍';position:absolute;left:11px;top:50%;
+      transform:translateY(-50%);opacity:0.55;font-size:13px;
+      pointer-events:none;
+    }
+    #page-casiers .hc-search-input{
+      width:100%;
+      padding:9px 12px 9px 36px;
+      background:rgba(255,255,255,0.05);
+      border:1px solid rgba(180,140,20,0.25);
+      border-radius:8px;
+      color:#f0e8d0;
+      font-size:13px;
+      font-family:'Share Tech Mono',monospace;
+      letter-spacing:0.3px;
+      transition:all 0.18s;
+      outline:none;
+    }
+    #page-casiers .hc-search-input::placeholder{
+      color:rgba(232,208,140,0.45);
+      font-style:italic;
+    }
+    #page-casiers .hc-search-input:focus{
+      border-color:rgba(212,180,74,0.55);
+      background:rgba(255,255,255,0.07);
+      box-shadow:0 0 0 3px rgba(212,180,74,0.10);
+    }
     #page-casiers .hc-toolbar .filter-pill{
       padding:6px 12px;border-radius:14px;
       background:rgba(255,255,255,0.04);
@@ -12179,31 +12209,185 @@ document.addEventListener('error', function(e){
       border:1px dashed rgba(180,140,20,0.25);
       border-radius:12px;
     }
-    /* Modale détail casier */
-    .hcv-section{margin-bottom:18px}
+    /* ════════════════════════════════════════════════════════════
+       MODALE DÉTAIL CASIER — Fiche officielle membre
+       ════════════════════════════════════════════════════════════ */
+    /* Header fiche d'identité */
+    .hcv-id-header{
+      display:flex;align-items:center;gap:18px;
+      padding:18px 20px;
+      background:linear-gradient(135deg, rgba(212,180,74,0.18), rgba(180,140,20,0.05));
+      border:1px solid rgba(212,180,74,0.40);
+      border-radius:12px;
+      margin-bottom:18px;
+      position:relative;overflow:hidden;
+    }
+    .hcv-id-header::before{
+      content:'';position:absolute;top:0;left:6px;right:6px;height:2px;
+      background:linear-gradient(90deg, transparent, rgba(212,180,74,0.55), transparent);
+    }
+    .hcv-id-avatar{
+      width:84px;height:84px;border-radius:50%;
+      background:linear-gradient(135deg, rgba(212,180,74,0.25), rgba(180,140,20,0.10));
+      border:3px solid rgba(212,180,74,0.55);
+      display:flex;align-items:center;justify-content:center;
+      font-size:34px;font-weight:700;color:#fbbf24;
+      font-family:'Cinzel',serif;
+      flex-shrink:0;overflow:hidden;
+      box-shadow:0 0 22px rgba(212,180,74,0.18);
+    }
+    .hcv-id-avatar img{width:100%;height:100%;object-fit:cover;display:block}
+    .hcv-id-info{flex:1;min-width:0}
+    .hcv-id-name{
+      font-family:'Cinzel',serif;font-size:22px;font-weight:700;
+      color:#f0e8d0;letter-spacing:0.5px;line-height:1.15;
+      margin-bottom:5px;
+    }
+    .hcv-id-meta{
+      display:flex;flex-wrap:wrap;gap:7px;align-items:center;
+      margin-top:4px;
+    }
+    .hcv-pill{
+      padding:3px 10px;border-radius:11px;
+      font-size:10.5px;
+      font-family:'Share Tech Mono',monospace;
+      letter-spacing:1px;font-weight:600;
+    }
+    .hcv-pill.grade{
+      background:rgba(255,255,255,0.06);
+      border:1px solid rgba(180,140,20,0.30);
+      color:rgba(232,208,140,0.85);
+    }
+    .hcv-pill.role-admin{
+      background:rgba(239,68,68,0.15);
+      border:1px solid rgba(239,68,68,0.45);
+      color:#fca5a5;
+    }
+    .hcv-pill.role-hc{
+      background:rgba(168,85,247,0.15);
+      border:1px solid rgba(168,85,247,0.45);
+      color:#c4b5fd;
+    }
+    .hcv-pill.role-membre{
+      background:rgba(34,197,94,0.12);
+      border:1px solid rgba(34,197,94,0.40);
+      color:#86efac;
+    }
+    .hcv-pill.role-default{
+      background:rgba(212,180,74,0.10);
+      border:1px solid rgba(212,180,74,0.30);
+      color:#fbbf24;
+    }
+    .hcv-pill.activity-active{
+      background:rgba(34,197,94,0.12);
+      border:1px solid rgba(34,197,94,0.40);
+      color:#86efac;
+    }
+    .hcv-pill.activity-inactive{
+      background:rgba(255,255,255,0.04);
+      border:1px solid rgba(180,140,20,0.20);
+      color:rgba(232,208,140,0.55);
+    }
+    /* Sections */
+    .hcv-section{margin-bottom:20px}
     .hcv-section-title{
-      display:flex;align-items:center;gap:8px;
-      font-size:10.5px;color:rgba(212,180,74,0.85);
+      display:flex;align-items:center;gap:9px;
+      font-size:11px;color:rgba(212,180,74,0.95);
       font-family:'Share Tech Mono',monospace;
       letter-spacing:1.8px;text-transform:uppercase;font-weight:700;
-      padding-bottom:6px;margin-bottom:10px;
-      border-bottom:1px solid rgba(180,140,20,0.20);
+      padding-bottom:8px;margin-bottom:12px;
+      border-bottom:1px solid rgba(180,140,20,0.25);
     }
     .hcv-section-title .count{
       margin-left:auto;
-      padding:2px 8px;border-radius:10px;
-      background:rgba(212,180,74,0.15);
-      border:1px solid rgba(212,180,74,0.32);
-      font-size:10px;color:#fbbf24;
+      padding:2px 9px;border-radius:11px;
+      background:rgba(212,180,74,0.18);
+      border:1px solid rgba(212,180,74,0.40);
+      font-size:10.5px;color:#fbbf24;font-weight:700;
+      letter-spacing:0.5px;
     }
+    /* Stats grid amélioré */
+    .hcv-stats-grid{
+      display:grid;grid-template-columns:repeat(3,1fr);gap:10px;
+    }
+    .hcv-stat-card{
+      background:linear-gradient(160deg, rgba(28,22,15,0.96), rgba(18,14,9,0.98));
+      border:1px solid rgba(180,140,20,0.30);
+      border-radius:10px;
+      padding:12px 10px;
+      text-align:center;
+      transition:all 0.18s;
+    }
+    .hcv-stat-card:hover{
+      border-color:rgba(212,180,74,0.50);
+      transform:translateY(-1px);
+    }
+    .hcv-stat-card .ico{
+      font-size:18px;display:block;margin-bottom:4px;opacity:0.85;
+    }
+    .hcv-stat-card .v{
+      font-family:'Barlow Condensed',sans-serif;font-size:24px;
+      font-weight:700;color:#fbbf24;line-height:1;margin-bottom:2px;
+    }
+    .hcv-stat-card .l{
+      font-size:9px;color:rgba(232,208,140,0.65);
+      font-family:'Share Tech Mono',monospace;letter-spacing:1px;
+      text-transform:uppercase;
+    }
+    /* Zone empty */
     .hcv-empty-section{
-      font-size:11.5px;font-style:italic;color:rgba(232,208,140,0.5);
-      padding:6px 0;
+      text-align:center;
+      padding:18px 12px;
+      background:rgba(255,255,255,0.02);
+      border:1px dashed rgba(180,140,20,0.22);
+      border-radius:8px;
+      font-size:11.5px;font-style:italic;
+      color:rgba(232,208,140,0.45);
     }
+    /* Liste équipes/sanctions dans la modale casier */
+    .hcv-row{
+      display:flex;align-items:center;gap:11px;
+      padding:10px 12px;
+      background:rgba(255,255,255,0.03);
+      border:1px solid rgba(180,140,20,0.20);
+      border-radius:8px;
+      margin-bottom:6px;
+      transition:all 0.15s;
+    }
+    .hcv-row:hover{
+      background:rgba(212,180,74,0.06);
+      border-color:rgba(212,180,74,0.35);
+    }
+    .hcv-row.is-chef{
+      background:linear-gradient(135deg, rgba(212,180,74,0.10), rgba(180,140,20,0.04));
+      border-color:rgba(212,180,74,0.40);
+    }
+    .hcv-row-icon{
+      width:36px;height:36px;border-radius:9px;
+      background:rgba(212,180,74,0.12);
+      border:1px solid rgba(212,180,74,0.35);
+      display:flex;align-items:center;justify-content:center;
+      font-size:17px;flex-shrink:0;
+    }
+    .hcv-row-info{flex:1;min-width:0}
+    .hcv-row-name{
+      font-family:'Cinzel',serif;font-weight:600;
+      font-size:13.5px;color:#f0e8d0;line-height:1.25;
+      margin-bottom:2px;
+      overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+    }
+    .hcv-row-meta{
+      font-size:10.5px;color:rgba(232,208,140,0.6);
+      font-family:'Share Tech Mono',monospace;letter-spacing:0.4px;
+    }
+    .hcv-row-meta .acc{color:#fbbf24}
     @media(max-width:768px){
       #page-casiers .hc-hero{padding:18px 20px 16px}
       #page-casiers .hc-hero-title{font-size:22px}
       #page-casiers .hc-grid{grid-template-columns:1fr}
+      .hcv-stats-grid{grid-template-columns:repeat(2,1fr)}
+      .hcv-id-header{flex-direction:column;text-align:center;align-items:center}
+      .hcv-id-meta{justify-content:center}
     }
     </style>
     <!-- Hero -->
@@ -12224,8 +12408,8 @@ document.addEventListener('error', function(e){
     </div>
     <!-- Toolbar -->
     <div class="hc-toolbar">
-      <div class="eq-search-wrap" style="flex:1;min-width:240px">
-        <input type="text" id="hc-search" class="eq-search" placeholder="Rechercher un membre, un grade..." oninput="hcRender()">
+      <div class="hc-search-wrap">
+        <input type="text" id="hc-search" class="hc-search-input" placeholder="Rechercher un membre, un grade..." oninput="hcRender()">
       </div>
       <div class="filter-pill active" data-hc-filter="all" onclick="hcSetFilter('all')">Tous</div>
       <div class="filter-pill" data-hc-filter="actifs" onclick="hcSetFilter('actifs')">Actifs récents</div>
@@ -34225,45 +34409,71 @@ function hcViewCasier(userId){
   var bodyEl = document.getElementById('hcv-body');
   if(bodyEl){
     var avatar = (u.photo && typeof safeImgSrc==='function' && safeImgSrc(u.photo))
-      ? '<img src="'+safeImgSrc(u.photo)+'" alt="" style="width:100%;height:100%;object-fit:cover;display:block">'
+      ? '<img src="'+safeImgSrc(u.photo)+'" alt="">'
       : rpEsc((u.nom||'?').charAt(0)).toUpperCase();
 
-    // En-tête fiche identité
+    // Pill du rôle (selon couleur)
+    var roleClass = 'role-default';
+    var roleLabel = (u.role||'').toUpperCase();
+    if(u.role === 'admin'){ roleClass = 'role-admin'; roleLabel = '🔧 ADMIN'; }
+    else if(u.role === 'hautcommandement'){ roleClass = 'role-hc'; roleLabel = '👑 HAUT COMMANDEMENT'; }
+    else if(u.role === 'membre' || u.role === 'gerant' || u.role === 'cogerant' || u.role === 'sergent'){ roleClass = 'role-membre'; }
+
+    // Badge activité
+    var activityHtml = s.actif
+      ? '<span class="hcv-pill activity-active">● Actif récemment</span>'
+      : '<span class="hcv-pill activity-inactive">○ Inactif</span>';
+
+    // Badge chef d'équipe si applicable
+    var chefBadge = s.isChef ? '<span class="hcv-pill role-default">⭐ Chef d\'équipe</span>' : '';
+
+    // ── HEADER FICHE D'IDENTITÉ ──
     var headHtml =
-      '<div class="evm-header" style="margin-bottom:14px">'
-      + '<div class="evm-emblem" style="border-radius:50%">'+avatar+'</div>'
-      + '<div style="flex:1;min-width:0">'
-      +   '<div class="evm-name">'+rpEsc(u.nom||'—')+'</div>'
-      +   '<div class="evm-id">'+rpEsc(u.grade||'—')+' · '+rpEsc((u.role||'').toUpperCase())+'</div>'
+      '<div class="hcv-id-header">'
+      + '<div class="hcv-id-avatar">'+avatar+'</div>'
+      + '<div class="hcv-id-info">'
+      +   '<div class="hcv-id-name">'+rpEsc(u.nom||'—')+'</div>'
+      +   '<div class="hcv-id-meta">'
+      +     '<span class="hcv-pill grade">'+rpEsc(u.grade||'—')+'</span>'
+      +     '<span class="hcv-pill '+roleClass+'">'+roleLabel+'</span>'
+      +     activityHtml
+      +     chefBadge
+      +   '</div>'
       + '</div></div>';
 
-    // Stats globales
+    // ── BILAN D'ACTIVITÉ (cards stats) ──
     var statsHtml =
       '<div class="hcv-section">'
       + '<div class="hcv-section-title">📊 Bilan d\'activité</div>'
-      + '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:8px">'
-      +   '<div class="hc-stat-mini"><div class="v">'+s.rapports.length+'</div><div class="l">Rapports</div></div>'
-      +   '<div class="hc-stat-mini"><div class="v">'+s.recenses.length+'</div><div class="l">Recensés</div></div>'
-      +   '<div class="hc-stat-mini"><div class="v">'+s.plaintes.length+'</div><div class="l">Plaintes</div></div>'
-      +   '<div class="hc-stat-mini"><div class="v">'+s.dossiers.length+'</div><div class="l">Dossiers</div></div>'
-      +   '<div class="hc-stat-mini"><div class="v">'+s.ops.length+'</div><div class="l">Opérations</div></div>'
-      +   '<div class="hc-stat-mini"><div class="v">'+s.equipes.length+'</div><div class="l">Équipes</div></div>'
+      + '<div class="hcv-stats-grid">'
+      +   '<div class="hcv-stat-card"><span class="ico">📝</span><div class="v">'+s.rapports.length+'</div><div class="l">Rapports</div></div>'
+      +   '<div class="hcv-stat-card"><span class="ico">📇</span><div class="v">'+s.recenses.length+'</div><div class="l">Recensés</div></div>'
+      +   '<div class="hcv-stat-card"><span class="ico">🛡️</span><div class="v">'+s.equipes.length+'</div><div class="l">Équipes</div></div>'
+      +   '<div class="hcv-stat-card"><span class="ico">📋</span><div class="v">'+s.plaintes.length+'</div><div class="l">Plaintes</div></div>'
+      +   '<div class="hcv-stat-card"><span class="ico">🗂️</span><div class="v">'+s.dossiers.length+'</div><div class="l">Dossiers</div></div>'
+      +   '<div class="hcv-stat-card"><span class="ico">🚨</span><div class="v">'+s.ops.length+'</div><div class="l">Opérations</div></div>'
       + '</div></div>';
 
-    // Équipes
+    // ── ÉQUIPES ──
     var equipesHtml = '<div class="hcv-section">'
       + '<div class="hcv-section-title">🛡️ Équipes <span class="count">'+s.equipes.length+'</span></div>';
     if(s.equipes.length){
       equipesHtml += s.equipes.map(function(eq){
-        var role = (s.myRecense && eq.chefId === s.myRecense.id) ? '⭐ Chef' : 'Membre';
-        return '<div class="evm-member" style="margin-bottom:6px"><div class="evm-member-avatar">'+rpEsc(eq.emblem||'🛡️')+'</div><div class="evm-member-info"><div class="evm-member-name">'+rpEsc(eq.nom)+'</div><div class="evm-member-rang">'+role+' · '+(eq.membres||[]).length+' membres</div></div></div>';
+        var isChef = (s.myRecense && eq.chefId === s.myRecense.id);
+        var roleTag = isChef ? '<span class="acc">⭐ Chef</span>' : 'Membre';
+        return '<div class="hcv-row'+(isChef?' is-chef':'')+'">'
+          + '<div class="hcv-row-icon">'+rpEsc(eq.emblem||'🛡️')+'</div>'
+          + '<div class="hcv-row-info">'
+          +   '<div class="hcv-row-name">'+rpEsc(eq.nom)+'</div>'
+          +   '<div class="hcv-row-meta">'+roleTag+' · '+(eq.membres||[]).length+' membre'+((eq.membres||[]).length>1?'s':'')+'</div>'
+          + '</div></div>';
       }).join('');
     } else {
       equipesHtml += '<div class="hcv-empty-section">N\'appartient à aucune équipe.</div>';
     }
     equipesHtml += '</div>';
 
-    // Rapports (les 10 derniers)
+    // ── RAPPORTS RÉDIGÉS ──
     var rappsHtml = '<div class="hcv-section">'
       + '<div class="hcv-section-title">📝 Rapports rédigés <span class="count">'+s.rapports.length+'</span></div>';
     if(s.rapports.length){
@@ -34280,27 +34490,37 @@ function hcViewCasier(userId){
           +   '<div class="rp-card-title">' + rpEsc(r.titre||'(sans titre)') + '</div>'
           +   '<div class="rp-card-meta"><span>'+meta.label+'</span><span class="sep">·</span><span>'+fmtSimpleDate(r.date)+'</span></div>'
           +   (preview ? '<div class="rp-card-preview">'+rpEsc(preview)+'</div>' : '')
-          + '</div></div>';
+          + '</div>'
+          + '<div class="rp-card-arrow">→</div>'
+          + '</div>';
       }).join('');
       if(s.rapports.length > 10){
-        rappsHtml += '<div style="text-align:center;font-size:10.5px;color:rgba(232,208,140,0.55);font-family:\'Share Tech Mono\',monospace;margin-top:8px">+ '+(s.rapports.length-10)+' rapports plus anciens</div>';
+        rappsHtml += '<div style="text-align:center;font-size:10.5px;color:rgba(232,208,140,0.55);font-family:\'Share Tech Mono\',monospace;margin-top:8px;letter-spacing:0.6px">+ '+(s.rapports.length-10)+' rapport'+(s.rapports.length-10>1?'s':'')+' plus ancien'+(s.rapports.length-10>1?'s':'')+'</div>';
       }
     } else {
-      rappsHtml += '<div class="hcv-empty-section">Aucun rapport rédigé.</div>';
+      rappsHtml += '<div class="hcv-empty-section">Aucun rapport rédigé pour le moment.</div>';
     }
     rappsHtml += '</div>';
 
-    // Sanctions
+    // ── SANCTIONS & PROMOTIONS ──
     var sancsHtml = '<div class="hcv-section">'
       + '<div class="hcv-section-title">⚖️ Sanctions & Promotions <span class="count">'+s.sancs.length+'</span></div>';
     if(s.sancs.length){
       var sortedSancs = s.sancs.slice().sort(function(a,b){ return (b.date||0) - (a.date||0); }).slice(0,5);
       sancsHtml += sortedSancs.map(function(sa){
         var icons = {Promotion:'⬆️',Félicitation:'⭐',Avertissement:'⚠️',Exclusion:'🚫'};
-        return '<div class="evm-member" style="margin-bottom:6px"><div class="evm-member-avatar">'+(icons[sa.type]||'⚖️')+'</div><div class="evm-member-info"><div class="evm-member-name">'+rpEsc(sa.type)+'</div><div class="evm-member-rang">'+rpEsc(sa.motif||'—')+' · '+fmt(sa.date)+'</div></div></div>';
+        return '<div class="hcv-row">'
+          + '<div class="hcv-row-icon">'+(icons[sa.type]||'⚖️')+'</div>'
+          + '<div class="hcv-row-info">'
+          +   '<div class="hcv-row-name">'+rpEsc(sa.type)+'</div>'
+          +   '<div class="hcv-row-meta">'+rpEsc(sa.motif||'—')+' · <span class="acc">'+fmt(sa.date)+'</span></div>'
+          + '</div></div>';
       }).join('');
+      if(s.sancs.length > 5){
+        sancsHtml += '<div style="text-align:center;font-size:10.5px;color:rgba(232,208,140,0.55);font-family:\'Share Tech Mono\',monospace;margin-top:8px;letter-spacing:0.6px">+ '+(s.sancs.length-5)+' plus ancien'+(s.sancs.length-5>1?'s':'')+'</div>';
+      }
     } else {
-      sancsHtml += '<div class="hcv-empty-section">Aucune sanction ou promotion.</div>';
+      sancsHtml += '<div class="hcv-empty-section">Aucune sanction ou promotion enregistrée.</div>';
     }
     sancsHtml += '</div>';
 
