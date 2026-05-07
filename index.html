@@ -11605,11 +11605,163 @@ document.addEventListener('error', function(e){
     .eq-recense-row.selected .eq-recense-check{
       background:#22c55e;border-color:#22c55e;color:#fff;
     }
+    /* ════════════════════════════════════════════════════════════
+       MODALE VUE D'ÉQUIPE — Design fiche officielle
+       Le CSS de page-equipes ne s'applique pas dans la modale
+       (puisque la modale est hors de #page-equipes), donc on a
+       besoin de styles dédiés .evm-* (Equipe View Modal).
+       ════════════════════════════════════════════════════════════ */
+    .evm-header{
+      display:flex;align-items:center;gap:14px;
+      padding:14px 16px;
+      background:linear-gradient(135deg, rgba(212,180,74,0.18), rgba(180,140,20,0.06));
+      border:1px solid rgba(212,180,74,0.40);
+      border-radius:10px;
+      margin-bottom:14px;
+    }
+    .evm-emblem{
+      width:54px;height:54px;border-radius:11px;
+      background:linear-gradient(135deg, rgba(212,180,74,0.30), rgba(180,140,20,0.15));
+      border:2px solid rgba(212,180,74,0.55);
+      display:flex;align-items:center;justify-content:center;
+      font-size:26px;flex-shrink:0;
+      box-shadow:inset 0 1px 0 rgba(255,255,255,0.10);
+    }
+    .evm-name{
+      font-family:'Cinzel',serif;font-size:19px;font-weight:700;
+      color:#f0e8d0;letter-spacing:0.5px;line-height:1.2;
+      margin-bottom:3px;
+    }
+    .evm-id{
+      font-size:10px;color:rgba(212,180,74,0.75);
+      font-family:'Share Tech Mono',monospace;letter-spacing:1.8px;
+      font-weight:700;
+    }
+    .evm-desc{
+      padding:11px 14px;
+      background:rgba(255,255,255,0.04);
+      border-left:3px solid rgba(212,180,74,0.55);
+      border-radius:0 6px 6px 0;
+      font-size:12.5px;color:rgba(232,208,140,0.85);
+      font-style:italic;line-height:1.55;
+      margin-bottom:14px;
+    }
+    .evm-section-title{
+      display:flex;align-items:center;gap:8px;
+      font-size:10.5px;color:rgba(212,180,74,0.85);
+      font-family:'Share Tech Mono',monospace;
+      letter-spacing:1.8px;text-transform:uppercase;
+      font-weight:700;
+      padding-bottom:6px;margin-bottom:10px;
+      border-bottom:1px solid rgba(180,140,20,0.20);
+    }
+    .evm-section-title .count{
+      margin-left:auto;
+      padding:2px 8px;border-radius:10px;
+      background:rgba(212,180,74,0.15);
+      border:1px solid rgba(212,180,74,0.32);
+      font-size:10px;color:#fbbf24;
+    }
+    /* Bandeau Chef d'équipe : vignette compacte (PAS de photo géante) */
+    .evm-chef{
+      display:flex;align-items:center;gap:12px;
+      padding:11px 13px;
+      background:linear-gradient(135deg, rgba(212,180,74,0.12), rgba(180,140,20,0.05));
+      border:1px solid rgba(212,180,74,0.40);
+      border-radius:9px;
+      margin-bottom:18px;
+    }
+    .evm-chef-avatar{
+      width:48px;height:48px;border-radius:50%;
+      background:rgba(212,180,74,0.18);
+      border:2px solid rgba(212,180,74,0.55);
+      display:flex;align-items:center;justify-content:center;
+      font-size:18px;font-weight:700;color:#fbbf24;
+      font-family:'Cinzel',serif;
+      flex-shrink:0;overflow:hidden;
+    }
+    .evm-chef-avatar img{
+      width:100%;height:100%;
+      object-fit:cover;display:block;
+    }
+    .evm-chef-info{flex:1;min-width:0}
+    .evm-chef-label{
+      display:inline-flex;align-items:center;gap:4px;
+      font-size:9px;color:#fbbf24;
+      font-family:'Share Tech Mono',monospace;
+      letter-spacing:1.8px;text-transform:uppercase;
+      font-weight:700;margin-bottom:2px;
+    }
+    .evm-chef-name{
+      font-family:'Cinzel',serif;font-size:15px;font-weight:700;
+      color:#f0e8d0;line-height:1.2;
+      overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+    }
+    .evm-chef-meta{
+      font-size:11px;color:rgba(232,208,140,0.65);
+      font-family:'Share Tech Mono',monospace;
+      letter-spacing:0.4px;margin-top:2px;
+    }
+    /* Liste des membres : rangées propres, pas pile vertical */
+    .evm-members{
+      display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));
+      gap:8px;
+      margin-bottom:14px;
+    }
+    .evm-member{
+      display:flex;align-items:center;gap:9px;
+      padding:8px 10px;
+      background:rgba(255,255,255,0.03);
+      border:1px solid rgba(180,140,20,0.22);
+      border-radius:7px;
+      transition:all 0.15s;
+    }
+    .evm-member.is-chef{
+      background:linear-gradient(135deg, rgba(212,180,74,0.10), rgba(180,140,20,0.04));
+      border-color:rgba(212,180,74,0.45);
+    }
+    .evm-member.is-missing{
+      background:rgba(239,68,68,0.08);
+      border-color:rgba(239,68,68,0.32);
+    }
+    .evm-member-avatar{
+      width:32px;height:32px;border-radius:50%;
+      background:rgba(212,180,74,0.15);
+      border:1px solid rgba(212,180,74,0.35);
+      display:flex;align-items:center;justify-content:center;
+      font-size:11px;font-weight:700;color:#fbbf24;
+      font-family:'Cinzel',serif;
+      flex-shrink:0;overflow:hidden;
+    }
+    .evm-member-avatar img{
+      width:100%;height:100%;object-fit:cover;display:block;
+    }
+    .evm-member-info{flex:1;min-width:0}
+    .evm-member-name{
+      font-size:12.5px;color:#f0e8d0;font-weight:600;
+      line-height:1.2;
+      overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+    }
+    .evm-member-name .star{color:#fbbf24;margin-right:3px}
+    .evm-member-rang{
+      font-size:10px;color:rgba(232,208,140,0.55);
+      font-family:'Share Tech Mono',monospace;
+      letter-spacing:0.3px;margin-top:1px;
+      overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+    }
+    .evm-foot{
+      margin-top:12px;padding-top:10px;
+      border-top:1px solid rgba(180,140,20,0.18);
+      font-size:10px;color:rgba(232,208,140,0.55);
+      font-family:'Share Tech Mono',monospace;
+      letter-spacing:0.6px;line-height:1.6;
+    }
     /* Mobile */
     @media(max-width:768px){
       #page-equipes .eq-hero{padding:18px 20px 16px}
       #page-equipes .eq-hero-title{font-size:22px}
       #page-equipes .eq-grid{grid-template-columns:1fr}
+      .evm-members{grid-template-columns:1fr}
     }
     </style>
     <!-- Hero -->
@@ -32955,45 +33107,86 @@ function eqView(id){
   if(!eq){ if(typeof showToast==='function') showToast('Équipe introuvable.', 'error'); return; }
   var chef = eqGetRecense(eq.chefId);
   var fileNum = eqComputeId(eq);
+  var fmt = (typeof fmtDate==='function') ? fmtDate : function(d){return new Date(d).toLocaleDateString('fr-FR');};
+
+  // Titre simple dans le header de la modale
   var titleEl = document.getElementById('eq-view-title');
   if(titleEl) titleEl.textContent = (eq.emblem||'🛡️') + ' ' + eq.nom;
+
+  // ── Bandeau chef d'équipe ──
+  var chefHtml;
+  if(chef){
+    var chefAvatar = (chef.photo && typeof safeImgSrc==='function' && safeImgSrc(chef.photo))
+      ? '<img src="'+safeImgSrc(chef.photo)+'" alt="">'
+      : eqEsc((chef.prenom||'?').charAt(0)+(chef.nom||'?').charAt(0)).toUpperCase();
+    var chefMetaParts = [];
+    if(chef.rang) chefMetaParts.push(eqEsc(chef.rang));
+    if(chef.faction) chefMetaParts.push(eqEsc(chef.faction));
+    if(chef.clan) chefMetaParts.push(eqEsc(chef.clan));
+    chefHtml =
+      '<div class="evm-chef">'
+      + '<div class="evm-chef-avatar">'+chefAvatar+'</div>'
+      + '<div class="evm-chef-info">'
+      +   '<div class="evm-chef-label">⭐ Chef d\'équipe</div>'
+      +   '<div class="evm-chef-name">'+eqEsc((chef.prenom||'')+' '+(chef.nom||''))+'</div>'
+      +   (chefMetaParts.length ? '<div class="evm-chef-meta">'+chefMetaParts.join(' · ')+'</div>' : '')
+      + '</div></div>';
+  } else {
+    chefHtml = '<div style="padding:12px 14px;background:rgba(239,68,68,0.10);border:1px solid rgba(239,68,68,0.32);border-radius:8px;color:#fca5a5;font-size:12px;margin-bottom:18px">⚠ Le chef d\'équipe n\'existe plus dans le recensement.</div>';
+  }
+
+  // ── Liste des membres ──
+  var nbMembres = (eq.membres||[]).length;
+  var membersHtml = (eq.membres||[]).map(function(mid){
+    var m = eqGetRecense(mid);
+    if(!m){
+      return '<div class="evm-member is-missing">'
+        + '<div class="evm-member-avatar" style="color:#fca5a5">⚠</div>'
+        + '<div class="evm-member-info">'
+        +   '<div class="evm-member-name" style="color:#fca5a5">Recensé supprimé</div>'
+        +   '<div class="evm-member-rang">Fiche introuvable</div>'
+        + '</div></div>';
+    }
+    var isChef = (m.id === eq.chefId);
+    var avatar = (m.photo && typeof safeImgSrc==='function' && safeImgSrc(m.photo))
+      ? '<img src="'+safeImgSrc(m.photo)+'" alt="">'
+      : eqEsc((m.prenom||'?').charAt(0)+(m.nom||'?').charAt(0)).toUpperCase();
+    var metaParts = [];
+    if(m.rang) metaParts.push(eqEsc(m.rang));
+    if(m.faction) metaParts.push(eqEsc(m.faction));
+    return '<div class="evm-member'+(isChef?' is-chef':'')+'">'
+      + '<div class="evm-member-avatar">'+avatar+'</div>'
+      + '<div class="evm-member-info">'
+      +   '<div class="evm-member-name">'+(isChef?'<span class="star">⭐</span>':'')+eqEsc((m.prenom||'')+' '+(m.nom||''))+'</div>'
+      +   (metaParts.length ? '<div class="evm-member-rang">'+metaParts.join(' · ')+'</div>' : '')
+      + '</div></div>';
+  }).join('');
+
+  // ── Footer infos création ──
+  var footInfo = 'Créée le '+fmt(eq.created)+(eq.createdBy?' par '+eqEsc(eq.createdBy):'');
+  if(eq.modified){
+    footInfo += '<br>Modifiée le '+fmt(eq.modified)+(eq.modifiedBy?' par '+eqEsc(eq.modifiedBy):'');
+  }
+
+  // ── Assemblage ──
   var bodyEl = document.getElementById('eq-view-body');
   if(bodyEl){
-    var membersHtml = (eq.membres||[]).map(function(mid){
-      var m = eqGetRecense(mid);
-      if(!m){
-        return '<div class="eq-member-chip" style="border-color:rgba(239,68,68,0.4);color:#fca5a5">⚠ Recensé supprimé</div>';
-      }
-      var label = ((m.prenom||'')+' '+(m.nom||'')).trim();
-      var rang = m.rang ? ' · '+m.rang : '';
-      var isChef = (m.id === eq.chefId);
-      return '<div class="eq-member-chip"'+(isChef?' style="background:rgba(212,180,74,0.15);border-color:rgba(212,180,74,0.45);color:#fbbf24"':'')+'>'
-        + (isChef?'⭐ ':'') + eqEsc(label) + eqEsc(rang)
-        + '</div>';
-    }).join('');
-    var chefBlock = chef ? (
-      '<div class="eq-card-chef" style="margin-bottom:14px">'
-      + '<div class="eq-chef-photo">' + (chef.photo && typeof safeImgSrc==='function' && safeImgSrc(chef.photo)
-            ? '<img src="'+safeImgSrc(chef.photo)+'" alt="">'
-            : eqEsc((chef.prenom||'?').charAt(0)+(chef.nom||'?').charAt(0)).toUpperCase()) + '</div>'
-      + '<div class="eq-chef-info">'
-      +   '<div class="eq-chef-label">⭐ Chef d\'équipe</div>'
-      +   '<div class="eq-chef-name">'+eqEsc((chef.prenom||'')+' '+(chef.nom||''))+'</div>'
-      +   '<div class="eq-chef-rang">'+eqEsc(chef.rang||'?')+(chef.faction?' · '+eqEsc(chef.faction):'')+'</div>'
-      + '</div></div>'
-    ) : '<div style="padding:10px;background:rgba(239,68,68,0.10);border:1px solid rgba(239,68,68,0.30);border-radius:8px;color:#fca5a5;margin-bottom:14px">⚠ Le chef n\'existe plus dans le recensement.</div>';
-    var fmt = (typeof fmtDate==='function') ? fmtDate : function(d){return new Date(d).toLocaleDateString('fr-FR');};
     bodyEl.innerHTML =
-      '<div style="font-size:10px;color:var(--gold2);font-family:\'Share Tech Mono\',monospace;letter-spacing:1.5px;margin-bottom:8px">'+fileNum+'</div>'
-      + (eq.desc ? '<div style="padding:10px 12px;background:rgba(255,255,255,0.04);border-left:3px solid rgba(212,180,74,0.45);border-radius:4px;font-size:13px;color:rgba(232,208,140,0.85);font-style:italic;margin-bottom:14px">'+eqEsc(eq.desc)+'</div>' : '')
-      + chefBlock
-      + '<div style="font-size:11px;color:var(--gold2);font-family:\'Share Tech Mono\',monospace;letter-spacing:1.5px;margin-bottom:8px;text-transform:uppercase">Membres ('+(eq.membres||[]).length+')</div>'
-      + '<div class="eq-card-members-list" style="margin-bottom:14px">'+membersHtml+'</div>'
-      + '<div style="font-size:10px;color:var(--muted);font-family:\'Share Tech Mono\',monospace;letter-spacing:1px">'
-      +   'Créée le '+fmt(eq.created)+(eq.createdBy?' par '+eqEsc(eq.createdBy):'')
-      +   (eq.modified?'<br>Modifiée le '+fmt(eq.modified)+(eq.modifiedBy?' par '+eqEsc(eq.modifiedBy):''):'')
-      + '</div>';
+      '<div class="evm-header">'
+      +   '<div class="evm-emblem">'+eqEsc(eq.emblem||'🛡️')+'</div>'
+      +   '<div style="flex:1;min-width:0">'
+      +     '<div class="evm-name">'+eqEsc(eq.nom)+'</div>'
+      +     '<div class="evm-id">'+fileNum+'</div>'
+      +   '</div>'
+      + '</div>'
+      + (eq.desc ? '<div class="evm-desc">'+eqEsc(eq.desc)+'</div>' : '')
+      + chefHtml
+      + '<div class="evm-section-title">👥 Membres <span class="count">'+nbMembres+'</span></div>'
+      + '<div class="evm-members">'+membersHtml+'</div>'
+      + '<div class="evm-foot">'+footInfo+'</div>';
   }
+
+  // ── Footer modal : actions ──
   var footerEl = document.getElementById('eq-view-footer');
   if(footerEl){
     var actions = '<button class="btn btn-outline" onclick="closeModal(\'modal-equipe-view\')">Fermer</button>';
