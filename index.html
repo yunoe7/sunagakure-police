@@ -32812,6 +32812,18 @@ function eqOpenForm(editId){
     return;
   }
   eqInitDB();
+  // Helpers défensifs : si un élément manque (HTML pas encore chargé, modale
+  // déplacée, etc.), on log un warn mais on ne crash pas.
+  var _setText = function(id, txt){
+    var e = document.getElementById(id);
+    if(e) e.textContent = txt;
+    else if(typeof console !== 'undefined') console.warn('[eqOpenForm] #'+id+' introuvable');
+  };
+  var _setVal = function(id, val){
+    var e = document.getElementById(id);
+    if(e) e.value = val;
+    else if(typeof console !== 'undefined') console.warn('[eqOpenForm] #'+id+' introuvable');
+  };
   var alertEl = document.getElementById('eq-form-alert');
   if(alertEl){ alertEl.style.display='none'; alertEl.textContent=''; }
   _eqRecensesFilter = '';
@@ -32820,19 +32832,19 @@ function eqOpenForm(editId){
   if(editId){
     var eq = (DB.equipes||[]).find(function(e){ return e.id===editId; });
     if(!eq){ if(typeof showToast==='function') showToast('Équipe introuvable.', 'error'); return; }
-    document.getElementById('eq-form-title').textContent = '✏️ Modifier l\'équipe';
-    document.getElementById('eq-form-id').value = eq.id;
-    document.getElementById('eq-form-nom').value = eq.nom || '';
-    document.getElementById('eq-form-emblem').value = eq.emblem || '🛡️';
-    document.getElementById('eq-form-desc').value = eq.desc || '';
+    _setText('eq-form-title', '✏️ Modifier l\'équipe');
+    _setVal('eq-form-id', eq.id);
+    _setVal('eq-form-nom', eq.nom || '');
+    _setVal('eq-form-emblem', eq.emblem || '🛡️');
+    _setVal('eq-form-desc', eq.desc || '');
     _eqMembersSelected = (eq.membres||[]).slice();
     eqRenderChefSelect(eq.chefId);
   } else {
-    document.getElementById('eq-form-title').textContent = '🛡️ Nouvelle équipe';
-    document.getElementById('eq-form-id').value = '';
-    document.getElementById('eq-form-nom').value = '';
-    document.getElementById('eq-form-emblem').value = '🛡️';
-    document.getElementById('eq-form-desc').value = '';
+    _setText('eq-form-title', '🛡️ Nouvelle équipe');
+    _setVal('eq-form-id', '');
+    _setVal('eq-form-nom', '');
+    _setVal('eq-form-emblem', '🛡️');
+    _setVal('eq-form-desc', '');
     _eqMembersSelected = [];
     eqRenderChefSelect(null);
   }
