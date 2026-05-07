@@ -7515,6 +7515,7 @@ document.addEventListener('error', function(e){
     <div class="nav-item" role="button" tabindex="0" onclick="showPage('diplo-comptabilite')" data-page="diplo-comptabilite" data-sec="diplomatie"><span class="icon">💰</span> Comptabilité</div>
 
     <div class="nav-section" data-member-only="true" data-sec="all">Administration</div>
+    <div class="nav-item" role="button" tabindex="0" id="nav-casiers" onclick="showPage('casiers')" style="display:none" data-sec="all"><span class="icon">🗃️</span> Tous les casiers</div>
     <div class="nav-item" role="button" tabindex="0" id="nav-admin" onclick="showPage('admin')" style="display:none" data-sec="all"><span class="icon">⚙️</span> Panel Admin</div>
     <div class="nav-item" role="button" tabindex="0" onclick="showPage('profil')" data-page="profil" data-sec="all"><span class="icon">📋</span> Casier personnel</div>
   </nav>
@@ -11606,7 +11607,115 @@ document.addEventListener('error', function(e){
       background:#22c55e;border-color:#22c55e;color:#fff;
     }
     /* ════════════════════════════════════════════════════════════
-       MODALE VUE D'ÉQUIPE — Design fiche officielle
+       RAPPORTS — Cards dans le casier personnel + modales
+       Styles globaux (non scopés) pour fonctionner partout.
+       ════════════════════════════════════════════════════════════ */
+    .rp-card{
+      display:flex;align-items:flex-start;gap:12px;
+      padding:12px 14px;
+      background:rgba(255,255,255,0.03);
+      border:1px solid rgba(180,140,20,0.22);
+      border-radius:9px;
+      cursor:pointer;
+      transition:all 0.18s ease;
+      margin-bottom:8px;
+    }
+    .rp-card:hover{
+      background:rgba(212,180,74,0.08);
+      border-color:rgba(212,180,74,0.45);
+      transform:translateX(2px);
+    }
+    .rp-card-icon{
+      width:38px;height:38px;border-radius:9px;
+      background:rgba(212,180,74,0.12);
+      border:1px solid rgba(212,180,74,0.35);
+      display:flex;align-items:center;justify-content:center;
+      font-size:18px;flex-shrink:0;
+    }
+    .rp-card-icon.t-patrouille{background:rgba(59,130,246,0.12);border-color:rgba(59,130,246,0.40)}
+    .rp-card-icon.t-operation{background:rgba(251,146,60,0.12);border-color:rgba(251,146,60,0.40)}
+    .rp-card-icon.t-enquete{background:rgba(168,85,247,0.12);border-color:rgba(168,85,247,0.40)}
+    .rp-card-icon.t-suivi-equipe{background:rgba(34,197,94,0.12);border-color:rgba(34,197,94,0.40)}
+    .rp-card-icon.t-incident{background:rgba(239,68,68,0.12);border-color:rgba(239,68,68,0.40)}
+    .rp-card-info{flex:1;min-width:0}
+    .rp-card-title{
+      font-family:'Cinzel',serif;font-weight:600;
+      font-size:14px;color:var(--text);
+      line-height:1.3;margin-bottom:3px;
+      overflow:hidden;text-overflow:ellipsis;
+      display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;
+    }
+    .rp-card-meta{
+      font-size:10.5px;color:var(--muted);
+      font-family:'Share Tech Mono',monospace;
+      letter-spacing:0.4px;display:flex;gap:8px;flex-wrap:wrap;
+    }
+    .rp-card-meta .sep{color:rgba(180,140,20,0.35)}
+    .rp-card-preview{
+      font-size:11.5px;color:rgba(232,208,140,0.55);
+      margin-top:5px;line-height:1.45;
+      overflow:hidden;text-overflow:ellipsis;
+      display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;
+    }
+    .rp-card-arrow{
+      color:rgba(212,180,74,0.5);font-size:16px;
+      flex-shrink:0;align-self:center;
+    }
+    /* Modale vue rapport */
+    .rpv-header{
+      display:flex;align-items:center;gap:14px;
+      padding:14px 16px;
+      background:linear-gradient(135deg, rgba(212,180,74,0.18), rgba(180,140,20,0.06));
+      border:1px solid rgba(212,180,74,0.40);
+      border-radius:10px;
+      margin-bottom:14px;
+    }
+    .rpv-icon{
+      width:54px;height:54px;border-radius:11px;
+      background:linear-gradient(135deg, rgba(212,180,74,0.30), rgba(180,140,20,0.15));
+      border:2px solid rgba(212,180,74,0.55);
+      display:flex;align-items:center;justify-content:center;
+      font-size:24px;flex-shrink:0;
+    }
+    .rpv-title{
+      font-family:'Cinzel',serif;font-size:18px;font-weight:700;
+      color:#f0e8d0;letter-spacing:0.3px;line-height:1.3;
+      margin-bottom:4px;
+    }
+    .rpv-meta{
+      display:flex;gap:10px;flex-wrap:wrap;
+      font-size:10.5px;color:rgba(232,208,140,0.65);
+      font-family:'Share Tech Mono',monospace;letter-spacing:0.4px;
+    }
+    .rpv-meta .pill{
+      padding:2px 8px;border-radius:10px;
+      background:rgba(212,180,74,0.10);
+      border:1px solid rgba(212,180,74,0.30);
+      color:#fbbf24;
+    }
+    .rpv-section-title{
+      font-size:10.5px;color:rgba(212,180,74,0.85);
+      font-family:'Share Tech Mono',monospace;
+      letter-spacing:1.8px;text-transform:uppercase;
+      font-weight:700;
+      padding-bottom:6px;margin-bottom:10px;
+      border-bottom:1px solid rgba(180,140,20,0.20);
+    }
+    .rpv-content{
+      padding:12px 14px;
+      background:rgba(255,255,255,0.03);
+      border-left:3px solid rgba(212,180,74,0.45);
+      border-radius:0 6px 6px 0;
+      font-size:13px;line-height:1.65;color:rgba(232,208,140,0.92);
+      white-space:pre-wrap;word-wrap:break-word;
+      margin-bottom:14px;
+    }
+    .rpv-foot{
+      font-size:10px;color:rgba(232,208,140,0.55);
+      font-family:'Share Tech Mono',monospace;
+      letter-spacing:0.6px;line-height:1.6;
+      padding-top:10px;border-top:1px solid rgba(180,140,20,0.18);
+    }
        Le CSS de page-equipes ne s'applique pas dans la modale
        (puisque la modale est hors de #page-equipes), donc on a
        besoin de styles dédiés .evm-* (Equipe View Modal).
@@ -11845,6 +11954,298 @@ document.addEventListener('error', function(e){
       <div class="modal-body" id="eq-view-body"></div>
       <div class="modal-footer" id="eq-view-footer">
         <button class="btn btn-outline" onclick="closeModal('modal-equipe-view')">Fermer</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal création/édition rapport personnel -->
+  <div class="modal-overlay" role="dialog" aria-modal="true" id="modal-rapport-form">
+    <div class="modal" style="max-width:680px">
+      <div class="modal-header">
+        <h3 id="rp-form-title">📝 Nouveau rapport</h3>
+        <span class="modal-close" aria-label="Fermer" onclick="closeModal('modal-rapport-form')">✕</span>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="rp-form-id">
+        <div class="form-group">
+          <label class="form-label">Titre du rapport *</label>
+          <input type="text" id="rp-form-titre" class="form-control" placeholder="Ex: Rapport de patrouille du 12 mai, Bilan d'opération..." maxlength="160">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Type</label>
+          <select id="rp-form-type" class="form-control">
+            <option value="patrouille">🚓 Patrouille</option>
+            <option value="operation">🎯 Opération</option>
+            <option value="enquete">🔍 Enquête</option>
+            <option value="suivi-equipe">🛡️ Suivi d'équipe</option>
+            <option value="incident">⚠️ Incident</option>
+            <option value="rapport">📋 Rapport général</option>
+            <option value="autre">📌 Autre</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Équipe concernée (optionnel)</label>
+          <select id="rp-form-equipe" class="form-control">
+            <option value="">— Aucune équipe spécifique —</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Date des faits *</label>
+          <input type="date" id="rp-form-date" class="form-control">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Contenu du rapport *</label>
+          <textarea id="rp-form-contenu" class="form-control" rows="8" placeholder="Décrivez en détail les événements, observations, conclusions..."></textarea>
+        </div>
+        <div id="rp-form-alert" class="alert alert-error" style="display:none"></div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline" onclick="closeModal('modal-rapport-form')">Annuler</button>
+        <button class="btn btn-primary" onclick="rpSaveForm()">💾 Enregistrer</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal vue détaillée d'un rapport -->
+  <div class="modal-overlay" role="dialog" aria-modal="true" id="modal-rapport-view">
+    <div class="modal" style="max-width:720px">
+      <div class="modal-header">
+        <h3 id="rp-view-title">📝 Rapport</h3>
+        <span class="modal-close" aria-label="Fermer" onclick="closeModal('modal-rapport-view')">✕</span>
+      </div>
+      <div class="modal-body" id="rp-view-body"></div>
+      <div class="modal-footer" id="rp-view-footer">
+        <button class="btn btn-outline" onclick="closeModal('modal-rapport-view')">Fermer</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════════════════════════
+       PAGE TOUS LES CASIERS — Vue Haut Commandement / Admin
+       ════════════════════════════════════════════════════════════ -->
+  <div class="page-content" id="page-casiers">
+    <style>
+    /* Hero */
+    #page-casiers .hc-hero{
+      background:linear-gradient(135deg, #15110b 0%, #1f1610 100%);
+      border:1px solid rgba(180,140,20,0.30);
+      border-radius:14px;
+      padding:28px 32px 24px;
+      margin-bottom:18px;
+      position:relative;overflow:hidden;
+      box-shadow:0 6px 28px rgba(0,0,0,0.45);
+    }
+    #page-casiers .hc-hero::before{
+      content:'';position:absolute;top:0;left:8px;right:8px;height:2px;
+      background:linear-gradient(90deg, transparent, rgba(212,180,74,0.6), transparent);
+    }
+    #page-casiers .hc-hero-row{display:flex;align-items:center;gap:22px;flex-wrap:wrap;position:relative;z-index:2}
+    #page-casiers .hc-hero-icon{
+      width:74px;height:74px;border-radius:50%;
+      background:linear-gradient(135deg, rgba(212,180,74,0.22), rgba(180,140,20,0.10));
+      border:2px solid rgba(212,180,74,0.55);
+      display:flex;align-items:center;justify-content:center;
+      font-size:34px;flex-shrink:0;
+      box-shadow:0 0 24px rgba(212,180,74,0.18), inset 0 1px 0 rgba(255,255,255,0.08);
+    }
+    #page-casiers .hc-hero-text{flex:1;min-width:240px}
+    #page-casiers .hc-hero-overline{
+      font-size:9.5px;letter-spacing:2.5px;color:rgba(212,180,74,0.7);
+      font-family:'Share Tech Mono',monospace;text-transform:uppercase;
+      margin-bottom:6px;font-weight:700;
+    }
+    #page-casiers .hc-hero-title{
+      font-family:'Cinzel',serif;font-size:30px;font-weight:700;
+      color:#f0e8d0;letter-spacing:2px;line-height:1.05;margin-bottom:5px;
+    }
+    #page-casiers .hc-hero-title span{
+      background:linear-gradient(135deg,#fbbf24,#c9a227);
+      -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+      background-clip:text;
+    }
+    #page-casiers .hc-hero-sub{
+      font-size:12px;color:rgba(232,208,140,0.65);
+      font-family:'Share Tech Mono',monospace;letter-spacing:0.8px;
+    }
+    #page-casiers .hc-hero-stats{display:flex;gap:14px;flex-wrap:wrap}
+    #page-casiers .hc-hero-stat{
+      background:rgba(20,16,9,0.6);
+      border:1px solid rgba(180,140,20,0.30);
+      border-radius:10px;padding:12px 18px;text-align:center;min-width:90px;
+    }
+    #page-casiers .hc-hero-stat .num{
+      font-family:'Barlow Condensed',sans-serif;font-size:26px;font-weight:700;
+      color:#fbbf24;line-height:1;
+    }
+    #page-casiers .hc-hero-stat .lbl{
+      font-size:9px;color:rgba(232,208,140,0.6);
+      font-family:'Share Tech Mono',monospace;letter-spacing:1.3px;
+      text-transform:uppercase;margin-top:4px;
+    }
+    /* Toolbar */
+    #page-casiers .hc-toolbar{
+      background:rgba(20,16,9,0.95);
+      border:1px solid rgba(180,140,20,0.20);
+      border-radius:10px;
+      padding:12px 14px;
+      margin-bottom:14px;
+      display:flex;flex-wrap:wrap;gap:10px;align-items:center;
+    }
+    #page-casiers .hc-toolbar .filter-pill{
+      padding:6px 12px;border-radius:14px;
+      background:rgba(255,255,255,0.04);
+      border:1px solid rgba(180,140,20,0.22);
+      color:rgba(232,208,140,0.7);
+      font-family:'Share Tech Mono',monospace;font-size:11px;
+      letter-spacing:0.6px;cursor:pointer;
+      transition:all 0.18s;
+    }
+    #page-casiers .hc-toolbar .filter-pill:hover{
+      background:rgba(212,180,74,0.10);border-color:rgba(212,180,74,0.40);color:#f0e8d0;
+    }
+    #page-casiers .hc-toolbar .filter-pill.active{
+      background:rgba(212,180,74,0.20);border-color:rgba(212,180,74,0.55);color:#fbbf24;
+    }
+    /* Grid */
+    #page-casiers .hc-grid{
+      display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));
+      gap:14px;
+    }
+    #page-casiers .hc-card{
+      background:linear-gradient(160deg, rgba(28,22,15,0.96), rgba(18,14,9,0.98));
+      border:1px solid rgba(180,140,20,0.32);
+      border-radius:12px;padding:14px 16px;cursor:pointer;
+      transition:all 0.2s;box-shadow:0 4px 16px rgba(0,0,0,0.35);
+    }
+    #page-casiers .hc-card:hover{
+      border-color:rgba(212,180,74,0.55);
+      transform:translateY(-2px);
+      box-shadow:0 6px 22px rgba(0,0,0,0.45);
+    }
+    #page-casiers .hc-card-head{
+      display:flex;align-items:center;gap:12px;
+      padding-bottom:10px;margin-bottom:10px;
+      border-bottom:1px solid rgba(180,140,20,0.18);
+    }
+    #page-casiers .hc-card-avatar{
+      width:48px;height:48px;border-radius:50%;
+      background:rgba(212,180,74,0.15);
+      border:2px solid rgba(212,180,74,0.40);
+      display:flex;align-items:center;justify-content:center;
+      font-size:18px;font-weight:700;color:#fbbf24;
+      font-family:'Cinzel',serif;
+      flex-shrink:0;overflow:hidden;
+    }
+    #page-casiers .hc-card-avatar img{width:100%;height:100%;object-fit:cover;display:block}
+    #page-casiers .hc-card-name{
+      font-family:'Cinzel',serif;font-size:15px;font-weight:700;
+      color:#f0e8d0;line-height:1.2;
+      overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+    }
+    #page-casiers .hc-card-grade{
+      font-size:10.5px;color:rgba(232,208,140,0.6);
+      font-family:'Share Tech Mono',monospace;letter-spacing:0.5px;
+    }
+    #page-casiers .hc-card-stats{
+      display:grid;grid-template-columns:repeat(3,1fr);gap:6px;
+      margin-bottom:8px;
+    }
+    #page-casiers .hc-stat-mini{
+      background:rgba(255,255,255,0.03);
+      border:1px solid rgba(180,140,20,0.18);
+      border-radius:6px;
+      padding:6px 4px;text-align:center;
+    }
+    #page-casiers .hc-stat-mini .v{
+      font-family:'Barlow Condensed',sans-serif;font-size:18px;
+      font-weight:700;color:#fbbf24;line-height:1;
+    }
+    #page-casiers .hc-stat-mini .l{
+      font-size:8px;color:rgba(232,208,140,0.55);
+      font-family:'Share Tech Mono',monospace;letter-spacing:0.7px;
+      margin-top:2px;text-transform:uppercase;
+    }
+    #page-casiers .hc-card-foot{
+      display:flex;align-items:center;justify-content:space-between;
+      font-size:10px;color:rgba(232,208,140,0.55);
+      font-family:'Share Tech Mono',monospace;letter-spacing:0.6px;
+    }
+    #page-casiers .hc-card-foot .last-rapport{color:rgba(212,180,74,0.7)}
+    #page-casiers .hc-empty{
+      grid-column:1/-1;text-align:center;padding:60px 20px;
+      color:rgba(232,208,140,0.5);
+      font-family:'Share Tech Mono',monospace;
+      background:rgba(20,16,9,0.5);
+      border:1px dashed rgba(180,140,20,0.25);
+      border-radius:12px;
+    }
+    /* Modale détail casier */
+    .hcv-section{margin-bottom:18px}
+    .hcv-section-title{
+      display:flex;align-items:center;gap:8px;
+      font-size:10.5px;color:rgba(212,180,74,0.85);
+      font-family:'Share Tech Mono',monospace;
+      letter-spacing:1.8px;text-transform:uppercase;font-weight:700;
+      padding-bottom:6px;margin-bottom:10px;
+      border-bottom:1px solid rgba(180,140,20,0.20);
+    }
+    .hcv-section-title .count{
+      margin-left:auto;
+      padding:2px 8px;border-radius:10px;
+      background:rgba(212,180,74,0.15);
+      border:1px solid rgba(212,180,74,0.32);
+      font-size:10px;color:#fbbf24;
+    }
+    .hcv-empty-section{
+      font-size:11.5px;font-style:italic;color:rgba(232,208,140,0.5);
+      padding:6px 0;
+    }
+    @media(max-width:768px){
+      #page-casiers .hc-hero{padding:18px 20px 16px}
+      #page-casiers .hc-hero-title{font-size:22px}
+      #page-casiers .hc-grid{grid-template-columns:1fr}
+    }
+    </style>
+    <!-- Hero -->
+    <div class="hc-hero">
+      <div class="hc-hero-row">
+        <div class="hc-hero-icon">🗃️</div>
+        <div class="hc-hero-text">
+          <div class="hc-hero-overline">Vue Haut Commandement</div>
+          <div class="hc-hero-title">Tous les <span>casiers</span></div>
+          <div class="hc-hero-sub">Suivi du travail accompli par chaque membre</div>
+        </div>
+        <div class="hc-hero-stats">
+          <div class="hc-hero-stat"><div class="num" id="hc-stat-users">0</div><div class="lbl">Membres</div></div>
+          <div class="hc-hero-stat"><div class="num" id="hc-stat-rapports">0</div><div class="lbl">Rapports</div></div>
+          <div class="hc-hero-stat"><div class="num" id="hc-stat-actifs">0</div><div class="lbl">Actifs (30j)</div></div>
+        </div>
+      </div>
+    </div>
+    <!-- Toolbar -->
+    <div class="hc-toolbar">
+      <div class="eq-search-wrap" style="flex:1;min-width:240px">
+        <input type="text" id="hc-search" class="eq-search" placeholder="Rechercher un membre, un grade..." oninput="hcRender()">
+      </div>
+      <div class="filter-pill active" data-hc-filter="all" onclick="hcSetFilter('all')">Tous</div>
+      <div class="filter-pill" data-hc-filter="actifs" onclick="hcSetFilter('actifs')">Actifs récents</div>
+      <div class="filter-pill" data-hc-filter="inactifs" onclick="hcSetFilter('inactifs')">Inactifs</div>
+      <div class="filter-pill" data-hc-filter="chefs" onclick="hcSetFilter('chefs')">Chefs d'équipe</div>
+    </div>
+    <!-- Grid -->
+    <div class="hc-grid" id="casiers-grid"></div>
+  </div>
+
+  <!-- Modale détail casier d'un membre -->
+  <div class="modal-overlay" role="dialog" aria-modal="true" id="modal-casier-view">
+    <div class="modal" style="max-width:780px">
+      <div class="modal-header">
+        <h3 id="hcv-title">🗃️ Casier</h3>
+        <span class="modal-close" aria-label="Fermer" onclick="closeModal('modal-casier-view')">✕</span>
+      </div>
+      <div class="modal-body" id="hcv-body"></div>
+      <div class="modal-footer">
+        <button class="btn btn-outline" onclick="closeModal('modal-casier-view')">Fermer</button>
       </div>
     </div>
   </div>
@@ -14670,6 +15071,17 @@ document.addEventListener('error', function(e){
         <span style="margin-left:auto;font-size:9px;color:var(--muted);font-family:'Share Tech Mono',monospace;letter-spacing:1px" id="profil-mes-equipes-count">0</span>
       </div>
       <div class="card-body" id="profil-mes-equipes" style="padding:14px"></div>
+    </div>
+    <!-- Mes rapports -->
+    <div class="card mt-6" id="profil-mes-rapports-card">
+      <div class="card-header">
+        <span>📝</span><h3>Mes rapports</h3>
+        <span style="margin-left:auto;display:flex;align-items:center;gap:8px">
+          <span style="font-size:9px;color:var(--muted);font-family:'Share Tech Mono',monospace;letter-spacing:1px" id="profil-mes-rapports-count">0</span>
+          <button class="btn btn-sm btn-primary" onclick="rpOpenForm()" style="padding:5px 10px;font-size:11px">➕ Nouveau</button>
+        </span>
+      </div>
+      <div class="card-body" id="profil-mes-rapports" style="padding:14px"></div>
     </div>
     <div class="grid grid-2">
       <div class="card">
@@ -19590,7 +20002,7 @@ function initFirebaseSync(){
       if(!wasFirst&&currentUser){
         // Mettre a jour seulement les tableaux avec les nouvelles donnees distantes
         // mais respecter les suppressions locales (ne pas restaurer les elements supprimes)
-        const SYNC_KEYS=['plaintes','dossiers','annonces','candidatures','operations','sanctions','recenses','infractions','timeline','users','laissezPasse','missions','equipes'];
+        const SYNC_KEYS=['plaintes','dossiers','annonces','candidatures','operations','sanctions','recenses','infractions','timeline','users','laissezPasse','missions','equipes','rapports'];
         // bug-fix : tracker quelles collections ont changé pour re-render uniquement
         // les pages concernées (au lieu de re-render aveuglément ou de ne rien faire).
         var _changedKeys = new Set();
@@ -19893,8 +20305,9 @@ function initFirebaseSync(){
               'impots':      { fn: 'renderImpots',      keys: ['impots','users'] },
               'dashboard':   { fn: 'syncDashboard',     keys: ['plaintes','dossiers','annonces','operations','users','recenses','sanctions','missions'] },
               'hierarchie':  { fn: 'renderHierarchie',  keys: ['users'] },
-              'profil':      { fn: 'renderProfil',      keys: ['users','recenses','plaintes','dossiers','operations','sanctions','timeline','equipes'] },
+              'profil':      { fn: 'renderProfil',      keys: ['users','recenses','plaintes','dossiers','operations','sanctions','timeline','equipes','rapports'] },
               'equipes':     { fn: 'eqRender',          keys: ['equipes','recenses','users'] },
+              'casiers':     { fn: 'hcRender',          keys: ['users','rapports','equipes','recenses','plaintes','dossiers','operations','sanctions'] },
               // 'bingobook' retiré du pageRenderers : il ne dépend pas de la collection 'users'
               // (les fiches sont dans la branche Firebase séparée 'sunagakure/bingobook'
               //  qui a son propre listener dédié). Sans ce retrait, la page se re-rendait à
@@ -20257,7 +20670,7 @@ function defaultData(){
     grades:["Gérant","Co-Gérant","Sergent","Officier","Stagiaire"],
     users:[{id:1,login:"admin",pass:"__PENDING_HASH__",nom:"Développeur",grade:"Gérant",role:"admin",statut:"Actif",photo:"",created:now()}],
     annonces:[{id:1,titre:"Bienvenue sur le portail Police de Sunagakure",cat:"Information",contenu:"Ce portail est le centre névralgique des communications internes.\n\nToutes les informations officielles y seront publiées.",auteur:"Administration",pin:true,date:now()}],
-    recenses:[],candidatures:[],plaintes:[],dossiers:[],operations:[],sanctions:[],infractions:[],timeline:[],adminNotes:{},loginHistory:[],missions:[],equipes:[],features:{map_active:false},
+    recenses:[],candidatures:[],plaintes:[],dossiers:[],operations:[],sanctions:[],infractions:[],timeline:[],adminNotes:{},loginHistory:[],missions:[],equipes:[],rapports:[],features:{map_active:false},
     // ═══ HÔPITAL & SCIENTIFIQUE ═══
     // Stockage centralisé : DB.hospital = { patients, consultations, pharmacie, psy, scientifique, morgue, paiements, dons }
     // Chaque tableau contient des entrées { id, ...champs propres à la collection, auteurId, auteurNom, created, modified }
@@ -21924,6 +22337,12 @@ function applyLogin(){
     // Le bouton "Panel Admin" est strictement réservé au rôle admin (pas même au haut commandement)
     if(isAdmin()) el("nav-admin").style.display="flex";
     else el("nav-admin").style.display="none";
+    // Le bouton "Tous les casiers" est accessible aux admins ET au haut commandement
+    var navCasiers = el("nav-casiers");
+    if(navCasiers){
+      var canSeeCasiers = isAdmin() || (currentUser && currentUser.role === 'hautcommandement');
+      navCasiers.style.display = canSeeCasiers ? 'flex' : 'none';
+    }
     const ditAdmin=el("ditem-admin");if(ditAdmin)ditAdmin.style.display=isAdmin()?"flex":"none";
     ["btn-new-annonce","btn-new-dossier","btn-new-operation","btn-new-sanction"].forEach(id=>{const e=el(id);if(e)e.style.display="inline-flex"});
     // Boutons export visibles uniquement pour les admins
@@ -21957,7 +22376,7 @@ function applyLogin(){
         } else if(!isVisiteur()||VISITOR_PAGES.includes(lp)) lastPage=lp;
       } else {
         // Vérifier que la page est accessible depuis la section du user
-        var ALL_OK = ['dashboard','bingobook','codepenal','histoire','profil','admin','equipes'].includes(lp);
+        var ALL_OK = ['dashboard','bingobook','codepenal','histoire','profil','admin','equipes','casiers'].includes(lp);
         var SEC_OK = false;
         var us = (currentUser && currentUser.section) || 'police';
         if(us === 'police'){
@@ -22060,6 +22479,7 @@ function doLogout(){
   // (ça assure que les déverrouillages faits avant le logout sont reflétés visuellement)
   if(typeof window._lgSyncLoginCardsFromLS === 'function') window._lgSyncLoginCardsFromLS();
   el("nav-admin").style.display="none";
+  var _navC = el("nav-casiers"); if(_navC) _navC.style.display="none";
   const _ditAdmin=el("ditem-admin");if(_ditAdmin)_ditAdmin.style.display="none";
   // Masquer explicitement les éléments membres-only (ils restaient visibles après logout)
   document.querySelectorAll('[data-member-only="true"]').forEach(e=>e.style.display='none');
@@ -22108,7 +22528,7 @@ function saveCommNameAdmin(){
 }
 
 // NAV
-const PAGES={dashboard:"Tableau de bord",annonces:"Annonces",recensement:"Recensement",recrutement:"Recrutement",plaintes:"Plaintes",dossiers:"Dossiers criminels",codepenal:"Code Pénal",histoire:"Histoire",equipes:"Équipes",operations:"Opérations",effectifs:"Effectifs",hierarchie:"Hiérarchie",sanctions:"Sanctions & Promotions",impots:"Impôts",admin:"Panel Admin",profil:"Casier personnel",bingobook:"Bingo Book",
+const PAGES={dashboard:"Tableau de bord",annonces:"Annonces",recensement:"Recensement",recrutement:"Recrutement",plaintes:"Plaintes",dossiers:"Dossiers criminels",codepenal:"Code Pénal",histoire:"Histoire",equipes:"Équipes",operations:"Opérations",effectifs:"Effectifs",hierarchie:"Hiérarchie",sanctions:"Sanctions & Promotions",impots:"Impôts",admin:"Panel Admin",casiers:"Tous les casiers",profil:"Casier personnel",bingobook:"Bingo Book",
   // Tribunal (6 pages)
   "juge-audiences":"Audiences","juge-plaintes":"Plaintes reçues","juge-affaires":"Affaires en cours","juge-jugements":"Jugements rendus","juge-procedure":"Code de procédure","juge-archives":"Archives & Jurisprudence",
   // Avocat
@@ -22150,7 +22570,7 @@ function showPage(name){
   // BYPASS ADMIN : les admins ont accès à tout, peu importe leur section
   // BYPASS HAUT COMMANDEMENT : oversight transverse sur toutes les pages, sauf le panel admin (bloqué plus bas)
   var isFullAccess = !!(currentUser && (currentUser.role === 'admin' || currentUser.role === 'hautcommandement'));
-  var ALL_PAGES = ['dashboard','bingobook','codepenal','histoire','profil','admin','diplo-laissezpasse','equipes'];
+  var ALL_PAGES = ['dashboard','bingobook','codepenal','histoire','profil','admin','diplo-laissezpasse','equipes','casiers'];
   var SECTION_PREFIXES = { juge:/^juge-/, avocat:/^avocat-/, mission:/^mission-/, medical:/^(medical|sci|compta)-/, diplomatie:/^diplo-/ };
   var POLICE_PAGES = ['annonces','recensement','recrutement','plaintes','dossiers','operations','effectifs','sanctions','impots','hierarchie'];
   var userSection = (currentUser && currentUser.section) || 'police';
@@ -22177,6 +22597,15 @@ function showPage(name){
   if(MEMBER_ONLY_PAGES.includes(name)&&isVisiteur()){
     showToast("Accès réservé aux membres de la Police.","error");
     return;
+  }
+  // Page "Tous les casiers" : strictement réservée au Haut Commandement et aux admins
+  if(name==="casiers"){
+    var canSeeCasiers = (typeof isAdmin==='function' && isAdmin())
+                     || (currentUser && currentUser.role === 'hautcommandement');
+    if(!canSeeCasiers){
+      if(typeof showToast==='function') showToast("⛔ Accès réservé au Haut Commandement.","error");
+      return;
+    }
   }
   document.querySelectorAll(".page-content").forEach(p=>p.classList.remove("active"));
   document.querySelectorAll(".nav-item").forEach(n=>n.classList.remove("active"));
@@ -22213,6 +22642,7 @@ function renderPage(name){
   if(name==="sanctions")renderSanctions();
   if(name==="impots")renderImpots();
   if(name==="equipes"){if(typeof eqRender==='function') eqRender();}
+  if(name==="casiers"){if(typeof hcRender==='function') hcRender();}
   if(name==="admin"){
     el("admin-comm-input").value=DB.commissaire||"";applyLogo();loadNotifPrefs();refreshNotifCounts();renderNotifHistory();
     var _fmSaved=(DB.features&&typeof DB.features.map_active!=='undefined')?!!DB.features.map_active:false;try{if(!DB.features||typeof DB.features.map_active==='undefined')_fmSaved=localStorage.getItem('feat_map_active')==='1';}catch(e){} _syncFeatureMapUI(_fmSaved);
@@ -22291,6 +22721,9 @@ function renderPage(name){
   }
   if(name==="profil"){renderProfil();}
   if(name==="equipes"){eqRender();}
+  if(name==="casiers"){
+    if(typeof hcRender==='function') hcRender();
+  }
   if(name==="hierarchie")renderHierarchie();
 }
 
@@ -33309,6 +33742,573 @@ function eqRender(){
   }).join('');
 }
 
+/* ─── 3.6 RAPPORTS — Rapports personnels et suivi d'équipe ──────────────
+   Chaque rapport est créé par un utilisateur et lié à lui-même
+   (auteurId = currentUser.id). Optionnellement, un rapport peut être lié
+   à une équipe (equipeId). Visible dans le casier personnel de l'auteur
+   et dans la page HC pour le Haut Commandement. ──────────────────── */
+
+function rpEsc(s){
+  return String(s||'').replace(/[&<>"']/g, function(c){
+    return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];
+  });
+}
+function rpInitDB(){
+  if(typeof DB === 'undefined') return;
+  if(!Array.isArray(DB.rapports)) DB.rapports = [];
+}
+// Mapping type → {icon, label, css class}
+function rpFmtType(t){
+  var map = {
+    'patrouille':   {icon:'🚓', label:'Patrouille',     cls:'t-patrouille'},
+    'operation':    {icon:'🎯', label:'Opération',      cls:'t-operation'},
+    'enquete':      {icon:'🔍', label:'Enquête',        cls:'t-enquete'},
+    'suivi-equipe': {icon:'🛡️', label:"Suivi d'équipe", cls:'t-suivi-equipe'},
+    'incident':     {icon:'⚠️', label:'Incident',       cls:'t-incident'},
+    'rapport':      {icon:'📋', label:'Rapport général',cls:''},
+    'autre':        {icon:'📌', label:'Autre',          cls:''}
+  };
+  return map[t] || map['autre'];
+}
+
+// Helpers null-safe
+function _rpSetText(id, txt){
+  var e = document.getElementById(id);
+  if(e) e.textContent = txt;
+  else if(typeof console !== 'undefined') console.warn('[rapport] #'+id+' introuvable');
+}
+function _rpSetVal(id, val){
+  var e = document.getElementById(id);
+  if(e) e.value = val;
+  else if(typeof console !== 'undefined') console.warn('[rapport] #'+id+' introuvable');
+}
+
+// Filtrer les équipes accessibles à l'utilisateur courant
+// (toutes les équipes où l'utilisateur est membre via sa fiche recensement)
+function _rpGetMyTeams(){
+  if(typeof currentUser === 'undefined' || !currentUser) return [];
+  var myFullName = (currentUser.nom||'').trim().toLowerCase();
+  var myRecense = (DB.recenses||[]).find(function(r){
+    if(!r) return false;
+    var combo1 = ((r.prenom||'')+' '+(r.nom||'')).trim().toLowerCase();
+    var combo2 = ((r.nom||'')+' '+(r.prenom||'')).trim().toLowerCase();
+    return combo1===myFullName || combo2===myFullName;
+  });
+  if(!myRecense) return DB.equipes || []; // pas recensé : on lui montre toutes les équipes
+  return (DB.equipes||[]).filter(function(eq){
+    return (eq.membres||[]).indexOf(myRecense.id) >= 0;
+  });
+}
+
+// Ouvre le formulaire (création ou édition)
+function rpOpenForm(editId){
+  if(typeof currentUser === 'undefined' || !currentUser){
+    if(typeof showToast==='function') showToast('Connectez-vous pour créer un rapport.', 'error');
+    return;
+  }
+  rpInitDB();
+  var alertEl = document.getElementById('rp-form-alert');
+  if(alertEl){ alertEl.style.display='none'; alertEl.textContent=''; }
+  // Peupler le select des équipes
+  var selEq = document.getElementById('rp-form-equipe');
+  if(selEq){
+    var myTeams = _rpGetMyTeams();
+    selEq.innerHTML = '<option value="">— Aucune équipe spécifique —</option>'
+      + myTeams.map(function(eq){
+        return '<option value="'+eq.id+'">'+(rpEsc(eq.emblem||'🛡️'))+' '+rpEsc(eq.nom)+'</option>';
+      }).join('');
+  }
+  // Date par défaut = aujourd'hui (YYYY-MM-DD)
+  var today = (function(){
+    var d = new Date();
+    var y = d.getFullYear();
+    var m = String(d.getMonth()+1).padStart(2,'0');
+    var dd = String(d.getDate()).padStart(2,'0');
+    return y+'-'+m+'-'+dd;
+  })();
+  if(editId){
+    var rp = (DB.rapports||[]).find(function(r){ return r.id===editId; });
+    if(!rp){ if(typeof showToast==='function') showToast('Rapport introuvable.', 'error'); return; }
+    // Vérifier que l'utilisateur peut modifier (auteur OU admin/HC)
+    var canEdit = (rp.auteurId === currentUser.id)
+                || currentUser.role === 'admin'
+                || currentUser.role === 'hautcommandement';
+    if(!canEdit){
+      if(typeof showToast==='function') showToast('⛔ Seul l\'auteur peut modifier ce rapport.', 'error');
+      return;
+    }
+    _rpSetText('rp-form-title', '✏️ Modifier le rapport');
+    _rpSetVal('rp-form-id', rp.id);
+    _rpSetVal('rp-form-titre', rp.titre || '');
+    _rpSetVal('rp-form-type', rp.type || 'rapport');
+    _rpSetVal('rp-form-equipe', rp.equipeId || '');
+    _rpSetVal('rp-form-date', rp.date || today);
+    _rpSetVal('rp-form-contenu', rp.contenu || '');
+  } else {
+    _rpSetText('rp-form-title', '📝 Nouveau rapport');
+    _rpSetVal('rp-form-id', '');
+    _rpSetVal('rp-form-titre', '');
+    _rpSetVal('rp-form-type', 'rapport');
+    _rpSetVal('rp-form-equipe', '');
+    _rpSetVal('rp-form-date', today);
+    _rpSetVal('rp-form-contenu', '');
+  }
+  openModal('modal-rapport-form');
+}
+
+function rpSaveForm(){
+  if(typeof currentUser === 'undefined' || !currentUser){
+    if(typeof showToast==='function') showToast('Connectez-vous pour créer un rapport.', 'error');
+    return;
+  }
+  rpInitDB();
+  var alertEl = document.getElementById('rp-form-alert');
+  function showErr(msg){
+    if(alertEl){ alertEl.textContent = msg; alertEl.style.display='block'; }
+    else if(typeof showToast==='function') showToast(msg, 'error');
+  }
+  var titre = (document.getElementById('rp-form-titre').value||'').trim();
+  var type = document.getElementById('rp-form-type').value || 'rapport';
+  var equipeIdRaw = document.getElementById('rp-form-equipe').value;
+  var equipeId = equipeIdRaw ? parseInt(equipeIdRaw, 10) : null;
+  var date = document.getElementById('rp-form-date').value;
+  var contenu = (document.getElementById('rp-form-contenu').value||'').trim();
+  var idRaw = document.getElementById('rp-form-id').value;
+  var editId = idRaw ? parseInt(idRaw, 10) : null;
+
+  if(!titre){ showErr('Le titre du rapport est obligatoire.'); return; }
+  if(!date){ showErr('La date des faits est obligatoire.'); return; }
+  if(!contenu){ showErr('Le contenu du rapport ne peut pas être vide.'); return; }
+  if(contenu.length < 10){ showErr('Le contenu est trop court (10 caractères minimum).'); return; }
+
+  if(editId){
+    var rp = (DB.rapports||[]).find(function(r){ return r.id===editId; });
+    if(!rp){ showErr('Rapport introuvable.'); return; }
+    var canEdit = (rp.auteurId === currentUser.id)
+                || currentUser.role === 'admin'
+                || currentUser.role === 'hautcommandement';
+    if(!canEdit){ showErr("Vous n'avez pas le droit de modifier ce rapport."); return; }
+    rp.titre = titre;
+    rp.type = type;
+    rp.equipeId = equipeId;
+    rp.date = date;
+    rp.contenu = contenu;
+    rp.modified = (typeof now==='function') ? now() : Date.now();
+    if(typeof addTimeline==='function') addTimeline('Rapport modifié : '+titre+' (auteur : '+(currentUser.nom||'?')+')');
+  } else {
+    var newRp = {
+      id: Date.now(),
+      titre: titre,
+      type: type,
+      equipeId: equipeId,
+      date: date,
+      contenu: contenu,
+      auteurId: currentUser.id,
+      auteurNom: currentUser.nom || '?',
+      created: (typeof now==='function') ? now() : Date.now()
+    };
+    DB.rapports.push(newRp);
+    if(typeof addTimeline==='function') addTimeline('Rapport créé : '+titre+' par '+(currentUser.nom||'?'));
+  }
+  if(typeof saveData==='function') saveData(['rapports','timeline']);
+  closeModal('modal-rapport-form');
+  if(typeof showToast==='function') showToast(editId ? '✓ Rapport mis à jour.' : '✓ Rapport enregistré.', 'success');
+  // Rafraîchir le rendu
+  if(typeof rpRenderForProfile==='function') rpRenderForProfile();
+  if(typeof renderProfil==='function') renderProfil();
+  if(typeof hcRender==='function') hcRender();
+}
+
+function rpDelete(id){
+  var rp = (DB.rapports||[]).find(function(r){ return r.id===id; });
+  if(!rp) return;
+  var canDel = (rp.auteurId === currentUser.id)
+            || currentUser.role === 'admin'
+            || currentUser.role === 'hautcommandement';
+  if(!canDel){
+    if(typeof showToast==='function') showToast("⛔ Seul l'auteur peut supprimer ce rapport.", 'error');
+    return;
+  }
+  var msg = 'Supprimer définitivement le rapport "'+rp.titre+'" ? Cette action est irréversible.';
+  function doDel(){
+    DB.rapports = (DB.rapports||[]).filter(function(r){ return r.id!==id; });
+    if(typeof addTimeline==='function') addTimeline('Rapport supprimé : '+rp.titre);
+    if(typeof saveData==='function') saveData(['rapports','timeline']);
+    closeModal('modal-rapport-view');
+    if(typeof showToast==='function') showToast('🗑 Rapport supprimé.', 'success');
+    if(typeof rpRenderForProfile==='function') rpRenderForProfile();
+    if(typeof renderProfil==='function') renderProfil();
+    if(typeof hcRender==='function') hcRender();
+  }
+  if(typeof askDelete==='function') askDelete(msg, doDel, '🗑 Supprimer');
+  else if(confirm(msg)) doDel();
+}
+
+function rpView(id){
+  var rp = (DB.rapports||[]).find(function(r){ return r.id===id; });
+  if(!rp){ if(typeof showToast==='function') showToast('Rapport introuvable.', 'error'); return; }
+  var meta = rpFmtType(rp.type);
+  var fmt = (typeof fmtDate==='function') ? fmtDate : function(d){return new Date(d).toLocaleDateString('fr-FR');};
+  var fmtSimpleDate = function(s){
+    if(!s) return '—';
+    try{ var d = new Date(s); return d.toLocaleDateString('fr-FR'); } catch(e){ return s; }
+  };
+  // Trouver l'équipe liée
+  var eq = null;
+  if(rp.equipeId) eq = (DB.equipes||[]).find(function(e){ return e.id===rp.equipeId; });
+
+  var titleEl = document.getElementById('rp-view-title');
+  if(titleEl) titleEl.textContent = meta.icon + ' ' + (rp.titre || 'Rapport');
+
+  var bodyEl = document.getElementById('rp-view-body');
+  if(bodyEl){
+    var pills = '<span class="pill">' + meta.icon + ' ' + meta.label + '</span>'
+              + '<span class="pill">📅 ' + fmtSimpleDate(rp.date) + '</span>'
+              + (eq ? '<span class="pill">🛡️ ' + rpEsc(eq.nom) + '</span>' : '');
+    var footInfo = 'Rédigé par ' + rpEsc(rp.auteurNom||'?') + ' · ' + fmt(rp.created);
+    if(rp.modified) footInfo += '<br>Modifié le ' + fmt(rp.modified);
+
+    bodyEl.innerHTML =
+      '<div class="rpv-header">'
+      +   '<div class="rpv-icon">' + meta.icon + '</div>'
+      +   '<div style="flex:1;min-width:0">'
+      +     '<div class="rpv-title">' + rpEsc(rp.titre||'—') + '</div>'
+      +     '<div class="rpv-meta">' + pills + '</div>'
+      +   '</div>'
+      + '</div>'
+      + '<div class="rpv-section-title">📄 Contenu du rapport</div>'
+      + '<div class="rpv-content">' + rpEsc(rp.contenu||'') + '</div>'
+      + '<div class="rpv-foot">' + footInfo + '</div>';
+  }
+
+  // Footer avec actions selon permissions
+  var footerEl = document.getElementById('rp-view-footer');
+  if(footerEl){
+    var actions = '<button class="btn btn-outline" onclick="closeModal(\'modal-rapport-view\')">Fermer</button>';
+    var isAuthor = currentUser && (rp.auteurId === currentUser.id);
+    var isAdmin = currentUser && (currentUser.role === 'admin' || currentUser.role === 'hautcommandement');
+    if(isAuthor || isAdmin){
+      actions += '<button class="btn btn-primary" onclick="closeModal(\'modal-rapport-view\');rpOpenForm('+rp.id+')">✏️ Modifier</button>';
+      actions += '<button class="btn" style="background:rgba(239,68,68,0.15);border:1px solid rgba(239,68,68,0.40);color:#fca5a5" onclick="rpDelete('+rp.id+')">🗑 Supprimer</button>';
+    }
+    footerEl.innerHTML = actions;
+  }
+  openModal('modal-rapport-view');
+}
+
+// Render dans le casier personnel : liste de mes rapports
+function rpRenderForProfile(){
+  rpInitDB();
+  var box = document.getElementById('profil-mes-rapports');
+  var cnt = document.getElementById('profil-mes-rapports-count');
+  if(!box) return;
+  if(typeof currentUser === 'undefined' || !currentUser){
+    box.innerHTML = '';
+    if(cnt) cnt.textContent = '0';
+    return;
+  }
+  var mes = (DB.rapports||[]).filter(function(r){ return r.auteurId === currentUser.id; });
+  // Trier par date desc (plus récent en premier)
+  mes.sort(function(a,b){
+    var da = new Date(a.date||a.created||0).getTime();
+    var db = new Date(b.date||b.created||0).getTime();
+    return db - da;
+  });
+  if(cnt) cnt.textContent = mes.length + ' RAPPORT' + (mes.length>1?'S':'');
+  if(!mes.length){
+    box.innerHTML = '<p class="text-muted" style="margin:0;text-align:center;padding:18px 0;font-style:italic">Aucun rapport pour le moment. Cliquez sur ➕ Nouveau pour en créer un.</p>';
+    return;
+  }
+  var fmtSimpleDate = function(s){
+    if(!s) return '—';
+    try{ var d = new Date(s); return d.toLocaleDateString('fr-FR'); } catch(e){ return s; }
+  };
+  box.innerHTML = mes.map(function(rp){
+    var meta = rpFmtType(rp.type);
+    var eq = rp.equipeId ? (DB.equipes||[]).find(function(e){ return e.id===rp.equipeId; }) : null;
+    var preview = (rp.contenu||'').slice(0, 180);
+    if((rp.contenu||'').length > 180) preview += '…';
+    return '<div class="rp-card" onclick="rpView('+rp.id+')">'
+      + '<div class="rp-card-icon ' + meta.cls + '">' + meta.icon + '</div>'
+      + '<div class="rp-card-info">'
+      +   '<div class="rp-card-title">' + rpEsc(rp.titre||'(sans titre)') + '</div>'
+      +   '<div class="rp-card-meta">'
+      +     '<span>' + meta.label + '</span>'
+      +     '<span class="sep">·</span>'
+      +     '<span>📅 ' + fmtSimpleDate(rp.date) + '</span>'
+      +     (eq ? '<span class="sep">·</span><span>🛡️ ' + rpEsc(eq.nom) + '</span>' : '')
+      +   '</div>'
+      +   (preview ? '<div class="rp-card-preview">' + rpEsc(preview) + '</div>' : '')
+      + '</div>'
+      + '<div class="rp-card-arrow">→</div>'
+      + '</div>';
+  }).join('');
+}
+
+/* ─── 3.7 PAGE HC — Tous les casiers (Haut Commandement / Admin) ────
+   Liste de tous les utilisateurs (membres) avec leurs stats et rapports.
+   Permet au Haut Commandement de voir le travail accompli. Accessible
+   uniquement aux rôles 'admin' et 'hautcommandement'. ─────────────── */
+
+var _hcFilter = 'all';
+function hcCanView(){
+  if(typeof currentUser === 'undefined' || !currentUser) return false;
+  return currentUser.role === 'admin' || currentUser.role === 'hautcommandement';
+}
+function hcSetFilter(f){
+  _hcFilter = f;
+  // Mettre à jour l'UI des pills
+  document.querySelectorAll('#page-casiers .filter-pill').forEach(function(p){
+    if(p.getAttribute('data-hc-filter') === f) p.classList.add('active');
+    else p.classList.remove('active');
+  });
+  hcRender();
+}
+
+// Calculer le bilan d'activité d'un user
+function _hcUserStats(u){
+  var nm = u.nom || '';
+  var rapports = (DB.rapports||[]).filter(function(r){ return r.auteurId === u.id; });
+  var recenses = (DB.recenses||[]).filter(function(r){ return r.auteur === nm; });
+  var plaintes = (DB.plaintes||[]).filter(function(p){ return p.agent === nm || p.plaignant === nm; });
+  var dossiers = (DB.dossiers||[]).filter(function(d){ return d.auteur === nm || d.agent === nm; });
+  var ops      = (DB.operations||[]).filter(function(o){ return o.resp === nm || (o.membres||[]).indexOf(nm) >= 0; });
+  var sancs    = (DB.sanctions||[]).filter(function(s){ return s.cible === nm; });
+
+  // Trouver fiche recensement de l'user (par nom)
+  var fullName = nm.trim().toLowerCase();
+  var myRecense = (DB.recenses||[]).find(function(r){
+    if(!r) return false;
+    var c1 = ((r.prenom||'')+' '+(r.nom||'')).trim().toLowerCase();
+    var c2 = ((r.nom||'')+' '+(r.prenom||'')).trim().toLowerCase();
+    return c1===fullName || c2===fullName;
+  });
+  var equipes = [];
+  var isChef = false;
+  if(myRecense){
+    equipes = (DB.equipes||[]).filter(function(eq){
+      var inMembers = (eq.membres||[]).indexOf(myRecense.id) >= 0;
+      if(eq.chefId === myRecense.id) isChef = true;
+      return inMembers;
+    });
+  }
+
+  // Dernière activité (rapport le plus récent)
+  var lastRapportTs = 0;
+  rapports.forEach(function(r){
+    var t = new Date(r.date||r.created||0).getTime();
+    if(t > lastRapportTs) lastRapportTs = t;
+  });
+
+  // Actif récent ?
+  var thirtyDaysAgo = Date.now() - 30*24*3600*1000;
+  var actif = lastRapportTs >= thirtyDaysAgo;
+
+  return {
+    rapports: rapports,
+    recenses: recenses,
+    plaintes: plaintes,
+    dossiers: dossiers,
+    ops: ops,
+    sancs: sancs,
+    equipes: equipes,
+    isChef: isChef,
+    lastRapportTs: lastRapportTs,
+    actif: actif,
+    myRecense: myRecense
+  };
+}
+
+function hcRender(){
+  if(!hcCanView()){
+    var grid = document.getElementById('casiers-grid');
+    if(grid) grid.innerHTML = '<div class="hc-empty"><div style="font-size:42px;margin-bottom:10px;opacity:0.55">⛔</div><div>Accès réservé au Haut Commandement.</div></div>';
+    return;
+  }
+  rpInitDB();
+  var grid = document.getElementById('casiers-grid');
+  if(!grid) return;
+
+  var inp = document.getElementById('hc-search');
+  var q = inp ? (inp.value||'').toLowerCase().trim() : '';
+
+  // Lister tous les users (sauf visiteurs et stagiaires inactifs)
+  var users = (DB.users||[]).filter(function(u){
+    if(!u || !u.nom) return false;
+    if(u.role === 'visiteur') return false;
+    return true;
+  });
+
+  // Calculer stats pour chaque user
+  var withStats = users.map(function(u){
+    return { user: u, stats: _hcUserStats(u) };
+  });
+
+  // Stats globales du hero
+  var totalRapports = (DB.rapports||[]).length;
+  var actifsCount = withStats.filter(function(x){ return x.stats.actif; }).length;
+  var setVal = function(id,v){ var e=document.getElementById(id); if(e) e.textContent=v; };
+  setVal('hc-stat-users', users.length);
+  setVal('hc-stat-rapports', totalRapports);
+  setVal('hc-stat-actifs', actifsCount);
+
+  // Filtre
+  var filtered = withStats;
+  if(_hcFilter === 'actifs') filtered = filtered.filter(function(x){ return x.stats.actif; });
+  else if(_hcFilter === 'inactifs') filtered = filtered.filter(function(x){ return !x.stats.actif; });
+  else if(_hcFilter === 'chefs') filtered = filtered.filter(function(x){ return x.stats.isChef; });
+
+  if(q){
+    filtered = filtered.filter(function(x){
+      var blob = ((x.user.nom||'')+' '+(x.user.grade||'')+' '+(x.user.role||'')).toLowerCase();
+      return blob.indexOf(q) >= 0;
+    });
+  }
+
+  // Trier : plus actifs en premier (par dernier rapport, puis par nb de rapports)
+  filtered.sort(function(a,b){
+    if(b.stats.lastRapportTs !== a.stats.lastRapportTs) return b.stats.lastRapportTs - a.stats.lastRapportTs;
+    return b.stats.rapports.length - a.stats.rapports.length;
+  });
+
+  if(!filtered.length){
+    grid.innerHTML = '<div class="hc-empty"><div style="font-size:42px;margin-bottom:10px;opacity:0.55">🗃️</div><div>Aucun membre trouvé pour ce filtre.</div></div>';
+    return;
+  }
+
+  var fmt = (typeof fmtDate==='function') ? fmtDate : function(d){return new Date(d).toLocaleDateString('fr-FR');};
+  grid.innerHTML = filtered.map(function(x){
+    var u = x.user; var s = x.stats;
+    var avatar = (u.photo && typeof safeImgSrc==='function' && safeImgSrc(u.photo))
+      ? '<img src="'+safeImgSrc(u.photo)+'" alt="">'
+      : rpEsc((u.nom||'?').charAt(0)).toUpperCase();
+    var lastTxt = s.lastRapportTs ? 'Dernier rapport : '+fmt(s.lastRapportTs) : 'Aucun rapport';
+    var roleBadge = u.role === 'admin' ? ' <span style="font-size:9px;color:#fca5a5;font-weight:700">[ADMIN]</span>'
+                  : u.role === 'hautcommandement' ? ' <span style="font-size:9px;color:#a78bfa;font-weight:700">[HC]</span>'
+                  : '';
+    return '<div class="hc-card" onclick="hcViewCasier('+u.id+')">'
+      + '<div class="hc-card-head">'
+      +   '<div class="hc-card-avatar">'+avatar+'</div>'
+      +   '<div style="flex:1;min-width:0">'
+      +     '<div class="hc-card-name">'+rpEsc(u.nom||'—')+roleBadge+'</div>'
+      +     '<div class="hc-card-grade">'+rpEsc(u.grade||'—')+(s.isChef?' · ⭐ Chef d\'équipe':'')+'</div>'
+      +   '</div>'
+      + '</div>'
+      + '<div class="hc-card-stats">'
+      +   '<div class="hc-stat-mini"><div class="v">'+s.rapports.length+'</div><div class="l">Rapports</div></div>'
+      +   '<div class="hc-stat-mini"><div class="v">'+s.recenses.length+'</div><div class="l">Recensés</div></div>'
+      +   '<div class="hc-stat-mini"><div class="v">'+s.equipes.length+'</div><div class="l">Équipes</div></div>'
+      + '</div>'
+      + '<div class="hc-card-foot">'
+      +   '<span>'+(s.actif?'<span style="color:#22c55e">●</span> Actif':'<span style="color:rgba(232,208,140,0.4)">○</span> Inactif')+'</span>'
+      +   '<span class="last-rapport">'+lastTxt+'</span>'
+      + '</div>'
+      + '</div>';
+  }).join('');
+}
+
+// Vue détaillée du casier d'un membre
+function hcViewCasier(userId){
+  if(!hcCanView()){ if(typeof showToast==='function') showToast('⛔ Accès réservé au Haut Commandement.', 'error'); return; }
+  var u = (DB.users||[]).find(function(x){ return x.id === userId; });
+  if(!u){ if(typeof showToast==='function') showToast('Membre introuvable.', 'error'); return; }
+  var s = _hcUserStats(u);
+  var fmt = (typeof fmtDate==='function') ? fmtDate : function(d){return new Date(d).toLocaleDateString('fr-FR');};
+  var fmtSimpleDate = function(d){
+    if(!d) return '—';
+    try{ return new Date(d).toLocaleDateString('fr-FR'); } catch(e){ return d; }
+  };
+
+  var titleEl = document.getElementById('hcv-title');
+  if(titleEl) titleEl.textContent = '🗃️ Casier de ' + (u.nom||'—');
+
+  var bodyEl = document.getElementById('hcv-body');
+  if(bodyEl){
+    var avatar = (u.photo && typeof safeImgSrc==='function' && safeImgSrc(u.photo))
+      ? '<img src="'+safeImgSrc(u.photo)+'" alt="" style="width:100%;height:100%;object-fit:cover;display:block">'
+      : rpEsc((u.nom||'?').charAt(0)).toUpperCase();
+
+    // En-tête fiche identité
+    var headHtml =
+      '<div class="evm-header" style="margin-bottom:14px">'
+      + '<div class="evm-emblem" style="border-radius:50%">'+avatar+'</div>'
+      + '<div style="flex:1;min-width:0">'
+      +   '<div class="evm-name">'+rpEsc(u.nom||'—')+'</div>'
+      +   '<div class="evm-id">'+rpEsc(u.grade||'—')+' · '+rpEsc((u.role||'').toUpperCase())+'</div>'
+      + '</div></div>';
+
+    // Stats globales
+    var statsHtml =
+      '<div class="hcv-section">'
+      + '<div class="hcv-section-title">📊 Bilan d\'activité</div>'
+      + '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:8px">'
+      +   '<div class="hc-stat-mini"><div class="v">'+s.rapports.length+'</div><div class="l">Rapports</div></div>'
+      +   '<div class="hc-stat-mini"><div class="v">'+s.recenses.length+'</div><div class="l">Recensés</div></div>'
+      +   '<div class="hc-stat-mini"><div class="v">'+s.plaintes.length+'</div><div class="l">Plaintes</div></div>'
+      +   '<div class="hc-stat-mini"><div class="v">'+s.dossiers.length+'</div><div class="l">Dossiers</div></div>'
+      +   '<div class="hc-stat-mini"><div class="v">'+s.ops.length+'</div><div class="l">Opérations</div></div>'
+      +   '<div class="hc-stat-mini"><div class="v">'+s.equipes.length+'</div><div class="l">Équipes</div></div>'
+      + '</div></div>';
+
+    // Équipes
+    var equipesHtml = '<div class="hcv-section">'
+      + '<div class="hcv-section-title">🛡️ Équipes <span class="count">'+s.equipes.length+'</span></div>';
+    if(s.equipes.length){
+      equipesHtml += s.equipes.map(function(eq){
+        var role = (s.myRecense && eq.chefId === s.myRecense.id) ? '⭐ Chef' : 'Membre';
+        return '<div class="evm-member" style="margin-bottom:6px"><div class="evm-member-avatar">'+rpEsc(eq.emblem||'🛡️')+'</div><div class="evm-member-info"><div class="evm-member-name">'+rpEsc(eq.nom)+'</div><div class="evm-member-rang">'+role+' · '+(eq.membres||[]).length+' membres</div></div></div>';
+      }).join('');
+    } else {
+      equipesHtml += '<div class="hcv-empty-section">N\'appartient à aucune équipe.</div>';
+    }
+    equipesHtml += '</div>';
+
+    // Rapports (les 10 derniers)
+    var rappsHtml = '<div class="hcv-section">'
+      + '<div class="hcv-section-title">📝 Rapports rédigés <span class="count">'+s.rapports.length+'</span></div>';
+    if(s.rapports.length){
+      var sortedRapps = s.rapports.slice().sort(function(a,b){
+        return new Date(b.date||b.created||0).getTime() - new Date(a.date||a.created||0).getTime();
+      }).slice(0,10);
+      rappsHtml += sortedRapps.map(function(r){
+        var meta = rpFmtType(r.type);
+        var preview = (r.contenu||'').slice(0,120);
+        if((r.contenu||'').length > 120) preview += '…';
+        return '<div class="rp-card" onclick="closeModal(\'modal-casier-view\');rpView('+r.id+')" style="margin-bottom:6px">'
+          + '<div class="rp-card-icon ' + meta.cls + '">' + meta.icon + '</div>'
+          + '<div class="rp-card-info">'
+          +   '<div class="rp-card-title">' + rpEsc(r.titre||'(sans titre)') + '</div>'
+          +   '<div class="rp-card-meta"><span>'+meta.label+'</span><span class="sep">·</span><span>'+fmtSimpleDate(r.date)+'</span></div>'
+          +   (preview ? '<div class="rp-card-preview">'+rpEsc(preview)+'</div>' : '')
+          + '</div></div>';
+      }).join('');
+      if(s.rapports.length > 10){
+        rappsHtml += '<div style="text-align:center;font-size:10.5px;color:rgba(232,208,140,0.55);font-family:\'Share Tech Mono\',monospace;margin-top:8px">+ '+(s.rapports.length-10)+' rapports plus anciens</div>';
+      }
+    } else {
+      rappsHtml += '<div class="hcv-empty-section">Aucun rapport rédigé.</div>';
+    }
+    rappsHtml += '</div>';
+
+    // Sanctions
+    var sancsHtml = '<div class="hcv-section">'
+      + '<div class="hcv-section-title">⚖️ Sanctions & Promotions <span class="count">'+s.sancs.length+'</span></div>';
+    if(s.sancs.length){
+      var sortedSancs = s.sancs.slice().sort(function(a,b){ return (b.date||0) - (a.date||0); }).slice(0,5);
+      sancsHtml += sortedSancs.map(function(sa){
+        var icons = {Promotion:'⬆️',Félicitation:'⭐',Avertissement:'⚠️',Exclusion:'🚫'};
+        return '<div class="evm-member" style="margin-bottom:6px"><div class="evm-member-avatar">'+(icons[sa.type]||'⚖️')+'</div><div class="evm-member-info"><div class="evm-member-name">'+rpEsc(sa.type)+'</div><div class="evm-member-rang">'+rpEsc(sa.motif||'—')+' · '+fmt(sa.date)+'</div></div></div>';
+      }).join('');
+    } else {
+      sancsHtml += '<div class="hcv-empty-section">Aucune sanction ou promotion.</div>';
+    }
+    sancsHtml += '</div>';
+
+    bodyEl.innerHTML = headHtml + statsHtml + equipesHtml + rappsHtml + sancsHtml;
+  }
+  openModal('modal-casier-view');
+}
+
 /* ─── 4. CALENDRIER DES OPÉRATIONS ────────────────────────────── */
 var _calYear = new Date().getFullYear();
 var _calMonth = new Date().getMonth();
@@ -33573,6 +34573,8 @@ function renderProfil(){
   // Sanctions
   var sl=document.getElementById('profil-sanctions-list');
   if(sl){sl.innerHTML=mySanctions.slice(-8).reverse().map(function(s){var icons={Promotion:'⬆️',Félicitation:'⭐',Avertissement:'⚠️',Exclusion:'🚫'};return '<div class="plainte-item"><div class="plainte-header"><span style="font-size:14px">'+(icons[s.type]||'⚖️')+'</span><span class="plainte-title">'+esc(s.type)+'</span><span class="badge badge-gray" style="margin-left:auto">'+fmtDate(s.date)+'</span></div><div class="plainte-meta">'+esc(s.motif||'—')+'</div></div>';}).join('')||'<p class="text-muted">Aucune sanction ou promotion.</p>';}
+  // Mes rapports
+  if(typeof rpRenderForProfile==='function') rpRenderForProfile();
 }
 
 /* ─── 6. CHANGEMENT DE MOT DE PASSE (profil) ──────────────────── */
