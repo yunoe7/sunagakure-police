@@ -22521,10 +22521,11 @@ function applyLogin(){
     // Le bouton "Panel Admin" est strictement réservé au rôle admin (pas même au haut commandement)
     if(isAdmin()) el("nav-admin").style.display="flex";
     else el("nav-admin").style.display="none";
-    // Le bouton "Tous les casiers" est accessible aux admins ET au haut commandement
+    // Le bouton "Tous les casiers" est accessible aux admins, HC, Gérants et Co-Gérants
     var navCasiers = el("nav-casiers");
     if(navCasiers){
-      var canSeeCasiers = isAdmin() || (currentUser && currentUser.role === 'hautcommandement');
+      var _r = currentUser ? currentUser.role : '';
+      var canSeeCasiers = isAdmin() || _r === 'hautcommandement' || _r === 'gerant' || _r === 'cogerant';
       navCasiers.style.display = canSeeCasiers ? 'flex' : 'none';
     }
     const ditAdmin=el("ditem-admin");if(ditAdmin)ditAdmin.style.display=isAdmin()?"flex":"none";
@@ -22782,12 +22783,15 @@ function showPage(name){
     showToast("Accès réservé aux membres de la Police.","error");
     return;
   }
-  // Page "Tous les casiers" : strictement réservée au Haut Commandement et aux admins
+  // Page "Tous les casiers" : Admin, Haut Commandement, Gérants et Co-Gérants
   if(name==="casiers"){
+    var _r = currentUser ? currentUser.role : '';
     var canSeeCasiers = (typeof isAdmin==='function' && isAdmin())
-                     || (currentUser && currentUser.role === 'hautcommandement');
+                     || _r === 'hautcommandement'
+                     || _r === 'gerant'
+                     || _r === 'cogerant';
     if(!canSeeCasiers){
-      if(typeof showToast==='function') showToast("⛔ Accès réservé au Haut Commandement.","error");
+      if(typeof showToast==='function') showToast("⛔ Accès réservé aux hauts gradés.","error");
       return;
     }
   }
@@ -34235,7 +34239,20 @@ function rpRenderForProfile(){
    uniquement aux rôles 'admin' et 'hautcommandement'. ─────────────── */
 
 var _hcFilter = 'all';
+// Lecture de la page "Tous les casiers" : Admin + HC + Gérant + Co-Gérant.
+// Les Gérants et Co-Gérants peuvent voir le bilan d'activité de chacun,
+// mais ne peuvent PAS modifier les rapports des autres (cf. hcCanEdit).
 function hcCanView(){
+  if(typeof currentUser === 'undefined' || !currentUser) return false;
+  var role = currentUser.role;
+  return role === 'admin'
+      || role === 'hautcommandement'
+      || role === 'gerant'
+      || role === 'cogerant';
+}
+// Modification des rapports d'autres membres : Admin + HC uniquement.
+// (L'auteur d'un rapport peut toujours modifier son propre rapport.)
+function hcCanEdit(){
   if(typeof currentUser === 'undefined' || !currentUser) return false;
   return currentUser.role === 'admin' || currentUser.role === 'hautcommandement';
 }
@@ -34427,6 +34444,19 @@ function hcViewCasier(userId){
     // Badge chef d'équipe si applicable
     var chefBadge = s.isChef ? '<span class="hcv-pill role-default">⭐ Chef d\'équipe</span>' : '';
 
+    // Bandeau "lecture seule" pour Gérants/CoGérants (admin & HC ont les droits complets)
+    var readOnlyBanner = '';
+    if(!hcCanEdit() && currentUser && u.id !== currentUser.id){
+      readOnlyBanner =
+        '<div style="display:flex;align-items:center;gap:9px;padding:8px 12px;'
+        + 'background:rgba(168,85,247,0.08);border:1px solid rgba(168,85,247,0.30);'
+        + 'border-radius:8px;margin-bottom:14px;font-size:11px;color:rgba(196,181,253,0.85);'
+        + 'font-family:\'Share Tech Mono\',monospace;letter-spacing:0.5px">'
+        + '<span style="font-size:14px">🔒</span>'
+        + '<span>Mode lecture — vous pouvez consulter les rapports mais pas les modifier.</span>'
+        + '</div>';
+    }
+
     // ── HEADER FICHE D'IDENTITÉ ──
     var headHtml =
       '<div class="hcv-id-header">'
@@ -34524,7 +34554,7 @@ function hcViewCasier(userId){
     }
     sancsHtml += '</div>';
 
-    bodyEl.innerHTML = headHtml + statsHtml + equipesHtml + rappsHtml + sancsHtml;
+    bodyEl.innerHTML = headHtml + readOnlyBanner + statsHtml + equipesHtml + rappsHtml + sancsHtml;
   }
   openModal('modal-casier-view');
 }
