@@ -7466,6 +7466,8 @@ document.addEventListener('error', function(e){
     <div class="nav-item" role="button" tabindex="0" onclick="showPage('diplo-laissezpasse')" data-page="diplo-laissezpasse" data-sec="all"><span class="icon">🪪</span> Laissez-passer</div>
     <div class="nav-item" role="button" tabindex="0" onclick="showPage('codepenal')" data-page="codepenal" data-sec="all"><span class="icon">📜</span> Code Pénal</div>
     <div class="nav-item" role="button" tabindex="0" onclick="showPage('histoire')" data-page="histoire" data-sec="all"><span class="icon">📖</span> Histoire</div>
+    <div class="nav-section" data-sec="all">Équipes</div>
+    <div class="nav-item" role="button" tabindex="0" onclick="showPage('equipes')" data-page="equipes" data-sec="all"><span class="icon">🛡️</span> Équipes <span class="nav-badge" id="badge-equipes" style="background:var(--cyan);display:none">0</span></div>
     <div class="nav-section" data-member-only="true" data-sec="police">Opérations</div>
     <div class="nav-item" role="button" tabindex="0" onclick="showPage('operations')" data-page="operations" data-member-only="true" data-sec="police"><span class="icon">🚨</span> Opérations <span class="nav-badge" id="badge-operations" style="background:var(--accent);display:none">0</span></div>
     <div class="nav-item" role="button" tabindex="0" onclick="showPage('effectifs')" data-page="effectifs" data-member-only="true" data-sec="police"><span class="icon">👮</span> Effectifs</div>
@@ -11352,6 +11354,349 @@ document.addEventListener('error', function(e){
 
   </div><!-- /page-histoire -->
 
+  <!-- ÉQUIPES -->
+  <div class="page-content" id="page-equipes">
+    <style>
+    /* ═══════════════════════════════════════════════════════════
+       ÉQUIPES — Style cards parchemin doré, cohérent avec le reste
+       ═══════════════════════════════════════════════════════════ */
+    #page-equipes .eq-hero{
+      background:linear-gradient(135deg, #15110b 0%, #1f1610 100%);
+      border:1px solid rgba(180,140,20,0.30);
+      border-radius:14px;
+      padding:28px 32px 24px;
+      margin-bottom:18px;
+      position:relative;
+      overflow:hidden;
+      box-shadow:0 6px 28px rgba(0,0,0,0.45);
+    }
+    #page-equipes .eq-hero::before{
+      content:'';position:absolute;top:0;left:8px;right:8px;height:2px;
+      background:linear-gradient(90deg, transparent, rgba(212,180,74,0.6), transparent);
+    }
+    #page-equipes .eq-hero-row{display:flex;align-items:center;gap:22px;flex-wrap:wrap;position:relative;z-index:2}
+    #page-equipes .eq-hero-icon{
+      width:74px;height:74px;border-radius:50%;
+      background:linear-gradient(135deg, rgba(212,180,74,0.22), rgba(180,140,20,0.10));
+      border:2px solid rgba(212,180,74,0.55);
+      display:flex;align-items:center;justify-content:center;
+      font-size:34px;flex-shrink:0;
+      box-shadow:0 0 24px rgba(212,180,74,0.18), inset 0 1px 0 rgba(255,255,255,0.08);
+    }
+    #page-equipes .eq-hero-text{flex:1;min-width:240px}
+    #page-equipes .eq-hero-overline{
+      font-size:9.5px;letter-spacing:2.5px;color:rgba(212,180,74,0.7);
+      font-family:'Share Tech Mono',monospace;text-transform:uppercase;
+      margin-bottom:6px;font-weight:700;
+    }
+    #page-equipes .eq-hero-title{
+      font-family:'Cinzel',serif;font-size:30px;font-weight:700;
+      color:#f0e8d0;letter-spacing:2px;line-height:1.05;
+      margin-bottom:5px;
+    }
+    #page-equipes .eq-hero-title span{
+      background:linear-gradient(135deg,#fbbf24,#c9a227);
+      -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+      background-clip:text;
+    }
+    #page-equipes .eq-hero-sub{
+      font-size:12px;color:rgba(232,208,140,0.65);
+      font-family:'Share Tech Mono',monospace;letter-spacing:0.8px;
+    }
+    #page-equipes .eq-hero-stats{display:flex;gap:14px;flex-wrap:wrap}
+    #page-equipes .eq-hero-stat{
+      background:rgba(20,16,9,0.6);
+      border:1px solid rgba(180,140,20,0.30);
+      border-radius:10px;
+      padding:12px 18px;text-align:center;min-width:90px;
+    }
+    #page-equipes .eq-hero-stat .num{
+      font-family:'Barlow Condensed',sans-serif;font-size:26px;font-weight:700;
+      color:#fbbf24;line-height:1;
+    }
+    #page-equipes .eq-hero-stat .lbl{
+      font-size:9px;color:rgba(232,208,140,0.6);
+      font-family:'Share Tech Mono',monospace;letter-spacing:1.3px;
+      text-transform:uppercase;margin-top:4px;
+    }
+    /* Toolbar */
+    #page-equipes .eq-toolbar{
+      background:rgba(20,16,9,0.95);
+      border:1px solid rgba(180,140,20,0.20);
+      border-radius:10px;
+      padding:12px 14px;
+      margin-bottom:14px;
+      display:flex;flex-wrap:wrap;gap:10px;align-items:center;
+    }
+    #page-equipes .eq-search{
+      flex:1;min-width:240px;
+      padding:9px 12px 9px 36px !important;
+      background:rgba(255,255,255,0.05) !important;
+      border:1px solid rgba(180,140,20,0.22) !important;
+      border-radius:8px !important;
+      color:#f0e8d0 !important;
+      font-size:13px !important;
+      font-family:'Share Tech Mono',monospace !important;
+    }
+    #page-equipes .eq-search-wrap{flex:1;min-width:240px;position:relative}
+    #page-equipes .eq-search-wrap::before{
+      content:'🔍';position:absolute;left:11px;top:50%;
+      transform:translateY(-50%);opacity:0.5;font-size:12px;pointer-events:none;
+    }
+    /* Grid des équipes */
+    #page-equipes .eq-grid{
+      display:grid;grid-template-columns:repeat(auto-fill,minmax(360px,1fr));
+      gap:16px;
+    }
+    /* Card équipe */
+    #page-equipes .eq-card{
+      background:linear-gradient(160deg, rgba(28,22,15,0.96), rgba(18,14,9,0.98));
+      border:1px solid rgba(180,140,20,0.32);
+      border-radius:14px;
+      overflow:hidden;
+      transition:all 0.2s ease;
+      box-shadow:0 4px 16px rgba(0,0,0,0.35);
+      position:relative;
+    }
+    #page-equipes .eq-card:hover{
+      border-color:rgba(212,180,74,0.55);
+      transform:translateY(-2px);
+      box-shadow:0 6px 22px rgba(0,0,0,0.45);
+    }
+    #page-equipes .eq-card-header{
+      padding:14px 16px 10px;
+      background:linear-gradient(180deg, rgba(212,180,74,0.10), transparent);
+      border-bottom:1px solid rgba(180,140,20,0.22);
+      display:flex;align-items:center;gap:12px;
+    }
+    #page-equipes .eq-card-emblem{
+      width:46px;height:46px;border-radius:10px;
+      background:linear-gradient(135deg, rgba(212,180,74,0.25), rgba(180,140,20,0.12));
+      border:1.5px solid rgba(212,180,74,0.50);
+      display:flex;align-items:center;justify-content:center;
+      font-size:22px;flex-shrink:0;
+    }
+    #page-equipes .eq-card-name{
+      font-family:'Cinzel',serif;font-size:17px;font-weight:700;
+      color:#f0e8d0;letter-spacing:0.8px;line-height:1.2;
+      margin-bottom:2px;
+    }
+    #page-equipes .eq-card-id{
+      font-size:9.5px;color:rgba(212,180,74,0.65);
+      font-family:'Share Tech Mono',monospace;letter-spacing:1.5px;
+    }
+    #page-equipes .eq-card-body{padding:12px 16px 14px}
+    #page-equipes .eq-card-chef{
+      display:flex;align-items:center;gap:10px;
+      padding:9px 11px;
+      background:rgba(212,180,74,0.08);
+      border:1px solid rgba(212,180,74,0.25);
+      border-radius:8px;
+      margin-bottom:10px;
+    }
+    #page-equipes .eq-chef-photo{
+      width:36px;height:36px;border-radius:50%;
+      background:rgba(212,180,74,0.15);border:1.5px solid rgba(212,180,74,0.40);
+      display:flex;align-items:center;justify-content:center;
+      font-size:14px;font-weight:700;color:#fbbf24;
+      overflow:hidden;flex-shrink:0;
+      font-family:'Cinzel',serif;
+    }
+    #page-equipes .eq-chef-photo img{width:100%;height:100%;object-fit:cover}
+    #page-equipes .eq-chef-info{flex:1;min-width:0}
+    #page-equipes .eq-chef-label{
+      font-size:8.5px;color:rgba(212,180,74,0.7);
+      font-family:'Share Tech Mono',monospace;letter-spacing:1.3px;
+      text-transform:uppercase;font-weight:700;margin-bottom:1px;
+    }
+    #page-equipes .eq-chef-name{
+      font-size:13px;color:#f0e8d0;font-weight:600;
+      overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+    }
+    #page-equipes .eq-chef-rang{
+      font-size:10px;color:rgba(232,208,140,0.6);
+      font-family:'Share Tech Mono',monospace;
+    }
+    #page-equipes .eq-card-members{
+      font-size:11px;color:rgba(232,208,140,0.7);
+      margin-bottom:10px;
+      font-family:'Share Tech Mono',monospace;letter-spacing:0.5px;
+    }
+    #page-equipes .eq-card-members-list{
+      display:flex;flex-wrap:wrap;gap:5px;margin-top:6px;
+    }
+    #page-equipes .eq-member-chip{
+      display:inline-flex;align-items:center;gap:5px;
+      padding:4px 9px;border-radius:14px;
+      background:rgba(255,255,255,0.05);
+      border:1px solid rgba(180,140,20,0.22);
+      font-size:11px;color:rgba(240,232,208,0.85);
+      font-family:'Share Tech Mono',monospace;
+    }
+    #page-equipes .eq-card-desc{
+      font-size:11.5px;color:rgba(232,208,140,0.75);line-height:1.45;
+      padding:8px 0;border-top:1px solid rgba(180,140,20,0.15);
+      margin-top:8px;font-style:italic;
+    }
+    #page-equipes .eq-card-foot{
+      display:flex;align-items:center;justify-content:space-between;
+      padding:10px 16px;
+      background:rgba(0,0,0,0.20);
+      border-top:1px solid rgba(180,140,20,0.18);
+      font-size:9.5px;color:rgba(232,208,140,0.55);
+      font-family:'Share Tech Mono',monospace;letter-spacing:1px;
+    }
+    #page-equipes .eq-card-actions{display:flex;gap:6px}
+    #page-equipes .eq-act-btn{
+      padding:5px 10px;background:rgba(212,180,74,0.10);
+      border:1px solid rgba(212,180,74,0.32);
+      color:#fbbf24;border-radius:6px;cursor:pointer;font-size:11px;
+      font-family:'Share Tech Mono',monospace;letter-spacing:0.5px;
+      transition:all 0.18s;
+    }
+    #page-equipes .eq-act-btn:hover{
+      background:rgba(212,180,74,0.20);
+      border-color:rgba(212,180,74,0.55);
+    }
+    #page-equipes .eq-act-btn.is-delete{color:#fca5a5;border-color:rgba(239,68,68,0.32);background:rgba(239,68,68,0.08)}
+    #page-equipes .eq-act-btn.is-delete:hover{background:rgba(239,68,68,0.18);border-color:rgba(239,68,68,0.55)}
+    /* Empty state */
+    #page-equipes .eq-empty{
+      grid-column:1/-1;
+      text-align:center;padding:60px 20px;
+      color:rgba(232,208,140,0.5);
+      font-family:'Share Tech Mono',monospace;
+      background:rgba(20,16,9,0.5);
+      border:1px dashed rgba(180,140,20,0.25);
+      border-radius:12px;
+    }
+    #page-equipes .eq-empty .icon{font-size:42px;margin-bottom:10px;opacity:0.55}
+    /* Modal liste membres recensés */
+    .eq-recense-picker{
+      max-height:340px;overflow-y:auto;
+      border:1px solid rgba(180,140,20,0.20);
+      border-radius:8px;background:rgba(0,0,0,0.25);
+      padding:6px;margin-top:6px;
+    }
+    .eq-recense-row{
+      display:flex;align-items:center;gap:10px;
+      padding:7px 9px;border-radius:6px;cursor:pointer;
+      transition:background 0.15s;
+    }
+    .eq-recense-row:hover{background:rgba(212,180,74,0.08)}
+    .eq-recense-row.selected{background:rgba(34,197,94,0.12);border-left:3px solid #22c55e}
+    .eq-recense-photo{
+      width:34px;height:34px;border-radius:50%;
+      background:rgba(212,180,74,0.12);border:1px solid rgba(212,180,74,0.30);
+      display:flex;align-items:center;justify-content:center;
+      font-size:13px;font-weight:700;color:#fbbf24;flex-shrink:0;overflow:hidden;
+    }
+    .eq-recense-photo img{width:100%;height:100%;object-fit:cover}
+    .eq-recense-info{flex:1;min-width:0}
+    .eq-recense-name{font-size:13px;color:#f0e8d0;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .eq-recense-meta{font-size:10.5px;color:rgba(232,208,140,0.55);font-family:'Share Tech Mono',monospace}
+    .eq-recense-row .eq-recense-check{
+      width:20px;height:20px;border-radius:5px;
+      border:1.5px solid rgba(180,140,20,0.45);
+      background:rgba(0,0,0,0.4);
+      display:flex;align-items:center;justify-content:center;
+      flex-shrink:0;color:transparent;font-weight:bold;font-size:14px;
+    }
+    .eq-recense-row.selected .eq-recense-check{
+      background:#22c55e;border-color:#22c55e;color:#fff;
+    }
+    /* Mobile */
+    @media(max-width:768px){
+      #page-equipes .eq-hero{padding:18px 20px 16px}
+      #page-equipes .eq-hero-title{font-size:22px}
+      #page-equipes .eq-grid{grid-template-columns:1fr}
+    }
+    </style>
+    <!-- Hero -->
+    <div class="eq-hero">
+      <div class="eq-hero-row">
+        <div class="eq-hero-icon">🛡️</div>
+        <div class="eq-hero-text">
+          <div class="eq-hero-overline">Registre des Équipes</div>
+          <div class="eq-hero-title">Équipes <span>Officielles</span></div>
+          <div class="eq-hero-sub">Cellules opérationnelles dirigées par un Chunin ou supérieur</div>
+        </div>
+        <div class="eq-hero-stats">
+          <div class="eq-hero-stat"><div class="num" id="eq-stat-total">0</div><div class="lbl">Équipes</div></div>
+          <div class="eq-hero-stat"><div class="num" id="eq-stat-membres">0</div><div class="lbl">Membres</div></div>
+          <div class="eq-hero-stat"><div class="num" id="eq-stat-chefs">0</div><div class="lbl">Chefs</div></div>
+        </div>
+      </div>
+    </div>
+    <!-- Toolbar -->
+    <div class="eq-toolbar">
+      <div class="eq-search-wrap">
+        <input type="text" id="search-equipes" class="eq-search" placeholder="Rechercher une équipe, un chef, un membre..." oninput="eqRender()">
+      </div>
+      <button class="btn btn-primary" id="btn-new-equipe" onclick="eqOpenForm()" style="display:none">➕ Nouvelle équipe</button>
+    </div>
+    <!-- Grid -->
+    <div class="eq-grid" id="equipes-grid"></div>
+  </div>
+
+  <!-- Modal création/édition équipe -->
+  <div class="modal-overlay" role="dialog" aria-modal="true" id="modal-equipe-form">
+    <div class="modal" style="max-width:680px">
+      <div class="modal-header">
+        <h3 id="eq-form-title">🛡️ Nouvelle équipe</h3>
+        <span class="modal-close" aria-label="Fermer" onclick="closeModal('modal-equipe-form')">✕</span>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="eq-form-id">
+        <div class="form-group">
+          <label class="form-label">Nom de l'équipe *</label>
+          <input type="text" id="eq-form-nom" class="form-control" placeholder="Ex: Cellule Tempête, Escouade Sable...">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Emblème (emoji)</label>
+          <input type="text" id="eq-form-emblem" class="form-control" placeholder="🛡️" maxlength="4" style="max-width:120px;text-align:center;font-size:18px">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Chef d'équipe (Chunin ou supérieur) *</label>
+          <select id="eq-form-chef" class="form-control">
+            <option value="">— Sélectionner un chef recensé —</option>
+          </select>
+          <div style="font-size:10.5px;color:var(--muted);margin-top:4px;font-family:'Share Tech Mono',monospace">Le chef doit être recensé. Seuls les ninjas avec rang Chunin ou supérieur peuvent diriger.</div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Membres de l'équipe *</label>
+          <div style="font-size:10.5px;color:var(--muted);margin-bottom:6px;font-family:'Share Tech Mono',monospace">Sélectionnez les membres dans la liste des recensés. Tous doivent être recensés.</div>
+          <input type="text" id="eq-form-search-members" class="form-control" placeholder="🔍 Filtrer les recensés..." oninput="eqFilterRecenses()" style="margin-bottom:6px">
+          <div class="eq-recense-picker" id="eq-recense-picker"></div>
+          <div style="font-size:10.5px;color:var(--gold2);margin-top:6px;font-family:'Share Tech Mono',monospace" id="eq-selected-count">0 membre sélectionné</div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Description / Mission</label>
+          <textarea id="eq-form-desc" class="form-control" rows="3" placeholder="Description du rôle de l'équipe, sa spécialité..."></textarea>
+        </div>
+        <div id="eq-form-alert" class="alert alert-error" style="display:none"></div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline" onclick="closeModal('modal-equipe-form')">Annuler</button>
+        <button class="btn btn-primary" onclick="eqSaveForm()">💾 Enregistrer</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal vue détaillée d'une équipe -->
+  <div class="modal-overlay" role="dialog" aria-modal="true" id="modal-equipe-view">
+    <div class="modal" style="max-width:700px">
+      <div class="modal-header">
+        <h3 id="eq-view-title">🛡️ Équipe</h3>
+        <span class="modal-close" aria-label="Fermer" onclick="closeModal('modal-equipe-view')">✕</span>
+      </div>
+      <div class="modal-body" id="eq-view-body"></div>
+      <div class="modal-footer" id="eq-view-footer">
+        <button class="btn btn-outline" onclick="closeModal('modal-equipe-view')">Fermer</button>
+      </div>
+    </div>
+  </div>
+
   <!-- BINGO BOOK -->
   <div class="page-content" id="page-bingobook">
     <style>
@@ -14165,6 +14510,14 @@ document.addEventListener('error', function(e){
         <span style="margin-left:auto;font-size:9px;color:var(--muted);font-family:'Share Tech Mono',monospace;letter-spacing:1px" id="profil-ma-fiche-status">—</span>
       </div>
       <div class="card-body" id="profil-ma-fiche" style="padding:14px"></div>
+    </div>
+    <!-- Mes équipes -->
+    <div class="card mt-6" id="profil-mes-equipes-card">
+      <div class="card-header">
+        <span>🛡️</span><h3>Mes équipes</h3>
+        <span style="margin-left:auto;font-size:9px;color:var(--muted);font-family:'Share Tech Mono',monospace;letter-spacing:1px" id="profil-mes-equipes-count">0</span>
+      </div>
+      <div class="card-body" id="profil-mes-equipes" style="padding:14px"></div>
     </div>
     <div class="grid grid-2">
       <div class="card">
@@ -19085,7 +19438,7 @@ function initFirebaseSync(){
       if(!wasFirst&&currentUser){
         // Mettre a jour seulement les tableaux avec les nouvelles donnees distantes
         // mais respecter les suppressions locales (ne pas restaurer les elements supprimes)
-        const SYNC_KEYS=['plaintes','dossiers','annonces','candidatures','operations','sanctions','recenses','infractions','timeline','users','laissezPasse','missions'];
+        const SYNC_KEYS=['plaintes','dossiers','annonces','candidatures','operations','sanctions','recenses','infractions','timeline','users','laissezPasse','missions','equipes'];
         // bug-fix : tracker quelles collections ont changé pour re-render uniquement
         // les pages concernées (au lieu de re-render aveuglément ou de ne rien faire).
         var _changedKeys = new Set();
@@ -19388,7 +19741,8 @@ function initFirebaseSync(){
               'impots':      { fn: 'renderImpots',      keys: ['impots','users'] },
               'dashboard':   { fn: 'syncDashboard',     keys: ['plaintes','dossiers','annonces','operations','users','recenses','sanctions','missions'] },
               'hierarchie':  { fn: 'renderHierarchie',  keys: ['users'] },
-              'profil':      { fn: 'renderProfil',      keys: ['users'] },
+              'profil':      { fn: 'renderProfil',      keys: ['users','recenses','plaintes','dossiers','operations','sanctions','timeline','equipes'] },
+              'equipes':     { fn: 'eqRender',          keys: ['equipes','recenses','users'] },
               // 'bingobook' retiré du pageRenderers : il ne dépend pas de la collection 'users'
               // (les fiches sont dans la branche Firebase séparée 'sunagakure/bingobook'
               //  qui a son propre listener dédié). Sans ce retrait, la page se re-rendait à
@@ -19751,7 +20105,7 @@ function defaultData(){
     grades:["Gérant","Co-Gérant","Sergent","Officier","Stagiaire"],
     users:[{id:1,login:"admin",pass:"__PENDING_HASH__",nom:"Développeur",grade:"Gérant",role:"admin",statut:"Actif",photo:"",created:now()}],
     annonces:[{id:1,titre:"Bienvenue sur le portail Police de Sunagakure",cat:"Information",contenu:"Ce portail est le centre névralgique des communications internes.\n\nToutes les informations officielles y seront publiées.",auteur:"Administration",pin:true,date:now()}],
-    recenses:[],candidatures:[],plaintes:[],dossiers:[],operations:[],sanctions:[],infractions:[],timeline:[],adminNotes:{},loginHistory:[],missions:[],features:{map_active:false},
+    recenses:[],candidatures:[],plaintes:[],dossiers:[],operations:[],sanctions:[],infractions:[],timeline:[],adminNotes:{},loginHistory:[],missions:[],equipes:[],features:{map_active:false},
     // ═══ HÔPITAL & SCIENTIFIQUE ═══
     // Stockage centralisé : DB.hospital = { patients, consultations, pharmacie, psy, scientifique, morgue, paiements, dons }
     // Chaque tableau contient des entrées { id, ...champs propres à la collection, auteurId, auteurNom, created, modified }
@@ -21451,7 +21805,7 @@ function applyLogin(){
         } else if(!isVisiteur()||VISITOR_PAGES.includes(lp)) lastPage=lp;
       } else {
         // Vérifier que la page est accessible depuis la section du user
-        var ALL_OK = ['dashboard','bingobook','codepenal','histoire','profil','admin'].includes(lp);
+        var ALL_OK = ['dashboard','bingobook','codepenal','histoire','profil','admin','equipes'].includes(lp);
         var SEC_OK = false;
         var us = (currentUser && currentUser.section) || 'police';
         if(us === 'police'){
@@ -21602,7 +21956,7 @@ function saveCommNameAdmin(){
 }
 
 // NAV
-const PAGES={dashboard:"Tableau de bord",annonces:"Annonces",recensement:"Recensement",recrutement:"Recrutement",plaintes:"Plaintes",dossiers:"Dossiers criminels",codepenal:"Code Pénal",histoire:"Histoire",operations:"Opérations",effectifs:"Effectifs",hierarchie:"Hiérarchie",sanctions:"Sanctions & Promotions",impots:"Impôts",admin:"Panel Admin",profil:"Casier personnel",bingobook:"Bingo Book",
+const PAGES={dashboard:"Tableau de bord",annonces:"Annonces",recensement:"Recensement",recrutement:"Recrutement",plaintes:"Plaintes",dossiers:"Dossiers criminels",codepenal:"Code Pénal",histoire:"Histoire",equipes:"Équipes",operations:"Opérations",effectifs:"Effectifs",hierarchie:"Hiérarchie",sanctions:"Sanctions & Promotions",impots:"Impôts",admin:"Panel Admin",profil:"Casier personnel",bingobook:"Bingo Book",
   // Tribunal (6 pages)
   "juge-audiences":"Audiences","juge-plaintes":"Plaintes reçues","juge-affaires":"Affaires en cours","juge-jugements":"Jugements rendus","juge-procedure":"Code de procédure","juge-archives":"Archives & Jurisprudence",
   // Avocat
@@ -21617,7 +21971,7 @@ const PAGES={dashboard:"Tableau de bord",annonces:"Annonces",recensement:"Recens
   // Diplomatie
   "diplo-villages":"Villages alliés","diplo-traites":"Traités","diplo-communications":"Communications","diplo-laissezpasse":"Laissez-passer","diplo-comptabilite":"Comptabilité"
 };
-const VISITOR_PAGES=["dashboard","annonces","recensement","recrutement","plaintes","codepenal","histoire","profil","bingobook",
+const VISITOR_PAGES=["dashboard","annonces","recensement","recrutement","plaintes","codepenal","histoire","profil","bingobook","equipes",
   // Pages des sections : visibles par les visiteurs de leur section (les visiteurs des autres sections ne pourront pas y accéder via _applySectionUI)
   "juge-audiences","juge-plaintes","juge-affaires","juge-jugements","juge-procedure","juge-archives",
   "avocat-clients","avocat-affaires","avocat-plaidoiries",
@@ -21644,7 +21998,7 @@ function showPage(name){
   // BYPASS ADMIN : les admins ont accès à tout, peu importe leur section
   // BYPASS HAUT COMMANDEMENT : oversight transverse sur toutes les pages, sauf le panel admin (bloqué plus bas)
   var isFullAccess = !!(currentUser && (currentUser.role === 'admin' || currentUser.role === 'hautcommandement'));
-  var ALL_PAGES = ['dashboard','bingobook','codepenal','histoire','profil','admin','diplo-laissezpasse'];
+  var ALL_PAGES = ['dashboard','bingobook','codepenal','histoire','profil','admin','diplo-laissezpasse','equipes'];
   var SECTION_PREFIXES = { juge:/^juge-/, avocat:/^avocat-/, mission:/^mission-/, medical:/^(medical|sci|compta)-/, diplomatie:/^diplo-/ };
   var POLICE_PAGES = ['annonces','recensement','recrutement','plaintes','dossiers','operations','effectifs','sanctions','impots','hierarchie'];
   var userSection = (currentUser && currentUser.section) || 'police';
@@ -21706,6 +22060,7 @@ function renderPage(name){
   if(name==="effectifs")renderEffectifs();
   if(name==="sanctions")renderSanctions();
   if(name==="impots")renderImpots();
+  if(name==="equipes"){if(typeof eqRender==='function') eqRender();}
   if(name==="admin"){
     el("admin-comm-input").value=DB.commissaire||"";applyLogo();loadNotifPrefs();refreshNotifCounts();renderNotifHistory();
     var _fmSaved=(DB.features&&typeof DB.features.map_active!=='undefined')?!!DB.features.map_active:false;try{if(!DB.features||typeof DB.features.map_active==='undefined')_fmSaved=localStorage.getItem('feat_map_active')==='1';}catch(e){} _syncFeatureMapUI(_fmSaved);
@@ -21783,6 +22138,7 @@ function renderPage(name){
     renderSectionPage(name);
   }
   if(name==="profil"){renderProfil();}
+  if(name==="equipes"){eqRender();}
   if(name==="hierarchie")renderHierarchie();
 }
 
@@ -32313,6 +32669,441 @@ window.toggleDarkMode = function(){
    dans l'UI. Si tu rétablis un déclencheur depuis le panel admin,
    il faudra recréer la fonction (voir l'historique git). */
 
+/* ─── 3.5 ÉQUIPES — Cellules opérationnelles dirigées par un Chunin+ ───────
+   Les équipes sont visibles par tous, mais seuls les rangs Chunin et
+   supérieurs (= Sergent, Co-Gérant, Gérant côté grades Police) peuvent
+   créer/éditer/supprimer. Le chef d'équipe et tous les membres doivent
+   être présents dans DB.recenses. ────────────────────────────────── */
+
+// État local
+var _eqMembersSelected = []; // IDs (=Date.now() des recenses) sélectionnés dans le formulaire
+var _eqRecensesFilter = '';
+
+// Helpers
+function eqEsc(s){
+  return String(s||'').replace(/[&<>"']/g, function(c){
+    return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];
+  });
+}
+function eqInitDB(){
+  if(typeof DB === 'undefined') return;
+  if(!Array.isArray(DB.equipes)) DB.equipes = [];
+}
+// Rangs autorisés à créer/diriger (Chunin = Sergent ou + côté Police).
+// On accepte aussi les vrais rangs ninja « Chunin », « Tokubetsu Chunin »,
+// « Jonin », « Tokubetsu Jonin », « Kage » qui pourraient être stockés
+// dans le champ "rang" des recenses.
+var EQ_RANGS_CHEF = [
+  'Chunin','Tokubetsu Chunin','Jonin','Tokubetsu Jonin','Kage','Hokage',
+  'Kazekage','Anbu','Sergent','Co-Gérant','Gérant'
+];
+function eqIsChefRang(rang){
+  if(!rang) return false;
+  var r = String(rang).trim().toLowerCase();
+  return EQ_RANGS_CHEF.some(function(x){ return r === x.toLowerCase(); });
+}
+// Permission de gérer (créer/modifier/supprimer une équipe)
+function eqCanManage(){
+  if(typeof currentUser === 'undefined' || !currentUser) return false;
+  if(currentUser.role === 'admin' || currentUser.role === 'hautcommandement') return true;
+  if(currentUser.role !== 'membre' && currentUser.section !== 'police') {
+    // Les rôles spéciaux (gerant, cogerant, sergent) côté Police peuvent gérer
+  }
+  // Côté Police : Gérant, Co-Gérant, Sergent (= Chunin+) peuvent gérer
+  if(currentUser.section === 'police' || !currentUser.section){
+    var role = currentUser.role || '';
+    if(['gerant','cogerant','sergent'].includes(role)) return true;
+  }
+  return false;
+}
+
+function eqComputeId(eq){
+  // Numérotation EQU-AAAA-NNN
+  var year = (function(){
+    try { return new Date(eq.created || Date.now()).getFullYear(); }
+    catch(e){ return new Date().getFullYear(); }
+  })();
+  var sameYear = (DB.equipes||[]).filter(function(e){
+    try { return new Date(e.created).getFullYear() === year; } catch(_){ return false; }
+  }).sort(function(a,b){ return (a.id||0)-(b.id||0); });
+  var idx = sameYear.findIndex(function(e){ return e.id === eq.id; }) + 1;
+  if(idx <= 0) idx = sameYear.length + 1;
+  return 'EQU-' + year + '-' + String(idx).padStart(3,'0');
+}
+
+// Lookup recense par ID (id = Date.now() de création)
+function eqGetRecense(id){
+  return (DB.recenses||[]).find(function(r){ return r.id === id; });
+}
+
+// Render de la liste de recensés sélectionnables dans le formulaire
+function eqRenderRecensePicker(){
+  var box = document.getElementById('eq-recense-picker');
+  if(!box) return;
+  var q = (_eqRecensesFilter||'').toLowerCase().trim();
+  var list = (DB.recenses||[]).filter(function(r){
+    if(!r) return false;
+    if(r.defuntStatut === 'defunt') return false; // exclure défunts
+    if(!q) return true;
+    var combo = ((r.prenom||'')+' '+(r.nom||'')+' '+(r.rang||'')+' '+(r.faction||'')+' '+(r.clan||'')).toLowerCase();
+    return combo.indexOf(q) >= 0;
+  });
+  if(!list.length){
+    box.innerHTML = '<div style="text-align:center;padding:18px;color:rgba(232,208,140,0.45);font-size:11.5px;font-style:italic">Aucun recensé trouvé.</div>';
+    return;
+  }
+  // Trier par nom
+  list.sort(function(a,b){
+    return ((a.prenom||'')+' '+(a.nom||'')).localeCompare((b.prenom||'')+' '+(b.nom||''));
+  });
+  box.innerHTML = list.map(function(r){
+    var sel = _eqMembersSelected.indexOf(r.id) >= 0;
+    var photo = r.photo && typeof safeImgSrc==='function' && safeImgSrc(r.photo)
+      ? '<img src="'+safeImgSrc(r.photo)+'" alt="">'
+      : '<span>'+eqEsc((r.prenom||'?').charAt(0)+(r.nom||'?').charAt(0)).toUpperCase()+'</span>';
+    var meta = [r.rang, r.faction, r.clan].filter(Boolean).join(' · ');
+    return '<div class="eq-recense-row'+(sel?' selected':'')+'" onclick="eqToggleMember('+r.id+')">'
+      +   '<div class="eq-recense-photo">'+photo+'</div>'
+      +   '<div class="eq-recense-info">'
+      +     '<div class="eq-recense-name">'+eqEsc((r.prenom||'')+' '+(r.nom||''))+'</div>'
+      +     '<div class="eq-recense-meta">'+eqEsc(meta||'—')+'</div>'
+      +   '</div>'
+      +   '<div class="eq-recense-check">✓</div>'
+      + '</div>';
+  }).join('');
+}
+
+function eqFilterRecenses(){
+  var inp = document.getElementById('eq-form-search-members');
+  _eqRecensesFilter = inp ? (inp.value||'') : '';
+  eqRenderRecensePicker();
+}
+
+function eqToggleMember(id){
+  var i = _eqMembersSelected.indexOf(id);
+  if(i >= 0) _eqMembersSelected.splice(i,1);
+  else _eqMembersSelected.push(id);
+  eqRenderRecensePicker();
+  var cnt = document.getElementById('eq-selected-count');
+  if(cnt) cnt.textContent = _eqMembersSelected.length + ' membre' + (_eqMembersSelected.length>1?'s':'') + ' sélectionné' + (_eqMembersSelected.length>1?'s':'');
+}
+
+// Render select chef (uniquement recensés avec rang Chunin+)
+function eqRenderChefSelect(currentChefId){
+  var sel = document.getElementById('eq-form-chef');
+  if(!sel) return;
+  var chefs = (DB.recenses||[]).filter(function(r){
+    return r && r.defuntStatut !== 'defunt' && eqIsChefRang(r.rang);
+  });
+  chefs.sort(function(a,b){
+    return ((a.prenom||'')+' '+(a.nom||'')).localeCompare((b.prenom||'')+' '+(b.nom||''));
+  });
+  sel.innerHTML = '<option value="">— Sélectionner un chef recensé —</option>'
+    + chefs.map(function(r){
+      var label = ((r.prenom||'')+' '+(r.nom||'')).trim() + ' · ' + (r.rang||'?');
+      return '<option value="'+r.id+'"'+(currentChefId===r.id?' selected':'')+'>'+eqEsc(label)+'</option>';
+    }).join('');
+}
+
+// Ouvre le formulaire (création ou édition)
+function eqOpenForm(editId){
+  if(!eqCanManage()){
+    if(typeof showToast==='function') showToast('⛔ Action réservée aux Chunin et supérieurs.', 'error');
+    return;
+  }
+  eqInitDB();
+  var alertEl = document.getElementById('eq-form-alert');
+  if(alertEl){ alertEl.style.display='none'; alertEl.textContent=''; }
+  _eqRecensesFilter = '';
+  var inpFilter = document.getElementById('eq-form-search-members');
+  if(inpFilter) inpFilter.value='';
+  if(editId){
+    var eq = (DB.equipes||[]).find(function(e){ return e.id===editId; });
+    if(!eq){ if(typeof showToast==='function') showToast('Équipe introuvable.', 'error'); return; }
+    document.getElementById('eq-form-title').textContent = '✏️ Modifier l\'équipe';
+    document.getElementById('eq-form-id').value = eq.id;
+    document.getElementById('eq-form-nom').value = eq.nom || '';
+    document.getElementById('eq-form-emblem').value = eq.emblem || '🛡️';
+    document.getElementById('eq-form-desc').value = eq.desc || '';
+    _eqMembersSelected = (eq.membres||[]).slice();
+    eqRenderChefSelect(eq.chefId);
+  } else {
+    document.getElementById('eq-form-title').textContent = '🛡️ Nouvelle équipe';
+    document.getElementById('eq-form-id').value = '';
+    document.getElementById('eq-form-nom').value = '';
+    document.getElementById('eq-form-emblem').value = '🛡️';
+    document.getElementById('eq-form-desc').value = '';
+    _eqMembersSelected = [];
+    eqRenderChefSelect(null);
+  }
+  eqRenderRecensePicker();
+  var cnt = document.getElementById('eq-selected-count');
+  if(cnt) cnt.textContent = _eqMembersSelected.length + ' membre' + (_eqMembersSelected.length>1?'s':'') + ' sélectionné' + (_eqMembersSelected.length>1?'s':'');
+  openModal('modal-equipe-form');
+}
+
+// Sauvegarde du formulaire
+function eqSaveForm(){
+  if(!eqCanManage()){
+    if(typeof showToast==='function') showToast('⛔ Action réservée aux Chunin et supérieurs.', 'error');
+    return;
+  }
+  eqInitDB();
+  var alertEl = document.getElementById('eq-form-alert');
+  function showErr(msg){
+    if(alertEl){ alertEl.textContent = msg; alertEl.style.display='block'; }
+    else if(typeof showToast==='function') showToast(msg, 'error');
+  }
+  var nom = (document.getElementById('eq-form-nom').value||'').trim();
+  var emblem = (document.getElementById('eq-form-emblem').value||'').trim() || '🛡️';
+  var chefIdRaw = document.getElementById('eq-form-chef').value;
+  var chefId = chefIdRaw ? parseInt(chefIdRaw, 10) : null;
+  var desc = (document.getElementById('eq-form-desc').value||'').trim();
+  var idRaw = document.getElementById('eq-form-id').value;
+  var editId = idRaw ? parseInt(idRaw, 10) : null;
+
+  if(!nom){ showErr("Le nom de l'équipe est obligatoire."); return; }
+  if(!chefId){ showErr("Sélectionnez un chef d'équipe."); return; }
+  var chef = eqGetRecense(chefId);
+  if(!chef){ showErr("Le chef sélectionné n'existe plus dans le recensement."); return; }
+  if(!eqIsChefRang(chef.rang)){
+    showErr("Le chef doit avoir au moins le rang Chunin (rang actuel : "+(chef.rang||'?')+").");
+    return;
+  }
+  if(!_eqMembersSelected.length){
+    showErr("Sélectionnez au moins un membre dans la liste des recensés.");
+    return;
+  }
+  // Vérifier que tous les membres existent dans recenses
+  var membresValides = _eqMembersSelected.filter(function(id){ return !!eqGetRecense(id); });
+  if(membresValides.length !== _eqMembersSelected.length){
+    showErr("Certains membres sélectionnés ne sont plus recensés. Re-sélectionnez la liste.");
+    return;
+  }
+  // S'assurer que le chef est aussi dans la liste des membres (cohérence)
+  if(membresValides.indexOf(chefId) < 0) membresValides.unshift(chefId);
+
+  if(editId){
+    // Édition
+    var eq = (DB.equipes||[]).find(function(e){ return e.id===editId; });
+    if(!eq){ showErr("Équipe introuvable."); return; }
+    eq.nom = nom;
+    eq.emblem = emblem;
+    eq.chefId = chefId;
+    eq.membres = membresValides;
+    eq.desc = desc;
+    eq.modifiedBy = currentUser ? currentUser.nom : '?';
+    eq.modified = (typeof now==='function') ? now() : Date.now();
+    if(typeof addTimeline==='function') addTimeline('Équipe modifiée : '+nom);
+  } else {
+    // Création
+    var newEq = {
+      id: Date.now(),
+      nom: nom,
+      emblem: emblem,
+      chefId: chefId,
+      membres: membresValides,
+      desc: desc,
+      createdBy: currentUser ? currentUser.nom : '?',
+      created: (typeof now==='function') ? now() : Date.now()
+    };
+    DB.equipes.push(newEq);
+    if(typeof addTimeline==='function') addTimeline('Équipe créée : '+nom+' (chef : '+(chef.prenom||'')+' '+(chef.nom||'')+')');
+  }
+  if(typeof saveData==='function') saveData(['equipes','timeline']);
+  closeModal('modal-equipe-form');
+  if(typeof showToast==='function') showToast(editId ? '✓ Équipe mise à jour.' : '✓ Équipe créée avec succès.', 'success');
+  eqRender();
+}
+
+// Suppression
+function eqDelete(id){
+  if(!eqCanManage()){
+    if(typeof showToast==='function') showToast('⛔ Action réservée aux Chunin et supérieurs.', 'error');
+    return;
+  }
+  var eq = (DB.equipes||[]).find(function(e){ return e.id===id; });
+  if(!eq) return;
+  var msg = 'Supprimer définitivement l\'équipe "'+eq.nom+'" ? Cette action est irréversible.';
+  function doDel(){
+    DB.equipes = (DB.equipes||[]).filter(function(e){ return e.id!==id; });
+    if(typeof addTimeline==='function') addTimeline('Équipe supprimée : '+eq.nom);
+    if(typeof saveData==='function') saveData(['equipes','timeline']);
+    closeModal('modal-equipe-view');
+    if(typeof showToast==='function') showToast('🗑 Équipe supprimée.', 'success');
+    eqRender();
+  }
+  if(typeof askDelete==='function') askDelete(msg, doDel, '🗑 Supprimer');
+  else if(confirm(msg)) doDel();
+}
+
+// Vue détaillée
+function eqView(id){
+  var eq = (DB.equipes||[]).find(function(e){ return e.id===id; });
+  if(!eq){ if(typeof showToast==='function') showToast('Équipe introuvable.', 'error'); return; }
+  var chef = eqGetRecense(eq.chefId);
+  var fileNum = eqComputeId(eq);
+  var titleEl = document.getElementById('eq-view-title');
+  if(titleEl) titleEl.textContent = (eq.emblem||'🛡️') + ' ' + eq.nom;
+  var bodyEl = document.getElementById('eq-view-body');
+  if(bodyEl){
+    var membersHtml = (eq.membres||[]).map(function(mid){
+      var m = eqGetRecense(mid);
+      if(!m){
+        return '<div class="eq-member-chip" style="border-color:rgba(239,68,68,0.4);color:#fca5a5">⚠ Recensé supprimé</div>';
+      }
+      var label = ((m.prenom||'')+' '+(m.nom||'')).trim();
+      var rang = m.rang ? ' · '+m.rang : '';
+      var isChef = (m.id === eq.chefId);
+      return '<div class="eq-member-chip"'+(isChef?' style="background:rgba(212,180,74,0.15);border-color:rgba(212,180,74,0.45);color:#fbbf24"':'')+'>'
+        + (isChef?'⭐ ':'') + eqEsc(label) + eqEsc(rang)
+        + '</div>';
+    }).join('');
+    var chefBlock = chef ? (
+      '<div class="eq-card-chef" style="margin-bottom:14px">'
+      + '<div class="eq-chef-photo">' + (chef.photo && typeof safeImgSrc==='function' && safeImgSrc(chef.photo)
+            ? '<img src="'+safeImgSrc(chef.photo)+'" alt="">'
+            : eqEsc((chef.prenom||'?').charAt(0)+(chef.nom||'?').charAt(0)).toUpperCase()) + '</div>'
+      + '<div class="eq-chef-info">'
+      +   '<div class="eq-chef-label">⭐ Chef d\'équipe</div>'
+      +   '<div class="eq-chef-name">'+eqEsc((chef.prenom||'')+' '+(chef.nom||''))+'</div>'
+      +   '<div class="eq-chef-rang">'+eqEsc(chef.rang||'?')+(chef.faction?' · '+eqEsc(chef.faction):'')+'</div>'
+      + '</div></div>'
+    ) : '<div style="padding:10px;background:rgba(239,68,68,0.10);border:1px solid rgba(239,68,68,0.30);border-radius:8px;color:#fca5a5;margin-bottom:14px">⚠ Le chef n\'existe plus dans le recensement.</div>';
+    var fmt = (typeof fmtDate==='function') ? fmtDate : function(d){return new Date(d).toLocaleDateString('fr-FR');};
+    bodyEl.innerHTML =
+      '<div style="font-size:10px;color:var(--gold2);font-family:\'Share Tech Mono\',monospace;letter-spacing:1.5px;margin-bottom:8px">'+fileNum+'</div>'
+      + (eq.desc ? '<div style="padding:10px 12px;background:rgba(255,255,255,0.04);border-left:3px solid rgba(212,180,74,0.45);border-radius:4px;font-size:13px;color:rgba(232,208,140,0.85);font-style:italic;margin-bottom:14px">'+eqEsc(eq.desc)+'</div>' : '')
+      + chefBlock
+      + '<div style="font-size:11px;color:var(--gold2);font-family:\'Share Tech Mono\',monospace;letter-spacing:1.5px;margin-bottom:8px;text-transform:uppercase">Membres ('+(eq.membres||[]).length+')</div>'
+      + '<div class="eq-card-members-list" style="margin-bottom:14px">'+membersHtml+'</div>'
+      + '<div style="font-size:10px;color:var(--muted);font-family:\'Share Tech Mono\',monospace;letter-spacing:1px">'
+      +   'Créée le '+fmt(eq.created)+(eq.createdBy?' par '+eqEsc(eq.createdBy):'')
+      +   (eq.modified?'<br>Modifiée le '+fmt(eq.modified)+(eq.modifiedBy?' par '+eqEsc(eq.modifiedBy):''):'')
+      + '</div>';
+  }
+  var footerEl = document.getElementById('eq-view-footer');
+  if(footerEl){
+    var actions = '<button class="btn btn-outline" onclick="closeModal(\'modal-equipe-view\')">Fermer</button>';
+    if(eqCanManage()){
+      actions = '<button class="btn btn-outline" onclick="closeModal(\'modal-equipe-view\')">Fermer</button>'
+              + '<button class="btn btn-primary" onclick="closeModal(\'modal-equipe-view\');eqOpenForm('+eq.id+')">✏️ Modifier</button>'
+              + '<button class="btn" style="background:rgba(239,68,68,0.15);border:1px solid rgba(239,68,68,0.40);color:#fca5a5" onclick="eqDelete('+eq.id+')">🗑 Supprimer</button>';
+    }
+    footerEl.innerHTML = actions;
+  }
+  openModal('modal-equipe-view');
+}
+
+// Render principal de la page
+function eqRender(){
+  eqInitDB();
+  var grid = document.getElementById('equipes-grid');
+  if(!grid) return;
+
+  // Bouton "Nouvelle équipe" : visible uniquement pour Chunin+
+  var btnNew = document.getElementById('btn-new-equipe');
+  if(btnNew) btnNew.style.display = eqCanManage() ? '' : 'none';
+
+  // Filtre recherche
+  var inp = document.getElementById('search-equipes');
+  var q = inp ? (inp.value||'').toLowerCase().trim() : '';
+  var equipes = (DB.equipes||[]).slice();
+  if(q){
+    equipes = equipes.filter(function(eq){
+      var chef = eqGetRecense(eq.chefId);
+      var names = (eq.membres||[]).map(function(mid){
+        var m = eqGetRecense(mid);
+        return m ? ((m.prenom||'')+' '+(m.nom||'')) : '';
+      }).join(' ');
+      var blob = ((eq.nom||'')+' '+(eq.desc||'')+' '+(chef?(chef.prenom||'')+' '+(chef.nom||''):'')+' '+names).toLowerCase();
+      return blob.indexOf(q) >= 0;
+    });
+  }
+
+  // Tri par date de création décroissante
+  equipes.sort(function(a,b){ return (b.created||0) - (a.created||0); });
+
+  // Stats
+  var setVal = function(id,v){ var e=document.getElementById(id); if(e) e.textContent=v; };
+  setVal('eq-stat-total', equipes.length);
+  var allMembers = new Set();
+  var allChefs = new Set();
+  (DB.equipes||[]).forEach(function(eq){
+    (eq.membres||[]).forEach(function(mid){ allMembers.add(mid); });
+    if(eq.chefId) allChefs.add(eq.chefId);
+  });
+  setVal('eq-stat-membres', allMembers.size);
+  setVal('eq-stat-chefs', allChefs.size);
+
+  // Badge nav
+  var badge = document.getElementById('badge-equipes');
+  if(badge){
+    var n = (DB.equipes||[]).length;
+    badge.textContent = n;
+    badge.style.display = n > 0 ? '' : 'none';
+  }
+
+  // Render cartes
+  if(!equipes.length){
+    grid.innerHTML = '<div class="eq-empty">'
+      + '<div class="icon">🛡️</div>'
+      + '<div style="font-size:14px;margin-bottom:6px;color:rgba(232,208,140,0.75)">Aucune équipe '+(q?'trouvée pour cette recherche':'enregistrée pour le moment')+'.</div>'
+      + (eqCanManage() && !q ? '<div style="font-size:11px;font-style:italic">Créez la première équipe avec le bouton ➕ ci-dessus.</div>' : '')
+      + '</div>';
+    return;
+  }
+  grid.innerHTML = equipes.map(function(eq){
+    var chef = eqGetRecense(eq.chefId);
+    var fileNum = eqComputeId(eq);
+    var nbMembres = (eq.membres||[]).length;
+    var membersChips = (eq.membres||[]).slice(0,6).map(function(mid){
+      var m = eqGetRecense(mid);
+      if(!m) return '';
+      if(m.id === eq.chefId) return ''; // chef affiché à part
+      return '<span class="eq-member-chip">'+eqEsc((m.prenom||'').charAt(0)+'. '+(m.nom||''))+'</span>';
+    }).filter(Boolean).join('');
+    var moreCount = nbMembres - 1 - Math.min(5, nbMembres - 1);
+    var moreBadge = moreCount > 0 ? '<span class="eq-member-chip" style="background:rgba(212,180,74,0.10);border-color:rgba(212,180,74,0.30);color:#fbbf24">+'+moreCount+'</span>' : '';
+
+    var chefHtml = chef ? (
+      '<div class="eq-card-chef">'
+      + '<div class="eq-chef-photo">' + (chef.photo && typeof safeImgSrc==='function' && safeImgSrc(chef.photo)
+          ? '<img src="'+safeImgSrc(chef.photo)+'" alt="">'
+          : eqEsc((chef.prenom||'?').charAt(0)+(chef.nom||'?').charAt(0)).toUpperCase()) + '</div>'
+      + '<div class="eq-chef-info">'
+      +   '<div class="eq-chef-label">⭐ Chef</div>'
+      +   '<div class="eq-chef-name">'+eqEsc((chef.prenom||'')+' '+(chef.nom||''))+'</div>'
+      +   '<div class="eq-chef-rang">'+eqEsc(chef.rang||'?')+'</div>'
+      + '</div></div>'
+    ) : '<div class="eq-card-chef" style="background:rgba(239,68,68,0.10);border-color:rgba(239,68,68,0.30)"><div class="eq-chef-photo" style="color:#fca5a5">⚠</div><div class="eq-chef-info"><div class="eq-chef-label" style="color:#fca5a5">Chef supprimé</div><div class="eq-chef-name" style="color:rgba(252,165,165,0.8)">Le chef n\'est plus recensé</div></div></div>';
+
+    return '<div class="eq-card" onclick="eqView('+eq.id+')" style="cursor:pointer">'
+      + '<div class="eq-card-header">'
+      +   '<div class="eq-card-emblem">'+eqEsc(eq.emblem||'🛡️')+'</div>'
+      +   '<div style="flex:1;min-width:0">'
+      +     '<div class="eq-card-name">'+eqEsc(eq.nom)+'</div>'
+      +     '<div class="eq-card-id">'+fileNum+'</div>'
+      +   '</div>'
+      + '</div>'
+      + '<div class="eq-card-body">'
+      +   chefHtml
+      +   '<div class="eq-card-members">👥 '+nbMembres+' membre'+(nbMembres>1?'s':'')
+      +     '<div class="eq-card-members-list">'+membersChips+moreBadge+'</div>'
+      +   '</div>'
+      +   (eq.desc ? '<div class="eq-card-desc">'+eqEsc(eq.desc.length>120?eq.desc.slice(0,120)+'…':eq.desc)+'</div>' : '')
+      + '</div>'
+      + '<div class="eq-card-foot" onclick="event.stopPropagation()">'
+      +   '<span>Créée par '+eqEsc(eq.createdBy||'?')+'</span>'
+      +   '<div class="eq-card-actions">'
+      +     '<button class="eq-act-btn" onclick="eqView('+eq.id+')" title="Voir">👁 Voir</button>'
+      +     (eqCanManage() ? '<button class="eq-act-btn" onclick="eqOpenForm('+eq.id+')" title="Modifier">✏️</button>' : '')
+      +   '</div>'
+      + '</div>'
+      + '</div>';
+  }).join('');
+}
+
 /* ─── 4. CALENDRIER DES OPÉRATIONS ────────────────────────────── */
 var _calYear = new Date().getFullYear();
 var _calMonth = new Date().getMonth();
@@ -32525,6 +33316,47 @@ function renderProfil(){
     } else {
       if(maFicheStatus) maFicheStatus.textContent = 'NON RECENSÉ';
       maFicheBox.innerHTML = '<p class="text-muted" style="margin:0;text-align:center;padding:18px 0;font-style:italic">Aucune fiche de recensement trouvée à votre nom. Demandez à un agent de vous recenser dans le registre officiel.</p>';
+    }
+  }
+
+  // ── Mes équipes : lookup en croisant ma fiche recensement avec DB.equipes ──
+  var mesEqBox = document.getElementById('profil-mes-equipes');
+  var mesEqCount = document.getElementById('profil-mes-equipes-count');
+  if(mesEqBox){
+    // Retrouver l'ID de ma fiche (on réutilise le maFiche du bloc précédent si dispo)
+    var myRecenseId = null;
+    var myFullName2 = (u.nom||'').trim().toLowerCase();
+    var myRecense = (DB.recenses||[]).find(function(r){
+      if(!r) return false;
+      var combo1 = ((r.prenom||'')+' '+(r.nom||'')).trim().toLowerCase();
+      var combo2 = ((r.nom||'')+' '+(r.prenom||'')).trim().toLowerCase();
+      return combo1===myFullName2 || combo2===myFullName2;
+    });
+    if(myRecense) myRecenseId = myRecense.id;
+
+    var mesEquipes = [];
+    if(myRecenseId !== null && Array.isArray(DB.equipes)){
+      mesEquipes = DB.equipes.filter(function(eq){
+        return (eq.membres||[]).indexOf(myRecenseId) >= 0;
+      });
+    }
+    if(mesEqCount) mesEqCount.textContent = mesEquipes.length + ' ÉQUIPE' + (mesEquipes.length>1?'S':'');
+    if(!mesEquipes.length){
+      mesEqBox.innerHTML = '<p class="text-muted" style="margin:0;text-align:center;padding:18px 0;font-style:italic">Vous n\'appartenez à aucune équipe pour le moment.</p>';
+    } else {
+      mesEqBox.innerHTML = '<div style="display:flex;flex-direction:column;gap:8px">' + mesEquipes.map(function(eq){
+        var isChef = eq.chefId === myRecenseId;
+        var chef = (DB.recenses||[]).find(function(r){return r.id===eq.chefId;});
+        var chefName = chef ? ((chef.prenom||'')+' '+(chef.nom||'')).trim() : '?';
+        return '<div onclick="showPage(\'equipes\');setTimeout(function(){eqView('+eq.id+')},100)" style="cursor:pointer;display:flex;align-items:center;gap:10px;padding:10px 12px;background:rgba(212,180,74,0.06);border:1px solid rgba(212,180,74,0.22);border-radius:8px;transition:all .18s" onmouseover="this.style.background=\'rgba(212,180,74,0.14)\';this.style.borderColor=\'rgba(212,180,74,0.45)\'" onmouseout="this.style.background=\'rgba(212,180,74,0.06)\';this.style.borderColor=\'rgba(212,180,74,0.22)\'">'
+          + '<div style="font-size:22px">'+esc(eq.emblem||'🛡️')+'</div>'
+          + '<div style="flex:1;min-width:0">'
+          +   '<div style="font-family:\'Cinzel\',serif;font-weight:700;color:var(--text);font-size:14px">'+esc(eq.nom)+(isChef?' <span style="color:#fbbf24;font-size:11px">⭐ Chef</span>':'')+'</div>'
+          +   '<div style="font-size:11px;color:var(--muted);font-family:\'Share Tech Mono\',monospace">'+(isChef?'Vous dirigez cette équipe':'Sous le commandement de '+esc(chefName))+' · '+(eq.membres||[]).length+' membres</div>'
+          + '</div>'
+          + '<div style="font-size:14px;color:var(--gold2)">→</div>'
+        + '</div>';
+      }).join('') + '</div>';
     }
   }
   // Plaintes list
