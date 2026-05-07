@@ -20815,9 +20815,12 @@ async function _flushSaveQueue(){
         await window._fbUpdate(window._fbRef(window._fbDB,"sunagakure"), partialPayload);
       }
     } else {
-      // Mode full (legacy) : réécrit toute la base
+      // BUG-FIX BINGOBOOK : on remplace _fbSet par _fbUpdate pour le mode full.
+      // _fbSet(racine, payload) supprime toutes les clés ABSENTES du payload :
+      // or bingobook/adoptions ne sont pas dans DB → ils seraient effacés à chaque save.
+      // _fbUpdate(racine, payload) ne touche qu'aux clés présentes → branches séparées préservées.
       const payload=JSON.parse(JSON.stringify(toSave));
-      await window._fbSet(window._fbRef(window._fbDB,"sunagakure"),payload);
+      await window._fbUpdate(window._fbRef(window._fbDB,"sunagakure"),payload);
     }
     // Reset du flag d'erreur Firebase si un save réussit
     if(window._fbWriteFailed){
