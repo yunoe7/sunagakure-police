@@ -30731,6 +30731,50 @@ function _adInit(){
       DB.adoptions = [];
     }
   }
+  // ─── Migration : attribuer un numéro séquentiel à toute adoption qui n'en a pas ───
+  // Les adoptions sont numérotées par ordre de création (createdAt croissant).
+  // Ce numéro est stable, contrairement à l'id (timestamp) qui était utilisé avant.
+  var needsMigration = DB.adoptions.some(function(a){ return !a || typeof a.numero !== 'number'; });
+  if(needsMigration){
+    // 1) Récupérer le numéro max existant pour ne pas écraser ceux déjà attribués
+    var maxNum = 0;
+    DB.adoptions.forEach(function(a){
+      if(a && typeof a.numero === 'number' && a.numero > maxNum) maxNum = a.numero;
+    });
+    // 2) Trier les SANS numéro par createdAt croissant et leur en attribuer un
+    var withoutNum = DB.adoptions
+      .filter(function(a){ return a && typeof a.numero !== 'number'; })
+      .sort(function(a,b){
+        var ta = a.createdAt || 0, tb = b.createdAt || 0;
+        if(ta !== tb) return ta - tb;
+        // Fallback : trier par id
+        return String(a.id||'').localeCompare(String(b.id||''));
+      });
+    withoutNum.forEach(function(a){
+      maxNum++;
+      a.numero = maxNum;
+    });
+    // 3) Sauvegarder discrètement (pas d'erreur si saveData n'est pas dispo)
+    try{ if(typeof saveData === 'function' && withoutNum.length > 0) saveData('adoptions'); }catch(e){}
+  }
+}
+
+/* Retourne le prochain numéro séquentiel à attribuer (= max + 1) */
+function _adNextNumero(){
+  if(!Array.isArray(DB.adoptions)) return 1;
+  var max = 0;
+  DB.adoptions.forEach(function(a){
+    if(a && typeof a.numero === 'number' && a.numero > max) max = a.numero;
+  });
+  return max + 1;
+}
+
+/* Construit la référence officielle d'une adoption à partir de son numero.
+   Format : "#000001", "#000042", "#001234"… (toujours 6 chiffres minimum) */
+function _adGetRef(a){
+  if(!a) return '#000000';
+  var n = (typeof a.numero === 'number' && a.numero > 0) ? a.numero : 0;
+  return '#' + String(n).padStart(6,'0');
 }
 
 // Échappement HTML simple (factorise esc() qui peut ne pas exister à tous moments)
@@ -30860,7 +30904,7 @@ function editAdoption(id){
   setVal('ad-notes', a.notes);
   _adCurrentPhoto = a.photo || null;
   _adRefreshPhotoPreview();
-  var t = document.getElementById('ad-form-title'); if(t) t.textContent = "Modifier l'adoption — réf. #"+String(a.id||'').slice(-6);
+  var t = document.getElementById('ad-form-title'); if(t) t.textContent = "Modifier l'adoption — réf. "+_adGetRef(a);
   var c = document.getElementById('ad-cancel-btn'); if(c) c.style.display = 'inline-block';
   // Scroll vers le formulaire pour confort
   var panel = document.getElementById('ad-add-panel');
@@ -30901,15 +30945,17 @@ function saveAdoption(){
   if(editId){
     var idx = DB.adoptions.findIndex(function(x){ return String(x.id) === String(editId); });
     if(idx > -1){
-      // On préserve id et createdAt
+      // On préserve id, createdAt ET numero (stable)
       data.id = DB.adoptions[idx].id;
       data.createdAt = DB.adoptions[idx].createdAt || Date.now();
+      data.numero = DB.adoptions[idx].numero;
       data.editedAt = Date.now();
       DB.adoptions[idx] = data;
     }
   } else {
     data.id = Date.now();
     data.createdAt = Date.now();
+    data.numero = _adNextNumero();   // nouveau numéro séquentiel
     DB.adoptions.push(data);
   }
   if(typeof saveData === 'function') saveData('adoptions');
@@ -30982,7 +31028,7 @@ function renderAdoptions(){
   }
 
   grid.innerHTML = list.map(function(a){
-    var ref = '#'+String(a.id||'').slice(-6).toUpperCase();
+    var ref = _adGetRef(a);
     var photoCell = a.photo
       ? '<img src="'+a.photo+'" alt="Photo">'
       : '<span>👶</span>';
@@ -31020,7 +31066,7 @@ function _buildAdoptionFicheHTML(a, opts){
   opts = opts || {};
   var withToolbar = opts.withToolbar !== false; // par défaut true (utile pour print preview)
 
-  var ref = '#'+String(a.id||'').slice(-6).toUpperCase();
+  var ref = _adGetRef(a);
   var photoBlock = a.photo
     ? '<img src="'+a.photo+'" alt="Photo de l\'adopté">'
     : '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#9ca3af;font-family:\'Share Tech Mono\',monospace;font-size:10px;letter-spacing:2px">PHOTO NON FOURNIE</div>';
@@ -31046,10 +31092,21 @@ function _buildAdoptionFicheHTML(a, opts){
 
   var toolbarHtml = withToolbar
     ? '<div class="no-print-toolbar no-print">'
+      +   '<button class="png" onclick="downloadFicheAsPNG()">🖼 Télécharger en PNG</button>'
       +   '<button class="primary" onclick="window.print()">🖨 Imprimer / PDF</button>'
       +   '<button onclick="window.close()">✕ Fermer</button>'
       + '</div>'
     : '';
+
+  // Nom de fichier PNG safe (sans accents, espaces ni caractères spéciaux)
+  var _safeFn = function(s){
+    return String(s||'inconnu')
+      .normalize('NFD').replace(/[\u0300-\u036f]/g,'')   // accents
+      .replace(/[^a-zA-Z0-9]/g,'_')                       // caractères spéciaux
+      .replace(/_+/g,'_').replace(/^_|_$/g,'')           // trim
+      .substring(0,40) || 'inconnu';
+  };
+  var _pngFilename = 'Acte_adoption_' + _safeFn(a.adoptant) + '_' + _safeFn(a.adopte) + '_' + ref.replace('#','') + '.png';
 
   return ''
     + '<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8">'
@@ -31066,6 +31123,9 @@ function _buildAdoptionFicheHTML(a, opts){
     + '.no-print-toolbar button:hover{background:#374151}'
     + '.no-print-toolbar button.primary{background:#c0410e}'
     + '.no-print-toolbar button.primary:hover{background:#dc4f15}'
+    + '.no-print-toolbar button.png{background:#7c3aed}'
+    + '.no-print-toolbar button.png:hover{background:#9333ea}'
+    + '.no-print-toolbar button:disabled{opacity:0.6;cursor:wait}'
     + '.header-bar{background:linear-gradient(90deg,#a16207 0%,#d4b44a 50%,#a16207 100%);height:8px;width:100%}'
     + '.header{padding:30px 40px 22px;border-bottom:2px solid #1f2937;background:#fdfcf7;position:relative}'
     + '.header::after{content:"";position:absolute;left:0;right:0;bottom:-2px;height:2px;background:repeating-linear-gradient(90deg,#1f2937 0,#1f2937 8px,transparent 8px,transparent 12px)}'
@@ -31185,6 +31245,60 @@ function _buildAdoptionFicheHTML(a, opts){
     +     '<span>Page 1 / 1</span>'
     +   '</div>'
     + '</div>'
+    + (withToolbar
+        ? '<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></scr'+'ipt>'
+          + '<script>'
+          + 'function downloadFicheAsPNG(){'
+          +   'var btn = document.querySelector(".no-print-toolbar button.png");'
+          +   'if(typeof html2canvas !== "function"){'
+          +     'alert("La librairie de capture n\'est pas chargée. Vérifiez votre connexion et réessayez.");'
+          +     'return;'
+          +   '}'
+          +   'var page = document.querySelector(".page");'
+          +   'if(!page){ alert("Élément introuvable."); return; }'
+          +   'if(btn){ btn.disabled = true; btn.textContent = "⏳ Génération…"; }'
+          +   'html2canvas(page, {'
+          +     'scale: 2,'                            // qualité x2 pour image nette
+          +     'useCORS: true,'
+          +     'allowTaint: true,'
+          +     'backgroundColor: "#fdfcf7",'
+          +     'logging: false,'
+          +     'windowWidth: page.scrollWidth,'
+          +     'windowHeight: page.scrollHeight'
+          +   '}).then(function(canvas){'
+          +     'try {'
+          +       'canvas.toBlob(function(blob){'
+          +         'if(!blob){ throw new Error("Blob vide"); }'
+          +         'var url = URL.createObjectURL(blob);'
+          +         'var dl = document.createElement("a");'
+          +         'dl.href = url;'
+          +         'dl.download = "'+_pngFilename+'";'
+          +         'document.body.appendChild(dl);'
+          +         'dl.click();'
+          +         'document.body.removeChild(dl);'
+          +         'setTimeout(function(){ URL.revokeObjectURL(url); }, 1500);'
+          +       '}, "image/png");'
+          +     '} catch(e) {'
+          +       'try {'
+          +         'var dataURL = canvas.toDataURL("image/png");'
+          +         'var dl2 = document.createElement("a");'
+          +         'dl2.href = dataURL;'
+          +         'dl2.download = "Acte_adoption.png";'
+          +         'document.body.appendChild(dl2);'
+          +         'dl2.click();'
+          +         'document.body.removeChild(dl2);'
+          +       '} catch(err) {'
+          +         'alert("Erreur lors de la génération du PNG : " + err.message);'
+          +       '}'
+          +     '}'
+          +     'if(btn){ btn.disabled = false; btn.textContent = "🖼 Télécharger en PNG"; }'
+          +   '}).catch(function(err){'
+          +     'alert("Erreur lors de la capture : " + (err && err.message ? err.message : err));'
+          +     'if(btn){ btn.disabled = false; btn.textContent = "🖼 Télécharger en PNG"; }'
+          +   '});'
+          + '}'
+          + '</scr'+'ipt>'
+        : '')
     + '</body></html>';
 }
 
@@ -31219,7 +31333,7 @@ function _adDownloadAdoption(a){
   };
   var nameAdopt = safe(a.adoptant||'inconnu');
   var nameAdop  = safe(a.adopte||'inconnu');
-  var ref = String(a.id||'').slice(-6).toUpperCase();
+  var ref = _adGetRef(a).replace('#','');   // "000001" sans le #
   var fname = 'Acte_adoption_' + nameAdopt + '_' + nameAdop + '_' + ref + '.html';
   // Créer un Blob et déclencher le téléchargement
   try{
@@ -31251,7 +31365,7 @@ function openAdoptionView(id){
   _adCurrentViewId = String(id);
 
   // Mettre à jour l'en-tête du modal
-  var ref = '#'+String(a.id||'').slice(-6).toUpperCase();
+  var ref = _adGetRef(a);
   var refEl = document.getElementById('ad-view-ref');
   var titleEl = document.getElementById('ad-view-title');
   if(refEl) refEl.textContent = 'RÉF. '+ref+' · '+_adFmtDate(a.date);
@@ -31356,6 +31470,61 @@ function saveAdoptionFile(){
     return;
   }
   _adDownloadAdoption(a);
+}
+
+/* ─── TÉLÉCHARGEMENT PNG ───
+   Ouvre la fiche imprimable dans une nouvelle fenêtre puis déclenche
+   automatiquement la capture PNG via html2canvas (qui y est chargé).
+   La fenêtre se ferme toute seule une fois le téléchargement déclenché. */
+function downloadAdoptionAsPNG(id){
+  _adInit();
+  var a = DB.adoptions.find(function(x){ return String(x.id) === String(id); });
+  if(!a){
+    if(typeof showToast === 'function') showToast('Adoption introuvable.','error');
+    return;
+  }
+  // On marque le HTML pour qu'il déclenche un download auto à la fin du chargement
+  // (le helper `_buildAdoptionFicheHTML` injecte déjà html2canvas + downloadFicheAsPNG)
+  // Il suffit d'ajouter un petit script "auto-trigger" en plus.
+  var html = _buildAdoptionFicheHTML(a, {withToolbar:true});
+  // Injection : on insère un script auto-trigger juste avant </body>
+  var autoScript = '<script>'
+    + 'window.addEventListener("load", function(){'
+    +   'var tries = 0;'
+    +   'var itv = setInterval(function(){'
+    +     'tries++;'
+    +     'if(typeof html2canvas === "function"){'
+    +       'clearInterval(itv);'
+    +       'setTimeout(function(){'
+    +         'try { downloadFicheAsPNG(); } catch(e){ console.error(e); }'
+    +         'setTimeout(function(){ try { window.close(); } catch(e){} }, 2500);'
+    +       '}, 600);'                            // laisser le temps aux fonts de se charger
+    +     '} else if(tries > 60){'                // 6 secondes max
+    +       'clearInterval(itv);'
+    +       'alert("La librairie de capture n\'a pas pu se charger.");'
+    +     '}'
+    +   '}, 100);'
+    + '});'
+    + '</scr'+'ipt>';
+  html = html.replace('</body></html>', autoScript + '</body></html>');
+
+  var w = window.open('', '_blank');
+  if(!w){
+    if(typeof showToast === 'function') showToast('Veuillez autoriser les pop-ups pour télécharger le PNG.','error');
+    return;
+  }
+  w.document.open();
+  w.document.write(html);
+  w.document.close();
+  if(typeof showToast === 'function') showToast('🖼 Génération du PNG en cours…', 'info');
+}
+
+function downloadPNGFromCurrent(){
+  if(!_adCurrentViewId){
+    if(typeof showToast === 'function') showToast('Aucune adoption sélectionnée.','error');
+    return;
+  }
+  downloadAdoptionAsPNG(_adCurrentViewId);
 }
 
 // Fermer le modal avec Échap
@@ -42331,7 +42500,7 @@ document.addEventListener('DOMContentLoaded', function(){
     </div>
     <div class="ad-view-body" id="ad-view-body"></div>
     <div class="ad-view-footer">
-      <button type="button" class="ad-view-btn save" onclick="saveAdoptionFile()" title="Enregistrer la fiche au format HTML">💾 Enregistrer le fichier</button>
+      <button type="button" class="ad-view-btn save" onclick="downloadPNGFromCurrent()" title="Télécharger la fiche au format image PNG">🖼 Télécharger en PNG</button>
       <button type="button" class="ad-view-btn print" onclick="printCurrentAdoption()" title="Ouvrir la fiche imprimable">🖨 Ouvrir la fiche imprimable</button>
       <button type="button" class="ad-view-btn close" onclick="closeAdoptionView()">Fermer</button>
     </div>
