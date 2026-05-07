@@ -1635,28 +1635,6 @@ body.dark #btn-darkmode:hover {
   #effectifs-grid{grid-template-columns:1fr !important}
 }
 
-/* ===== MESSAGERIE ===== */
-.msg-thread{display:flex;flex-direction:column;gap:10px;padding:16px}
-.msg-bubble{max-width:70%;padding:10px 14px;border-radius:16px;font-size:13px;line-height:1.6;position:relative}
-.msg-bubble.mine{align-self:flex-end;background:linear-gradient(135deg,var(--accent),#8a2c08);color:#fff;border-bottom-right-radius:4px}
-.msg-bubble.theirs{align-self:flex-start;background:rgba(25,20,12,0.95);border:1px solid rgba(201,162,39,0.15);color:var(--text);border-bottom-left-radius:4px}
-.msg-meta{font-size:9.5px;opacity:0.6;margin-top:4px;font-family:'Share Tech Mono',monospace}
-.msg-input-row{display:flex;gap:8px;padding:12px 16px;border-top:1px solid rgba(180,140,20,0.12);background:rgba(255,255,255,0.6);backdrop-filter:blur(8px);flex-shrink:0}
-.msg-contact{display:flex;align-items:center;gap:10px;padding:11px 16px;cursor:pointer;border-bottom:1px solid rgba(180,140,20,0.08);transition:background 0.15s}
-.msg-contact:hover{background:rgba(180,140,20,0.05)}
-.msg-contact.active{background:rgba(192,65,14,0.08);border-left:3px solid var(--accent)}
-.msg-contact-name{font-weight:600;font-size:13px;color:var(--text)}
-.msg-contact-preview{font-size:10.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:160px}.msg-unread-dot{width:8px;height:8px;border-radius:50%;background:var(--accent);flex-shrink:0;margin-left:auto}
-#page-messagerie .msg-layout{display:grid;grid-template-columns:260px 1fr;height:calc(100vh - 56px - 48px);overflow:hidden;gap:0}
-#page-messagerie .msg-sidebar{border-right:1px solid rgba(201,162,39,0.12);overflow-y:auto;background:rgba(12,10,7,0.95)}
-#page-messagerie .msg-main{display:flex;flex-direction:column;overflow:hidden}
-#page-messagerie .msg-thread-wrap{flex:1;overflow-y:auto}
-@media(max-width:768px){
-  #page-messagerie .msg-layout{grid-template-columns:1fr;height:auto}
-  #page-messagerie .msg-sidebar{height:200px;border-right:none;border-bottom:1px solid rgba(180,140,20,0.12)}
-  .msg-bubble{max-width:85%}
-}
-
 /* ===== PROFIL ===== */
 .profile-hero{background:linear-gradient(135deg,rgba(192,65,14,0.1),rgba(201,162,39,0.06));border:1px solid rgba(201,162,39,0.2);border-radius:14px;padding:28px 24px;display:flex;align-items:center;gap:20px;margin-bottom:20px}
 .profile-hero-avatar{width:80px;height:80px;border-radius:50%;background:linear-gradient(135deg,var(--accent),#8a2c08);display:flex;align-items:center;justify-content:center;font-size:30px;font-weight:700;color:#fff;flex-shrink:0;border:3px solid rgba(201,162,39,0.4);box-shadow:0 4px 24px rgba(0,0,0,0.4)}
@@ -2188,15 +2166,8 @@ body.dark .skeleton{background:linear-gradient(90deg,rgba(255,255,255,0.04) 25%,
   @page{margin:1.5cm}
 }
 
-/* Dark mode chart / messagerie */
+/* Dark mode chart */
 body.dark .chart-card{background:rgba(18,14,8,0.95)!important;border-color:rgba(180,140,20,0.12)!important}
-body.dark .msg-contact{border-bottom-color:rgba(255,255,255,0.05)!important}
-body.dark .msg-contact:hover{background:rgba(255,255,255,0.04)!important}
-body.dark .msg-contact.active{background:rgba(192,65,14,0.12)!important}
-body.dark .msg-bubble.theirs{background:rgba(12,10,7,0.95)!important;border-color:rgba(180,140,20,0.15)!important}
-body.dark .msg-input-row{background:rgba(18,20,36,0.9)!important;border-top-color:rgba(180,140,20,0.12)!important}
-.msg-header-bar{background:rgba(18,14,8,0.95)}
-#page-messagerie .msg-sidebar{border-right:1px solid rgba(201,162,39,0.12);overflow-y:auto;background:rgba(12,10,7,0.95)}
 .cal-cell{min-height:72px;background:rgba(18,14,8,0.95);border:1px solid rgba(201,162,39,0.1);border-radius:8px;padding:5px;font-size:10.5px}
 .cal-cell.today{border-color:rgba(201,162,39,0.4);background:rgba(201,162,39,0.05)}
 .cal-event.active{background:rgba(34,197,94,0.12);color:#4ade80;border-left:2px solid var(--green)}
@@ -2461,16 +2432,6 @@ body.dark .msg-input-row{background:rgba(18,20,36,0.9)!important;border-top-colo
 }
 
 /* Bingo book card */
-/* Msg contact items */
-.msg-contact{border-bottom:1px solid rgba(201,162,39,0.07) !important;}
-.msg-contact:hover{background:rgba(201,162,39,0.04) !important;}
-.msg-contact.active{background:rgba(192,65,14,0.12) !important;}
-
-/* Msg input row */
-.msg-input-row{
-  background:rgba(10,8,6,0.95) !important;
-  border-top:1px solid rgba(201,162,39,0.1) !important;
-}
 
 /* Operations card */
 .op-card{
@@ -2479,14 +2440,6 @@ body.dark .msg-input-row{background:rgba(18,20,36,0.9)!important;border-top-colo
 }
 
 /* Dossier card */
-
-/* Reaction buttons */
-.react-btn{
-  border:1px solid rgba(201,162,39,0.18) !important;
-  background:rgba(201,162,39,0.04) !important;
-  color:var(--text) !important;
-}
-.react-btn:hover{border-color:rgba(201,162,39,0.38) !important;background:rgba(201,162,39,0.09) !important;}
 
 /* Effectif cards */
 
@@ -2499,9 +2452,7 @@ body.dark .msg-input-row{background:rgba(18,20,36,0.9)!important;border-top-colo
 #btn-global-search:hover{background:rgba(201,162,39,0.14) !important;}
 
 /* Suppression de l'override dark-mode - le site est déjà dark par défaut */
-body.dark .chart-card,body.dark .msg-contact,body.dark .msg-contact.active,
-body.dark .msg-bubble.theirs,body.dark .msg-input-row,body.dark .msg-header-bar,
-body.dark .msg-contact:hover,body.dark .react-btn,body.dark .react-btn:hover,
+body.dark .chart-card,
 body.dark .skeleton,body.dark .timeline-item::before{
   /* ces overrides sont désormais gérés par le thème global */
 }
@@ -2917,8 +2868,6 @@ body.dark .skeleton,body.dark .timeline-item::before{
   .lore-wrap,
   #login-screen,
   #sidebar,
-  .msg-list,
-  .msg-thread-wrap,
   #imp-collecteurs-list,
   #imp-recup-list,
   .cp-articles-grid,
@@ -3072,7 +3021,6 @@ html{-webkit-tap-highlight-color:transparent}
 @media(max-width:768px){
   .nav-item,.btn,.bnav-item,.drawer-item,.adm-tab,.cp-tab,
   .imp-fbtn,.dc-fbtn,.bb-card-btn,.bb-fbtn,
-  .msg-c,.msg-bubble,.msg-react,.msg-react-add,
   button,a[onclick],input[type="button"],input[type="submit"]{
     touch-action:manipulation;
   }
@@ -3096,7 +3044,7 @@ html{-webkit-tap-highlight-color:transparent}
 
 /* ─── SCROLLABLE LISTS : scroll-snap pour fluidité ─── */
 @media(max-width:768px){
-  .msg-list, #imp-collecteurs-list, #imp-recup-list,
+  #imp-collecteurs-list, #imp-recup-list,
   #lore-published-zone, .cp-articles-grid{
     scroll-behavior:smooth;
   }
@@ -3136,18 +3084,6 @@ html{-webkit-tap-highlight-color:transparent}
   }
 }
 
-/* ─── MESSAGERIE : protection contre le clavier qui pousse l'input ─── */
-@media(max-width:768px){
-  #page-messagerie .msg-shell{
-    /* interactive-widget=resizes-visual → la viewport se redimensionne avec le clavier */
-    height:calc(100dvh - 56px - 64px - env(safe-area-inset-bottom,0px)) !important;
-    max-height:calc(100dvh - 56px - 64px - env(safe-area-inset-bottom,0px)) !important;
-  }
-  #page-messagerie .msg-input-row{
-    padding-bottom:calc(env(safe-area-inset-bottom,0px) + 10px) !important;
-  }
-}
-
 /* ─── PAGE HEADER : titre et sous-titre adaptés mobile ─── */
 @media(max-width:768px){
   .section-header{
@@ -3174,7 +3110,7 @@ html{-webkit-tap-highlight-color:transparent}
     overflow-x:visible;
   }
   /* Sauf les zones explicitement scrollables */
-  .table-scroll-wrapper, .lg-tax-grid, .msg-thread-wrap{
+  .table-scroll-wrapper, .lg-tax-grid{
     overflow-x:auto !important;
   }
 }
@@ -4707,7 +4643,6 @@ html{-webkit-tap-highlight-color:transparent}
   /* Conteneurs qui DOIVENT pouvoir déborder horizontalement (tables, etc.) */
   .table-scroll-wrapper,
   .lg-tax-grid,
-  .msg-thread-wrap,
   .pgv2-tabs,
   .tab-row,
   .rcv2-steps{
@@ -7533,7 +7468,6 @@ document.addEventListener('error', function(e){
     <div class="nav-item" role="button" tabindex="0" onclick="showPage('diplo-laissezpasse')" data-page="diplo-laissezpasse" data-sec="all"><span class="icon">🪪</span> Laissez-passer</div>
     <div class="nav-item" role="button" tabindex="0" onclick="showPage('codepenal')" data-page="codepenal" data-sec="all"><span class="icon">📜</span> Code Pénal</div>
     <div class="nav-item" role="button" tabindex="0" onclick="showPage('histoire')" data-page="histoire" data-sec="all"><span class="icon">📖</span> Histoire</div>
-    <div class="nav-item" role="button" tabindex="0" onclick="showPage('messagerie')" data-page="messagerie" data-member-only="true" data-sec="all"><span class="icon">💬</span> Messagerie <span class="nav-badge" id="badge-messagerie" style="background:var(--cyan);display:none">0</span></div>
     <div class="nav-section" data-member-only="true" data-sec="police">Opérations</div>
     <div class="nav-item" role="button" tabindex="0" onclick="showPage('operations')" data-page="operations" data-member-only="true" data-sec="police"><span class="icon">🚨</span> Opérations <span class="nav-badge" id="badge-operations" style="background:var(--accent);display:none">0</span></div>
     <div class="nav-item" role="button" tabindex="0" onclick="showPage('effectifs')" data-page="effectifs" data-member-only="true" data-sec="police"><span class="icon">👮</span> Effectifs</div>
@@ -8040,10 +7974,6 @@ document.addEventListener('error', function(e){
         <button class="db-quick-btn" style="--qa-bg:rgba(217,119,6,0.1);--qa-bd:rgba(217,119,6,0.4)" onclick="removeAnnoncePhoto&&removeAnnoncePhoto();openModal('modal-annonce')">
           <span class="ic">📢</span>
           <div class="txt"><div class="lbl">Annonce</div><div class="sub">Publier une info</div></div>
-        </button>
-        <button class="db-quick-btn" style="--qa-bg:rgba(132,204,22,0.1);--qa-bd:rgba(132,204,22,0.4)" onclick="showPage('messagerie')">
-          <span class="ic">💬</span>
-          <div class="txt"><div class="lbl">Messagerie</div><div class="sub">Communications</div></div>
         </button>
       </div>
     </div>
@@ -14198,630 +14128,6 @@ document.addEventListener('error', function(e){
     </div>
   </div>
 
-  <!-- MESSAGERIE -->
-  <div class="page-content" id="page-messagerie">
-    <style>
-    /* ═══════════════════════════════════════════════════════════
-       MESSAGERIE — Refonte style Discord/Telegram pro
-       ═══════════════════════════════════════════════════════════ */
-    #page-messagerie .msg-shell{
-      display:grid;
-      grid-template-columns:300px 1fr;
-      height:calc(100vh - 56px - 48px);
-      max-height:calc(100vh - 56px - 48px);
-      background:#0e0b07;
-      border:1px solid rgba(180,140,20,0.18);
-      border-radius:14px;
-      overflow:hidden;
-      box-shadow:0 4px 32px rgba(0,0,0,0.4);
-    }
-
-    /* ═══ SIDEBAR CONTACTS ═══ */
-    #page-messagerie .msg-side{
-      display:flex;flex-direction:column;
-      background:linear-gradient(180deg,#15110b 0%,#0e0b07 100%);
-      border-right:1px solid rgba(180,140,20,0.14);
-      min-width:0;
-    }
-    #page-messagerie .msg-side-head{
-      padding:14px 16px 12px;
-      border-bottom:1px solid rgba(180,140,20,0.12);
-      flex-shrink:0;
-    }
-    #page-messagerie .msg-side-title{
-      font-family:'Cinzel',serif;
-      font-size:13px;font-weight:700;
-      letter-spacing:2px;color:#d4b44a;
-      text-transform:uppercase;
-      margin-bottom:10px;
-      display:flex;align-items:center;gap:8px;
-    }
-    #page-messagerie .msg-side-title .count{
-      margin-left:auto;
-      font-family:'Share Tech Mono',monospace;
-      font-size:9px;letter-spacing:1.5px;
-      color:rgba(255,255,255,0.4);
-      background:rgba(255,255,255,0.04);
-      padding:2px 8px;border-radius:10px;
-    }
-    #page-messagerie .msg-search-wrap{
-      position:relative;
-    }
-    #page-messagerie .msg-search-wrap::before{
-      content:'🔍';
-      position:absolute;left:11px;top:50%;
-      transform:translateY(-50%);
-      font-size:11px;
-      pointer-events:none;
-      opacity:0.5;
-    }
-    #page-messagerie .msg-side-search{
-      width:100%;
-      padding:9px 12px 9px 32px !important;
-      background:rgba(255,255,255,0.04) !important;
-      border:1px solid rgba(180,140,20,0.18) !important;
-      border-radius:8px !important;
-      color:#f0e8d0 !important;
-      font-size:12.5px !important;
-      font-family:'Barlow',sans-serif !important;
-      transition:all .18s ease;
-    }
-    #page-messagerie .msg-side-search:focus{
-      border-color:rgba(180,140,20,0.45) !important;
-      background:rgba(255,255,255,0.06) !important;
-      outline:none !important;
-      box-shadow:0 0 0 3px rgba(180,140,20,0.1) !important;
-    }
-    #page-messagerie .msg-side-search::placeholder{color:rgba(255,255,255,0.3) !important}
-
-    #page-messagerie .msg-list{
-      flex:1;overflow-y:auto;
-      padding:6px;
-      -webkit-overflow-scrolling:touch;
-    }
-    #page-messagerie .msg-list::-webkit-scrollbar{width:5px}
-    #page-messagerie .msg-list::-webkit-scrollbar-thumb{background:rgba(180,140,20,0.18);border-radius:3px}
-
-    /* Carte de contact */
-    #page-messagerie .msg-c{
-      display:grid;
-      grid-template-columns:42px 1fr auto;
-      gap:11px;align-items:center;
-      padding:9px 10px;border-radius:9px;
-      cursor:pointer;
-      transition:background .15s ease,transform .12s ease;
-      margin-bottom:2px;position:relative;
-    }
-    #page-messagerie .msg-c:hover{
-      background:rgba(255,255,255,0.04);
-    }
-    #page-messagerie .msg-c.active{
-      background:linear-gradient(90deg,rgba(192,65,14,0.18) 0%,rgba(192,65,14,0.06) 100%);
-      box-shadow:inset 3px 0 0 #e05c1a;
-    }
-    /* Avatar avec statut */
-    #page-messagerie .msg-c-av{
-      width:42px;height:42px;border-radius:50%;
-      display:flex;align-items:center;justify-content:center;
-      font-family:'Cinzel',serif;font-weight:700;font-size:15px;
-      color:#fff;flex-shrink:0;position:relative;
-      box-shadow:0 2px 6px rgba(0,0,0,0.3);
-    }
-    /* Pastille statut */
-    #page-messagerie .msg-c-status{
-      position:absolute;
-      bottom:-1px;right:-1px;
-      width:13px;height:13px;border-radius:50%;
-      border:2.5px solid #15110b;
-      background:#6b7280;
-      box-shadow:0 1px 3px rgba(0,0,0,0.3);
-    }
-    #page-messagerie .msg-c.active .msg-c-status{border-color:#1a1410}
-    #page-messagerie .msg-c-status.online{background:#22c55e;box-shadow:0 0 8px rgba(34,197,94,0.6),0 1px 3px rgba(0,0,0,0.3)}
-    #page-messagerie .msg-c-status.recent{background:#f59e0b}
-    #page-messagerie .msg-c-status.offline{background:#6b7280}
-
-    #page-messagerie .msg-c-info{min-width:0;flex:1}
-    #page-messagerie .msg-c-row1{
-      display:flex;justify-content:space-between;align-items:baseline;gap:6px;
-      margin-bottom:2px;
-    }
-    #page-messagerie .msg-c-name{
-      font-weight:700;font-size:13.5px;color:#f0e8d0;
-      letter-spacing:0.2px;
-      white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
-    }
-    #page-messagerie .msg-c-time{
-      font-family:'Share Tech Mono',monospace;
-      font-size:9px;letter-spacing:0.5px;
-      color:rgba(255,255,255,0.4);
-      flex-shrink:0;
-    }
-    #page-messagerie .msg-c.unread .msg-c-name{color:#fff}
-    #page-messagerie .msg-c.unread .msg-c-time{color:#e05c1a}
-    #page-messagerie .msg-c-row2{
-      display:flex;justify-content:space-between;align-items:center;gap:6px;
-    }
-    #page-messagerie .msg-c-preview{
-      font-size:11.5px;color:rgba(255,255,255,0.45);
-      white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
-      flex:1;min-width:0;
-    }
-    #page-messagerie .msg-c.unread .msg-c-preview{
-      color:rgba(255,255,255,0.85);font-weight:600;
-    }
-    #page-messagerie .msg-c-preview .me-prefix{
-      color:rgba(255,255,255,0.5);font-style:italic;
-    }
-    #page-messagerie .msg-c-badge{
-      background:linear-gradient(135deg,#dc2626,#991b1b);
-      color:#fff;font-size:10px;font-weight:700;
-      padding:2px 7px;border-radius:10px;
-      min-width:20px;text-align:center;
-      box-shadow:0 2px 6px rgba(220,38,38,0.4);
-      flex-shrink:0;
-    }
-    #page-messagerie .msg-c-typing{
-      color:#22c55e !important;font-style:italic;
-      animation:msgTypingPulse 1.4s ease-in-out infinite;
-    }
-    @keyframes msgTypingPulse{
-      0%,100%{opacity:0.7}50%{opacity:1}
-    }
-
-    /* ═══ MAIN CHAT ═══ */
-    #page-messagerie .msg-main{
-      display:flex;flex-direction:column;
-      min-width:0;background:#0e0b07;
-    }
-    #page-messagerie .msg-main-empty{
-      flex:1;display:flex;flex-direction:column;
-      align-items:center;justify-content:center;
-      gap:14px;padding:40px;
-      text-align:center;
-      color:rgba(255,255,255,0.4);
-    }
-    #page-messagerie .msg-main-empty-ic{
-      font-size:54px;opacity:0.45;
-    }
-    #page-messagerie .msg-main-empty-ttl{
-      font-family:'Cinzel',serif;
-      font-size:18px;font-weight:600;
-      color:rgba(240,232,208,0.6);
-      letter-spacing:1px;
-    }
-    #page-messagerie .msg-main-empty-sub{
-      font-family:'Share Tech Mono',monospace;
-      font-size:10px;letter-spacing:1.5px;
-      color:rgba(255,255,255,0.3);
-      text-transform:uppercase;
-    }
-
-    /* En-tête conversation */
-    #page-messagerie .msg-conv-head{
-      display:flex;align-items:center;gap:13px;
-      padding:14px 20px;
-      border-bottom:1px solid rgba(180,140,20,0.14);
-      background:linear-gradient(180deg,#15110b 0%,#0e0b07 100%);
-      flex-shrink:0;
-      box-shadow:0 2px 12px rgba(0,0,0,0.3);
-    }
-    #page-messagerie .msg-conv-av{
-      width:44px;height:44px;border-radius:50%;
-      display:flex;align-items:center;justify-content:center;
-      font-family:'Cinzel',serif;font-weight:700;font-size:15px;
-      color:#fff;flex-shrink:0;position:relative;
-      box-shadow:0 2px 8px rgba(0,0,0,0.4);
-    }
-    #page-messagerie .msg-conv-av .msg-c-status{
-      bottom:0;right:0;
-      width:14px;height:14px;border-width:2.5px;
-    }
-    #page-messagerie .msg-conv-info{flex:1;min-width:0}
-    #page-messagerie .msg-conv-name{
-      font-family:'Cinzel',serif;
-      font-size:16px;font-weight:700;
-      color:#f0e8d0;letter-spacing:0.4px;
-      margin-bottom:1px;
-    }
-    #page-messagerie .msg-conv-status{
-      font-family:'Share Tech Mono',monospace;
-      font-size:10px;letter-spacing:1.5px;
-      color:rgba(255,255,255,0.5);
-      text-transform:uppercase;
-      display:flex;align-items:center;gap:6px;
-    }
-    #page-messagerie .msg-conv-status .dot{
-      width:7px;height:7px;border-radius:50%;
-      background:#6b7280;
-    }
-    #page-messagerie .msg-conv-status.online .dot{background:#22c55e;box-shadow:0 0 6px rgba(34,197,94,0.6)}
-    #page-messagerie .msg-conv-status.recent .dot{background:#f59e0b}
-
-    /* Zone messages */
-    #page-messagerie .msg-thread-wrap{
-      flex:1;overflow-y:auto;
-      padding:18px 24px 12px;
-      -webkit-overflow-scrolling:touch;
-      background:
-        radial-gradient(ellipse at 30% 0%,rgba(192,65,14,0.04) 0%,transparent 50%),
-        radial-gradient(ellipse at 70% 100%,rgba(180,140,20,0.04) 0%,transparent 50%),
-        #0e0b07;
-    }
-    #page-messagerie .msg-thread-wrap::-webkit-scrollbar{width:6px}
-    #page-messagerie .msg-thread-wrap::-webkit-scrollbar-thumb{background:rgba(180,140,20,0.2);border-radius:3px}
-
-    #page-messagerie .msg-thread{
-      display:flex;flex-direction:column;gap:3px;
-      max-width:780px;margin:0 auto;
-    }
-    /* Séparateur date */
-    #page-messagerie .msg-day-sep{
-      align-self:center;
-      font-family:'Share Tech Mono',monospace;
-      font-size:9px;letter-spacing:2.5px;
-      color:rgba(255,255,255,0.35);
-      text-transform:uppercase;
-      padding:14px 14px 8px;
-      display:flex;align-items:center;gap:10px;
-      width:100%;justify-content:center;
-    }
-    #page-messagerie .msg-day-sep::before,
-    #page-messagerie .msg-day-sep::after{
-      content:'';flex:0 0 56px;height:1px;
-      background:rgba(180,140,20,0.18);
-    }
-
-    /* Bulle message */
-    #page-messagerie .msg-bubble-row{
-      display:flex;gap:9px;align-items:flex-end;
-      max-width:75%;
-      margin-top:2px;
-    }
-    #page-messagerie .msg-bubble-row.mine{align-self:flex-end;flex-direction:row-reverse}
-    #page-messagerie .msg-bubble-row.first-of-group{margin-top:14px}
-    #page-messagerie .msg-bubble-row .av-slot{
-      width:32px;flex-shrink:0;
-    }
-    #page-messagerie .msg-bubble-row .av-slot .mini-av{
-      width:32px;height:32px;border-radius:50%;
-      display:flex;align-items:center;justify-content:center;
-      font-family:'Cinzel',serif;font-weight:700;font-size:12px;
-      color:#fff;
-      box-shadow:0 1px 4px rgba(0,0,0,0.3);
-    }
-    #page-messagerie .msg-bubble-row.mine .av-slot{display:none}
-
-    #page-messagerie .msg-b-content{
-      display:flex;flex-direction:column;
-      min-width:0;flex:1;
-    }
-    #page-messagerie .msg-b-author{
-      font-family:'Share Tech Mono',monospace;
-      font-size:9px;letter-spacing:1.5px;
-      color:rgba(255,255,255,0.5);
-      text-transform:uppercase;
-      margin-bottom:3px;padding-left:14px;
-    }
-    #page-messagerie .msg-bubble{
-      padding:9px 14px;border-radius:18px;
-      font-size:13.5px;line-height:1.5;
-      position:relative;
-      word-wrap:break-word;
-      /* bug-fix : la bulle s'adapte à son contenu via display:inline-block.
-         (avant : width:fit-content cassait la mise en page sur certains navigateurs). */
-      display:inline-block;
-      max-width:100%;
-    }
-    @keyframes msgPop{
-      from{opacity:0;transform:scale(0.94) translateY(4px)}
-      to{opacity:1;transform:scale(1) translateY(0)}
-    }
-    #page-messagerie .msg-bubble.theirs{
-      background:linear-gradient(135deg,#1f1810 0%,#1a1510 100%);
-      border:1px solid rgba(180,140,20,0.18);
-      color:#f0e8d0;
-      border-bottom-left-radius:5px;
-      box-shadow:0 1px 3px rgba(0,0,0,0.3);
-    }
-    #page-messagerie .msg-bubble-row.mine .msg-bubble{
-      background:linear-gradient(135deg,#c0410e 0%,#8a2c08 100%);
-      color:#fff;
-      border-bottom-right-radius:5px;
-      box-shadow:0 2px 8px rgba(192,65,14,0.3);
-    }
-    #page-messagerie .msg-bubble.last-of-group{margin-bottom:0}
-    /* Bulle dans un groupe (pas la première) → coins normaux */
-    #page-messagerie .msg-bubble-row:not(.first-of-group) .msg-bubble.theirs{
-      border-top-left-radius:5px;
-    }
-    #page-messagerie .msg-bubble-row.mine:not(.first-of-group) .msg-bubble{
-      border-top-right-radius:5px;
-    }
-
-    #page-messagerie .msg-b-meta{
-      display:flex;gap:6px;align-items:center;
-      font-family:'Share Tech Mono',monospace;
-      font-size:9px;letter-spacing:0.5px;
-      color:rgba(255,255,255,0.4);
-      margin-top:3px;padding:0 4px;
-    }
-    #page-messagerie .msg-bubble-row.mine .msg-b-meta{justify-content:flex-end}
-    #page-messagerie .msg-b-meta .read-mark{
-      color:#60a5fa;font-weight:700;
-    }
-
-    /* Réactions */
-    #page-messagerie .msg-reacts{
-      display:flex;gap:4px;flex-wrap:wrap;
-      margin-top:4px;padding:0 4px;
-    }
-    #page-messagerie .msg-bubble-row.mine .msg-reacts{justify-content:flex-end}
-    #page-messagerie .msg-react{
-      background:rgba(20,16,9,0.95);
-      border:1px solid rgba(180,140,20,0.25);
-      border-radius:12px;
-      padding:2px 8px;
-      font-size:11px;
-      cursor:pointer;
-      display:inline-flex;align-items:center;gap:4px;
-      transition:all .15s ease;
-      user-select:none;
-    }
-    #page-messagerie .msg-react:hover{
-      background:rgba(30,24,14,0.95);
-      transform:scale(1.05);
-    }
-    #page-messagerie .msg-react.mine{
-      background:rgba(192,65,14,0.18);
-      border-color:rgba(192,65,14,0.5);
-    }
-    #page-messagerie .msg-react .ct{
-      font-family:'Share Tech Mono',monospace;
-      font-size:9.5px;color:rgba(255,255,255,0.7);
-    }
-    /* Bouton ajouter réaction (apparaît au hover) */
-    #page-messagerie .msg-bubble-row .msg-react-add{
-      position:absolute;
-      top:-10px;
-      background:rgba(20,16,9,0.98);
-      border:1px solid rgba(180,140,20,0.4);
-      border-radius:14px;
-      padding:3px 7px;
-      font-size:13px;cursor:pointer;
-      opacity:0;transition:opacity .15s ease;
-      pointer-events:none;
-      box-shadow:0 2px 8px rgba(0,0,0,0.4);
-    }
-    #page-messagerie .msg-bubble-row.theirs .msg-react-add{right:-30px}
-    #page-messagerie .msg-bubble-row.mine .msg-react-add{left:-30px}
-    #page-messagerie .msg-bubble-row:hover .msg-react-add{opacity:1;pointer-events:auto}
-    #page-messagerie .msg-react-add:hover{transform:scale(1.15);background:rgba(30,24,14,1)}
-
-    /* Picker emoji */
-    #page-messagerie .msg-react-picker{
-      position:fixed;z-index:9000;
-      background:rgba(20,16,9,0.98);
-      border:1px solid rgba(180,140,20,0.4);
-      border-radius:24px;
-      padding:6px 10px;
-      display:flex;gap:6px;
-      box-shadow:0 6px 22px rgba(0,0,0,0.5);
-      animation:msgPickerIn .2s ease;
-    }
-    @keyframes msgPickerIn{
-      from{opacity:0;transform:translateY(-4px) scale(.9)}
-      to{opacity:1;transform:translateY(0) scale(1)}
-    }
-    #page-messagerie .msg-react-picker .emoji{
-      font-size:20px;cursor:pointer;
-      width:30px;height:30px;border-radius:50%;
-      display:flex;align-items:center;justify-content:center;
-      transition:all .15s ease;
-    }
-    #page-messagerie .msg-react-picker .emoji:hover{
-      background:rgba(180,140,20,0.15);
-      transform:scale(1.25);
-    }
-
-    /* Indicateur typing */
-    #page-messagerie .msg-typing-indicator{
-      align-self:flex-start;
-      display:flex;align-items:center;gap:9px;
-      margin:6px 0 2px;
-      padding-left:42px;
-    }
-    #page-messagerie .msg-typing-bubble{
-      background:linear-gradient(135deg,#1f1810,#1a1510);
-      border:1px solid rgba(180,140,20,0.18);
-      border-radius:16px 16px 16px 5px;
-      padding:9px 14px;
-      display:flex;gap:4px;align-items:center;
-    }
-    #page-messagerie .msg-typing-bubble .d{
-      width:6px;height:6px;border-radius:50%;
-      background:rgba(255,255,255,0.5);
-      animation:msgTypingDot 1.2s infinite ease-in-out;
-    }
-    #page-messagerie .msg-typing-bubble .d:nth-child(2){animation-delay:.2s}
-    #page-messagerie .msg-typing-bubble .d:nth-child(3){animation-delay:.4s}
-    @keyframes msgTypingDot{
-      0%,80%,100%{opacity:0.3;transform:scale(0.8)}
-      40%{opacity:1;transform:scale(1.1)}
-    }
-
-    /* Zone de saisie */
-    #page-messagerie .msg-input-row{
-      padding:14px 20px 18px;
-      border-top:1px solid rgba(180,140,20,0.14);
-      background:rgba(15,12,7,0.95);
-      flex-shrink:0;
-      min-height:74px;
-      box-sizing:border-box;
-      width:100%;
-      position:relative;
-      z-index:5;
-    }
-    /* ═══ BARRE D'INPUT — APPROCHE ROBUSTE ═══
-       Toujours affichée (display:flex) tant que le wrapper conversation
-       est .is-open. Plus aucun toggle JS, juste du CSS. */
-    #page-messagerie #msg-conv-wrap.is-open{
-      display:flex !important;
-      flex:1 !important;
-      flex-direction:column !important;
-      min-height:0 !important;
-      height:100% !important;
-      position:relative;
-    }
-    /* Le thread-wrap doit laisser de la place à l'input row en bas */
-    #page-messagerie #msg-conv-wrap.is-open .msg-thread-wrap{
-      flex:1 1 0 !important;
-      min-height:0 !important;
-      overflow-y:auto !important;
-      /* Réserve la hauteur de l'input row pour qu'il ne soit jamais caché */
-      padding-bottom:8px !important;
-    }
-    /* L'input row : garantie absolue d'affichage par tous les moyens */
-    #page-messagerie #msg-conv-wrap.is-open #msg-input-row{
-      display:flex !important;
-      visibility:visible !important;
-      opacity:1 !important;
-      flex-shrink:0 !important;
-      flex-grow:0 !important;
-      flex-basis:auto !important;
-      height:auto !important;
-      min-height:74px !important;
-      max-height:none !important;
-      overflow:visible !important;
-      pointer-events:auto !important;
-    }
-    /* Tant que le wrapper n'est pas .is-open, tout est caché */
-    #page-messagerie #msg-conv-wrap:not(.is-open){
-      display:none !important;
-    }
-    #page-messagerie .msg-input-box{
-      display:flex;gap:10px;align-items:flex-end;
-      max-width:780px;margin:0 auto;
-    }
-    #page-messagerie .msg-input-text{
-      flex:1;
-      padding:11px 16px !important;
-      background:rgba(255,255,255,0.06) !important;
-      border:1px solid rgba(180,140,20,0.22) !important;
-      border-radius:22px !important;
-      color:#f0e8d0 !important;
-      font-family:'Barlow',sans-serif !important;
-      font-size:13.5px !important;
-      resize:none;min-height:44px;max-height:140px;
-      line-height:1.45 !important;
-      transition:all .15s ease;
-    }
-    #page-messagerie .msg-input-text:focus{
-      border-color:rgba(180,140,20,0.5) !important;
-      background:rgba(255,255,255,0.08) !important;
-      outline:none !important;
-      box-shadow:0 0 0 3px rgba(180,140,20,0.1) !important;
-    }
-    #page-messagerie .msg-input-text::placeholder{color:rgba(255,255,255,0.35) !important}
-    #page-messagerie .msg-send-btn{
-      width:44px;height:44px;border-radius:50%;
-      background:linear-gradient(135deg,#c0410e,#8a2c08);
-      border:none;color:#fff;cursor:pointer;
-      font-size:18px;
-      display:flex;align-items:center;justify-content:center;
-      flex-shrink:0;
-      transition:all .15s ease;
-      box-shadow:0 3px 12px rgba(192,65,14,0.35);
-    }
-    #page-messagerie .msg-send-btn:hover{
-      transform:scale(1.06);
-      box-shadow:0 5px 18px rgba(192,65,14,0.55);
-    }
-    #page-messagerie .msg-send-btn:active{transform:scale(0.96)}
-    #page-messagerie .msg-send-btn:disabled{opacity:0.4;cursor:not-allowed;transform:none}
-
-    /* Mobile */
-    @media(max-width:768px){
-      #page-messagerie .msg-shell{
-        grid-template-columns:1fr;
-        height:calc(100vh - 56px - 64px - env(safe-area-inset-bottom,0px));
-        max-height:calc(100vh - 56px - 64px - env(safe-area-inset-bottom,0px));
-        border-radius:0;border:none;
-      }
-      #page-messagerie .msg-side{display:flex}
-      #page-messagerie .msg-main{display:none}
-      /* Mode "conversation ouverte" sur mobile */
-      #page-messagerie.in-chat .msg-side{display:none}
-      #page-messagerie.in-chat .msg-main{display:flex}
-      #page-messagerie .msg-thread-wrap{padding:14px 12px 8px}
-      #page-messagerie .msg-bubble-row{max-width:88%}
-      #page-messagerie .msg-input-row{padding:10px 12px 14px}
-      #page-messagerie .msg-conv-head{padding:11px 14px}
-    }
-    /* Bouton retour mobile */
-    #page-messagerie .msg-back-btn{
-      display:none;background:none;border:none;
-      color:#f0e8d0;font-size:22px;cursor:pointer;
-      padding:0 6px;
-    }
-    @media(max-width:768px){
-      #page-messagerie .msg-back-btn{display:inline-flex}
-    }
-    </style>
-
-    <div class="section-header">
-      <div><div class="section-title">Messagerie interne</div><div class="section-sub">COMMUNICATIONS ENTRE MEMBRES</div></div>
-      <button class="btn btn-primary" onclick="openModal('modal-new-msg')">✉️ Nouveau message</button>
-    </div>
-
-    <div class="msg-shell">
-      <!-- SIDEBAR : liste des contacts -->
-      <aside class="msg-side">
-        <div class="msg-side-head">
-          <div class="msg-side-title">
-            <span>💬</span>Conversations
-            <span class="count" id="msg-side-count">0</span>
-          </div>
-          <div class="msg-search-wrap">
-            <input type="text" class="msg-side-search" placeholder="Rechercher un contact..." id="msg-search" oninput="renderMsgContacts()">
-          </div>
-        </div>
-        <div class="msg-list" id="msg-contacts-inner"></div>
-      </aside>
-
-      <!-- MAIN : conversation -->
-      <section class="msg-main" id="msg-main">
-        <!-- État vide -->
-        <div class="msg-main-empty" id="msg-main-empty">
-          <div class="msg-main-empty-ic">💬</div>
-          <div class="msg-main-empty-ttl">Sélectionnez un contact</div>
-          <div class="msg-main-empty-sub">Pour démarrer la conversation</div>
-        </div>
-
-        <!-- Conversation ouverte - visibilité contrôlée par la classe .is-open -->
-        <div id="msg-conv-wrap">
-          <div class="msg-conv-head">
-            <button class="msg-back-btn" onclick="msgCloseConv()" aria-label="Retour">←</button>
-            <div class="msg-conv-av" id="msg-conv-av">?</div>
-            <div class="msg-conv-info">
-              <div class="msg-conv-name" id="msg-header-name">Sélectionnez un contact</div>
-              <div class="msg-conv-status" id="msg-conv-status"><span class="dot"></span><span id="msg-header-grade"></span></div>
-            </div>
-          </div>
-          <div class="msg-thread-wrap" id="msg-thread"></div>
-          <div class="msg-input-row" id="msg-input-row">
-            <div class="msg-input-box">
-              <textarea id="msg-text" class="msg-input-text" placeholder="Écrire un message..." rows="1"
-                oninput="msgOnInput(this)"
-                onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendMsg()}"></textarea>
-              <button class="msg-send-btn" onclick="sendMsg()" aria-label="Envoyer">➤</button>
-            </div>
-          </div>
-        </div>
-      </section>
-    </div>
-  </div>
-
   <!-- PROFIL -->
   <div class="page-content" id="page-profil">
     <!-- Hero premium -->
@@ -19686,7 +18992,6 @@ async function _flushSaveQueue(){
       // Mode partial : push uniquement les clés sélectionnées
       const partialPayload = {};
       partialKeysSnapshot.forEach(function(k){
-        if(k === 'messages') return; // messages gérés séparément
         if(toSave.hasOwnProperty(k)){
           partialPayload[k] = JSON.parse(JSON.stringify(toSave[k]));
         }
@@ -19697,7 +19002,6 @@ async function _flushSaveQueue(){
     } else {
       // Mode full (legacy) : réécrit toute la base
       const payload=JSON.parse(JSON.stringify(toSave));
-      delete payload.messages; // messages gérés séparément
       await window._fbSet(window._fbRef(window._fbDB,"sunagakure"),payload);
     }
     // Reset du flag d'erreur Firebase si un save réussit
@@ -20095,7 +19399,7 @@ function initFirebaseSync(){
               'mission-actives':     { fn: 'msRender',           keys: ['missions'] },
               'mission-recompenses': { fn: 'msRender',           keys: ['missions'] },
               'juge-plaintes': { fn: 'tribRenderPlaintes', keys: ['plaintes','tribunal'] }
-              // 'histoire' et 'messagerie' : pas de sync auto (lecture seule ou listener Firebase dédié)
+              // 'histoire' : pas de sync auto (lecture seule)
             };
             // Re-render uniquement la page active si une de ses collections a changé
             if(activePage && pageRenderers[activePage]){
@@ -20275,7 +19579,6 @@ function initFirebaseSync(){
           refreshAll();
           updateBadges();
           syncBottomNavBadges();
-          updateMsgBadge();
           // Auto-seed code pénal officiel si vide
           setTimeout(function(){ if(!DB.infractions||DB.infractions.length===0) seedCodePenal(); }, 800);
         }
@@ -20448,7 +19751,7 @@ function defaultData(){
     grades:["Gérant","Co-Gérant","Sergent","Officier","Stagiaire"],
     users:[{id:1,login:"admin",pass:"__PENDING_HASH__",nom:"Développeur",grade:"Gérant",role:"admin",statut:"Actif",photo:"",created:now()}],
     annonces:[{id:1,titre:"Bienvenue sur le portail Police de Sunagakure",cat:"Information",contenu:"Ce portail est le centre névralgique des communications internes.\n\nToutes les informations officielles y seront publiées.",auteur:"Administration",pin:true,date:now()}],
-    recenses:[],candidatures:[],plaintes:[],dossiers:[],operations:[],sanctions:[],infractions:[],timeline:[],adminNotes:{},messages:{},loginHistory:[],missions:[],features:{map_active:false},
+    recenses:[],candidatures:[],plaintes:[],dossiers:[],operations:[],sanctions:[],infractions:[],timeline:[],adminNotes:{},loginHistory:[],missions:[],features:{map_active:false},
     // ═══ HÔPITAL & SCIENTIFIQUE ═══
     // Stockage centralisé : DB.hospital = { patients, consultations, pharmacie, psy, scientifique, morgue, paiements, dons }
     // Chaque tableau contient des entrées { id, ...champs propres à la collection, auteurId, auteurNom, created, modified }
@@ -22133,8 +21436,6 @@ function applyLogin(){
   const dsecOps=document.getElementById('dsec-ops');
   if(dsecOps)dsecOps.style.display=isMember?'':'none';
   renderCommissaire();applyLogo();loadNotifPrefs();populateGradeSelects();refreshAll();const btnRec=el("btn-recenser");if(btnRec)btnRec.style.display=isVisiteur()?"none":"";
-  // Précharger les messages en arrière-plan dès la connexion
-  if(!isVisiteur()) setTimeout(function(){ _msgInitDone=false; initMessagingFirebase(); }, 2000);
   // Restaurer le dernier onglet visité, sinon afficher le tableau de bord
   let lastPage="dashboard";
   try{
@@ -22150,7 +21451,7 @@ function applyLogin(){
         } else if(!isVisiteur()||VISITOR_PAGES.includes(lp)) lastPage=lp;
       } else {
         // Vérifier que la page est accessible depuis la section du user
-        var ALL_OK = ['dashboard','bingobook','codepenal','histoire','profil','admin','messagerie'].includes(lp);
+        var ALL_OK = ['dashboard','bingobook','codepenal','histoire','profil','admin'].includes(lp);
         var SEC_OK = false;
         var us = (currentUser && currentUser.section) || 'police';
         if(us === 'police'){
@@ -22246,12 +21547,6 @@ function doLogout(){
   try{ localStorage.removeItem("suna_session"); }catch(e){}
   currentUser=null;
   document.body.classList.remove('is-visitor');
-  _msgInitDone=false;
-  if(_msgAllUnsubscribe){_msgAllUnsubscribe();_msgAllUnsubscribe=null;}
-  if(_msgUnsubscribe){_msgUnsubscribe();_msgUnsubscribe=null;}
-  // Couper la présence (heartbeat + listeners typing/présence) avant de perdre currentUser
-  if(typeof _msgStopPresence === 'function') try{_msgStopPresence();}catch(e){}
-  _currentMsgContact=null;
   // Vider la mémoire de la dernière page pour éviter qu'un visiteur atterrisse sur une page membre
   try{sessionStorage.removeItem("suna_active_page");}catch(e){}
   el("login-screen").style.display="flex";updateLoginStats();
@@ -22307,7 +21602,7 @@ function saveCommNameAdmin(){
 }
 
 // NAV
-const PAGES={dashboard:"Tableau de bord",annonces:"Annonces",recensement:"Recensement",recrutement:"Recrutement",plaintes:"Plaintes",dossiers:"Dossiers criminels",codepenal:"Code Pénal",histoire:"Histoire",operations:"Opérations",effectifs:"Effectifs",hierarchie:"Hiérarchie",sanctions:"Sanctions & Promotions",impots:"Impôts",admin:"Panel Admin",messagerie:"Messagerie",profil:"Mon profil",bingobook:"Bingo Book",
+const PAGES={dashboard:"Tableau de bord",annonces:"Annonces",recensement:"Recensement",recrutement:"Recrutement",plaintes:"Plaintes",dossiers:"Dossiers criminels",codepenal:"Code Pénal",histoire:"Histoire",operations:"Opérations",effectifs:"Effectifs",hierarchie:"Hiérarchie",sanctions:"Sanctions & Promotions",impots:"Impôts",admin:"Panel Admin",profil:"Mon profil",bingobook:"Bingo Book",
   // Tribunal (6 pages)
   "juge-audiences":"Audiences","juge-plaintes":"Plaintes reçues","juge-affaires":"Affaires en cours","juge-jugements":"Jugements rendus","juge-procedure":"Code de procédure","juge-archives":"Archives & Jurisprudence",
   // Avocat
@@ -22344,12 +21639,12 @@ function showPage(name){
   }
   // BUG-FIX SECTIONS : empêcher l'accès aux pages d'autres sections
   // (un Juge ne peut pas accéder aux pages Police, Avocat, etc., et vice-versa)
-  // Pages "all" (visibles partout) : dashboard, bingobook, codepenal, histoire, profil, admin, messagerie
+  // Pages "all" (visibles partout) : dashboard, bingobook, codepenal, histoire, profil, admin
   // + diplo-laissezpasse (laissez-passer publics, visibles par tous, modifiables uniquement par diplomates)
   // BYPASS ADMIN : les admins ont accès à tout, peu importe leur section
   // BYPASS HAUT COMMANDEMENT : oversight transverse sur toutes les pages, sauf le panel admin (bloqué plus bas)
   var isFullAccess = !!(currentUser && (currentUser.role === 'admin' || currentUser.role === 'hautcommandement'));
-  var ALL_PAGES = ['dashboard','bingobook','codepenal','histoire','profil','admin','messagerie','diplo-laissezpasse'];
+  var ALL_PAGES = ['dashboard','bingobook','codepenal','histoire','profil','admin','diplo-laissezpasse'];
   var SECTION_PREFIXES = { juge:/^juge-/, avocat:/^avocat-/, mission:/^mission-/, medical:/^(medical|sci|compta)-/, diplomatie:/^diplo-/ };
   var POLICE_PAGES = ['annonces','recensement','recrutement','plaintes','dossiers','operations','effectifs','sanctions','impots','hierarchie'];
   var userSection = (currentUser && currentUser.section) || 'police';
@@ -22372,7 +21667,7 @@ function showPage(name){
     return;
   }
   // Pages membres (opérations, effectifs, sanctions) — interdites aux visiteurs
-  const MEMBER_ONLY_PAGES=["operations","effectifs","hierarchie","sanctions","messagerie"];
+  const MEMBER_ONLY_PAGES=["operations","effectifs","hierarchie","sanctions"];
   if(MEMBER_ONLY_PAGES.includes(name)&&isVisiteur()){
     showToast("Accès réservé aux membres de la Police.","error");
     return;
@@ -22486,23 +21781,6 @@ function renderPage(name){
   // Pages des AUTRES sections (avocat, médical, diplomatie sauf custom) : système générique
   else if(typeof renderSectionPage === 'function' && /^(avocat|medical|diplo)-/.test(name) && name !== 'diplo-laissezpasse' && name !== 'diplo-comptabilite'){
     renderSectionPage(name);
-  }
-  if(name==="messagerie"){
-    initMessagingFirebase();
-    renderMsgContacts();
-    // Si une conversation était ouverte, la restaurer (header + thread + input)
-    if(typeof _currentMsgContact !== 'undefined' && _currentMsgContact){
-      var _hName = document.getElementById('msg-header-name');
-      var _hGrade = document.getElementById('msg-header-grade');
-      if(_hName) _hName.textContent = _currentMsgContact.nom;
-      if(_hGrade) _hGrade.textContent = (_currentMsgContact.grade||'')+(_currentMsgContact.role?' · '+roleLabel(_currentMsgContact.role, _currentMsgContact.section):'');
-      // Restaurer l'état "conversation ouverte" via classe CSS (input row apparaît automatiquement)
-      var _convWrap = document.getElementById('msg-conv-wrap');
-      var _emptyEl  = document.getElementById('msg-main-empty');
-      if(_convWrap){ _convWrap.style.display = ''; _convWrap.classList.add('is-open'); }
-      if(_emptyEl) _emptyEl.style.display = 'none';
-      renderMsgThread();
-    }
   }
   if(name==="profil"){renderProfil();renderLoginHistory();}
   if(name==="hierarchie")renderHierarchie();
@@ -31744,7 +31022,6 @@ function gsSearch() {
     { label:'Effectifs', icon:'&#128110;', page:'effectifs', keywords:'effectifs membres agents policiers' },
     { label:'Sanctions / Promo', icon:'&#9878;&#65039;', page:'sanctions', keywords:'sanctions promotions felicitations avertissement exclusion' },
     { label:'Hiérarchie', icon:'&#127963;&#65039;', page:'hierarchie', keywords:'hierarchie organigramme grades gerant cogerant sergent officier stagiaire' },
-    { label:'Messagerie', icon:'&#128172;', page:'messagerie', keywords:'messagerie messages chat conversations communications interne' },
     { label:'Panel Admin', icon:'&#9881;&#65039;', page:'admin', keywords:'admin administration comptes utilisateurs' }
   ];
   GS_PAGES.filter(function(p){
@@ -31795,23 +31072,6 @@ function gsSearch() {
     R.candidatures.push({ icon:'&#127894;', title:c.nom||'', sub:'Candidature · '+_gsSt(c.statut)+(c.grade?' · Grade visé: '+c.grade:''), page:'recrutement', q:q });
   });
 
-  // Messages privés (uniquement les siens)
-  if(!isVisiteur()&&currentUser){
-    var msgs=[];
-    var dbMsgs=DB.messages||{};
-    Object.keys(dbMsgs).forEach(function(key){
-      if(key.indexOf(String(currentUser.id))<0) return;
-      var thread=dbMsgs[key]||{};
-      Object.values(thread).forEach(function(m){
-        if(((m.text||'')+(m.senderNom||'')).toLowerCase().indexOf(q)>=0){
-          var otherId=key.split('_').find(function(id){return parseInt(id)!==currentUser.id;});
-          var other=(DB.users||[]).find(function(u){return u.id===parseInt(otherId);});
-          msgs.push({icon:'&#128172;',title:(m.text||'').slice(0,60)+(m.text&&m.text.length>60?'…':''),sub:'Message · De '+esc(m.senderNom||'?')+(other?' → '+esc(other.nom):''),page:'messagerie',q:q});
-        }
-      });
-    });
-    msgs.slice(0,3).forEach(function(item){ R.membres.push(item); }); // réutilise section membres
-  }
 
 
 
@@ -32960,8 +32220,6 @@ document.querySelectorAll('.modal-overlay').forEach(function(o){
 /* ════════════════════════════════════════════════════════════════
    NOUVELLES FONCTIONNALITÉS — v4 AMÉLIORÉ
    1. Graphiques Dashboard (Chart.js)
-   2. Export CSV
-   3. Messagerie interne (Firebase)
    4. Calendrier des opérations
    5. Page Profil
    6. Changement de mot de passe profil
@@ -33078,562 +32336,6 @@ window.toggleDarkMode = function(){
    La fonction exportCSV a été retirée : l'export n'est plus exposé
    dans l'UI. Si tu rétablis un déclencheur depuis le panel admin,
    il faudra recréer la fonction (voir l'historique git). */
-
-/* ─── 3. MESSAGERIE INTERNE ────────────────────────────────────── */
-var _currentMsgContact = null;
-var _msgUnsubscribe = null;
-var _msgAllUnsubscribe = null; // listener global pour tous les threads
-var _msgInitDone = false;
-// Présence en ligne / hors ligne
-var _msgPresence = {}; // {userId: lastSeenTs}
-var _msgPresenceUnsub = null;
-var _msgHeartbeat = null;
-// Indicateur "X est en train d'écrire"
-var _msgTypingState = {}; // {key: {userId, ts}}
-var _msgTypingUnsub = null;
-var _msgTypingTimer = null;
-var _msgTypingRemoteSub = null;
-
-// Couleur d'avatar déterministe basée sur le nom
-function _msgAvatarColor(name){
-  var palette = [
-    ['#dc2626','#7f1d1d'], ['#ea580c','#9a3412'], ['#d97706','#92400e'],
-    ['#65a30d','#3f6212'], ['#16a34a','#14532d'], ['#0891b2','#155e75'],
-    ['#2563eb','#1e3a8a'], ['#7c3aed','#4c1d95'], ['#c026d3','#701a75'],
-    ['#db2777','#831843'], ['#e11d48','#881337']
-  ];
-  var s = String(name||'?');
-  var h = 0;
-  for(var i=0; i<s.length; i++) h = (h*31 + s.charCodeAt(i)) & 0xFFFFFFFF;
-  var p = palette[Math.abs(h) % palette.length];
-  return 'linear-gradient(135deg,'+p[0]+' 0%,'+p[1]+' 100%)';
-}
-function _msgInitials(name){
-  if(!name) return '?';
-  var parts = String(name).trim().split(/\s+/);
-  return ((parts[0]||'?')[0] + (parts[1]?parts[1][0]:'')).toUpperCase();
-}
-function _msgFmtRelTime(ts){
-  if(!ts) return '';
-  var diff = Date.now() - ts;
-  if(diff < 60000) return "à l'instant";
-  if(diff < 3600000) return Math.floor(diff/60000) + ' min';
-  if(diff < 86400000) return Math.floor(diff/3600000) + ' h';
-  if(diff < 604800000) return Math.floor(diff/86400000) + ' j';
-  return new Date(ts).toLocaleDateString('fr-FR',{day:'2-digit',month:'2-digit'});
-}
-function _msgPresenceState(userId){
-  var lastSeen = _msgPresence[userId];
-  if(!lastSeen) return {state:'offline', label:'Hors ligne'};
-  var diff = Date.now() - lastSeen;
-  if(diff < 90000) return {state:'online', label:'En ligne'};
-  if(diff < 600000) return {state:'recent', label:"Vu " + _msgFmtRelTime(lastSeen)};
-  return {state:'offline', label:"Vu " + _msgFmtRelTime(lastSeen)};
-}
-
-// Charge tous les messages depuis Firebase au démarrage de la messagerie
-// et souscrit aux mises à jour en temps réel sur tous les threads
-function initMessagingFirebase(){
-  if(_msgInitDone) return;
-  if(!window._fbDB||!window._fbRef||!window._fbOnValue||!currentUser) return;
-  _msgInitDone = true;
-  var fbRef = window._fbRef(window._fbDB, 'sunagakure/messages');
-  if(_msgAllUnsubscribe) _msgAllUnsubscribe();
-  _msgAllUnsubscribe = window._fbOnValue(fbRef, function(snap){
-    var data = snap && snap.val ? snap.val() : null;
-    if(!DB.messages) DB.messages = {};
-    if(data && typeof data === 'object'){
-      Object.keys(data).forEach(function(key){
-        if(!key.includes(String(currentUser.id))) return;
-        if(!DB.messages[key]) DB.messages[key] = {};
-        var thread = data[key];
-        if(thread && typeof thread === 'object'){
-          Object.keys(thread).forEach(function(msgId){
-            DB.messages[key][msgId] = thread[msgId];
-          });
-        }
-      });
-    }
-    try{ localStorage.setItem(STORE, JSON.stringify(DB)); }catch(e){}
-    renderMsgContacts();
-    updateMsgBadge();
-    if(_currentMsgContact) renderMsgThread();
-  });
-  // Démarrer la présence
-  _msgStartPresence();
-}
-
-// ─── PRÉSENCE EN LIGNE ───
-function _msgStartPresence(){
-  if(!window._fbDB||!window._fbRef||!window._fbSet||!window._fbOnValue||!currentUser) return;
-  // Heartbeat : on écrit notre lastSeen toutes les 45s
-  var beat = function(){
-    try{
-      var ref = window._fbRef(window._fbDB, 'sunagakure/presence/'+currentUser.id);
-      window._fbSet(ref, Date.now());
-    }catch(e){}
-  };
-  beat();
-  if(_msgHeartbeat) clearInterval(_msgHeartbeat);
-  _msgHeartbeat = setInterval(beat, 45000);
-  // Listener global présence
-  if(_msgPresenceUnsub) _msgPresenceUnsub();
-  var allRef = window._fbRef(window._fbDB, 'sunagakure/presence');
-  _msgPresenceUnsub = window._fbOnValue(allRef, function(snap){
-    var data = snap && snap.val ? snap.val() : null;
-    _msgPresence = (data && typeof data === 'object') ? data : {};
-    renderMsgContacts();
-    if(_currentMsgContact) _msgUpdateConvHeader();
-  });
-  // Listener typing global
-  if(_msgTypingRemoteSub) _msgTypingRemoteSub();
-  var typingRef = window._fbRef(window._fbDB, 'sunagakure/typing');
-  _msgTypingRemoteSub = window._fbOnValue(typingRef, function(snap){
-    var data = snap && snap.val ? snap.val() : null;
-    _msgTypingState = (data && typeof data === 'object') ? data : {};
-    renderMsgContacts();
-    if(_currentMsgContact) _msgRenderTypingIndicator();
-  });
-}
-function _msgStopPresence(){
-  if(_msgHeartbeat){ clearInterval(_msgHeartbeat); _msgHeartbeat = null; }
-  if(_msgPresenceUnsub){ _msgPresenceUnsub(); _msgPresenceUnsub = null; }
-  if(_msgTypingRemoteSub){ _msgTypingRemoteSub(); _msgTypingRemoteSub = null; }
-  // Nettoyer notre statut
-  if(window._fbDB && currentUser){
-    try{
-      var ref = window._fbRef(window._fbDB, 'sunagakure/presence/'+currentUser.id);
-      window._fbSet(ref, null);
-    }catch(e){}
-  }
-}
-// On se déconnecte gracieusement quand on quitte la page
-window.addEventListener('beforeunload', function(){ try{_msgStopPresence();}catch(e){} });
-
-// bug-fix : prévenir l'utilisateur si une sauvegarde Firebase est en attente
-// (queue non vidée). Évite la perte d'un compte fraîchement créé si on ferme trop vite.
-window.addEventListener('beforeunload', function(e){
-  if(_fbSaveRunning || _fbSaveQueue){
-    var msg = '⚠️ Une sauvegarde est en cours. Si vous quittez maintenant, les dernières modifications pourraient ne pas être enregistrées sur le serveur.';
-    e.preventDefault();
-    e.returnValue = msg;
-    return msg;
-  }
-});
-
-function _msgKey(idA, idB){
-  return [idA,idB].sort().join('_');
-}
-
-// ─── TYPING ───
-function msgOnInput(textarea){
-  // Auto-grow
-  textarea.style.height = 'auto';
-  textarea.style.height = Math.min(textarea.scrollHeight, 140) + 'px';
-  // Signaler "en train d'écrire" sur Firebase
-  if(!_currentMsgContact || !window._fbDB || !window._fbRef || !window._fbSet) return;
-  var key = _msgKey(currentUser.id, _currentMsgContact.id);
-  var typingPath = 'sunagakure/typing/'+key+'/'+currentUser.id;
-  try{
-    var ref = window._fbRef(window._fbDB, typingPath);
-    if((textarea.value||'').trim()){
-      window._fbSet(ref, Date.now());
-    } else {
-      window._fbSet(ref, null);
-    }
-  }catch(e){}
-  // Auto-stop après 5s
-  if(_msgTypingTimer) clearTimeout(_msgTypingTimer);
-  _msgTypingTimer = setTimeout(function(){
-    try{
-      var r = window._fbRef(window._fbDB, typingPath);
-      window._fbSet(r, null);
-    }catch(e){}
-  }, 5000);
-}
-function _msgIsTypingForKey(key, otherUserId){
-  // Quelqu'un d'autre est-il en train d'écrire dans ce thread ?
-  if(!_msgTypingState || !_msgTypingState[key]) return false;
-  var ts = _msgTypingState[key][otherUserId];
-  if(!ts) return false;
-  return (Date.now() - ts) < 8000;
-}
-function _msgRenderTypingIndicator(){
-  if(!_currentMsgContact) return;
-  var key = _msgKey(currentUser.id, _currentMsgContact.id);
-  var thread = document.getElementById('msg-thread');
-  if(!thread) return;
-  var existing = thread.querySelector('.msg-typing-indicator');
-  if(_msgIsTypingForKey(key, _currentMsgContact.id)){
-    if(!existing){
-      var div = document.createElement('div');
-      div.className = 'msg-typing-indicator';
-      div.innerHTML = '<div class="msg-typing-bubble"><span class="d"></span><span class="d"></span><span class="d"></span></div>';
-      var threadEl = thread.querySelector('.msg-thread');
-      if(threadEl) threadEl.appendChild(div);
-      thread.scrollTop = thread.scrollHeight;
-    }
-  } else if(existing){
-    existing.remove();
-  }
-}
-
-function renderMsgContacts(){
-  if(!currentUser) return;
-  var inner = document.getElementById('msg-contacts-inner'); if(!inner) return;
-  var q = (document.getElementById('msg-search')||{}).value||'';
-  q = q.toLowerCase();
-  var members = (DB.users||[]).filter(function(u){
-    return u.id!==currentUser.id && u.statut!=='Désactivé' &&
-      (!q || (u.nom||'').toLowerCase().includes(q));
-  });
-  // Tri : ceux avec messages d'abord (par dernier message décroissant), puis alpha
-  members.sort(function(a,b){
-    var keyA = _msgKey(currentUser.id, a.id);
-    var keyB = _msgKey(currentUser.id, b.id);
-    var msgsA = Object.values((DB.messages||{})[keyA]||{});
-    var msgsB = Object.values((DB.messages||{})[keyB]||{});
-    var lastA = msgsA.length ? Math.max.apply(null, msgsA.map(function(m){return m.ts||0})) : 0;
-    var lastB = msgsB.length ? Math.max.apply(null, msgsB.map(function(m){return m.ts||0})) : 0;
-    if(lastA !== lastB) return lastB - lastA;
-    return (a.nom||'').localeCompare(b.nom||'');
-  });
-  // Compteur
-  var countEl = document.getElementById('msg-side-count');
-  if(countEl) countEl.textContent = members.length;
-  if(!members.length){
-    inner.innerHTML='<div style="padding:30px 20px;text-align:center;color:rgba(255,255,255,0.3);font-size:12px;font-family:\'Share Tech Mono\',monospace;letter-spacing:1px">— Aucun contact trouvé —</div>';
-    return;
-  }
-  inner.innerHTML = members.map(function(u){
-    var key = _msgKey(currentUser.id, u.id);
-    var thread = (DB.messages||{})[key]||{};
-    var msgs = Object.values(thread).sort(function(a,b){return (a.ts||0)-(b.ts||0);});
-    var last = msgs.length ? msgs[msgs.length-1] : null;
-    var unread = msgs.filter(function(m){return m.senderId!==currentUser.id&&!m.read;}).length;
-    var isActive = _currentMsgContact && _currentMsgContact.id===u.id;
-    var pres = _msgPresenceState(u.id);
-    var isTyping = _msgIsTypingForKey(key, u.id);
-    // Preview
-    var previewHtml;
-    if(isTyping){
-      previewHtml = '<span class="msg-c-typing">en train d\'écrire…</span>';
-    } else if(last){
-      var prefix = last.senderId===currentUser.id ? '<span class="me-prefix">Vous : </span>' : '';
-      var txt = (last.text||'').slice(0, 38) + (last.text && last.text.length>38 ? '…' : '');
-      previewHtml = prefix + esc(txt);
-    } else {
-      previewHtml = '<em style="color:rgba(255,255,255,0.3)">Aucun message</em>';
-    }
-    var timeHtml = last ? _msgFmtRelTime(last.ts) : '';
-    return '<div class="msg-c'+(isActive?' active':'')+(unread>0?' unread':'')+'" onclick="openMsgContact('+u.id+')">'
-      +'<div class="msg-c-av" style="background:'+_msgAvatarColor(u.nom)+'">'+_msgInitials(u.nom)
-      +'<span class="msg-c-status '+pres.state+'" title="'+pres.label+'"></span>'
-      +'</div>'
-      +'<div class="msg-c-info">'
-      +'<div class="msg-c-row1">'
-      +'<span class="msg-c-name">'+esc(u.nom)+'</span>'
-      +'<span class="msg-c-time">'+timeHtml+'</span>'
-      +'</div>'
-      +'<div class="msg-c-row2">'
-      +'<span class="msg-c-preview">'+previewHtml+'</span>'
-      +(unread>0?'<span class="msg-c-badge">'+(unread>99?'99+':unread)+'</span>':'')
-      +'</div>'
-      +'</div>'
-      +'</div>';
-  }).join('');
-}
-
-function _msgUpdateConvHeader(){
-  if(!_currentMsgContact) return;
-  var u = _currentMsgContact;
-  var av = document.getElementById('msg-conv-av');
-  if(av){
-    av.style.background = _msgAvatarColor(u.nom);
-    var pres = _msgPresenceState(u.id);
-    av.innerHTML = _msgInitials(u.nom) + '<span class="msg-c-status '+pres.state+'"></span>';
-  }
-  var name = document.getElementById('msg-header-name');
-  if(name) name.textContent = u.nom;
-  var statusEl = document.getElementById('msg-conv-status');
-  if(statusEl){
-    var pres = _msgPresenceState(u.id);
-    var grade = (u.grade||'')+(u.role?' · '+roleLabel(u.role, u.section):'');
-    statusEl.className = 'msg-conv-status ' + pres.state;
-    statusEl.innerHTML = '<span class="dot"></span><span>'+esc(pres.label)+(grade?' · '+esc(grade):'')+'</span>';
-  }
-}
-
-function openMsgContact(userId){
-  var u = (DB.users||[]).find(function(u){return String(u.id)===String(userId);});
-  if(!u) return;
-  _currentMsgContact = u;
-  // Switcher l'affichage
-  var emptyEl = document.getElementById('msg-main-empty');
-  var convWrap = document.getElementById('msg-conv-wrap');
-  if(emptyEl) emptyEl.style.display = 'none';
-  if(convWrap){
-    // Reset l'inline style:display:none du HTML pour que la classe puisse prendre le relais
-    convWrap.style.display = '';
-    convWrap.classList.add('is-open');
-  }
-  // Mode mobile : afficher la conversation (cacher la sidebar)
-  var page = document.getElementById('page-messagerie');
-  if(page) page.classList.add('in-chat');
-  _msgUpdateConvHeader();
-  // Mark all as read
-  var key = _msgKey(currentUser.id, u.id);
-  if(DB.messages&&DB.messages[key]){
-    var changed=false;
-    Object.keys(DB.messages[key]).forEach(function(k){
-      if(DB.messages[key][k].senderId!==currentUser.id&&!DB.messages[key][k].read){
-        DB.messages[key][k].read=true; changed=true;
-      }
-    });
-    if(changed){
-      saveData();
-      // Push read flag à Firebase aussi
-      if(window._fbDB&&window._fbRef&&window._fbSet){
-        try{
-          var ref = window._fbRef(window._fbDB, 'sunagakure/messages/'+key);
-          window._fbSet(ref, DB.messages[key]);
-        }catch(e){}
-      }
-    }
-  }
-  renderMsgContacts();
-  renderMsgThread();
-  // Subscribe to real-time updates for this thread
-  if(window._fbDB && window._fbRef && window._fbOnValue){
-    if(_msgUnsubscribe) _msgUnsubscribe();
-    var fbRef = window._fbRef(window._fbDB, 'sunagakure/messages/'+key);
-    _msgUnsubscribe = window._fbOnValue(fbRef, function(snap){
-      var data = snap.val();
-      if(!DB.messages) DB.messages={};
-      DB.messages[key] = data||{};
-      renderMsgThread();
-      renderMsgContacts();
-      updateMsgBadge();
-    });
-  }
-}
-// Bouton retour mobile
-function msgCloseConv(){
-  var page = document.getElementById('page-messagerie');
-  if(page) page.classList.remove('in-chat');
-}
-
-function renderMsgThread(){
-  var threadWrap = document.getElementById('msg-thread'); if(!threadWrap) return;
-  if(!_currentMsgContact) return;
-  var key = _msgKey(currentUser.id, _currentMsgContact.id);
-  var msgs = Object.values((DB.messages||{})[key]||{});
-  msgs.sort(function(a,b){return (a.ts||0)-(b.ts||0);});
-  // bug-fix anti-clignotement : ne re-render que si l'empreinte des messages
-  // a changé. Sans ça, chaque caractère tapé déclenchait un re-render complet
-  // via le listener typing Firebase, qui rejouait toutes les animations.
-  var fingerprint = key + '|' + msgs.length + '|' +
-    msgs.map(function(m){
-      var reactCount = m.reactions ? Object.keys(m.reactions).reduce(function(s,k){
-        return s + (m.reactions[k]||[]).length;
-      }, 0) : 0;
-      return (m.id||0)+':'+(m.read?'1':'0')+':'+reactCount;
-    }).join(',');
-  if(threadWrap._lastFingerprint === fingerprint){
-    // Aucun changement → ne pas re-render. On laisse simplement
-    // l'indicateur typing se mettre à jour séparément.
-    return;
-  }
-  threadWrap._lastFingerprint = fingerprint;
-  if(!msgs.length){
-    threadWrap.innerHTML='<div class="msg-thread"><div style="text-align:center;color:rgba(255,255,255,0.4);font-size:12px;padding:40px;font-family:\'Share Tech Mono\',monospace;letter-spacing:1.5px;text-transform:uppercase">— Aucun message — Démarrez la conversation —</div></div>';
-    return;
-  }
-  // Construction avec regroupement par date et par auteur consécutif
-  var html = '<div class="msg-thread">';
-  var prevDate = null;
-  var prevSender = null;
-  var prevTs = 0;
-  msgs.forEach(function(m, i){
-    var ts = m.ts || 0;
-    var date = ts ? new Date(ts) : new Date();
-    var dayKey = date.toDateString();
-    // Séparateur date
-    if(dayKey !== prevDate){
-      var label;
-      var today = new Date(); today.setHours(0,0,0,0);
-      var yest = new Date(today.getTime() - 86400000);
-      if(date >= today) label = "Aujourd'hui";
-      else if(date >= yest) label = "Hier";
-      else label = date.toLocaleDateString('fr-FR',{weekday:'long',day:'2-digit',month:'long'});
-      html += '<div class="msg-day-sep">'+label+'</div>';
-      prevDate = dayKey;
-      prevSender = null;
-      prevTs = 0;
-    }
-    var mine = m.senderId === currentUser.id;
-    // Premier d'un groupe ? (changement d'auteur OU >5 min depuis dernier)
-    var firstOfGroup = (prevSender !== m.senderId) || (ts - prevTs > 300000);
-    var time = date.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});
-    var senderName = mine ? '' : (_currentMsgContact.nom || '');
-    // Réactions
-    var reactsHtml = '';
-    if(m.reactions && typeof m.reactions === 'object'){
-      var rEntries = Object.keys(m.reactions).map(function(emoji){
-        var users = m.reactions[emoji] || [];
-        if(!Array.isArray(users) || users.length === 0) return null;
-        var mineReact = users.indexOf(currentUser.id) !== -1;
-        return '<span class="msg-react'+(mineReact?' mine':'')+'" onclick="msgToggleReact('+m.id+','+JSON.stringify(emoji).replace(/"/g,'&quot;')+')">'
-          +emoji+'<span class="ct">'+users.length+'</span></span>';
-      }).filter(Boolean);
-      if(rEntries.length){
-        reactsHtml = '<div class="msg-reacts">'+rEntries.join('')+'</div>';
-      }
-    }
-    html += '<div class="msg-bubble-row '+(mine?'mine':'theirs')+(firstOfGroup?' first-of-group':'')+'" data-msg-id="'+m.id+'">'
-      +'<div class="av-slot">'
-      + (firstOfGroup && !mine ? '<div class="mini-av" style="background:'+_msgAvatarColor(_currentMsgContact.nom)+'">'+_msgInitials(_currentMsgContact.nom)+'</div>' : '')
-      +'</div>'
-      +'<div class="msg-b-content">'
-      + (firstOfGroup && !mine ? '<div class="msg-b-author">'+esc(senderName)+'</div>' : '')
-      +'<div class="msg-bubble" onclick="msgShowReactPicker(event,'+m.id+')">'
-      +esc(m.text||'')
-      +'</div>'
-      + reactsHtml
-      +'<div class="msg-b-meta">'+time
-      + (mine ? ' <span class="read-mark">'+(m.read?'✓✓':'✓')+'</span>' : '')
-      +'</div>'
-      +'</div>'
-      +'<div class="msg-react-add" onclick="event.stopPropagation();msgShowReactPicker(event,'+m.id+')">😊</div>'
-      +'</div>';
-    prevSender = m.senderId;
-    prevTs = ts;
-  });
-  html += '</div>';
-  threadWrap.innerHTML = html;
-  // Scroll en bas
-  setTimeout(function(){ threadWrap.scrollTop=threadWrap.scrollHeight; },50);
-  // Re-render typing si actif
-  _msgRenderTypingIndicator();
-}
-
-// ─── RÉACTIONS ───
-function msgShowReactPicker(event, msgId){
-  event.stopPropagation();
-  // Fermer un picker existant
-  document.querySelectorAll('.msg-react-picker').forEach(function(p){p.remove()});
-  var emojis = ['👍','❤️','😂','😮','😢','🔥'];
-  var picker = document.createElement('div');
-  picker.className = 'msg-react-picker';
-  picker.innerHTML = emojis.map(function(e){
-    return '<span class="emoji" onclick="msgToggleReact('+msgId+','+JSON.stringify(e).replace(/"/g,'&quot;')+');document.querySelectorAll(\'.msg-react-picker\').forEach(function(x){x.remove()});">'+e+'</span>';
-  }).join('');
-  // bug-fix : position FIXED au-dessus de la bulle cliquée (coords viewport, pas thread)
-  // Avantages :
-  //  - La barre n'est plus coupée par la topbar (z-index 9000 > topbar 50)
-  //  - Si l'utilisateur scrolle, on ferme le picker au lieu de le laisser flotter
-  var rect = event.target.getBoundingClientRect();
-  // Append au body pour échapper aux containers avec overflow:hidden / will-change
-  document.body.appendChild(picker);
-  // Mesurer la taille du picker pour le centrer
-  var pickerRect = picker.getBoundingClientRect();
-  var top = rect.top - pickerRect.height - 8;
-  var left = rect.left;
-  // Si pas la place en haut, mettre en dessous
-  if(top < 8) top = rect.bottom + 8;
-  // Clamp horizontal pour rester dans la viewport
-  left = Math.max(8, Math.min(window.innerWidth - pickerRect.width - 8, left));
-  picker.style.top = top + 'px';
-  picker.style.left = left + 'px';
-  // Fermer au clic ailleurs OU au scroll
-  setTimeout(function(){
-    var closePicker = function(){
-      picker.remove();
-      document.removeEventListener('click', onClickOutside, true);
-      window.removeEventListener('scroll', closePicker, true);
-      // Aussi écouter le scroll dans le thread
-      var threadWrap = document.getElementById('msg-thread');
-      if(threadWrap) threadWrap.removeEventListener('scroll', closePicker);
-      var pageContent = document.querySelector('.page-content.active');
-      if(pageContent) pageContent.removeEventListener('scroll', closePicker);
-    };
-    var onClickOutside = function(ev){
-      if(!picker.contains(ev.target)) closePicker();
-    };
-    document.addEventListener('click', onClickOutside, true);
-    // Fermer aussi au scroll (page, thread, ou container)
-    window.addEventListener('scroll', closePicker, true);
-    var threadWrap = document.getElementById('msg-thread');
-    if(threadWrap) threadWrap.addEventListener('scroll', closePicker);
-    var pageContent = document.querySelector('.page-content.active');
-    if(pageContent) pageContent.addEventListener('scroll', closePicker);
-  }, 50);
-}
-function msgToggleReact(msgId, emoji){
-  if(!_currentMsgContact || !currentUser) return;
-  var key = _msgKey(currentUser.id, _currentMsgContact.id);
-  if(!DB.messages || !DB.messages[key] || !DB.messages[key][msgId]) return;
-  var m = DB.messages[key][msgId];
-  if(!m.reactions) m.reactions = {};
-  if(!m.reactions[emoji]) m.reactions[emoji] = [];
-  var idx = m.reactions[emoji].indexOf(currentUser.id);
-  if(idx >= 0){
-    m.reactions[emoji].splice(idx, 1);
-    if(m.reactions[emoji].length === 0) delete m.reactions[emoji];
-  } else {
-    m.reactions[emoji].push(currentUser.id);
-  }
-  // Push à Firebase
-  if(window._fbDB && window._fbRef && window._fbSet){
-    try{
-      var ref = window._fbRef(window._fbDB, 'sunagakure/messages/'+key+'/'+msgId);
-      window._fbSet(ref, m);
-    }catch(e){}
-  }
-  try{ localStorage.setItem(STORE, JSON.stringify(DB)); }catch(e){}
-  renderMsgThread();
-}
-
-function sendMsg(){
-  if(!_currentMsgContact||!currentUser) return;
-  var inp = document.getElementById('msg-text'); if(!inp) return;
-  var text = (inp.value||'').trim(); if(!text) return;
-  var key = _msgKey(currentUser.id, _currentMsgContact.id);
-  if(!DB.messages) DB.messages={};
-  if(!DB.messages[key]) DB.messages[key]={};
-  var msgId = Date.now();
-  var msg = {id:msgId,senderId:currentUser.id,senderNom:currentUser.nom,text:text,ts:msgId,read:false};
-  DB.messages[key][msgId] = msg;
-  inp.value='';
-  inp.style.height = 'auto';
-  // Save to Firebase + localStorage backup
-  if(window._fbDB&&window._fbRef&&window._fbSet){
-    var fbRef = window._fbRef(window._fbDB,'sunagakure/messages/'+key+'/'+msgId);
-    window._fbSet(fbRef, msg);
-    // Effacer typing
-    try{
-      var typingRef = window._fbRef(window._fbDB, 'sunagakure/typing/'+key+'/'+currentUser.id);
-      window._fbSet(typingRef, null);
-    }catch(e){}
-  }
-  try{localStorage.setItem(STORE, JSON.stringify(DB));}catch(e){}
-  renderMsgThread();
-  renderMsgContacts();
-  updateMsgBadge();
-}
-
-function updateMsgBadge(){
-  if(!currentUser) return;
-  var total = 0;
-  Object.keys((DB.messages||{})).forEach(function(key){
-    if(!key.toString().includes(String(currentUser.id))) return;
-    Object.values(DB.messages[key]||{}).forEach(function(m){
-      if(m.senderId!==currentUser.id&&!m.read) total++;
-    });
-  });
-  var b = document.getElementById('badge-messagerie');
-  if(b){b.textContent=total;b.style.display=total>0?'':'none';}
-}
 
 /* ─── 4. CALENDRIER DES OPÉRATIONS ────────────────────────────── */
 var _calYear = new Date().getFullYear();
@@ -33832,59 +32534,7 @@ function renderProfil(){
     +'<button class="btn btn-primary" onclick="doChangePass()">💾 Enregistrer</button></div>'
     +'</div>';
   document.body.appendChild(m);
-
-  // Ajouter modal nouveau message
-  var m2=document.createElement('div');
-  m2.className='modal-overlay'; m2.id='modal-new-msg';
-  m2.innerHTML='<div class="modal" style="max-width:480px">'
-    +'<div class="modal-header"><h3>✉️ Nouveau message</h3><span class="modal-close" aria-label="Fermer" onclick="closeModal(\'modal-new-msg\')">✕</span></div>'
-    +'<div class="modal-body">'
-    +'<div class="form-group"><label class="form-label">Destinataire</label>'
-    +'<select id="msg-new-to" class="form-control"><option value="">— Choisir un membre —</option></select></div>'
-    +'<div class="form-group"><label class="form-label">Message</label><textarea id="msg-new-text" class="form-control" style="min-height:100px" placeholder="Votre message..."></textarea></div>'
-    +'</div>'
-    +'<div class="modal-footer"><button class="btn btn-outline" onclick="closeModal(\'modal-new-msg\')">Annuler</button>'
-    +'<button class="btn btn-primary" onclick="sendNewMsg()">Envoyer →</button></div>'
-    +'</div>';
-  document.body.appendChild(m2);
 })();
-
-function openModal_newMsg(){
-  var sel=document.getElementById('msg-new-to'); if(!sel) return;
-  var members=(DB.users||[]).filter(function(u){return u.id!==currentUser.id&&u.statut!=='Désactivé';});
-  sel.innerHTML='<option value="">— Choisir un membre —</option>'+members.map(function(u){return '<option value="'+u.id+'">'+esc(u.nom)+'</option>';}).join('');
-  openModal('modal-new-msg');
-}
-
-// Override openModal for new-msg
-var _origOpenModal2=window.openModal;
-window.openModal=function(id){
-  if(id==='modal-new-msg'){
-    var sel=document.getElementById('msg-new-to'); if(sel){
-      var members=(DB.users||[]).filter(function(u){return u.id!==currentUser.id&&u.statut!=='Désactivé';});
-      sel.innerHTML='<option value="">— Choisir —</option>'+members.map(function(u){return '<option value="'+u.id+'">'+esc(u.nom)+'</option>';}).join('');
-    }
-  }
-  if(_origOpenModal2) _origOpenModal2(id);
-};
-
-function sendNewMsg(){
-  var toId=parseInt(document.getElementById('msg-new-to').value);
-  var text=(document.getElementById('msg-new-text').value||'').trim();
-  if(!toId){showToast('Choisissez un destinataire.','error');return;}
-  if(!text){showToast('Écrivez un message.','error');return;}
-  var u=(DB.users||[]).find(function(u){return u.id===toId;});
-  if(!u) return;
-  closeModal('modal-new-msg');
-  document.getElementById('msg-new-text').value='';
-  // Open contact and send
-  showPage('messagerie');
-  setTimeout(function(){
-    openMsgContact(toId);
-    var inp=document.getElementById('msg-text');
-    if(inp){inp.value=text;sendMsg();}
-  },200);
-}
 
 function doChangePass(){
   var oldP=document.getElementById('cp-old').value;
@@ -33967,11 +32617,6 @@ window.initFirebaseSync=function(){
 function printPage(){window.print();}
 
 // Impression disponible via window.print()
-
-/* ─── BADGE MESSAGERIE au chargement ───────────────────────────── */
-setTimeout(function(){
-  if(currentUser) updateMsgBadge();
-},2000);
 
 </script>
 
@@ -34542,7 +33187,6 @@ self.addEventListener('fetch',e=>{
         <div class="shortcut-row"><kbd>Alt</kbd>+<kbd>O</kbd><span>Opérations</span></div>
         <div class="shortcut-row"><kbd>Alt</kbd>+<kbd>E</kbd><span>Effectifs</span></div>
         <div class="shortcut-row"><kbd>Alt</kbd>+<kbd>S</kbd><span>Sanctions</span></div>
-        <div class="shortcut-row"><kbd>Alt</kbd>+<kbd>M</kbd><span>Messagerie</span></div>
         <div class="shortcut-row"><kbd>Alt</kbd>+<kbd>F</kbd><span>Mon profil</span></div>
         <div style="font-size:9px;letter-spacing:2px;color:var(--gold2);font-family:'Share Tech Mono',monospace;text-transform:uppercase;grid-column:1/-1;margin:10px 0 2px">Actions globales</div>
         <div class="shortcut-row"><kbd>Ctrl</kbd>+<kbd>K</kbd><span>Recherche globale</span></div>
@@ -34597,7 +33241,6 @@ document.addEventListener('keydown', function(e) {
     'KeyO': 'operations',
     'KeyE': 'effectifs',
     'KeyS': 'sanctions',
-    'KeyM': 'messagerie',
     'KeyF': 'profil'
   };
   if (nav[e.code]) { e.preventDefault(); showPage(nav[e.code]); return; }
