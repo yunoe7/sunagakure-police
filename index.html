@@ -31135,6 +31135,11 @@ function saveAdoption(){
     data.numero = _adNextNumero();   // nouveau numéro séquentiel
     DB.adoptions.push(data);
   }
+  // Garde anti-snapshot-fantôme : marquer l'heure et les IDs écrits
+  // (même pattern que le BingoBook) pour ignorer les snapshots Firebase
+  // pré-écriture renvoyés dans les ~3s qui suivent le save.
+  window._adLastWriteAt = Date.now();
+  window._adLastWriteIds = DB.adoptions.map(function(a){ return a && a.id; }).filter(function(x){ return x != null; });
   if(typeof saveData === 'function') saveData('adoptions');
   if(typeof addTimeline === 'function'){
     addTimeline((editId?'Adoption modifiée':'Adoption enregistrée')+' : '+adoptant+' → '+adopte);
@@ -31152,6 +31157,8 @@ function deleteAdoption(id){
   askDelete('Supprimer définitivement cette adoption du registre ?', function(){
     _adInit();
     DB.adoptions = DB.adoptions.filter(function(x){ return String(x.id) !== String(id); });
+    window._adLastWriteAt = Date.now();
+    window._adLastWriteIds = DB.adoptions.map(function(a){ return a && a.id; }).filter(function(x){ return x != null; });
     if(typeof saveData === 'function') saveData('adoptions');
     renderAdoptions();
     if(typeof showToast === 'function') showToast('Adoption supprimée.','info');
@@ -31731,6 +31738,25 @@ document.addEventListener('DOMContentLoaded', function(){
           }
           // Accepter aussi un tableau vide (suppression côté autre client)
           if(Array.isArray(v)){
+            // ─── Garde anti-snapshot-fantôme (même pattern que BingoBook) ───
+            // Si on vient juste d'écrire localement (< 3s) et que le snapshot
+            // reçu ne contient pas tous les IDs qu'on a écrits, c'est un snapshot
+            // pré-écriture qui annulerait notre ajout. On l'ignore.
+            try {
+              var lastWrite = window._adLastWriteAt || 0;
+              var lastIds = window._adLastWriteIds || [];
+              if (lastWrite && (Date.now() - lastWrite) < 3000 && lastIds.length > 0) {
+                var snapIds = v.map(function(a){ return a && a.id; }).filter(function(x){ return x != null; });
+                var snapIdSet = {};
+                snapIds.forEach(function(id){ snapIdSet[String(id)] = 1; });
+                var missingCount = 0;
+                lastIds.forEach(function(id){ if(!snapIdSet[String(id)]) missingCount++; });
+                if (missingCount > 0) {
+                  // Snapshot incomplet → on ignore, on garde notre version locale
+                  return;
+                }
+              }
+            } catch(e){}
             DB.adoptions = v;
             try{ localStorage.setItem(STORE, JSON.stringify(DB)); }catch(e){}
             // Re-render uniquement si la page adoptions est active
