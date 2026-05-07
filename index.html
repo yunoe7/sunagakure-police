@@ -10810,6 +10810,63 @@ document.addEventListener('error', function(e){
       border-color:rgba(239,68,68,0.55);
       transform:scale(1.05);
     }
+    /* Bouton MODIFIER : même format que supprimer mais en doré (Sunagakure) */
+    #page-codepenal .cp-art-edit{
+      background:rgba(180,140,20,0.10);
+      border:1px solid rgba(180,140,20,0.35);
+      color:#d4b44a;
+      width:24px;height:24px;
+      border-radius:4px;
+      cursor:pointer;
+      font-size:11px;
+      display:flex;align-items:center;justify-content:center;
+      transition:all .15s ease;
+      opacity:0;
+      flex-shrink:0;
+    }
+    #page-codepenal .cp-art:hover .cp-art-edit{opacity:1}
+    #page-codepenal .cp-art-edit:hover{
+      background:rgba(180,140,20,0.25);
+      border-color:rgba(180,140,20,0.6);
+      transform:scale(1.05);
+    }
+    /* Mode édition : panneau d'ajout mis en évidence */
+    #page-codepenal .cp-add-panel.editing{
+      border-color:rgba(180,140,20,0.7) !important;
+      box-shadow:0 0 0 2px rgba(180,140,20,0.2), 0 8px 24px rgba(0,0,0,0.4) !important;
+    }
+    #page-codepenal .cp-edit-banner{
+      display:none;
+      background:linear-gradient(135deg,rgba(180,140,20,0.15),rgba(180,140,20,0.05));
+      border:1px solid rgba(180,140,20,0.35);
+      border-radius:6px;
+      padding:10px 14px;
+      margin-bottom:14px;
+      color:#d4b44a;
+      font-size:13px;
+      font-family:'Cinzel',serif;
+      letter-spacing:0.5px;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+    }
+    #page-codepenal .cp-add-panel.editing .cp-edit-banner{display:flex}
+    #page-codepenal .cp-edit-banner button{
+      background:rgba(255,255,255,0.05);
+      border:1px solid rgba(255,255,255,0.2);
+      color:#e5e7eb;
+      padding:5px 12px;
+      border-radius:4px;
+      cursor:pointer;
+      font-size:12px;
+      font-family:inherit;
+      letter-spacing:0.3px;
+      transition:all .15s ease;
+    }
+    #page-codepenal .cp-edit-banner button:hover{
+      background:rgba(255,255,255,0.12);
+      border-color:rgba(255,255,255,0.35);
+    }
 
     /* État vide */
     #page-codepenal .cp-empty{
@@ -10867,8 +10924,12 @@ document.addEventListener('error', function(e){
 
     <!-- AJOUT (admin) -->
     <div id="cp-add-panel" class="cp-add-panel" style="display:none">
-      <div class="cp-add-header"><span class="seal-icon">⚖️</span><h3>Inscrire une nouvelle ordonnance</h3></div>
+      <div class="cp-add-header"><span class="seal-icon">⚖️</span><h3 id="cp-add-title">Inscrire une nouvelle ordonnance</h3></div>
       <div class="cp-add-body">
+        <div class="cp-edit-banner" id="cp-edit-banner">
+          <span>✏️ <strong>Mode modification</strong> — Vous éditez l'article : <span id="cp-edit-target" style="opacity:0.85"></span></span>
+          <button type="button" onclick="cancelEditInfraction()">✕ Annuler</button>
+        </div>
         <div class="grid grid-2" style="gap:12px;margin-bottom:12px">
           <div class="form-group" style="margin-bottom:0"><label class="cp-label">Chef d'accusation</label><input type="text" id="cp-nom" class="cp-input" placeholder="Ex : Vol à l'étalage"></div>
           <div class="form-group" style="margin-bottom:0"><label class="cp-label">Catégorie</label>
@@ -10888,8 +10949,8 @@ document.addEventListener('error', function(e){
           <div class="form-group" style="margin-bottom:0"><label class="cp-label">Durée prison</label><input type="text" id="cp-duree" class="cp-input" placeholder="Ex : 30 min RP"></div>
         </div>
         <div class="form-group" style="margin-bottom:14px"><label class="cp-label">Notes / Précisions</label><input type="text" id="cp-notes" class="cp-input" placeholder="Circonstances aggravantes, conditions d'application..."></div>
-        <button class="btn btn-cp-add" onclick="saveInfraction()">⚖ Sceller l'ordonnance</button>
-        <button class="btn btn-cp-reimport" style="margin-left:10px" onclick="doReimportCP()" title="Réservé aux administrateurs">🔒 Réimporter Code Pénal officiel</button>
+        <button class="btn btn-cp-add" id="cp-save-btn" onclick="saveInfraction()">⚖ Sceller l'ordonnance</button>
+        <button class="btn btn-cp-reimport" id="cp-reimport-btn" style="margin-left:10px" onclick="doReimportCP()" title="Réservé aux administrateurs">🔒 Réimporter Code Pénal officiel</button>
       </div>
     </div>
 
@@ -30649,6 +30710,7 @@ function renderCodePenal(){
           <div class="cp-art-num">Art. ${num}</div>
           <div class="cp-art-head-right">
             <div class="cp-art-cat ${safeCat}">${esc(catCPLabel(x.cat))}</div>
+            ${showDel ? `<button class="cp-art-edit" onclick="editInfraction(${x.id})" title="Modifier cette infraction">✏</button>` : ''}
             ${showDel ? `<button class="cp-art-del" onclick="askDelete('Supprimer cette infraction du code pénal ?',()=>doDeleteInfraction(${x.id}))" title="Supprimer">🗑</button>` : ''}
           </div>
         </div>
@@ -30668,13 +30730,100 @@ function saveInfraction(){
   if(typeof canModify === 'function' && !canModify()){ showToast('⛔ Action réservée aux modérateurs.','error'); return; }
   const nom=v("cp-nom");if(!nom)return;
   if(!DB.infractions)DB.infractions=[];
+  // Mode ÉDITION : on remplace l'article existant en gardant son id d'origine
+  if(_cpEditingId !== null){
+    var idx = DB.infractions.findIndex(function(x){ return String(x.id) === String(_cpEditingId); });
+    if(idx !== -1){
+      DB.infractions[idx] = {
+        id: DB.infractions[idx].id,
+        nom: nom,
+        cat: v("cp-cat"),
+        amende: v("cp-amende"),
+        prison: v("cp-prison"),
+        duree: v("cp-duree"),
+        notes: v("cp-notes")
+      };
+      addTimeline('Infraction modifiée dans le code pénal : '+nom);
+      saveData('infractions');
+      cancelEditInfraction();
+      renderCodePenal();
+      if(typeof showToast==='function') showToast('Ordonnance mise à jour.','success');
+      return;
+    }
+    // Si l'id n'existe plus (suppression entre temps), on retombe sur création normale
+    cancelEditInfraction();
+  }
+  // Mode CRÉATION
   DB.infractions.push({id:Date.now(),nom,cat:v("cp-cat"),amende:v("cp-amende"),prison:v("cp-prison"),duree:v("cp-duree"),notes:v("cp-notes")});
   addTimeline(`Infraction ajoutée au code pénal : ${nom}`);
   saveData('infractions');renderCodePenal();clearForm(["cp-nom","cp-amende","cp-duree","cp-notes"]);
 }
+
+/* ─── ÉDITION D'UNE INFRACTION ───────────────────────────────────
+   Passe le formulaire d'ajout en mode édition : pré-remplit les champs,
+   change le titre et le bouton, et stocke l'id ciblé dans _cpEditingId.
+   Le clic sur "Sceller l'ordonnance" remplace alors l'article existant. */
+var _cpEditingId = null;
+function editInfraction(id){
+  if(typeof canModify === 'function' && !canModify()){ showToast('⛔ Action réservée aux modérateurs.','error'); return; }
+  if(!DB.infractions) return;
+  var inf = DB.infractions.find(function(x){ return String(x.id) === String(id); });
+  if(!inf){ showToast('Article introuvable.','error'); return; }
+  _cpEditingId = inf.id;
+  // Pré-remplissage
+  var setVal = function(elId,val){ var e=document.getElementById(elId); if(e) e.value = val||''; };
+  setVal('cp-nom', inf.nom);
+  setVal('cp-cat', inf.cat || 'violet');
+  setVal('cp-amende', inf.amende);
+  setVal('cp-prison', inf.prison || 'Non');
+  setVal('cp-duree', inf.duree);
+  setVal('cp-notes', inf.notes);
+  // UI : titre, bannière, bouton
+  var panel = document.getElementById('cp-add-panel');
+  if(panel) panel.classList.add('editing');
+  var title = document.getElementById('cp-add-title');
+  if(title) title.textContent = "Modifier une ordonnance existante";
+  var target = document.getElementById('cp-edit-target');
+  if(target) target.textContent = inf.nom || '(sans intitulé)';
+  var saveBtn = document.getElementById('cp-save-btn');
+  if(saveBtn) saveBtn.innerHTML = '✓ Enregistrer les modifications';
+  var reimportBtn = document.getElementById('cp-reimport-btn');
+  if(reimportBtn) reimportBtn.style.display = 'none';
+  // Scroll vers le formulaire
+  if(panel && panel.scrollIntoView){
+    panel.scrollIntoView({behavior:'smooth', block:'start'});
+  }
+  // Focus sur le champ Nom pour faciliter l'édition immédiate
+  setTimeout(function(){
+    var n = document.getElementById('cp-nom');
+    if(n) n.focus();
+  }, 350);
+}
+
+function cancelEditInfraction(){
+  _cpEditingId = null;
+  var panel = document.getElementById('cp-add-panel');
+  if(panel) panel.classList.remove('editing');
+  var title = document.getElementById('cp-add-title');
+  if(title) title.textContent = "Inscrire une nouvelle ordonnance";
+  var saveBtn = document.getElementById('cp-save-btn');
+  if(saveBtn) saveBtn.innerHTML = '⚖ Sceller l\'ordonnance';
+  var reimportBtn = document.getElementById('cp-reimport-btn');
+  if(reimportBtn) reimportBtn.style.display = '';
+  // Vider le formulaire
+  if(typeof clearForm === 'function'){
+    clearForm(["cp-nom","cp-amende","cp-duree","cp-notes"]);
+  }
+  var catSel = document.getElementById('cp-cat'); if(catSel) catSel.value = 'violet';
+  var prSel = document.getElementById('cp-prison'); if(prSel) prSel.value = 'Non';
+}
 function doDeleteInfraction(id){
   if(typeof canModify === 'function' && !canModify()){ showToast('⛔ Action réservée aux modérateurs.','error'); return; }
   id=parseInt(id);
+  // Si on supprime l'article actuellement en édition, on annule le mode édition
+  if(_cpEditingId !== null && String(_cpEditingId) === String(id)){
+    cancelEditInfraction();
+  }
   DB.infractions=DB.infractions.filter(x=>String(x.id)!==String(id));
   saveData();renderCodePenal();
 }
