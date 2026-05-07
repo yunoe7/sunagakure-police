@@ -261,6 +261,122 @@ textarea.form-control{resize:vertical;min-height:80px}
 .tab-btn.t-yellow:hover{background:rgba(234,179,8,0.18);color:#713f12}
 .tab-btn.t-yellow.active{background:rgba(255,250,235,0.85);color:#713f12;box-shadow:inset 0 -3px 0 #ca8a04, 0 1px 2px rgba(0,0,0,0.08)}
 
+/* ─── VARIANTE SOMBRE : .tab-row dans .card (fond noir/sombre) ───
+   Le parchemin clair par défaut jurerait sur fond noir. Ici on garde le
+   même langage visuel (soulignement coloré, hover, sémantique) mais en
+   palette adaptée au fond sombre : conteneur dégradé brun chocolat doré,
+   texte clair sur les boutons. L'actif reste en parchemin clair pour bien
+   ressortir, comme dans l'esprit de la maquette d'origine. */
+.card .tab-row{
+  background:linear-gradient(180deg, rgba(40,30,18,0.85) 0%, rgba(28,22,14,0.92) 100%);
+  border:1px solid rgba(180,140,20,0.35);
+  box-shadow:0 2px 8px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.05);
+}
+.card .tab-btn{color:rgba(232,208,140,0.55)}
+.card .tab-btn:hover{color:#f0d060;background:rgba(212,180,74,0.10)}
+.card .tab-btn.active{
+  background:linear-gradient(180deg, rgba(245,232,200,0.95) 0%, rgba(232,213,168,0.92) 100%);
+  color:#3a1f06;
+  box-shadow:inset 0 -3px 0 #8b6914, 0 2px 6px rgba(0,0,0,0.25);
+  text-shadow:0 1px 0 rgba(255,255,255,0.5);
+}
+/* Variantes sémantiques sur fond sombre : couleur claire pour le texte
+   inactif (lisible sur noir), soulignement coloré conservé sur l'actif. */
+.card .tab-btn.t-green{color:#86efac}
+.card .tab-btn.t-green:hover{background:rgba(34,197,94,0.12);color:#bbf7d0}
+.card .tab-btn.t-green.active{
+  background:linear-gradient(180deg, rgba(245,232,200,0.95) 0%, rgba(232,213,168,0.92) 100%);
+  color:#14532d;box-shadow:inset 0 -3px 0 #16a34a, 0 2px 6px rgba(0,0,0,0.25);
+}
+.card .tab-btn.t-blue{color:#93c5fd}
+.card .tab-btn.t-blue:hover{background:rgba(59,130,246,0.12);color:#bfdbfe}
+.card .tab-btn.t-blue.active{
+  background:linear-gradient(180deg, rgba(245,232,200,0.95) 0%, rgba(232,213,168,0.92) 100%);
+  color:#1e3a8a;box-shadow:inset 0 -3px 0 #2563eb, 0 2px 6px rgba(0,0,0,0.25);
+}
+.card .tab-btn.t-orange{color:#fdba74}
+.card .tab-btn.t-orange:hover{background:rgba(251,146,60,0.12);color:#fed7aa}
+.card .tab-btn.t-orange.active{
+  background:linear-gradient(180deg, rgba(245,232,200,0.95) 0%, rgba(232,213,168,0.92) 100%);
+  color:#9a3412;box-shadow:inset 0 -3px 0 #ea580c, 0 2px 6px rgba(0,0,0,0.25);
+}
+.card .tab-btn.t-red{color:#fca5a5}
+.card .tab-btn.t-red:hover{background:rgba(239,68,68,0.12);color:#fecaca}
+.card .tab-btn.t-red.active{
+  background:linear-gradient(180deg, rgba(245,232,200,0.95) 0%, rgba(232,213,168,0.92) 100%);
+  color:#7f1d1d;box-shadow:inset 0 -3px 0 #dc2626, 0 2px 6px rgba(0,0,0,0.25);
+}
+.card .tab-btn.t-purple{color:#c4b5fd}
+.card .tab-btn.t-purple:hover{background:rgba(168,85,247,0.12);color:#ddd6fe}
+.card .tab-btn.t-purple.active{
+  background:linear-gradient(180deg, rgba(245,232,200,0.95) 0%, rgba(232,213,168,0.92) 100%);
+  color:#4c1d95;box-shadow:inset 0 -3px 0 #7c3aed, 0 2px 6px rgba(0,0,0,0.25);
+}
+.card .tab-btn.t-yellow{color:#fde047}
+.card .tab-btn.t-yellow:hover{background:rgba(234,179,8,0.15);color:#fef08a}
+.card .tab-btn.t-yellow.active{
+  background:linear-gradient(180deg, rgba(245,232,200,0.95) 0%, rgba(232,213,168,0.92) 100%);
+  color:#713f12;box-shadow:inset 0 -3px 0 #ca8a04, 0 2px 6px rgba(0,0,0,0.25);
+}
+
+/* ─── VARIANTE SOMBRE : .tab-row à l'intérieur d'une .card (fond sombre) ───
+   Le parchemin clair jurerait sur fond noir. Ici on garde le même langage
+   visuel (soulignement coloré, hover, couleurs sémantiques) mais en palette
+   adaptée au fond sombre : conteneur dégradé brun chocolat doré, texte clair
+   sur les boutons, glow doux sur l'actif. */
+.card .tab-row{
+  background:linear-gradient(180deg, rgba(40,30,18,0.85) 0%, rgba(28,22,14,0.92) 100%);
+  border:1px solid rgba(180,140,20,0.35);
+  box-shadow:0 2px 8px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.05);
+}
+.card .tab-btn{color:rgba(232,208,140,0.55)}
+.card .tab-btn:hover{color:#f0d060;background:rgba(212,180,74,0.10)}
+.card .tab-btn.active{
+  background:linear-gradient(180deg, rgba(245,232,200,0.95) 0%, rgba(232,213,168,0.92) 100%);
+  color:#3a1f06;
+  box-shadow:inset 0 -3px 0 #8b6914, 0 2px 6px rgba(0,0,0,0.25);
+  text-shadow:0 1px 0 rgba(255,255,255,0.5);
+}
+/* Variantes colorées sur fond sombre : couleur vive pour le texte inactif,
+   et soulignement coloré conservé sur l'actif (le fond reste parchemin
+   clair pour bien ressortir sur le noir, comme dans la maquette d'origine) */
+.card .tab-btn.t-green{color:#86efac}
+.card .tab-btn.t-green:hover{background:rgba(34,197,94,0.12);color:#bbf7d0}
+.card .tab-btn.t-green.active{
+  background:linear-gradient(180deg, rgba(245,232,200,0.95) 0%, rgba(232,213,168,0.92) 100%);
+  color:#14532d;box-shadow:inset 0 -3px 0 #16a34a, 0 2px 6px rgba(0,0,0,0.25);
+}
+.card .tab-btn.t-blue{color:#93c5fd}
+.card .tab-btn.t-blue:hover{background:rgba(59,130,246,0.12);color:#bfdbfe}
+.card .tab-btn.t-blue.active{
+  background:linear-gradient(180deg, rgba(245,232,200,0.95) 0%, rgba(232,213,168,0.92) 100%);
+  color:#1e3a8a;box-shadow:inset 0 -3px 0 #2563eb, 0 2px 6px rgba(0,0,0,0.25);
+}
+.card .tab-btn.t-orange{color:#fdba74}
+.card .tab-btn.t-orange:hover{background:rgba(251,146,60,0.12);color:#fed7aa}
+.card .tab-btn.t-orange.active{
+  background:linear-gradient(180deg, rgba(245,232,200,0.95) 0%, rgba(232,213,168,0.92) 100%);
+  color:#9a3412;box-shadow:inset 0 -3px 0 #ea580c, 0 2px 6px rgba(0,0,0,0.25);
+}
+.card .tab-btn.t-red{color:#fca5a5}
+.card .tab-btn.t-red:hover{background:rgba(239,68,68,0.12);color:#fecaca}
+.card .tab-btn.t-red.active{
+  background:linear-gradient(180deg, rgba(245,232,200,0.95) 0%, rgba(232,213,168,0.92) 100%);
+  color:#7f1d1d;box-shadow:inset 0 -3px 0 #dc2626, 0 2px 6px rgba(0,0,0,0.25);
+}
+.card .tab-btn.t-purple{color:#c4b5fd}
+.card .tab-btn.t-purple:hover{background:rgba(168,85,247,0.12);color:#ddd6fe}
+.card .tab-btn.t-purple.active{
+  background:linear-gradient(180deg, rgba(245,232,200,0.95) 0%, rgba(232,213,168,0.92) 100%);
+  color:#4c1d95;box-shadow:inset 0 -3px 0 #7c3aed, 0 2px 6px rgba(0,0,0,0.25);
+}
+.card .tab-btn.t-yellow{color:#fde047}
+.card .tab-btn.t-yellow:hover{background:rgba(234,179,8,0.15);color:#fef08a}
+.card .tab-btn.t-yellow.active{
+  background:linear-gradient(180deg, rgba(245,232,200,0.95) 0%, rgba(232,213,168,0.92) 100%);
+  color:#713f12;box-shadow:inset 0 -3px 0 #ca8a04, 0 2px 6px rgba(0,0,0,0.25);
+}
+
 .annonce-item{background:rgba(20,16,9,0.95);border:1px solid rgba(201,162,39,0.12);border-radius:10px;padding:16px;margin-bottom:10px;position:relative;transition:all 0.2s;box-shadow:0 1px 8px rgba(0,0,0,0.25)}
 .annonce-item:hover{border-color:rgba(201,162,39,0.28);box-shadow:0 6px 24px rgba(0,0,0,0.35)}
 .annonce-item h4{font-size:14px;font-weight:600;margin-bottom:5px;margin-right:90px;color:var(--text)}
@@ -8177,6 +8293,43 @@ document.addEventListener('error', function(e){
       width:7px;height:7px;border-radius:50%;
       box-shadow:0 0 0 2px rgba(255,255,255,0.4);
     }
+    /* ─── VARIANTE SOMBRE : ann-filters dans ann-toolbar (fond sombre) ─── */
+    #page-annonces .ann-toolbar .ann-filters{
+      background:linear-gradient(180deg, rgba(40,30,18,0.85) 0%, rgba(28,22,14,0.92) 100%);
+      border:1px solid rgba(180,140,20,0.35);
+      box-shadow:0 2px 8px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.05);
+    }
+    #page-annonces .ann-toolbar .ann-fbtn{color:rgba(232,208,140,0.55)}
+    #page-annonces .ann-toolbar .ann-fbtn:hover{color:#f0d060;background:rgba(212,180,74,0.10)}
+    #page-annonces .ann-toolbar .ann-fbtn.active{
+      background:linear-gradient(180deg, rgba(245,232,200,0.95) 0%, rgba(232,213,168,0.92) 100%);
+      color:#3a1f06;
+      box-shadow:inset 0 -3px 0 #8b6914, 0 2px 6px rgba(0,0,0,0.25);
+    }
+    #page-annonces .ann-toolbar .ann-fbtn.f-info{color:#93c5fd}
+    #page-annonces .ann-toolbar .ann-fbtn.f-info:hover{background:rgba(59,130,246,0.12);color:#bfdbfe}
+    #page-annonces .ann-toolbar .ann-fbtn.f-info.active{
+      background:linear-gradient(180deg, rgba(245,232,200,0.95) 0%, rgba(232,213,168,0.92) 100%);
+      color:#1e3a8a;box-shadow:inset 0 -3px 0 #2563eb, 0 2px 6px rgba(0,0,0,0.25);
+    }
+    #page-annonces .ann-toolbar .ann-fbtn.f-opera{color:#fdba74}
+    #page-annonces .ann-toolbar .ann-fbtn.f-opera:hover{background:rgba(251,146,60,0.12);color:#fed7aa}
+    #page-annonces .ann-toolbar .ann-fbtn.f-opera.active{
+      background:linear-gradient(180deg, rgba(245,232,200,0.95) 0%, rgba(232,213,168,0.92) 100%);
+      color:#9a3412;box-shadow:inset 0 -3px 0 #ea580c, 0 2px 6px rgba(0,0,0,0.25);
+    }
+    #page-annonces .ann-toolbar .ann-fbtn.f-alert{color:#fca5a5}
+    #page-annonces .ann-toolbar .ann-fbtn.f-alert:hover{background:rgba(239,68,68,0.12);color:#fecaca}
+    #page-annonces .ann-toolbar .ann-fbtn.f-alert.active{
+      background:linear-gradient(180deg, rgba(245,232,200,0.95) 0%, rgba(232,213,168,0.92) 100%);
+      color:#7f1d1d;box-shadow:inset 0 -3px 0 #dc2626, 0 2px 6px rgba(0,0,0,0.25);
+    }
+    #page-annonces .ann-toolbar .ann-fbtn.f-disci{color:#c4b5fd}
+    #page-annonces .ann-toolbar .ann-fbtn.f-disci:hover{background:rgba(168,85,247,0.12);color:#ddd6fe}
+    #page-annonces .ann-toolbar .ann-fbtn.f-disci.active{
+      background:linear-gradient(180deg, rgba(245,232,200,0.95) 0%, rgba(232,213,168,0.92) 100%);
+      color:#4c1d95;box-shadow:inset 0 -3px 0 #7c3aed, 0 2px 6px rgba(0,0,0,0.25);
+    }
     #page-annonces .ann-fbtn .dot.b{background:#3b82f6}
     #page-annonces .ann-fbtn .dot.o{background:#f59e0b}
     #page-annonces .ann-fbtn .dot.r{background:#ef4444}
@@ -9604,6 +9757,77 @@ document.addEventListener('error', function(e){
     #page-dossiers .dc-fbtn.s-surveille.active{
       background:rgba(255,250,235,0.85);color:#713f12;
       box-shadow:inset 0 -3px 0 #ca8a04, 0 1px 2px rgba(0,0,0,0.08);
+    }
+    /* ─── VARIANTE SOMBRE : dc-filter-grp dans le toolbar sombre dc-toolbar ─── */
+    #page-dossiers .dc-toolbar .dc-filter-grp{
+      background:linear-gradient(180deg, rgba(40,30,18,0.85) 0%, rgba(28,22,14,0.92) 100%);
+      border:1px solid rgba(180,140,20,0.35);
+      box-shadow:0 2px 8px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.05);
+    }
+    #page-dossiers .dc-toolbar .dc-filter-grp .lbl{
+      color:rgba(232,208,140,0.65);
+      border-right-color:rgba(180,140,20,0.30);
+    }
+    #page-dossiers .dc-toolbar .dc-fbtn{color:rgba(232,208,140,0.55)}
+    #page-dossiers .dc-toolbar .dc-fbtn:hover{color:#f0d060;background:rgba(212,180,74,0.10)}
+    #page-dossiers .dc-toolbar .dc-fbtn.active{
+      background:linear-gradient(180deg, rgba(245,232,200,0.95) 0%, rgba(232,213,168,0.92) 100%);
+      color:#3a1f06;
+      box-shadow:inset 0 -3px 0 #8b6914, 0 2px 6px rgba(0,0,0,0.25);
+    }
+    #page-dossiers .dc-toolbar .dc-fbtn.f-faible{color:#86efac}
+    #page-dossiers .dc-toolbar .dc-fbtn.f-faible:hover{background:rgba(34,197,94,0.12);color:#bbf7d0}
+    #page-dossiers .dc-toolbar .dc-fbtn.f-faible.active{
+      background:linear-gradient(180deg, rgba(245,232,200,0.95) 0%, rgba(232,213,168,0.92) 100%);
+      color:#14532d;box-shadow:inset 0 -3px 0 #16a34a, 0 2px 6px rgba(0,0,0,0.25);
+    }
+    #page-dossiers .dc-toolbar .dc-fbtn.f-modere{color:#93c5fd}
+    #page-dossiers .dc-toolbar .dc-fbtn.f-modere:hover{background:rgba(59,130,246,0.12);color:#bfdbfe}
+    #page-dossiers .dc-toolbar .dc-fbtn.f-modere.active{
+      background:linear-gradient(180deg, rgba(245,232,200,0.95) 0%, rgba(232,213,168,0.92) 100%);
+      color:#1e3a8a;box-shadow:inset 0 -3px 0 #2563eb, 0 2px 6px rgba(0,0,0,0.25);
+    }
+    #page-dossiers .dc-toolbar .dc-fbtn.f-eleve{color:#fdba74}
+    #page-dossiers .dc-toolbar .dc-fbtn.f-eleve:hover{background:rgba(251,146,60,0.12);color:#fed7aa}
+    #page-dossiers .dc-toolbar .dc-fbtn.f-eleve.active{
+      background:linear-gradient(180deg, rgba(245,232,200,0.95) 0%, rgba(232,213,168,0.92) 100%);
+      color:#9a3412;box-shadow:inset 0 -3px 0 #ea580c, 0 2px 6px rgba(0,0,0,0.25);
+    }
+    #page-dossiers .dc-toolbar .dc-fbtn.f-extreme{color:#fca5a5}
+    #page-dossiers .dc-toolbar .dc-fbtn.f-extreme:hover{background:rgba(239,68,68,0.12);color:#fecaca}
+    #page-dossiers .dc-toolbar .dc-fbtn.f-extreme.active{
+      background:linear-gradient(180deg, rgba(245,232,200,0.95) 0%, rgba(232,213,168,0.92) 100%);
+      color:#7f1d1d;box-shadow:inset 0 -3px 0 #dc2626, 0 2px 6px rgba(0,0,0,0.25);
+    }
+    #page-dossiers .dc-toolbar .dc-fbtn.s-recherche{color:#fca5a5}
+    #page-dossiers .dc-toolbar .dc-fbtn.s-recherche:hover{background:rgba(239,68,68,0.12);color:#fecaca}
+    #page-dossiers .dc-toolbar .dc-fbtn.s-recherche.active{
+      background:linear-gradient(180deg, rgba(245,232,200,0.95) 0%, rgba(232,213,168,0.92) 100%);
+      color:#7f1d1d;box-shadow:inset 0 -3px 0 #dc2626, 0 2px 6px rgba(0,0,0,0.25);
+    }
+    #page-dossiers .dc-toolbar .dc-fbtn.s-gav{color:#fdba74}
+    #page-dossiers .dc-toolbar .dc-fbtn.s-gav:hover{background:rgba(251,146,60,0.12);color:#fed7aa}
+    #page-dossiers .dc-toolbar .dc-fbtn.s-gav.active{
+      background:linear-gradient(180deg, rgba(245,232,200,0.95) 0%, rgba(232,213,168,0.92) 100%);
+      color:#9a3412;box-shadow:inset 0 -3px 0 #ea580c, 0 2px 6px rgba(0,0,0,0.25);
+    }
+    #page-dossiers .dc-toolbar .dc-fbtn.s-incarcere{color:#c4b5fd}
+    #page-dossiers .dc-toolbar .dc-fbtn.s-incarcere:hover{background:rgba(168,85,247,0.12);color:#ddd6fe}
+    #page-dossiers .dc-toolbar .dc-fbtn.s-incarcere.active{
+      background:linear-gradient(180deg, rgba(245,232,200,0.95) 0%, rgba(232,213,168,0.92) 100%);
+      color:#4c1d95;box-shadow:inset 0 -3px 0 #7c3aed, 0 2px 6px rgba(0,0,0,0.25);
+    }
+    #page-dossiers .dc-toolbar .dc-fbtn.s-libere{color:#86efac}
+    #page-dossiers .dc-toolbar .dc-fbtn.s-libere:hover{background:rgba(34,197,94,0.12);color:#bbf7d0}
+    #page-dossiers .dc-toolbar .dc-fbtn.s-libere.active{
+      background:linear-gradient(180deg, rgba(245,232,200,0.95) 0%, rgba(232,213,168,0.92) 100%);
+      color:#14532d;box-shadow:inset 0 -3px 0 #16a34a, 0 2px 6px rgba(0,0,0,0.25);
+    }
+    #page-dossiers .dc-toolbar .dc-fbtn.s-surveille{color:#fde047}
+    #page-dossiers .dc-toolbar .dc-fbtn.s-surveille:hover{background:rgba(234,179,8,0.15);color:#fef08a}
+    #page-dossiers .dc-toolbar .dc-fbtn.s-surveille.active{
+      background:linear-gradient(180deg, rgba(245,232,200,0.95) 0%, rgba(232,213,168,0.92) 100%);
+      color:#713f12;box-shadow:inset 0 -3px 0 #ca8a04, 0 2px 6px rgba(0,0,0,0.25);
     }
 
     /* Mobile */
@@ -11350,16 +11574,16 @@ document.addEventListener('error', function(e){
       .bb-search-wrap input::placeholder { color: rgba(232,216,176,0.25); }
       .bb-filters {
         display: flex; gap: 2px; flex-wrap: wrap; align-items:center;
-        background: linear-gradient(180deg, #f5e8c8 0%, #e8d5a8 100%);
-        border: 1px solid rgba(139,105,20,0.40);
+        background:linear-gradient(180deg, rgba(40,30,18,0.85) 0%, rgba(28,22,14,0.92) 100%);
+        border: 1px solid rgba(180,140,20,0.35);
         border-radius: 8px;
         padding: 4px;
-        box-shadow: 0 2px 6px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.5);
+        box-shadow: 0 2px 8px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.05);
       }
       .bb-fbtn {
         background: transparent;
         border: 1px solid transparent;
-        color: #7a5a08;
+        color: rgba(232,208,140,0.55);
         font-family: 'Share Tech Mono', monospace;
         font-size: 10px;
         padding: 7px 13px;
@@ -11372,13 +11596,13 @@ document.addEventListener('error', function(e){
         font-weight: 700;
       }
       .bb-fbtn:hover {
-        color: #3a1f06;
-        background: rgba(212,180,74,0.18);
+        color: #f0d060;
+        background: rgba(212,180,74,0.10);
       }
       .bb-fbtn.on {
-        background: rgba(255,250,235,0.85);
+        background:linear-gradient(180deg, rgba(245,232,200,0.95) 0%, rgba(232,213,168,0.92) 100%);
         color: #3a1f06;
-        box-shadow: inset 0 -3px 0 #8b6914, 0 1px 2px rgba(0,0,0,0.08);
+        box-shadow: inset 0 -3px 0 #8b6914, 0 2px 6px rgba(0,0,0,0.25);
         text-shadow: 0 1px 0 rgba(255,255,255,0.5);
       }
       .bb-add-btn {
@@ -15696,15 +15920,10 @@ document.addEventListener('error', function(e){
       color:rgba(240,232,208,0.45) !important;
       opacity:1 !important;
     }
-    #page-impots .imp-fbtn{
-      background:rgba(20,16,9,0.85) !important;
-      color:rgba(255,255,255,0.65) !important;
-      border:1px solid rgba(180,140,20,0.3) !important;
-    }
-    #page-impots .imp-fbtn:hover{color:#fff !important;border-color:rgba(180,140,20,0.55) !important;background:rgba(30,24,14,0.95) !important}
-    #page-impots .imp-fbtn.active.all   {background:linear-gradient(135deg,#a16207,#854d0e) !important;color:#fff !important;border-color:#a16207 !important}
-    #page-impots .imp-fbtn.active.paid  {background:linear-gradient(135deg,#16a34a,#166534) !important;color:#fff !important;border-color:#16a34a !important}
-    #page-impots .imp-fbtn.active.unpaid{background:linear-gradient(135deg,#dc2626,#991b1b) !important;color:#fff !important;border-color:#dc2626 !important}
+    /* (Surcharges imp-fbtn désactivées : le nouveau style parchemin défini
+       plus haut s'applique correctement — fond crème doré, soulignement
+       coloré sur l'actif. L'ancien bloc forçait un fond brun foncé avec
+       boutons full-color qui jurait avec le reste de l'app.) */
     /* Texte info exonération bien visible */
     #page-impots .imp-info{
       color:#cdd9ff !important;
