@@ -7465,6 +7465,7 @@ document.addEventListener('error', function(e){
     <div class="nav-item" role="button" tabindex="0" onclick="showPage('bingobook')" data-page="bingobook" data-sec="all"><span class="icon">📕</span> Bingo Book</div>
     <div class="nav-item" role="button" tabindex="0" onclick="showPage('diplo-laissezpasse')" data-page="diplo-laissezpasse" data-sec="all"><span class="icon">🪪</span> Laissez-passer</div>
     <div class="nav-item" role="button" tabindex="0" onclick="showPage('codepenal')" data-page="codepenal" data-sec="all"><span class="icon">📜</span> Code Pénal</div>
+    <div class="nav-item" role="button" tabindex="0" onclick="showPage('adoptions')" data-page="adoptions" data-sec="all"><span class="icon">👨‍👩‍👧</span> Adoptions <span class="nav-badge" id="badge-adoptions" style="background:var(--purple);display:none">0</span></div>
     <div class="nav-item" role="button" tabindex="0" onclick="showPage('histoire')" data-page="histoire" data-sec="all"><span class="icon">📖</span> Histoire</div>
     <div class="nav-section" data-sec="all">Équipes</div>
     <div class="nav-item" role="button" tabindex="0" onclick="showPage('equipes')" data-page="equipes" data-sec="all"><span class="icon">🛡️</span> Équipes <span class="nav-badge" id="badge-equipes" style="background:var(--cyan);display:none">0</span></div>
@@ -10446,12 +10447,72 @@ document.addEventListener('error', function(e){
     #page-codepenal .cp-tab .seal.violet{background:radial-gradient(circle at 30% 30%,#a78bfa,#6d28d9);color:#a78bfa}
     #page-codepenal .cp-tab .seal.vert{background:radial-gradient(circle at 30% 30%,#4ade80,#15803d);color:#4ade80}
     #page-codepenal .cp-tab .seal.rouge{background:radial-gradient(circle at 30% 30%,#fca5a5,#991b1b);color:#fca5a5}
+    #page-codepenal .cp-tab .seal.noir{background:radial-gradient(circle at 30% 30%,#7a0e0e,#000000);color:#7a0e0e;box-shadow:0 0 0 2px rgba(0,0,0,0.7), 0 0 8px rgba(220,38,38,0.5)}
     #page-codepenal .cp-tab .seal.gold{background:radial-gradient(circle at 30% 30%,#fde047,#a16207);color:#fde047}
     #page-codepenal .cp-tab .count{
       font-family:'Share Tech Mono',monospace;
       font-size:10px;
       opacity:0.75;
       margin-left:4px;
+    }
+
+    /* ─── BARRE DE RECHERCHE Code Pénal ─── */
+    #page-codepenal .cp-search-wrap{
+      position:relative;
+      margin:0 0 14px;
+    }
+    #page-codepenal .cp-search-input{
+      width:100%;
+      padding:13px 44px 13px 44px;
+      background:linear-gradient(180deg, rgba(20,16,9,0.9) 0%, rgba(14,11,7,0.95) 100%);
+      border:1px solid rgba(201,162,39,0.25);
+      border-radius:8px;
+      color:var(--text);
+      font-family:'Barlow',sans-serif;
+      font-size:13.5px;
+      letter-spacing:0.3px;
+      outline:none;
+      transition:all .2s ease;
+      box-shadow:inset 0 1px 3px rgba(0,0,0,0.4), 0 1px 0 rgba(255,255,255,0.03);
+    }
+    #page-codepenal .cp-search-input::placeholder{color:rgba(240,232,208,0.4);font-style:italic}
+    #page-codepenal .cp-search-input:focus{
+      border-color:rgba(212,180,74,0.55);
+      box-shadow:inset 0 1px 3px rgba(0,0,0,0.4), 0 0 0 3px rgba(212,180,74,0.10);
+    }
+    #page-codepenal .cp-search-icon{
+      position:absolute;left:14px;top:50%;transform:translateY(-50%);
+      font-size:16px;color:rgba(212,180,74,0.6);pointer-events:none;
+    }
+    #page-codepenal .cp-search-clear{
+      position:absolute;right:10px;top:50%;transform:translateY(-50%);
+      background:rgba(239,68,68,0.10);
+      border:1px solid rgba(239,68,68,0.30);
+      color:#f87171;
+      width:26px;height:26px;border-radius:50%;
+      cursor:pointer;font-size:11px;
+      display:none;align-items:center;justify-content:center;
+      transition:all .15s ease;
+    }
+    #page-codepenal .cp-search-clear:hover{background:rgba(239,68,68,0.22);transform:translateY(-50%) scale(1.05)}
+    #page-codepenal .cp-search-clear.visible{display:flex}
+    #page-codepenal .cp-search-info{
+      display:none;
+      font-family:'Share Tech Mono',monospace;
+      font-size:10px;letter-spacing:1.5px;
+      color:rgba(212,180,74,0.7);
+      margin-bottom:10px;padding:8px 12px;
+      background:rgba(212,180,74,0.06);
+      border-left:2px solid rgba(212,180,74,0.4);
+      border-radius:3px;
+    }
+    #page-codepenal .cp-search-info.visible{display:block}
+    /* Surbrillance du terme recherché */
+    #page-codepenal .cp-hl{
+      background:rgba(255,235,59,0.25);
+      color:#fff;
+      padding:0 2px;border-radius:2px;
+      font-weight:700;
     }
 
     /* Panneau d'ajout — dark */
@@ -10608,7 +10669,15 @@ document.addEventListener('error', function(e){
     #page-codepenal .cp-art.cat-violet{border-left:4px solid #8b5cf6}
     #page-codepenal .cp-art.cat-vert  {border-left:4px solid #22c55e}
     #page-codepenal .cp-art.cat-rouge {border-left:4px solid #ef4444}
+    #page-codepenal .cp-art.cat-noir  {border-left:4px solid #1a1a1a;background:linear-gradient(135deg, rgba(20,5,5,0.95) 0%, rgba(35,10,10,0.92) 100%)}
     #page-codepenal .cp-art.cat-gray  {border-left:4px solid #6b7280}
+    /* Effet glaçant sur les articles "MORT" */
+    #page-codepenal .cp-art.cat-noir::before{
+      background:linear-gradient(90deg, transparent, rgba(220,38,38,0.6), transparent);
+      height:2px;
+    }
+    #page-codepenal .cp-art.cat-noir .cp-art-num{color:rgba(220,38,38,0.7)}
+    #page-codepenal .cp-art.cat-noir .cp-art-title{color:#fca5a5;text-shadow:0 0 12px rgba(220,38,38,0.25)}
 
     #page-codepenal .cp-art-head{
       display:flex;align-items:flex-start;justify-content:space-between;
@@ -10633,6 +10702,7 @@ document.addEventListener('error', function(e){
     #page-codepenal .cp-art-cat.violet{background:rgba(139,92,246,0.15);color:#c4b5fd;border-color:rgba(139,92,246,0.4)}
     #page-codepenal .cp-art-cat.vert  {background:rgba(34,197,94,0.13);color:#86efac;border-color:rgba(34,197,94,0.38)}
     #page-codepenal .cp-art-cat.rouge {background:rgba(239,68,68,0.13);color:#fca5a5;border-color:rgba(239,68,68,0.4)}
+    #page-codepenal .cp-art-cat.noir  {background:linear-gradient(90deg,rgba(0,0,0,0.6),rgba(60,10,10,0.5));color:#fca5a5;border-color:rgba(220,38,38,0.55);box-shadow:0 0 8px rgba(220,38,38,0.3)}
     #page-codepenal .cp-art-cat.gray  {background:rgba(107,114,128,0.13);color:#cbd5e1;border-color:rgba(107,114,128,0.35)}
 
     #page-codepenal .cp-art-title{
@@ -10745,6 +10815,7 @@ document.addEventListener('error', function(e){
         <div class="cp-hero-stat"><div class="cp-hero-stat-val" id="cp-stat-mineur">—</div><div class="cp-hero-stat-lbl">Délits mineurs</div></div>
         <div class="cp-hero-stat"><div class="cp-hero-stat-val" id="cp-stat-majeur">—</div><div class="cp-hero-stat-lbl">Délits majeurs</div></div>
         <div class="cp-hero-stat"><div class="cp-hero-stat-val" id="cp-stat-crime">—</div><div class="cp-hero-stat-lbl">Crimes</div></div>
+        <div class="cp-hero-stat"><div class="cp-hero-stat-val" id="cp-stat-mort" style="color:#fca5a5;text-shadow:0 0 12px rgba(220,38,38,0.4)">—</div><div class="cp-hero-stat-lbl">Peines capitales</div></div>
         <div class="cp-hero-stat"><div class="cp-hero-stat-val" id="cp-stat-total">—</div><div class="cp-hero-stat-lbl">Total articles</div></div>
       </div>
     </div>
@@ -10755,7 +10826,16 @@ document.addEventListener('error', function(e){
       <div class="cp-tab" onclick="filterCP('violet',this)"><span class="seal violet"></span> Délit mineur <span class="count" id="cp-cnt-violet"></span></div>
       <div class="cp-tab" onclick="filterCP('vert',this)"><span class="seal vert"></span> Délit majeur <span class="count" id="cp-cnt-vert"></span></div>
       <div class="cp-tab" onclick="filterCP('rouge',this)"><span class="seal rouge"></span> Crime <span class="count" id="cp-cnt-rouge"></span></div>
+      <div class="cp-tab" onclick="filterCP('noir',this)"><span class="seal noir"></span> Mort <span class="count" id="cp-cnt-noir"></span></div>
     </div>
+
+    <!-- BARRE DE RECHERCHE -->
+    <div class="cp-search-wrap">
+      <span class="cp-search-icon">🔎</span>
+      <input type="text" id="cp-search" class="cp-search-input" placeholder="Rechercher une infraction… (ex : 'vol', 'rébellion', '1.7', '2.')" autocomplete="off" oninput="cpSearchInput()">
+      <button type="button" class="cp-search-clear" id="cp-search-clear" onclick="cpClearSearch()" title="Effacer">✕</button>
+    </div>
+    <div class="cp-search-info" id="cp-search-info"></div>
 
     <!-- AJOUT (admin) -->
     <div id="cp-add-panel" class="cp-add-panel" style="display:none">
@@ -10768,6 +10848,7 @@ document.addEventListener('error', function(e){
               <option value="violet">🟣 Délit mineur</option>
               <option value="vert">🟢 Délit majeur</option>
               <option value="rouge">🔴 Crime</option>
+              <option value="noir">⚫ Peine capitale (Mort)</option>
             </select>
           </div>
         </div>
@@ -10789,6 +10870,365 @@ document.addEventListener('error', function(e){
 
     <!-- Garde le tbody pour compatibilité (caché) — certains scripts pourraient encore le viser -->
     <table style="display:none"><tbody id="cp-tbody"></tbody></table>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       ADOPTIONS — Registre des adoptions RP
+       Visible par tous, modifiable par les membres autorisés.
+       Chaque adoption peut générer une fiche imprimable (PDF/print).
+       ═══════════════════════════════════════════════════════════════ -->
+  <div class="page-content" id="page-adoptions">
+    <style>
+    /* HERO sceau */
+    #page-adoptions .ad-hero{
+      background:linear-gradient(135deg, #1a1410 0%, #221c13 50%, #1f1610 100%);
+      border:1px solid rgba(180,140,20,0.30);
+      border-radius:14px;
+      padding:28px 28px 24px;margin-bottom:18px;
+      position:relative;overflow:hidden;
+      box-shadow:0 4px 24px rgba(0,0,0,0.35);
+    }
+    #page-adoptions .ad-hero::before{
+      content:'';position:absolute;top:0;left:0;right:0;height:2px;
+      background:linear-gradient(90deg,transparent 0%,#c9a227 30%,#c0410e 50%,#c9a227 70%,transparent 100%);
+    }
+    #page-adoptions .ad-hero::after{
+      content:'';position:absolute;inset:0;
+      background:radial-gradient(ellipse at 90% 0%,rgba(192,65,14,0.06) 0%,transparent 60%),
+                 radial-gradient(ellipse at 10% 100%,rgba(180,140,20,0.06) 0%,transparent 60%);
+      pointer-events:none;
+    }
+    #page-adoptions .ad-hero > *{position:relative;z-index:1}
+    #page-adoptions .ad-hero-overline{
+      font-family:'Share Tech Mono',monospace;font-size:9.5px;letter-spacing:4px;
+      color:#c0410e;text-transform:uppercase;margin-bottom:10px;
+      display:inline-flex;align-items:center;gap:10px;
+    }
+    #page-adoptions .ad-hero-overline::before,
+    #page-adoptions .ad-hero-overline::after{
+      content:'';display:inline-block;width:24px;height:1px;background:rgba(192,65,14,0.5);
+    }
+    #page-adoptions .ad-hero h1{
+      font-family:'Cinzel',serif;font-size:30px;font-weight:700;letter-spacing:2px;
+      color:var(--gold2);margin-bottom:8px;text-transform:uppercase;
+      text-shadow:0 0 24px rgba(212,180,74,0.18);
+    }
+    #page-adoptions .ad-hero-sub{
+      font-family:'EB Garamond',Georgia,serif;font-style:italic;
+      font-size:14px;color:rgba(240,232,208,0.7);max-width:640px;line-height:1.55;
+    }
+    #page-adoptions .ad-hero-quote{
+      margin-top:14px;font-family:'EB Garamond',Georgia,serif;font-style:italic;
+      font-size:12.5px;color:rgba(240,232,208,0.55);
+      padding-left:14px;border-left:2px solid rgba(212,180,74,0.35);
+    }
+    #page-adoptions .ad-hero-stats{
+      display:flex;gap:32px;margin-top:18px;flex-wrap:wrap;
+    }
+    #page-adoptions .ad-hero-stat-val{
+      font-family:'Cinzel',serif;font-size:22px;font-weight:700;color:var(--gold2);
+      line-height:1;
+    }
+    #page-adoptions .ad-hero-stat-lbl{
+      font-family:'Share Tech Mono',monospace;font-size:9px;letter-spacing:2px;
+      color:rgba(240,232,208,0.4);text-transform:uppercase;margin-top:5px;
+    }
+
+    /* PANEL D'AJOUT */
+    #page-adoptions .ad-add-panel{
+      background:linear-gradient(180deg, var(--bg3) 0%, var(--bg2) 100%);
+      border:1px solid rgba(201,162,39,0.22);
+      border-radius:10px;
+      box-shadow:0 4px 18px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.04);
+      margin-bottom:18px;
+      overflow:hidden;position:relative;
+    }
+    #page-adoptions .ad-add-panel::before{
+      content:'';position:absolute;top:0;left:0;right:0;height:1px;
+      background:linear-gradient(90deg, transparent, rgba(212,180,74,0.4), transparent);
+    }
+    #page-adoptions .ad-add-header{
+      padding:14px 18px;display:flex;align-items:center;gap:10px;
+      border-bottom:1px solid rgba(201,162,39,0.15);
+      background:linear-gradient(90deg, rgba(212,180,74,0.06), transparent);
+    }
+    #page-adoptions .ad-add-header h3{
+      font-family:'Cinzel',serif;font-size:15px;font-weight:700;color:var(--gold2);
+      letter-spacing:1.5px;margin:0;
+    }
+    #page-adoptions .ad-add-header .seal-icon{font-size:18px}
+    #page-adoptions .ad-add-body{padding:18px}
+    #page-adoptions .ad-label{
+      display:block;font-family:'Share Tech Mono',monospace;
+      font-size:9px;letter-spacing:1.5px;color:rgba(212,180,74,0.7);
+      margin-bottom:6px;text-transform:uppercase;font-weight:700;
+    }
+    #page-adoptions .ad-input,#page-adoptions textarea.ad-input{
+      width:100%;padding:9px 12px;
+      background:rgba(20,16,9,0.7);
+      border:1px solid rgba(201,162,39,0.22);
+      border-radius:5px;
+      color:var(--text);font-family:'Barlow',sans-serif;font-size:13px;
+      outline:none;transition:all .15s ease;
+    }
+    #page-adoptions textarea.ad-input{resize:vertical;min-height:70px;line-height:1.5}
+    #page-adoptions .ad-input:focus{border-color:rgba(212,180,74,0.55);box-shadow:0 0 0 3px rgba(212,180,74,0.10)}
+    #page-adoptions .ad-input::placeholder{color:rgba(240,232,208,0.32);font-style:italic}
+
+    /* Zone photo */
+    #page-adoptions .ad-photo-wrap{
+      display:flex;align-items:center;gap:14px;flex-wrap:wrap;
+    }
+    #page-adoptions .ad-photo-preview{
+      width:72px;height:72px;border-radius:8px;
+      background:rgba(20,16,9,0.6);border:1px dashed rgba(212,180,74,0.4);
+      display:flex;align-items:center;justify-content:center;
+      font-size:24px;color:rgba(212,180,74,0.4);overflow:hidden;flex-shrink:0;
+    }
+    #page-adoptions .ad-photo-preview img{width:100%;height:100%;object-fit:cover}
+    #page-adoptions .ad-photo-btn{
+      padding:8px 14px;background:rgba(212,180,74,0.12);
+      border:1px solid rgba(212,180,74,0.35);
+      color:var(--gold2);border-radius:5px;cursor:pointer;
+      font-family:'Share Tech Mono',monospace;font-size:10px;letter-spacing:1.5px;
+      transition:all .15s ease;
+    }
+    #page-adoptions .ad-photo-btn:hover{background:rgba(212,180,74,0.22)}
+    #page-adoptions .ad-photo-info{font-size:11px;color:rgba(240,232,208,0.5);font-style:italic}
+
+    /* Boutons */
+    #page-adoptions .btn-ad-save{
+      background:linear-gradient(135deg, #c0410e, #b86010);
+      color:#fff;padding:10px 22px;border:none;border-radius:6px;
+      font-family:'Cinzel',serif;font-size:12.5px;font-weight:700;
+      letter-spacing:1.5px;cursor:pointer;text-transform:uppercase;
+      box-shadow:0 4px 12px rgba(192,65,14,0.3);
+      transition:all .2s ease;
+    }
+    #page-adoptions .btn-ad-save:hover{transform:translateY(-1px);box-shadow:0 6px 18px rgba(192,65,14,0.45)}
+    #page-adoptions .btn-ad-cancel{
+      background:rgba(107,114,128,0.15);color:rgba(240,232,208,0.65);
+      padding:10px 18px;border:1px solid rgba(107,114,128,0.3);
+      border-radius:6px;cursor:pointer;
+      font-family:'Cinzel',serif;font-size:12px;letter-spacing:1px;
+      margin-left:8px;
+    }
+    #page-adoptions .btn-ad-cancel:hover{background:rgba(107,114,128,0.25)}
+
+    /* RECHERCHE */
+    #page-adoptions .ad-search-wrap{
+      position:relative;margin-bottom:14px;
+    }
+    #page-adoptions .ad-search-input{
+      width:100%;padding:11px 40px 11px 40px;
+      background:rgba(20,16,9,0.85);
+      border:1px solid rgba(201,162,39,0.22);
+      border-radius:8px;color:var(--text);
+      font-family:'Barlow',sans-serif;font-size:13px;outline:none;
+    }
+    #page-adoptions .ad-search-input:focus{border-color:rgba(212,180,74,0.5)}
+    #page-adoptions .ad-search-icon{
+      position:absolute;left:13px;top:50%;transform:translateY(-50%);
+      font-size:14px;color:rgba(212,180,74,0.55);
+    }
+
+    /* GRILLE */
+    #page-adoptions .ad-grid{
+      display:grid;grid-template-columns:1fr;gap:14px;
+    }
+    @media(min-width:760px){
+      #page-adoptions .ad-grid{grid-template-columns:repeat(2,1fr)}
+    }
+    @media(min-width:1180px){
+      #page-adoptions .ad-grid{grid-template-columns:repeat(3,1fr)}
+    }
+
+    /* CARTE */
+    #page-adoptions .ad-card{
+      background:linear-gradient(135deg, rgba(26,20,16,0.92) 0%, rgba(34,28,19,0.88) 100%);
+      border:1px solid rgba(201,162,39,0.22);
+      border-radius:10px;padding:0;overflow:hidden;
+      box-shadow:0 4px 16px rgba(0,0,0,0.35);
+      transition:all .2s ease;position:relative;
+    }
+    #page-adoptions .ad-card::before{
+      content:'';position:absolute;top:0;left:0;right:0;height:2px;
+      background:linear-gradient(90deg, transparent, rgba(212,180,74,0.5), rgba(192,65,14,0.5), rgba(212,180,74,0.5), transparent);
+    }
+    #page-adoptions .ad-card:hover{
+      transform:translateY(-2px);
+      border-color:rgba(212,180,74,0.45);
+      box-shadow:0 8px 28px rgba(0,0,0,0.5);
+    }
+    #page-adoptions .ad-card-head{
+      padding:12px 16px 10px;
+      display:flex;align-items:center;gap:12px;
+      border-bottom:1px solid rgba(201,162,39,0.12);
+      background:linear-gradient(90deg, rgba(212,180,74,0.04), transparent);
+    }
+    #page-adoptions .ad-card-photo{
+      width:46px;height:46px;border-radius:8px;
+      background:rgba(20,16,9,0.7);
+      border:1px solid rgba(212,180,74,0.3);
+      display:flex;align-items:center;justify-content:center;
+      font-size:20px;flex-shrink:0;overflow:hidden;
+    }
+    #page-adoptions .ad-card-photo img{width:100%;height:100%;object-fit:cover}
+    #page-adoptions .ad-card-id{flex:1;min-width:0}
+    #page-adoptions .ad-card-ref{
+      font-family:'Share Tech Mono',monospace;font-size:9px;letter-spacing:2px;
+      color:rgba(212,180,74,0.6);text-transform:uppercase;
+    }
+    #page-adoptions .ad-card-title{
+      font-family:'Cinzel',serif;font-size:14px;font-weight:700;color:var(--text);
+      margin-top:3px;line-height:1.25;
+      overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+    }
+    #page-adoptions .ad-card-body{padding:12px 16px 14px}
+    #page-adoptions .ad-card-row{
+      display:grid;grid-template-columns:80px 1fr;gap:8px;
+      padding:5px 0;font-size:12px;
+      border-bottom:1px dashed rgba(201,162,39,0.10);
+    }
+    #page-adoptions .ad-card-row:last-child{border-bottom:none}
+    #page-adoptions .ad-card-row .lbl{
+      font-family:'Share Tech Mono',monospace;font-size:9px;
+      letter-spacing:1.2px;color:rgba(212,180,74,0.6);
+      text-transform:uppercase;align-self:center;
+    }
+    #page-adoptions .ad-card-row .val{
+      color:var(--text2);font-weight:500;
+      overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+    }
+    #page-adoptions .ad-card-actions{
+      display:flex;gap:6px;padding:10px 16px;
+      border-top:1px solid rgba(201,162,39,0.10);
+      background:rgba(0,0,0,0.18);
+    }
+    #page-adoptions .ad-act-btn{
+      flex:1;padding:7px 10px;
+      background:rgba(212,180,74,0.10);
+      border:1px solid rgba(212,180,74,0.28);
+      color:var(--gold2);border-radius:5px;cursor:pointer;
+      font-family:'Share Tech Mono',monospace;font-size:9.5px;
+      letter-spacing:1.2px;text-transform:uppercase;
+      transition:all .15s ease;
+    }
+    #page-adoptions .ad-act-btn:hover{background:rgba(212,180,74,0.20)}
+    #page-adoptions .ad-act-btn.del{
+      background:rgba(239,68,68,0.10);border-color:rgba(239,68,68,0.30);color:#f87171;
+      flex:0 0 auto;
+    }
+    #page-adoptions .ad-act-btn.del:hover{background:rgba(239,68,68,0.22)}
+    #page-adoptions .ad-act-btn.print{
+      background:rgba(34,197,94,0.10);border-color:rgba(34,197,94,0.30);color:#86efac;
+    }
+    #page-adoptions .ad-act-btn.print:hover{background:rgba(34,197,94,0.22)}
+
+    /* ÉTAT VIDE */
+    #page-adoptions .ad-empty{
+      grid-column:1/-1;text-align:center;padding:60px 20px;
+      font-family:'Cinzel',serif;font-size:14.5px;letter-spacing:1.2px;
+      color:rgba(240,232,208,0.4);
+      background:rgba(20,16,9,0.5);
+      border:1px dashed rgba(201,162,39,0.25);border-radius:10px;
+    }
+    #page-adoptions .ad-empty::before{
+      content:'👨‍👩‍👧';display:block;font-size:36px;margin-bottom:10px;opacity:.5;
+    }
+
+    /* MOBILE */
+    @media(max-width:600px){
+      #page-adoptions .ad-hero{padding:20px 18px}
+      #page-adoptions .ad-hero h1{font-size:22px;letter-spacing:1.5px}
+      #page-adoptions .ad-hero-stats{gap:18px}
+      #page-adoptions .ad-add-body{padding:14px}
+      #page-adoptions .ad-card-row{grid-template-columns:70px 1fr}
+    }
+    </style>
+
+    <!-- HERO -->
+    <div class="ad-hero">
+      <div class="ad-hero-overline">REGISTRE DES ADOPTIONS — SUNAGAKURE</div>
+      <h1>Adoptions</h1>
+      <div class="ad-hero-sub">Registre officiel des adoptions reconnues par le Village Caché du Sable. Chaque adoption fait l'objet d'une fiche imprimable, signée par les parties et conservée aux archives.</div>
+      <div class="ad-hero-quote">« Le sang du désert n'est pas seulement celui de la naissance, mais celui que l'on choisit de protéger. »</div>
+      <div class="ad-hero-stats">
+        <div><div class="ad-hero-stat-val" id="ad-stat-total">—</div><div class="ad-hero-stat-lbl">Adoptions enregistrées</div></div>
+        <div><div class="ad-hero-stat-val" id="ad-stat-mois">—</div><div class="ad-hero-stat-lbl">Ce mois-ci</div></div>
+        <div><div class="ad-hero-stat-val" id="ad-stat-clans">—</div><div class="ad-hero-stat-lbl">Clans concernés</div></div>
+      </div>
+    </div>
+
+    <!-- AJOUT (membres autorisés uniquement) -->
+    <div id="ad-add-panel" class="ad-add-panel" style="display:none">
+      <div class="ad-add-header"><span class="seal-icon">📜</span><h3 id="ad-form-title">Enregistrer une adoption</h3></div>
+      <div class="ad-add-body">
+        <input type="hidden" id="ad-edit-id" value="">
+
+        <div class="grid grid-2" style="gap:12px;margin-bottom:12px">
+          <div class="form-group" style="margin-bottom:0">
+            <label class="ad-label">Nom de l'adoptant·e</label>
+            <input type="text" id="ad-adoptant" class="ad-input" placeholder="Nom complet de l'adoptant">
+          </div>
+          <div class="form-group" style="margin-bottom:0">
+            <label class="ad-label">Nom de l'adopté·e</label>
+            <input type="text" id="ad-adopte" class="ad-input" placeholder="Nom complet de l'enfant adopté">
+          </div>
+        </div>
+
+        <div class="grid grid-2" style="gap:12px;margin-bottom:12px">
+          <div class="form-group" style="margin-bottom:0">
+            <label class="ad-label">Clan / Famille de rattachement</label>
+            <input type="text" id="ad-clan" class="ad-input" placeholder="Ex : Clan Yashamaru, sans clan...">
+          </div>
+          <div class="form-group" style="margin-bottom:0">
+            <label class="ad-label">Date de l'adoption</label>
+            <input type="date" id="ad-date" class="ad-input">
+          </div>
+        </div>
+
+        <div class="form-group" style="margin-bottom:12px">
+          <label class="ad-label">Témoins (un par ligne)</label>
+          <textarea id="ad-temoins" class="ad-input" rows="2" placeholder="Ex :&#10;Maître Hidetaka (Jōnin)&#10;Sayuri Kurogane (officier d'état civil)"></textarea>
+        </div>
+
+        <div class="form-group" style="margin-bottom:12px">
+          <label class="ad-label">Raison de l'adoption</label>
+          <textarea id="ad-raison" class="ad-input" rows="3" placeholder="Circonstances (orphelin, recueil après mission, volonté familiale...)"></textarea>
+        </div>
+
+        <div class="form-group" style="margin-bottom:14px">
+          <label class="ad-label">Photo (facultative — JPG/PNG, max 1 Mo)</label>
+          <div class="ad-photo-wrap">
+            <div class="ad-photo-preview" id="ad-photo-preview"><span>📷</span></div>
+            <button type="button" class="ad-photo-btn" onclick="document.getElementById('ad-photo-input').click()">📁 Choisir une image</button>
+            <button type="button" class="ad-photo-btn" id="ad-photo-clear" onclick="adClearPhoto()" style="display:none">✕ Retirer</button>
+            <input type="file" id="ad-photo-input" accept="image/png,image/jpeg,image/webp" style="display:none" onchange="adHandlePhoto(event)">
+            <span class="ad-photo-info">Affichée sur la fiche imprimable.</span>
+          </div>
+        </div>
+
+        <div class="form-group" style="margin-bottom:14px">
+          <label class="ad-label">Notes complémentaires (facultatif)</label>
+          <textarea id="ad-notes" class="ad-input" rows="2" placeholder="Précisions, conditions particulières..."></textarea>
+        </div>
+
+        <div style="display:flex;align-items:center;flex-wrap:wrap;gap:8px">
+          <button class="btn-ad-save" onclick="saveAdoption()">📜 Sceller l'adoption</button>
+          <button class="btn-ad-cancel" id="ad-cancel-btn" onclick="cancelAdoptionEdit()" style="display:none">Annuler la modification</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- RECHERCHE -->
+    <div class="ad-search-wrap">
+      <span class="ad-search-icon">🔎</span>
+      <input type="text" id="ad-search" class="ad-search-input" placeholder="Rechercher (adoptant, adopté, clan, date…)" oninput="renderAdoptions()" autocomplete="off">
+    </div>
+
+    <!-- LISTE -->
+    <div id="ad-list" class="ad-grid"></div>
   </div>
 
   <!-- HISTOIRE & LORE -->
@@ -22713,7 +23153,7 @@ function saveCommNameAdmin(){
 }
 
 // NAV
-const PAGES={dashboard:"Tableau de bord",annonces:"Annonces",recensement:"Recensement",recrutement:"Recrutement",plaintes:"Plaintes",dossiers:"Dossiers criminels",codepenal:"Code Pénal",histoire:"Histoire",equipes:"Équipes",operations:"Opérations",effectifs:"Effectifs",hierarchie:"Hiérarchie",sanctions:"Sanctions & Promotions",impots:"Impôts",admin:"Panel Admin",casiers:"Tous les casiers",profil:"Casier personnel",bingobook:"Bingo Book",
+const PAGES={dashboard:"Tableau de bord",annonces:"Annonces",recensement:"Recensement",recrutement:"Recrutement",plaintes:"Plaintes",dossiers:"Dossiers criminels",codepenal:"Code Pénal",adoptions:"Adoptions",histoire:"Histoire",equipes:"Équipes",operations:"Opérations",effectifs:"Effectifs",hierarchie:"Hiérarchie",sanctions:"Sanctions & Promotions",impots:"Impôts",admin:"Panel Admin",casiers:"Tous les casiers",profil:"Casier personnel",bingobook:"Bingo Book",
   // Tribunal (6 pages)
   "juge-audiences":"Audiences","juge-plaintes":"Plaintes reçues","juge-affaires":"Affaires en cours","juge-jugements":"Jugements rendus","juge-procedure":"Code de procédure","juge-archives":"Archives & Jurisprudence",
   // Avocat
@@ -22728,7 +23168,7 @@ const PAGES={dashboard:"Tableau de bord",annonces:"Annonces",recensement:"Recens
   // Diplomatie
   "diplo-villages":"Villages alliés","diplo-traites":"Traités","diplo-communications":"Communications","diplo-laissezpasse":"Laissez-passer","diplo-comptabilite":"Comptabilité"
 };
-const VISITOR_PAGES=["dashboard","annonces","recensement","recrutement","plaintes","codepenal","histoire","profil","bingobook","equipes",
+const VISITOR_PAGES=["dashboard","annonces","recensement","recrutement","plaintes","codepenal","adoptions","histoire","profil","bingobook","equipes",
   // Pages des sections : visibles par les visiteurs de leur section (les visiteurs des autres sections ne pourront pas y accéder via _applySectionUI)
   "juge-audiences","juge-plaintes","juge-affaires","juge-jugements","juge-procedure","juge-archives",
   "avocat-clients","avocat-affaires","avocat-plaidoiries",
@@ -22755,7 +23195,7 @@ function showPage(name){
   // BYPASS ADMIN : les admins ont accès à tout, peu importe leur section
   // BYPASS HAUT COMMANDEMENT : oversight transverse sur toutes les pages, sauf le panel admin (bloqué plus bas)
   var isFullAccess = !!(currentUser && (currentUser.role === 'admin' || currentUser.role === 'hautcommandement'));
-  var ALL_PAGES = ['dashboard','bingobook','codepenal','histoire','profil','admin','diplo-laissezpasse','equipes','casiers'];
+  var ALL_PAGES = ['dashboard','bingobook','codepenal','adoptions','histoire','profil','admin','diplo-laissezpasse','equipes','casiers'];
   var SECTION_PREFIXES = { juge:/^juge-/, avocat:/^avocat-/, mission:/^mission-/, medical:/^(medical|sci|compta)-/, diplomatie:/^diplo-/ };
   var POLICE_PAGES = ['annonces','recensement','recrutement','plaintes','dossiers','operations','effectifs','sanctions','impots','hierarchie'];
   var userSection = (currentUser && currentUser.section) || 'police';
@@ -22825,6 +23265,7 @@ function renderPage(name){
   if(name==="plaintes")renderPlaintes();
   if(name==="dossiers")renderDossiers();
   if(name==="codepenal")renderCodePenal();
+  if(name==="adoptions")renderAdoptions();
   if(name==="operations"){renderOperations();initFeatureMap();setTimeout(_syncTeaserBg,150);opsBriefingRender();}
   if(name==="effectifs")renderEffectifs();
   if(name==="sanctions")renderSanctions();
@@ -29826,39 +30267,138 @@ function impSaveGrades(){
 
 // CODE PÉNAL
 let cpFilter="all";
+let cpSearchTerm="";
 function filterCP(f,e){
   cpFilter=f;
   document.querySelectorAll("#codepenal-tabs .cp-tab").forEach(b=>b.classList.remove("active"));
   if(e&&e.classList) e.classList.add("active");
   renderCodePenal();
 }
-function catCPLabel(c){return{violet:"Délit mineur",vert:"Délit majeur",rouge:"Crime"}[c]||c}
-function catCPBadge(c){return{violet:"badge-violet",vert:"badge-vert",rouge:"badge-rouge"}[c]||"badge-gray"}
+function catCPLabel(c){return{violet:"Délit mineur",vert:"Délit majeur",rouge:"Crime",noir:"Peine capitale"}[c]||c}
+function catCPBadge(c){return{violet:"badge-violet",vert:"badge-vert",rouge:"badge-rouge",noir:"badge-noir"}[c]||"badge-gray"}
+
+/* Extrait le numéro principal préfixe d'un nom d'infraction.
+   Ex : "[1.7] Délit de fuite" → {major:1, minor:7, raw:"1.7"}
+        "[3.10] X" → {major:3, minor:10, raw:"3.10"}
+        "Sans numéro" → {major:999, minor:999, raw:""} (relégué en fin)
+   Permet un tri automatique par chapitre puis par sous-numéro. */
+function _cpExtractNum(nom){
+  if(!nom) return {major:9999,minor:9999,raw:""};
+  var m = String(nom).match(/^\s*\[\s*(\d+)(?:[.,](\d+))?\s*\]/);
+  if(!m) return {major:9999,minor:9999,raw:""};
+  return {
+    major: parseInt(m[1],10),
+    minor: m[2] ? parseInt(m[2],10) : 0,
+    raw: m[1] + (m[2] ? '.'+m[2] : '')
+  };
+}
+/* Comparateur de tri : d'abord par catégorie (violet < vert < rouge < noir),
+   puis par numéro extrait (1.0, 1.1, ..., 2.1, 2.2, ...). */
+function _cpSort(a,b){
+  var catOrder = {violet:1, vert:2, rouge:3, noir:4};
+  var ca = catOrder[a.cat]||99, cb = catOrder[b.cat]||99;
+  if(ca !== cb) return ca - cb;
+  var na = _cpExtractNum(a.nom), nb = _cpExtractNum(b.nom);
+  if(na.major !== nb.major) return na.major - nb.major;
+  if(na.minor !== nb.minor) return na.minor - nb.minor;
+  return String(a.nom||'').localeCompare(String(b.nom||''),'fr',{sensitivity:'base'});
+}
+
+/* Échappe pour regex */
+function _cpEscRe(s){return String(s).replace(/[.*+?^${}()|[\]\\]/g,'\\$&');}
+/* Met en surbrillance le terme recherché dans un texte (déjà échappé HTML) */
+function _cpHighlight(textHtml, term){
+  if(!term) return textHtml;
+  try{
+    var re = new RegExp('('+_cpEscRe(term)+')','gi');
+    return textHtml.replace(re, '<span class="cp-hl">$1</span>');
+  }catch(e){ return textHtml; }
+}
+
+/* Handlers de la barre de recherche */
+function cpSearchInput(){
+  var inp = document.getElementById('cp-search');
+  cpSearchTerm = inp ? inp.value.trim() : '';
+  var clr = document.getElementById('cp-search-clear');
+  if(clr) clr.classList.toggle('visible', !!cpSearchTerm);
+  renderCodePenal();
+}
+function cpClearSearch(){
+  var inp = document.getElementById('cp-search');
+  if(inp) inp.value = '';
+  cpSearchTerm = '';
+  var clr = document.getElementById('cp-search-clear');
+  if(clr) clr.classList.remove('visible');
+  renderCodePenal();
+  if(inp) inp.focus();
+}
 
 function renderCodePenal(){
   if(!DB.infractions)DB.infractions=[];
+
+  // ─── Migration auto : toute infraction avec amende ou prison "MORT" passe en cat:noir ───
+  // Cela permet que les anciennes données (où la peine capitale était en cat:rouge) soient
+  // automatiquement reclassées dans la nouvelle catégorie dédiée.
+  var _migrated = false;
+  DB.infractions.forEach(function(x){
+    if(!x) return;
+    var isMort = (String(x.amende||'').toUpperCase().indexOf('MORT')!==-1)
+              || (String(x.prison||'').toUpperCase()==='MORT');
+    if(isMort && x.cat !== 'noir'){
+      x.cat = 'noir';
+      _migrated = true;
+    }
+  });
+  if(_migrated){
+    try{ if(typeof saveData === 'function') saveData('infractions'); }catch(e){}
+  }
+
   const showDel=canModify();
   if(el("cp-add-panel"))el("cp-add-panel").style.display=showDel?"block":"none";
 
   // Compteurs par catégorie
   const all = DB.infractions;
-  const cnts = { violet:0, vert:0, rouge:0 };
+  const cnts = { violet:0, vert:0, rouge:0, noir:0 };
   for(const x of all){ if(cnts.hasOwnProperty(x.cat)) cnts[x.cat]++; }
   const set = (id,val)=>{ const e=document.getElementById(id); if(e) e.textContent = val; };
   set('cp-stat-mineur', cnts.violet);
   set('cp-stat-majeur', cnts.vert);
   set('cp-stat-crime',  cnts.rouge);
+  set('cp-stat-mort',   cnts.noir);
   set('cp-stat-total',  all.length);
   set('cp-cnt-all',    '('+all.length+')');
   set('cp-cnt-violet', '('+cnts.violet+')');
   set('cp-cnt-vert',   '('+cnts.vert+')');
   set('cp-cnt-rouge',  '('+cnts.rouge+')');
+  set('cp-cnt-noir',   '('+cnts.noir+')');
 
-  // Liste filtrée
+  // Liste filtrée par catégorie
   let list = all.slice();
   if(cpFilter!=="all") list = list.filter(x=>x.cat===cpFilter);
 
-  // Numérotation des articles dans l'ordre actuel (pour l'affichage)
+  // Filtrage par recherche (nom + notes + amende + catégorie)
+  var term = (cpSearchTerm||'').toLowerCase();
+  if(term){
+    list = list.filter(function(x){
+      var hay = ((x.nom||'')+' '+(x.notes||'')+' '+(x.amende||'')+' '+catCPLabel(x.cat)).toLowerCase();
+      return hay.indexOf(term) !== -1;
+    });
+  }
+
+  // ─── TRI AUTOMATIQUE par catégorie + numéro [X.Y] ───
+  list.sort(_cpSort);
+
+  // Mettre à jour le bandeau d'info de recherche
+  var info = document.getElementById('cp-search-info');
+  if(info){
+    if(term){
+      info.textContent = '🔎 ' + list.length + ' résultat' + (list.length>1?'s':'') + ' pour « ' + cpSearchTerm + ' »';
+      info.classList.add('visible');
+    } else {
+      info.classList.remove('visible');
+    }
+  }
+
   const grid = document.getElementById('cp-articles');
   if(!grid){
     // Fallback ancien tbody si la nouvelle structure n'est pas là
@@ -29866,14 +30406,30 @@ function renderCodePenal(){
     return;
   }
   if(!list.length){
-    grid.innerHTML = '<div class="cp-empty">Aucun article inscrit dans cette catégorie du registre.</div>';
+    var emptyMsg = term
+      ? 'Aucun article ne correspond à votre recherche « ' + esc(cpSearchTerm) + ' ».'
+      : 'Aucun article inscrit dans cette catégorie du registre.';
+    grid.innerHTML = '<div class="cp-empty">'+emptyMsg+'</div>';
     return;
   }
-  const CP_CATS = ["violet","vert","rouge"];
+  const CP_CATS = ["violet","vert","rouge","noir"];
   grid.innerHTML = list.map((x, i) => {
     const safeCat = CP_CATS.includes(x.cat) ? x.cat : "gray";
-    const num = String(i+1).padStart(3,'0');
-    const prison = x.prison === 'Oui' ? '<span class="cp-art-prison oui">⛓ Oui</span>' : '<span class="cp-art-prison non">— Non</span>';
+    // Numéro d'article : on utilise le numéro extrait du nom si présent (plus stable
+    // que la position dans la liste filtrée), sinon on retombe sur l'index courant.
+    var extracted = _cpExtractNum(x.nom);
+    const num = extracted.raw ? extracted.raw : String(i+1).padStart(3,'0');
+    // Texte des colonnes avec surbrillance du terme recherché
+    var titleHtml  = _cpHighlight(esc(x.nom||'(Sans intitulé)'), cpSearchTerm);
+    var amendeHtml = _cpHighlight(esc(x.amende||'—'), cpSearchTerm);
+    var notesHtml  = x.notes ? _cpHighlight(esc(x.notes), cpSearchTerm) : '';
+    // Affichage prison adapté à la catégorie "noir" (Mort)
+    var prison;
+    if(x.cat === 'noir' || (x.prison && String(x.prison).toUpperCase() === 'MORT')){
+      prison = '<span class="cp-art-prison oui" style="background:rgba(0,0,0,0.6);color:#fca5a5;border-color:rgba(220,38,38,0.6)">☠ MORT</span>';
+    } else {
+      prison = x.prison === 'Oui' ? '<span class="cp-art-prison oui">⛓ Oui</span>' : '<span class="cp-art-prison non">— Non</span>';
+    }
     return `
       <article class="cp-art cat-${safeCat}">
         <div class="cp-art-head">
@@ -29883,15 +30439,15 @@ function renderCodePenal(){
             ${showDel ? `<button class="cp-art-del" onclick="askDelete('Supprimer cette infraction du code pénal ?',()=>doDeleteInfraction(${x.id}))" title="Supprimer">🗑</button>` : ''}
           </div>
         </div>
-        <div class="cp-art-title">${esc(x.nom||'(Sans intitulé)')}</div>
+        <div class="cp-art-title">${titleHtml}</div>
         <div class="cp-art-rows">
           <div class="cp-art-lbl">Amende</div>
-          <div class="cp-art-val amende">${esc(x.amende)||'—'}</div>
+          <div class="cp-art-val amende">${amendeHtml}</div>
           <div class="cp-art-lbl">Prison</div>
           <div class="cp-art-val">${prison}</div>
           ${x.duree ? `<div class="cp-art-lbl">Durée</div><div class="cp-art-val">${esc(x.duree)}</div>` : ''}
         </div>
-        ${x.notes ? `<div class="cp-art-notes">« ${esc(x.notes)} »</div>` : ''}
+        ${notesHtml ? `<div class="cp-art-notes">« ${notesHtml} »</div>` : ''}
       </article>`;
   }).join("");
 }
@@ -29963,13 +30519,540 @@ function seedCodePenal(force){
     {id:10027,nom:"[3.4] Détournement de fonds publics — Police / Économie...",cat:"rouge",amende:"100 000両",prison:"Oui",duree:"",notes:"Jugement"},
     {id:10028,nom:"[3.5] Prise d'otage / Kidnapping",cat:"rouge",amende:"50 000両",prison:"Oui",duree:"",notes:"Jugement"},
     {id:10029,nom:"[3.6] Divulgation d'informations confidentielles",cat:"rouge",amende:"50 000両",prison:"Oui",duree:"",notes:"Jugement"},
-    {id:10030,nom:"[3.7] Réalisation avérée de l'un des actes ci-dessus",cat:"rouge",amende:"MORT",prison:"MORT",duree:"",notes:"MORT — Peine capitale"}
+    {id:10030,nom:"[3.7] Réalisation avérée de l'un des actes ci-dessus",cat:"noir",amende:"MORT",prison:"MORT",duree:"",notes:"MORT — Peine capitale"}
   ];
   try{ localStorage.setItem('suna_cp_seeded','1'); }catch(e){}
   saveData();
   renderCodePenal();
   return true;
 }
+
+/* ══════════════════════════════════════════════════════════
+   ADOPTIONS — Registre des adoptions RP
+   - Stockage : DB.adoptions = []
+   - Sync Firebase via saveData('adoptions')
+   - Fiche imprimable HTML générée à la volée
+   ══════════════════════════════════════════════════════════ */
+
+// État local pour la photo en cours d'édition (base64 dataURL)
+var _adCurrentPhoto = null;
+
+function _adInit(){
+  if(!DB.adoptions || !Array.isArray(DB.adoptions)){
+    // Firebase peut renvoyer un objet {0:..,1:..} → on convertit en array
+    if(DB.adoptions && typeof DB.adoptions === 'object'){
+      DB.adoptions = Object.values(DB.adoptions).filter(Boolean);
+    } else {
+      DB.adoptions = [];
+    }
+  }
+}
+
+// Échappement HTML simple (factorise esc() qui peut ne pas exister à tous moments)
+function _adEsc(s){
+  return String(s==null?'':s)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// Format de date court (jj/mm/aaaa) à partir d'une date ISO ou timestamp
+function _adFmtDate(d){
+  if(!d) return '—';
+  try{
+    var dt = (typeof d === 'number') ? new Date(d) : new Date(d);
+    if(isNaN(dt.getTime())) return _adEsc(String(d));
+    return dt.toLocaleDateString('fr-FR');
+  }catch(e){ return _adEsc(String(d)); }
+}
+
+// Format long pour la fiche : "12 mai 2026"
+function _adFmtDateLong(d){
+  if(!d) return '—';
+  try{
+    var dt = (typeof d === 'number') ? new Date(d) : new Date(d);
+    if(isNaN(dt.getTime())) return _adEsc(String(d));
+    return dt.toLocaleDateString('fr-FR',{day:'numeric',month:'long',year:'numeric'});
+  }catch(e){ return _adEsc(String(d)); }
+}
+
+// Gestion du choix de photo (compression légère + base64)
+function adHandlePhoto(ev){
+  var f = ev && ev.target && ev.target.files && ev.target.files[0];
+  if(!f) return;
+  if(f.size > 1024*1024){
+    if(typeof showToast === 'function') showToast('Image trop lourde (max 1 Mo).','error');
+    ev.target.value = '';
+    return;
+  }
+  var reader = new FileReader();
+  reader.onload = function(e){
+    var dataURL = e.target.result;
+    // Compression : redimensionner à 600px max pour limiter la taille en BDD
+    var img = new Image();
+    img.onload = function(){
+      try{
+        var canvas = document.createElement('canvas');
+        var maxSide = 600;
+        var w = img.width, h = img.height;
+        if(w > maxSide || h > maxSide){
+          if(w >= h){ h = Math.round(h * (maxSide / w)); w = maxSide; }
+          else      { w = Math.round(w * (maxSide / h)); h = maxSide; }
+        }
+        canvas.width = w; canvas.height = h;
+        var ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, w, h);
+        _adCurrentPhoto = canvas.toDataURL('image/jpeg', 0.82);
+      }catch(err){
+        // Fallback : on garde le dataURL brut
+        _adCurrentPhoto = dataURL;
+      }
+      _adRefreshPhotoPreview();
+    };
+    img.onerror = function(){
+      _adCurrentPhoto = dataURL;
+      _adRefreshPhotoPreview();
+    };
+    img.src = dataURL;
+  };
+  reader.readAsDataURL(f);
+}
+
+function _adRefreshPhotoPreview(){
+  var prev = document.getElementById('ad-photo-preview');
+  var clr  = document.getElementById('ad-photo-clear');
+  if(!prev) return;
+  if(_adCurrentPhoto){
+    prev.innerHTML = '<img src="'+_adCurrentPhoto+'" alt="Photo">';
+    if(clr) clr.style.display = 'inline-block';
+  } else {
+    prev.innerHTML = '<span>📷</span>';
+    if(clr) clr.style.display = 'none';
+  }
+}
+
+function adClearPhoto(){
+  _adCurrentPhoto = null;
+  var inp = document.getElementById('ad-photo-input');
+  if(inp) inp.value = '';
+  _adRefreshPhotoPreview();
+}
+
+// Réinitialiser le formulaire (mode "ajout")
+function _adResetForm(){
+  var ids = ['ad-edit-id','ad-adoptant','ad-adopte','ad-clan','ad-date','ad-temoins','ad-raison','ad-notes'];
+  ids.forEach(function(id){
+    var e = document.getElementById(id);
+    if(e) e.value = '';
+  });
+  _adCurrentPhoto = null;
+  _adRefreshPhotoPreview();
+  var t = document.getElementById('ad-form-title'); if(t) t.textContent = "Enregistrer une adoption";
+  var c = document.getElementById('ad-cancel-btn'); if(c) c.style.display = 'none';
+}
+
+function cancelAdoptionEdit(){
+  _adResetForm();
+  if(typeof showToast === 'function') showToast('Modification annulée.','info');
+}
+
+// Charger les données d'une adoption dans le formulaire (mode "édition")
+function editAdoption(id){
+  if(typeof canModify === 'function' && !canModify()){
+    if(typeof showToast === 'function') showToast('⛔ Action réservée aux membres autorisés.','error');
+    return;
+  }
+  _adInit();
+  var a = DB.adoptions.find(function(x){ return String(x.id) === String(id); });
+  if(!a) return;
+  var setVal = function(k,v){ var e=document.getElementById(k); if(e) e.value = v||''; };
+  setVal('ad-edit-id', a.id);
+  setVal('ad-adoptant', a.adoptant);
+  setVal('ad-adopte', a.adopte);
+  setVal('ad-clan', a.clan);
+  setVal('ad-date', a.date);
+  setVal('ad-temoins', a.temoins);
+  setVal('ad-raison', a.raison);
+  setVal('ad-notes', a.notes);
+  _adCurrentPhoto = a.photo || null;
+  _adRefreshPhotoPreview();
+  var t = document.getElementById('ad-form-title'); if(t) t.textContent = "Modifier l'adoption — réf. #"+String(a.id||'').slice(-6);
+  var c = document.getElementById('ad-cancel-btn'); if(c) c.style.display = 'inline-block';
+  // Scroll vers le formulaire pour confort
+  var panel = document.getElementById('ad-add-panel');
+  if(panel && panel.scrollIntoView) panel.scrollIntoView({behavior:'smooth', block:'start'});
+}
+
+function saveAdoption(){
+  if(typeof canModify === 'function' && !canModify()){
+    if(typeof showToast === 'function') showToast('⛔ Action réservée aux membres autorisés.','error');
+    return;
+  }
+  _adInit();
+  var get = function(id){ var e=document.getElementById(id); return e ? e.value.trim() : ''; };
+  var adoptant = get('ad-adoptant');
+  var adopte   = get('ad-adopte');
+  if(!adoptant){
+    if(typeof showToast === 'function') showToast('Le nom de l\'adoptant est obligatoire.','error');
+    var e=document.getElementById('ad-adoptant'); if(e) e.focus();
+    return;
+  }
+  if(!adopte){
+    if(typeof showToast === 'function') showToast('Le nom de l\'adopté est obligatoire.','error');
+    var e2=document.getElementById('ad-adopte'); if(e2) e2.focus();
+    return;
+  }
+  var editId = get('ad-edit-id');
+  var data = {
+    adoptant: adoptant,
+    adopte:   adopte,
+    clan:     get('ad-clan'),
+    date:     get('ad-date'),
+    temoins:  get('ad-temoins'),
+    raison:   get('ad-raison'),
+    notes:    get('ad-notes'),
+    photo:    _adCurrentPhoto || null,
+    auteur:   (typeof currentUser !== 'undefined' && currentUser) ? (currentUser.nom || currentUser.login || '?') : '?'
+  };
+  if(editId){
+    var idx = DB.adoptions.findIndex(function(x){ return String(x.id) === String(editId); });
+    if(idx > -1){
+      // On préserve id et createdAt
+      data.id = DB.adoptions[idx].id;
+      data.createdAt = DB.adoptions[idx].createdAt || Date.now();
+      data.editedAt = Date.now();
+      DB.adoptions[idx] = data;
+    }
+  } else {
+    data.id = Date.now();
+    data.createdAt = Date.now();
+    DB.adoptions.push(data);
+  }
+  if(typeof saveData === 'function') saveData('adoptions');
+  if(typeof addTimeline === 'function'){
+    addTimeline((editId?'Adoption modifiée':'Adoption enregistrée')+' : '+adoptant+' → '+adopte);
+  }
+  _adResetForm();
+  renderAdoptions();
+  if(typeof showToast === 'function') showToast(editId ? '✅ Adoption modifiée.' : '✅ Adoption enregistrée.', 'success');
+}
+
+function deleteAdoption(id){
+  if(typeof canModify === 'function' && !canModify()){
+    if(typeof showToast === 'function') showToast('⛔ Action réservée aux membres autorisés.','error');
+    return;
+  }
+  askDelete('Supprimer définitivement cette adoption du registre ?', function(){
+    _adInit();
+    DB.adoptions = DB.adoptions.filter(function(x){ return String(x.id) !== String(id); });
+    if(typeof saveData === 'function') saveData('adoptions');
+    renderAdoptions();
+    if(typeof showToast === 'function') showToast('Adoption supprimée.','info');
+  });
+}
+
+function renderAdoptions(){
+  _adInit();
+  var canEdit = (typeof canModify === 'function') ? canModify() : false;
+  var addPanel = document.getElementById('ad-add-panel');
+  if(addPanel) addPanel.style.display = canEdit ? 'block' : 'none';
+
+  var list = DB.adoptions.slice();
+  // Tri : du plus récent au plus ancien
+  list.sort(function(a,b){
+    var da = a.date ? new Date(a.date).getTime() : (a.createdAt||0);
+    var db = b.date ? new Date(b.date).getTime() : (b.createdAt||0);
+    return db - da;
+  });
+
+  // Stats
+  var setStat = function(id,val){ var e=document.getElementById(id); if(e) e.textContent = val; };
+  setStat('ad-stat-total', list.length);
+  // Mois courant
+  var now = new Date();
+  var cm = now.getMonth(), cy = now.getFullYear();
+  var moisCount = list.filter(function(a){
+    var d = a.date ? new Date(a.date) : (a.createdAt ? new Date(a.createdAt) : null);
+    return d && !isNaN(d.getTime()) && d.getMonth()===cm && d.getFullYear()===cy;
+  }).length;
+  setStat('ad-stat-mois', moisCount);
+  var clans = {};
+  list.forEach(function(a){ if(a.clan && a.clan.trim()) clans[a.clan.trim().toLowerCase()] = 1; });
+  setStat('ad-stat-clans', Object.keys(clans).length);
+
+  // Recherche
+  var q = (document.getElementById('ad-search') || {}).value || '';
+  q = q.trim().toLowerCase();
+  if(q){
+    list = list.filter(function(a){
+      var hay = ((a.adoptant||'')+' '+(a.adopte||'')+' '+(a.clan||'')+' '+(a.temoins||'')+' '+(a.raison||'')+' '+(a.notes||'')+' '+_adFmtDate(a.date)).toLowerCase();
+      return hay.indexOf(q) !== -1;
+    });
+  }
+
+  var grid = document.getElementById('ad-list');
+  if(!grid) return;
+  if(!list.length){
+    grid.innerHTML = '<div class="ad-empty">'+(q?'Aucune adoption ne correspond à votre recherche.':'Aucune adoption enregistrée pour le moment.')+'</div>';
+    return;
+  }
+
+  grid.innerHTML = list.map(function(a){
+    var ref = '#'+String(a.id||'').slice(-6).toUpperCase();
+    var photoCell = a.photo
+      ? '<img src="'+a.photo+'" alt="Photo">'
+      : '<span>👶</span>';
+    var actions = '';
+    actions += '<button class="ad-act-btn print" onclick="printAdoptionFiche(\''+a.id+'\')" title="Télécharger / imprimer la fiche">📄 Fiche</button>';
+    if(canEdit){
+      actions += '<button class="ad-act-btn" onclick="editAdoption(\''+a.id+'\')" title="Modifier">✏ Modifier</button>';
+      actions += '<button class="ad-act-btn del" onclick="deleteAdoption(\''+a.id+'\')" title="Supprimer">🗑</button>';
+    }
+    return ''
+      + '<article class="ad-card">'
+      +   '<div class="ad-card-head">'
+      +     '<div class="ad-card-photo">'+photoCell+'</div>'
+      +     '<div class="ad-card-id">'
+      +       '<div class="ad-card-ref">Réf. '+_adEsc(ref)+' · '+_adEsc(_adFmtDate(a.date))+'</div>'
+      +       '<div class="ad-card-title">'+_adEsc(a.adopte||'(adopté inconnu)')+'</div>'
+      +     '</div>'
+      +   '</div>'
+      +   '<div class="ad-card-body">'
+      +     '<div class="ad-card-row"><div class="lbl">Adoptant</div><div class="val" title="'+_adEsc(a.adoptant||'')+'">'+_adEsc(a.adoptant||'—')+'</div></div>'
+      +     '<div class="ad-card-row"><div class="lbl">Adopté</div><div class="val" title="'+_adEsc(a.adopte||'')+'">'+_adEsc(a.adopte||'—')+'</div></div>'
+      +     '<div class="ad-card-row"><div class="lbl">Clan</div><div class="val" title="'+_adEsc(a.clan||'')+'">'+_adEsc(a.clan||'—')+'</div></div>'
+      +     (a.raison ? '<div class="ad-card-row"><div class="lbl">Raison</div><div class="val" title="'+_adEsc(a.raison)+'">'+_adEsc(a.raison)+'</div></div>' : '')
+      +   '</div>'
+      +   '<div class="ad-card-actions">'+actions+'</div>'
+      + '</article>';
+  }).join('');
+}
+
+/* ─── FICHE IMPRIMABLE / TÉLÉCHARGEABLE (PDF via window.print) ─── */
+function printAdoptionFiche(id){
+  _adInit();
+  var a = DB.adoptions.find(function(x){ return String(x.id) === String(id); });
+  if(!a){
+    if(typeof showToast === 'function') showToast('Adoption introuvable.','error');
+    return;
+  }
+
+  var ref = '#'+String(a.id||'').slice(-6).toUpperCase();
+  var photoBlock = a.photo
+    ? '<img src="'+a.photo+'" alt="Photo de l\'adopté">'
+    : '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#9ca3af;font-family:\'Share Tech Mono\',monospace;font-size:10px;letter-spacing:2px">PHOTO NON FOURNIE</div>';
+
+  // Mise en page : témoins listés
+  var temoinsList = (a.temoins||'').split(/\r?\n/).map(function(t){return t.trim();}).filter(Boolean);
+  var temoinsHtml = temoinsList.length
+    ? '<ul style="margin:0;padding-left:20px;font-family:\'EB Garamond\',Georgia,serif;font-size:13px;line-height:1.7;color:#1f2937">'
+      + temoinsList.map(function(t){return '<li>'+_adEsc(t)+'</li>';}).join('')
+      + '</ul>'
+    : '<div style="font-style:italic;color:#9ca3af;font-size:12px">Aucun témoin déclaré.</div>';
+
+  var raisonHtml = a.raison
+    ? '<div style="font-family:\'EB Garamond\',Georgia,serif;font-size:13px;line-height:1.7;color:#1f2937;white-space:pre-wrap">'+_adEsc(a.raison)+'</div>'
+    : '<div style="font-style:italic;color:#9ca3af;font-size:12px">Aucune raison spécifiée.</div>';
+
+  var notesHtml = a.notes
+    ? '<div style="margin-top:18px;padding:12px 14px;background:#fef9e7;border-left:3px solid #d4b44a;border-radius:0 4px 4px 0"><div style="font-family:\'Share Tech Mono\',monospace;font-size:9px;letter-spacing:2px;color:#b45309;text-transform:uppercase;font-weight:700;margin-bottom:5px">Notes complémentaires</div><div style="font-family:\'EB Garamond\',Georgia,serif;font-size:12.5px;line-height:1.6;color:#1f2937;white-space:pre-wrap">'+_adEsc(a.notes)+'</div></div>'
+    : '';
+
+  var dateStr = _adFmtDateLong(a.date);
+  var auteur = a.auteur || '—';
+  var todayStr = (new Date()).toLocaleDateString('fr-FR',{day:'numeric',month:'long',year:'numeric'});
+
+  var html = ''
+    + '<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8">'
+    + '<title>Acte d\'adoption — '+_adEsc(a.adopte||'Inconnu')+'</title>'
+    + '<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;900&family=Barlow:wght@300;400;500;600;700&family=Share+Tech+Mono&family=EB+Garamond:ital@0;1&display=swap" rel="stylesheet">'
+    + '<style>'
+    + '*{margin:0;padding:0;box-sizing:border-box}'
+    + '@page{size:A4;margin:0}'
+    + 'html,body{background:#9ca3af;font-family:"Barlow",sans-serif;color:#111827;-webkit-print-color-adjust:exact;print-color-adjust:exact}'
+    + '.page{background:#fdfcf7;width:210mm;min-height:297mm;margin:20px auto;padding:0;box-shadow:0 0 30px rgba(0,0,0,0.2);position:relative;overflow:hidden}'
+    + '@media print{html,body{background:#fff}.page{margin:0;box-shadow:none;width:100%;min-height:0}.no-print{display:none !important}}'
+    + '.no-print-toolbar{position:fixed;top:14px;right:14px;z-index:100;display:flex;gap:8px}'
+    + '.no-print-toolbar button{padding:8px 16px;background:#1f2937;color:#fff;border:none;border-radius:6px;font-family:"Barlow",sans-serif;font-size:13px;font-weight:600;cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,0.3)}'
+    + '.no-print-toolbar button:hover{background:#374151}'
+    + '.no-print-toolbar button.primary{background:#c0410e}'
+    + '.no-print-toolbar button.primary:hover{background:#dc4f15}'
+    /* Bandeau or */
+    + '.header-bar{background:linear-gradient(90deg,#a16207 0%,#d4b44a 50%,#a16207 100%);height:8px;width:100%}'
+    /* Sceau / entête */
+    + '.header{padding:30px 40px 22px;border-bottom:2px solid #1f2937;background:#fdfcf7;position:relative}'
+    + '.header::after{content:"";position:absolute;left:0;right:0;bottom:-2px;height:2px;background:repeating-linear-gradient(90deg,#1f2937 0,#1f2937 8px,transparent 8px,transparent 12px)}'
+    + '.header-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:18px}'
+    + '.crest{display:flex;align-items:center;gap:14px}'
+    + '.crest-icon{width:58px;height:58px;border-radius:50%;background:linear-gradient(135deg,#fbbf24,#a16207);display:flex;align-items:center;justify-content:center;color:#fff;font-family:"Cinzel",serif;font-size:24px;font-weight:900;border:3px solid #78350f;box-shadow:0 2px 6px rgba(0,0,0,0.2)}'
+    + '.crest-text{display:flex;flex-direction:column}'
+    + '.crest-line1{font-family:"Cinzel",serif;font-size:14px;font-weight:700;color:#1f2937;letter-spacing:2.5px;text-transform:uppercase}'
+    + '.crest-line2{font-family:"Share Tech Mono",monospace;font-size:9px;color:#6b7280;letter-spacing:2.5px;text-transform:uppercase;margin-top:2px}'
+    + '.refbox{text-align:right}'
+    + '.refbox .lbl{font-family:"Share Tech Mono",monospace;font-size:8.5px;letter-spacing:2px;color:#6b7280;text-transform:uppercase;margin-bottom:3px}'
+    + '.refbox .val{font-family:"Share Tech Mono",monospace;font-size:13px;color:#a16207;font-weight:700;letter-spacing:1.5px}'
+    /* Titre */
+    + '.title-block{text-align:center;padding:8px 0 4px}'
+    + '.title-block .overline{font-family:"Share Tech Mono",monospace;font-size:9.5px;letter-spacing:5px;color:#a16207;text-transform:uppercase;font-weight:700;margin-bottom:8px}'
+    + '.title-block h1{font-family:"Cinzel",serif;font-size:36px;font-weight:900;color:#1f2937;letter-spacing:3px;line-height:1.05;text-transform:uppercase}'
+    + '.title-block .subtitle{font-family:"EB Garamond",Georgia,serif;font-size:14px;color:#6b7280;font-style:italic;margin-top:6px}'
+    /* Corps */
+    + '.body{padding:28px 40px}'
+    + '.preamble{font-family:"EB Garamond",Georgia,serif;font-size:13.5px;line-height:1.75;color:#1f2937;text-align:justify;margin-bottom:24px;font-style:italic;padding:14px 18px;background:#faf6e8;border-left:3px solid #d4b44a;border-radius:0 4px 4px 0}'
+    + '.body-grid{display:grid;grid-template-columns:200px 1fr;gap:30px;margin-bottom:24px}'
+    + '.id-block{display:flex;flex-direction:column;gap:12px}'
+    + '.photo-frame{width:100%;aspect-ratio:3/4;border:3px solid #1f2937;border-radius:2px;overflow:hidden;background:#e5e7eb;position:relative;box-shadow:0 2px 8px rgba(0,0,0,0.15)}'
+    + '.photo-frame img{width:100%;height:100%;object-fit:cover;display:block}'
+    + '.photo-corner{position:absolute;width:18px;height:18px;border:2px solid #fbbf24}'
+    + '.photo-corner.tl{top:6px;left:6px;border-right:none;border-bottom:none}'
+    + '.photo-corner.tr{top:6px;right:6px;border-left:none;border-bottom:none}'
+    + '.photo-corner.bl{bottom:6px;left:6px;border-right:none;border-top:none}'
+    + '.photo-corner.br{bottom:6px;right:6px;border-left:none;border-top:none}'
+    + '.photo-stamp{font-family:"Share Tech Mono",monospace;font-size:8.5px;letter-spacing:2px;color:#6b7280;text-align:center;text-transform:uppercase;padding:6px 0;border-top:1px solid #e5e7eb;background:#f9fafb}'
+    /* Carte d'identité */
+    + '.id-card{background:#fdf9ec;border:1px solid #e5d6a8;border-radius:6px;padding:18px}'
+    + '.id-card-title{font-family:"Share Tech Mono",monospace;font-size:9px;letter-spacing:2px;color:#a16207;text-transform:uppercase;margin-bottom:14px;padding-bottom:8px;border-bottom:1px solid #e5d6a8;font-weight:700}'
+    + '.id-row{display:flex;flex-direction:column;padding:8px 0;border-bottom:1px dotted #d1c282}'
+    + '.id-row:last-child{border-bottom:none}'
+    + '.id-row .k{font-family:"Share Tech Mono",monospace;font-size:8.5px;letter-spacing:1.5px;color:#92400e;text-transform:uppercase;margin-bottom:3px;font-weight:700}'
+    + '.id-row .v{font-family:"Cinzel",serif;font-size:14px;color:#1f2937;font-weight:600}'
+    /* Sections */
+    + '.section{margin-bottom:22px}'
+    + '.section-title{font-family:"Cinzel",serif;font-size:13px;letter-spacing:3px;color:#92400e;text-transform:uppercase;font-weight:700;margin-bottom:10px;padding-bottom:5px;border-bottom:1px solid #e5d6a8}'
+    /* Signatures */
+    + '.signatures{display:grid;grid-template-columns:1fr 1fr 1fr;gap:24px;margin-top:36px;padding-top:22px;border-top:1px solid #d4b44a}'
+    + '.sig-box{text-align:center}'
+    + '.sig-line{height:50px;border-bottom:1px solid #1f2937;margin-bottom:6px}'
+    + '.sig-label{font-family:"Share Tech Mono",monospace;font-size:8.5px;letter-spacing:2px;color:#6b7280;text-transform:uppercase;font-weight:700}'
+    + '.sig-name{font-family:"Cinzel",serif;font-size:11px;color:#1f2937;margin-top:3px;font-weight:600}'
+    /* Pied */
+    + '.footer{padding:18px 40px;background:#faf6e8;border-top:2px solid #d4b44a;font-family:"Share Tech Mono",monospace;font-size:9px;letter-spacing:1.5px;color:#6b7280;text-transform:uppercase;display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px}'
+    /* Sceau cire */
+    + '.wax-seal{position:absolute;bottom:90px;right:50px;width:90px;height:90px;border-radius:50%;background:radial-gradient(circle at 35% 35%,#dc2626,#7f1d1d 70%,#450a0a);display:flex;align-items:center;justify-content:center;color:#fef2f2;font-family:"Cinzel",serif;font-size:9px;font-weight:900;letter-spacing:2px;text-align:center;line-height:1.2;text-transform:uppercase;box-shadow:0 4px 12px rgba(127,29,29,0.5),inset 0 -8px 16px rgba(0,0,0,0.4),inset 0 4px 8px rgba(255,255,255,0.15);transform:rotate(-8deg);border:2px solid #450a0a}'
+    + '</style></head><body>'
+    + '<div class="no-print-toolbar no-print">'
+    +   '<button class="primary" onclick="window.print()">🖨 Imprimer / PDF</button>'
+    +   '<button onclick="window.close()">✕ Fermer</button>'
+    + '</div>'
+    + '<div class="page">'
+    +   '<div class="header-bar"></div>'
+    +   '<div class="header">'
+    +     '<div class="header-top">'
+    +       '<div class="crest">'
+    +         '<div class="crest-icon">砂</div>'
+    +         '<div class="crest-text">'
+    +           '<div class="crest-line1">Sunagakure</div>'
+    +           '<div class="crest-line2">Pays du Vent · Service de l\'État Civil</div>'
+    +         '</div>'
+    +       '</div>'
+    +       '<div class="refbox">'
+    +         '<div class="lbl">Référence</div>'
+    +         '<div class="val">'+_adEsc(ref)+'</div>'
+    +         '<div class="lbl" style="margin-top:6px">Émis le</div>'
+    +         '<div class="val" style="font-size:11px">'+_adEsc(todayStr)+'</div>'
+    +       '</div>'
+    +     '</div>'
+    +     '<div class="title-block">'
+    +       '<div class="overline">Document Officiel</div>'
+    +       '<h1>Acte d\'Adoption</h1>'
+    +       '<div class="subtitle">Reconnu par les autorités du Village Caché du Sable</div>'
+    +     '</div>'
+    +   '</div>'
+    +   '<div class="body">'
+    +     '<div class="preamble">'
+    +       'Par la présente, le Service de l\'État Civil de Sunagakure atteste que '
+    +       '<strong>'+_adEsc(a.adoptant||'—')+'</strong> a procédé, en date du '
+    +       '<strong>'+_adEsc(dateStr)+'</strong>, à l\'adoption officielle de '
+    +       '<strong>'+_adEsc(a.adopte||'—')+'</strong>, lequel·le est désormais reconnu·e '
+    +       'comme membre de plein droit'+(a.clan?' du <strong>'+_adEsc(a.clan)+'</strong>':'')+' '
+    +       'avec tous les droits et devoirs s\'y rattachant.'
+    +     '</div>'
+    +     '<div class="body-grid">'
+    +       '<div class="id-block">'
+    +         '<div class="photo-frame">'
+    +           '<div class="photo-corner tl"></div>'
+    +           '<div class="photo-corner tr"></div>'
+    +           '<div class="photo-corner bl"></div>'
+    +           '<div class="photo-corner br"></div>'
+    +           photoBlock
+    +         '</div>'
+    +         '<div class="photo-stamp">Photo de l\'adopté·e</div>'
+    +       '</div>'
+    +       '<div class="id-card">'
+    +         '<div class="id-card-title">⚜ Identité des parties</div>'
+    +         '<div class="id-row"><div class="k">Adoptant·e</div><div class="v">'+_adEsc(a.adoptant||'—')+'</div></div>'
+    +         '<div class="id-row"><div class="k">Adopté·e</div><div class="v">'+_adEsc(a.adopte||'—')+'</div></div>'
+    +         '<div class="id-row"><div class="k">Clan / Famille</div><div class="v">'+_adEsc(a.clan||'Sans clan')+'</div></div>'
+    +         '<div class="id-row"><div class="k">Date de l\'adoption</div><div class="v">'+_adEsc(dateStr)+'</div></div>'
+    +       '</div>'
+    +     '</div>'
+    +     '<div class="section">'
+    +       '<div class="section-title">⚜ Motif & Circonstances</div>'
+    +       raisonHtml
+    +     '</div>'
+    +     '<div class="section">'
+    +       '<div class="section-title">⚜ Témoins de l\'acte</div>'
+    +       temoinsHtml
+    +     '</div>'
+    +     notesHtml
+    +     '<div class="signatures">'
+    +       '<div class="sig-box"><div class="sig-line"></div><div class="sig-label">Adoptant·e</div><div class="sig-name">'+_adEsc(a.adoptant||'')+'</div></div>'
+    +       '<div class="sig-box"><div class="sig-line"></div><div class="sig-label">Officier d\'État Civil</div><div class="sig-name">'+_adEsc(auteur)+'</div></div>'
+    +       '<div class="sig-box"><div class="sig-line"></div><div class="sig-label">Témoin Principal</div><div class="sig-name">'+_adEsc(temoinsList[0]||'')+'</div></div>'
+    +     '</div>'
+    +   '</div>'
+    +   '<div class="wax-seal">SCEAU<br>SUNA<br>砂</div>'
+    +   '<div class="footer">'
+    +     '<span>Document conforme · Sunagakure</span>'
+    +     '<span>Réf. '+_adEsc(ref)+'</span>'
+    +     '<span>Page 1 / 1</span>'
+    +   '</div>'
+    + '</div>'
+    + '</body></html>';
+
+  var w = window.open('', '_blank');
+  if(!w){
+    if(typeof showToast === 'function') showToast('Veuillez autoriser les pop-ups pour générer la fiche.','error');
+    return;
+  }
+  w.document.open();
+  w.document.write(html);
+  w.document.close();
+}
+
+/* Sync Firebase pour DB.adoptions (alignée sur le pattern bingobook/sectionData) */
+document.addEventListener('DOMContentLoaded', function(){
+  var w = 0;
+  var itv = setInterval(function(){
+    w++;
+    if(window._fbDB && window._fbRef && window._fbOnValue){
+      clearInterval(itv);
+      try{
+        var r = window._fbRef(window._fbDB, 'sunagakure/adoptions');
+        window._fbOnValue(r, function(snap){
+          var v = snap.val();
+          // Normalisation : Firebase peut renvoyer un objet {0:..,1:..} au lieu d'un array
+          if(v && !Array.isArray(v) && typeof v === 'object'){
+            v = Object.values(v).filter(Boolean);
+          }
+          // Accepter aussi un tableau vide (suppression côté autre client)
+          if(Array.isArray(v)){
+            DB.adoptions = v;
+            try{ localStorage.setItem(STORE, JSON.stringify(DB)); }catch(e){}
+            // Re-render uniquement si la page adoptions est active
+            try{
+              var active = document.querySelector('.page-content.active');
+              if(active && active.id === 'page-adoptions'){
+                renderAdoptions();
+              }
+            }catch(e){}
+          }
+        });
+      }catch(e){}
+    } else if(w > 60){
+      clearInterval(itv);
+    }
+  }, 100);
+});
 
 // CUSTOM CONFIRM (replaces browser confirm() which is blocked in iframes)
 let _confirmCb=null;
@@ -32181,7 +33264,7 @@ function gsSearch() {
 
 
     (DB.infractions||[]).filter(function(i){ return ((i.nom||'')+(i.cat||'')+(i.notes||'')).toLowerCase().indexOf(q) >= 0; }).slice(0,4).forEach(function(i){
-    var catLabel = {violet:'Délit mineur',vert:'Délit majeur',rouge:'Crime'}[i.cat]||i.cat||'';
+    var catLabel = {violet:'Délit mineur',vert:'Délit majeur',rouge:'Crime',noir:'Peine capitale'}[i.cat]||i.cat||'';
     R.codepenal.push({ icon:'&#128220;', title:i.nom||'', sub:'Code Pénal · '+catLabel+(i.amende?' · Amende: '+i.amende:'')+(i.prison?' · Prison: '+i.prison:''), page:'codepenal', q:q });
   });
 
@@ -36321,7 +37404,7 @@ function exportDossierPDF(id) {
         inner = incidents.map(function(inc){
           var infrChips = (inc.infractions||[]).map(function(it){
             var amStr = it.amende > 0 ? it.amende.toLocaleString('fr-FR')+' Ryos' : '';
-            return '<div style="padding:6px 10px;background:#fff;border-left:3px solid '+(it.cat==='rouge'?'#dc2626':it.cat==='vert'?'#16a34a':it.cat==='violet'?'#7c3aed':'#9ca3af')+';margin-bottom:4px;font-size:11.5px;color:#1f2937">'
+            return '<div style="padding:6px 10px;background:#fff;border-left:3px solid '+(it.cat==='noir'?'#000000':it.cat==='rouge'?'#dc2626':it.cat==='vert'?'#16a34a':it.cat==='violet'?'#7c3aed':'#9ca3af')+';margin-bottom:4px;font-size:11.5px;color:#1f2937">'
                  + '<strong>'+esc(it.nom)+'</strong>'
                  + (amStr ? ' <span style="color:#92400e;font-family:\'Share Tech Mono\',monospace;font-size:10px;margin-left:6px">'+esc(amStr)+'</span>' : '')
                  + (it.prison ? ' <span style="color:#dc2626;font-weight:700">⛓ Prison</span>' : '')
