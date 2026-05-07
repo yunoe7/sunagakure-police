@@ -1638,7 +1638,7 @@ body.dark #btn-darkmode:hover {
 /* ===== PROFIL ===== */
 .profile-hero{background:linear-gradient(135deg,rgba(192,65,14,0.1),rgba(201,162,39,0.06));border:1px solid rgba(201,162,39,0.2);border-radius:14px;padding:28px 24px;display:flex;align-items:center;gap:20px;margin-bottom:20px}
 .profile-hero-avatar{width:80px;height:80px;border-radius:50%;background:linear-gradient(135deg,var(--accent),#8a2c08);display:flex;align-items:center;justify-content:center;font-size:30px;font-weight:700;color:#fff;flex-shrink:0;border:3px solid rgba(201,162,39,0.4);box-shadow:0 4px 24px rgba(0,0,0,0.4)}
-.profile-stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
+.profile-stat-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:20px}
 @media(max-width:768px){.profile-stat-grid{grid-template-columns:repeat(2,1fr)}}
 .profile-stat-item{background:rgba(18,14,8,0.95);border:1px solid rgba(180,140,20,0.12);border-radius:12px;padding:16px;text-align:center}
 .profile-stat-val{font-family:'Barlow Condensed',sans-serif;font-size:32px;font-weight:900;color:var(--text);line-height:1}
@@ -4602,12 +4602,10 @@ html{-webkit-tap-highlight-color:transparent}
 /* Card body texts pour éviter les blancs de profil */
 #profil-plaintes-list,
 #profil-timeline,
-#profil-sanctions-list,
-#profil-login-history{color:var(--text2)}
+#profil-sanctions-list{color:var(--text2)}
 #profil-plaintes-list *,
 #profil-timeline *,
-#profil-sanctions-list *,
-#profil-login-history *{color:inherit}
+#profil-sanctions-list *{color:inherit}
 
 /* ═══════════════════════════════════════════════════════════════════════════════
    ▓▓▓  REFONTE MOBILE GLOBALE V2 — iPhone optimisé (390-393px)
@@ -7516,7 +7514,7 @@ document.addEventListener('error', function(e){
 
     <div class="nav-section" data-member-only="true" data-sec="all">Administration</div>
     <div class="nav-item" role="button" tabindex="0" id="nav-admin" onclick="showPage('admin')" style="display:none" data-sec="all"><span class="icon">⚙️</span> Panel Admin</div>
-    <div class="nav-item" role="button" tabindex="0" onclick="showPage('profil')" data-page="profil" data-sec="all"><span class="icon">👤</span> Mon profil</div>
+    <div class="nav-item" role="button" tabindex="0" onclick="showPage('profil')" data-page="profil" data-sec="all"><span class="icon">📋</span> Casier personnel</div>
   </nav>
   <div class="sidebar-footer">
     <div class="user-pill">
@@ -14136,7 +14134,7 @@ document.addEventListener('error', function(e){
         <div class="pgv2-hero-icon">⚜</div>
         <div class="pgv2-hero-text">
           <div class="pgv2-hero-tag">Espace Personnel</div>
-          <div class="pgv2-hero-title">Mon profil</div>
+          <div class="pgv2-hero-title">Casier personnel</div>
           <div class="pgv2-hero-sub">Informations personnelles, statistiques et historique d'activité</div>
         </div>
         <div class="pgv2-hero-actions">
@@ -14158,6 +14156,15 @@ document.addEventListener('error', function(e){
       <div class="profile-stat-item"><div class="profile-stat-val" id="ps-dossiers">0</div><div class="profile-stat-label">Dossiers ouverts</div></div>
       <div class="profile-stat-item"><div class="profile-stat-val" id="ps-operations">0</div><div class="profile-stat-label">Opérations menées</div></div>
       <div class="profile-stat-item"><div class="profile-stat-val" id="ps-sanctions">0</div><div class="profile-stat-label">Sanctions / Promos</div></div>
+      <div class="profile-stat-item"><div class="profile-stat-val" id="ps-recenses">0</div><div class="profile-stat-label">Recensements effectués</div></div>
+    </div>
+    <!-- Ma fiche de recensement personnelle -->
+    <div class="card mt-6" id="profil-ma-fiche-card">
+      <div class="card-header">
+        <span>📇</span><h3>Ma fiche de recensement</h3>
+        <span style="margin-left:auto;font-size:9px;color:var(--muted);font-family:'Share Tech Mono',monospace;letter-spacing:1px" id="profil-ma-fiche-status">—</span>
+      </div>
+      <div class="card-body" id="profil-ma-fiche" style="padding:14px"></div>
     </div>
     <div class="grid grid-2">
       <div class="card">
@@ -14172,13 +14179,6 @@ document.addEventListener('error', function(e){
     <div class="card mt-6">
       <div class="card-header"><span>⚖️</span><h3>Mes sanctions & promotions</h3></div>
       <div class="card-body" id="profil-sanctions-list" style="padding:14px"></div>
-    </div>
-    <div class="card mt-6">
-      <div class="card-header">
-        <span>🕐</span><h3>Historique de connexions</h3>
-        <span style="margin-left:auto;font-size:9px;color:var(--muted);font-family:'Share Tech Mono',monospace;letter-spacing:1px">10 DERNIÈRES</span>
-      </div>
-      <div class="card-body" id="profil-login-history" style="padding:14px"></div>
     </div>
   </div>
   <div class="page-content" id="page-effectifs">
@@ -21602,7 +21602,7 @@ function saveCommNameAdmin(){
 }
 
 // NAV
-const PAGES={dashboard:"Tableau de bord",annonces:"Annonces",recensement:"Recensement",recrutement:"Recrutement",plaintes:"Plaintes",dossiers:"Dossiers criminels",codepenal:"Code Pénal",histoire:"Histoire",operations:"Opérations",effectifs:"Effectifs",hierarchie:"Hiérarchie",sanctions:"Sanctions & Promotions",impots:"Impôts",admin:"Panel Admin",profil:"Mon profil",bingobook:"Bingo Book",
+const PAGES={dashboard:"Tableau de bord",annonces:"Annonces",recensement:"Recensement",recrutement:"Recrutement",plaintes:"Plaintes",dossiers:"Dossiers criminels",codepenal:"Code Pénal",histoire:"Histoire",operations:"Opérations",effectifs:"Effectifs",hierarchie:"Hiérarchie",sanctions:"Sanctions & Promotions",impots:"Impôts",admin:"Panel Admin",profil:"Casier personnel",bingobook:"Bingo Book",
   // Tribunal (6 pages)
   "juge-audiences":"Audiences","juge-plaintes":"Plaintes reçues","juge-affaires":"Affaires en cours","juge-jugements":"Jugements rendus","juge-procedure":"Code de procédure","juge-archives":"Archives & Jurisprudence",
   // Avocat
@@ -21782,7 +21782,7 @@ function renderPage(name){
   else if(typeof renderSectionPage === 'function' && /^(avocat|medical|diplo)-/.test(name) && name !== 'diplo-laissezpasse' && name !== 'diplo-comptabilite'){
     renderSectionPage(name);
   }
-  if(name==="profil"){renderProfil();renderLoginHistory();}
+  if(name==="profil"){renderProfil();}
   if(name==="hierarchie")renderHierarchie();
 }
 
@@ -29109,28 +29109,6 @@ function renderLoginHistory(){
   // Rendu pagination
   lhRenderPagination(total, totalPages);
 
-  // Profil : les 10 dernières connexions de l'utilisateur courant
-  var profEl = el('profil-login-history');
-  if(profEl && currentUser){
-    var myItems = [...(DB.loginHistory||[])].reverse().filter(function(c){return c.userId===currentUser.id;}).slice(0,10);
-    if(!myItems.length){
-      profEl.innerHTML='<div style="font-size:12px;color:var(--muted);text-align:center;padding:14px">Aucune connexion enregistrée.</div>';
-    } else {
-      profEl.innerHTML=myItems.map(function(c){
-        var isDeconn=c.type==='deconnexion';
-        var isEchec=c.type==='echec';
-        var icon=isEchec?'🚫':isDeconn?'🔴':/Mobile/.test(c.device||'')?'📱':'🖥️';
-        var ipStr=(c.ip&&c.ip!=='...'&&c.ip!=='Inconnue')?' · '+esc(c.ip):'';
-        var typeStr=isEchec?' <span style="font-size:9px;color:#991b1b;font-weight:700">(échec)</span>':isDeconn?' <span style="font-size:9px;color:#991b1b;font-weight:700">(déco)</span>':'';
-        var brIcon={Chrome:'🟡',Firefox:'🦊',Safari:'🔵',Edge:'🔷',Opera:'🔴'}[c.browser||'']||'';
-        var brStr=c.browser?' · '+brIcon+c.browser+(c.browserVersion?' '+c.browserVersion:''):'';
-        var geoStr=c.geo&&c.geo.country?' · 🌍'+esc([c.geo.city,c.geo.country].filter(Boolean).join(', ')):'';
-        var srcStr=c.source==='auto'||c.source==='auto-saved'?' · 🔑Auto':'';
-        return '<div class="notif-hist-item"><span style="font-size:15px;flex-shrink:0">'+icon+'</span><span style="flex:1;font-size:12px">'+esc(c.os||c.device||'Inconnu')+typeStr+brStr+ipStr+geoStr+srcStr+'</span><span style="font-size:9px;color:var(--muted);font-family:\'Share Tech Mono\',monospace;white-space:nowrap">'+fmtDate(c.date)+'</span></div>';
-      }).join('');
-    }
-  }
-
   // Rafraîchir stats si ouvertes
   if(_lhStatsOpen) lhRenderStats();
 }
@@ -30238,9 +30216,7 @@ window.addEventListener("load",()=>{
 .field-error{font-size:10px;color:#dc2626;margin-top:3px;font-family:'Share Tech Mono',monospace;letter-spacing:0.3px;display:none;padding-left:2px}
 .field-error.show{display:block}
 .form-group:has(.field-error.show) .form-label{color:#dc2626}
-/* ── HISTORIQUE CONNEXIONS ── */
-#profil-login-history .notif-hist-item{padding:6px 0;border-bottom:1px solid rgba(180,140,20,0.07)}
-#profil-login-history .notif-hist-item:last-child{border-bottom:none}
+/* ── HISTORIQUE CONNEXIONS (admin) ── */
 #admin-login-history-tbody td{font-size:12px}
 
 /* Stat cards connexions */
@@ -32501,11 +32477,56 @@ function renderProfil(){
   var myDossiers=(DB.dossiers||[]).filter(function(d){return d.auteur===u.nom||d.agent===u.nom;});
   var myOps=(DB.operations||[]).filter(function(o){return o.resp===u.nom||(o.membres||[]).includes(u.nom);});
   var mySanctions=(DB.sanctions||[]).filter(function(s){return s.cible===u.nom;});
+  // Recensements effectués par l'utilisateur connecté
+  var myRecenses=(DB.recenses||[]).filter(function(r){return r.auteur===u.nom;});
   var setVal=function(id,v){var e=document.getElementById(id);if(e)e.textContent=v;};
   setVal('ps-plaintes',myPlaintes.length);
   setVal('ps-dossiers',myDossiers.length);
   setVal('ps-operations',myOps.length);
   setVal('ps-sanctions',mySanctions.length);
+  setVal('ps-recenses',myRecenses.length);
+
+  // ── Ma fiche de recensement personnelle ────────────────────────
+  // Lookup : on cherche dans DB.recenses une fiche dont (prenom + " " + nom)
+  // ou (nom + " " + prenom) matche le nom complet de l'utilisateur connecté.
+  var maFicheBox = document.getElementById('profil-ma-fiche');
+  var maFicheStatus = document.getElementById('profil-ma-fiche-status');
+  if(maFicheBox){
+    var myFullName = (u.nom||'').trim().toLowerCase();
+    var maFiche = (DB.recenses||[]).find(function(r){
+      if(!r) return false;
+      var combo1 = ((r.prenom||'')+' '+(r.nom||'')).trim().toLowerCase();
+      var combo2 = ((r.nom||'')+' '+(r.prenom||'')).trim().toLowerCase();
+      return combo1===myFullName || combo2===myFullName;
+    });
+    if(maFiche){
+      if(maFicheStatus) maFicheStatus.textContent = 'FICHE TROUVÉE';
+      var photo = maFiche.photo && typeof safeImgSrc==='function' && safeImgSrc(maFiche.photo)
+        ? '<img src="'+safeImgSrc(maFiche.photo)+'" alt="" style="width:80px;height:80px;border-radius:8px;object-fit:cover;border:2px solid rgba(201,162,39,0.35);flex-shrink:0">'
+        : '<div style="width:80px;height:80px;border-radius:8px;background:rgba(201,162,39,0.10);border:2px solid rgba(201,162,39,0.30);display:flex;align-items:center;justify-content:center;font-size:32px;flex-shrink:0">📇</div>';
+      var natures = Array.isArray(maFiche.natures) ? maFiche.natures.join(', ') : (maFiche.natures||'—');
+      maFicheBox.innerHTML =
+        '<div style="display:flex;gap:14px;align-items:flex-start;flex-wrap:wrap">'
+        + photo
+        + '<div style="flex:1;min-width:220px">'
+        +   '<div style="font-family:\'Cinzel\',serif;font-size:18px;font-weight:700;color:var(--text);margin-bottom:4px">'+esc((maFiche.prenom||'')+' '+(maFiche.nom||''))+'</div>'
+        +   (maFiche.titre ? '<div style="font-size:11px;color:var(--gold2);font-family:\'Share Tech Mono\',monospace;letter-spacing:1.2px;margin-bottom:8px">'+esc(maFiche.titre)+'</div>' : '')
+        +   '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:6px 14px;font-size:11.5px;color:var(--text2)">'
+        +     (maFiche.age ? '<div><span style="color:var(--muted)">Âge :</span> '+esc(maFiche.age)+'</div>' : '')
+        +     (maFiche.sexe ? '<div><span style="color:var(--muted)">Sexe :</span> '+esc(maFiche.sexe)+'</div>' : '')
+        +     (maFiche.rang ? '<div><span style="color:var(--muted)">Rang :</span> '+esc(maFiche.rang)+'</div>' : '')
+        +     (maFiche.faction ? '<div><span style="color:var(--muted)">Faction :</span> '+esc(maFiche.faction)+'</div>' : '')
+        +     (maFiche.clan ? '<div><span style="color:var(--muted)">Clan :</span> '+esc(maFiche.clan)+'</div>' : '')
+        +     (maFiche.metier ? '<div><span style="color:var(--muted)">Métier :</span> '+esc(maFiche.metier)+'</div>' : '')
+        +     (natures && natures!=='—' ? '<div style="grid-column:1/-1"><span style="color:var(--muted)">Natures :</span> '+esc(natures)+'</div>' : '')
+        +     (maFiche.competences ? '<div style="grid-column:1/-1"><span style="color:var(--muted)">Compétences :</span> '+esc(maFiche.competences)+'</div>' : '')
+        +   '</div>'
+        + '</div></div>';
+    } else {
+      if(maFicheStatus) maFicheStatus.textContent = 'NON RECENSÉ';
+      maFicheBox.innerHTML = '<p class="text-muted" style="margin:0;text-align:center;padding:18px 0;font-style:italic">Aucune fiche de recensement trouvée à votre nom. Demandez à un agent de vous recenser dans le registre officiel.</p>';
+    }
+  }
   // Plaintes list
   var pl=document.getElementById('profil-plaintes-list');
   if(pl){pl.innerHTML=myPlaintes.slice(-5).reverse().map(function(p){return '<div class="plainte-item"><div class="plainte-header"><span class="badge '+statutPlainte(p.statut)+'">'+fmtStatut(p.statut)+'</span><span class="plainte-title">'+esc(p.type)+'</span></div><div class="plainte-meta">'+esc(p.plaignant)+' vs '+esc(p.accuse)+' — '+fmtDate(p.date)+'</div></div>';}).join('')||'<p class="text-muted">Aucune plainte liée à votre compte.</p>';}
@@ -33187,7 +33208,7 @@ self.addEventListener('fetch',e=>{
         <div class="shortcut-row"><kbd>Alt</kbd>+<kbd>O</kbd><span>Opérations</span></div>
         <div class="shortcut-row"><kbd>Alt</kbd>+<kbd>E</kbd><span>Effectifs</span></div>
         <div class="shortcut-row"><kbd>Alt</kbd>+<kbd>S</kbd><span>Sanctions</span></div>
-        <div class="shortcut-row"><kbd>Alt</kbd>+<kbd>F</kbd><span>Mon profil</span></div>
+        <div class="shortcut-row"><kbd>Alt</kbd>+<kbd>F</kbd><span>Casier personnel</span></div>
         <div style="font-size:9px;letter-spacing:2px;color:var(--gold2);font-family:'Share Tech Mono',monospace;text-transform:uppercase;grid-column:1/-1;margin:10px 0 2px">Actions globales</div>
         <div class="shortcut-row"><kbd>Ctrl</kbd>+<kbd>K</kbd><span>Recherche globale</span></div>
         <div class="shortcut-row"><kbd>Ctrl</kbd>+<kbd>?</kbd><span>Cette aide</span></div>
