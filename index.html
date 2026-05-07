@@ -237,9 +237,29 @@ textarea.form-control{resize:vertical;min-height:80px}
 .modal-body{padding:20px 22px}
 .modal-footer{padding:13px 22px;border-top:1px solid rgba(201,162,39,0.1);display:flex;gap:9px;justify-content:flex-end;flex-wrap:wrap;background:rgba(10,8,6,0.5)}
 
-.tab-row{display:flex;gap:3px;background:rgba(255,255,255,0.04);border:1px solid rgba(201,162,39,0.12);border-radius:8px;padding:3px;margin-bottom:16px}
-.tab-btn{flex:1;padding:7px;text-align:center;border-radius:6px;cursor:pointer;font-size:10px;font-weight:600;letter-spacing:1px;color:var(--muted);transition:all 0.2s;text-transform:uppercase;font-family:'Share Tech Mono',monospace}
-.tab-btn.active{background:linear-gradient(135deg,var(--accent),#a03408);color:#fff;box-shadow:0 2px 8px rgba(192,65,14,0.4)}
+.tab-row{display:flex;gap:2px;background:linear-gradient(180deg, #f5e8c8 0%, #e8d5a8 100%);border:1px solid rgba(139,105,20,0.40);border-radius:8px;padding:4px;margin-bottom:16px;box-shadow:0 2px 6px rgba(0,0,0,0.15), inset 0 1px 0 rgba(255,255,255,0.5)}
+.tab-btn{flex:1;padding:8px 12px;text-align:center;border-radius:5px;cursor:pointer;font-size:10px;font-weight:700;letter-spacing:1.3px;color:#7a5a08;transition:all 0.18s ease;text-transform:uppercase;font-family:'Share Tech Mono',monospace;border:1px solid transparent;display:inline-flex;align-items:center;justify-content:center;gap:6px}
+.tab-btn:hover{color:#3a1f06;background:rgba(212,180,74,0.18)}
+.tab-btn.active{background:rgba(255,250,235,0.85);color:#3a1f06;box-shadow:inset 0 -3px 0 #8b6914, 0 1px 2px rgba(0,0,0,0.08);text-shadow:0 1px 0 rgba(255,255,255,0.5)}
+/* Variantes colorées pour onglets sémantiques (classes optionnelles) */
+.tab-btn.t-green{color:#15803d}
+.tab-btn.t-green:hover{background:rgba(34,197,94,0.12);color:#14532d}
+.tab-btn.t-green.active{background:rgba(255,250,235,0.85);color:#14532d;box-shadow:inset 0 -3px 0 #16a34a, 0 1px 2px rgba(0,0,0,0.08)}
+.tab-btn.t-blue{color:#1e40af}
+.tab-btn.t-blue:hover{background:rgba(59,130,246,0.12);color:#1e3a8a}
+.tab-btn.t-blue.active{background:rgba(255,250,235,0.85);color:#1e3a8a;box-shadow:inset 0 -3px 0 #2563eb, 0 1px 2px rgba(0,0,0,0.08)}
+.tab-btn.t-orange{color:#c2410c}
+.tab-btn.t-orange:hover{background:rgba(251,146,60,0.15);color:#9a3412}
+.tab-btn.t-orange.active{background:rgba(255,250,235,0.85);color:#9a3412;box-shadow:inset 0 -3px 0 #ea580c, 0 1px 2px rgba(0,0,0,0.08)}
+.tab-btn.t-red{color:#b91c1c}
+.tab-btn.t-red:hover{background:rgba(239,68,68,0.15);color:#7f1d1d}
+.tab-btn.t-red.active{background:rgba(255,250,235,0.85);color:#7f1d1d;box-shadow:inset 0 -3px 0 #dc2626, 0 1px 2px rgba(0,0,0,0.08)}
+.tab-btn.t-purple{color:#6d28d9}
+.tab-btn.t-purple:hover{background:rgba(168,85,247,0.15);color:#4c1d95}
+.tab-btn.t-purple.active{background:rgba(255,250,235,0.85);color:#4c1d95;box-shadow:inset 0 -3px 0 #7c3aed, 0 1px 2px rgba(0,0,0,0.08)}
+.tab-btn.t-yellow{color:#a16207}
+.tab-btn.t-yellow:hover{background:rgba(234,179,8,0.18);color:#713f12}
+.tab-btn.t-yellow.active{background:rgba(255,250,235,0.85);color:#713f12;box-shadow:inset 0 -3px 0 #ca8a04, 0 1px 2px rgba(0,0,0,0.08)}
 
 .annonce-item{background:rgba(20,16,9,0.95);border:1px solid rgba(201,162,39,0.12);border-radius:10px;padding:16px;margin-bottom:10px;position:relative;transition:all 0.2s;box-shadow:0 1px 8px rgba(0,0,0,0.25)}
 .annonce-item:hover{border-color:rgba(201,162,39,0.28);box-shadow:0 6px 24px rgba(0,0,0,0.35)}
@@ -1311,8 +1331,10 @@ textarea.form-control{resize:vertical;min-height:80px}
 .timeline::before { background: linear-gradient(180deg,rgba(192,65,14,0.5),rgba(201,162,39,0.2),transparent) !important; }
 
 /* Tabs */
-.tab-row { border-radius: 10px !important; background: rgba(255,255,255,0.04) !important; border: 1px solid rgba(201,162,39,0.12) !important; }
-.tab-btn.active { border-radius: 8px !important; }
+/* (Surcharges désactivées : le style parchemin de .tab-row est maintenant
+   défini directement et fonctionne en mode clair ET sombre, plus besoin
+   de différencier ici.) */
+.tab-btn.active { border-radius: 5px !important; }
 
 /* Scroll */
 ::-webkit-scrollbar { width: 5px; height: 5px; }
@@ -1348,19 +1370,8 @@ textarea.form-control{resize:vertical;min-height:80px}
 #main .page-content > .text-muted,
 #main .page-content > div > .text-muted { color: rgba(60,35,5,0.7) !important; }
 
-/* Onglets « Toutes / Ouvertes / Fermées » placés directement sur le fond clair
-   (uniquement quand .tab-row est un enfant direct d'une page-content) */
-#main .page-content > .tab-row {
-  background: rgba(40,25,5,0.05) !important;
-  border: 1px solid rgba(120,80,20,0.18) !important;
-}
-#main .page-content > .tab-row .tab-btn:not(.active) {
-  color: rgba(60,35,5,0.62) !important;
-}
-#main .page-content > .tab-row .tab-btn:not(.active):hover {
-  color: rgba(60,35,5,0.9) !important;
-  background: rgba(40,25,5,0.05) !important;
-}
+/* (Le style parchemin du .tab-row fonctionne désormais sur fond clair
+   comme sur fond sombre — plus besoin de surcharges spéciales ici.) */
 
 /* États vides (« Aucun X » en dehors d'une card) */
 #main .page-content > .bb-empty,
@@ -1399,17 +1410,7 @@ body.dark #main .page-content > .text-muted,
 body.dark #main .page-content > div > .text-muted {
   color: rgba(240,232,208,0.45) !important;
 }
-body.dark #main .page-content > .tab-row {
-  background: rgba(255,255,255,0.04) !important;
-  border: 1px solid rgba(180,140,20,0.18) !important;
-}
-body.dark #main .page-content > .tab-row .tab-btn:not(.active) {
-  color: rgba(240,232,208,0.55) !important;
-}
-body.dark #main .page-content > .tab-row .tab-btn:not(.active):hover {
-  color: var(--text) !important;
-  background: rgba(255,255,255,0.06) !important;
-}
+/* (Idem mode sombre : le style parchemin reste lisible partout.) */
 body.dark #main .page-content > .bb-empty,
 body.dark #main .page-content > div > [style*="color:var(--muted)"][style*="text-align:center"] {
   color: rgba(240,232,208,0.4) !important;
@@ -4509,32 +4510,11 @@ html{-webkit-tap-highlight-color:transparent}
 /* ═══════════════════════════════════════════════════════════════
    ▓▓▓  CORRECTIONS LISIBILITÉ — Texte invisible sur fond clair
    ═══════════════════════════════════════════════════════════════ */
-#main .page-content > .tab-row,
-#main .page-content .section-header .tab-row,
-#main .page-content > div .tab-row{
-  background:rgba(20,16,9,0.5) !important;
-  border:1px solid rgba(201,162,39,0.25) !important;
-  box-shadow:inset 0 1px 0 rgba(255,255,255,0.03);
-}
-#main .page-content > .tab-row .tab-btn:not(.active),
-#main .page-content .section-header .tab-row .tab-btn:not(.active),
-#main .page-content > div .tab-row .tab-btn:not(.active){
-  color:rgba(240,232,208,0.65) !important;
-  background:transparent !important;
-}
-#main .page-content > .tab-row .tab-btn:not(.active):hover,
-#main .page-content .section-header .tab-row .tab-btn:not(.active):hover,
-#main .page-content > div .tab-row .tab-btn:not(.active):hover{
-  color:var(--gold2) !important;
-  background:rgba(201,162,39,0.08) !important;
-}
-#main .page-content > .tab-row .tab-btn.active,
-#main .page-content .section-header .tab-row .tab-btn.active,
-#main .page-content > div .tab-row .tab-btn.active{
-  background:linear-gradient(135deg,var(--accent),#a03408) !important;
-  color:#fff !important;
-  box-shadow:0 2px 10px rgba(192,65,14,0.45) !important;
-}
+/* (Surcharges tab-row désactivées : le nouveau style parchemin de
+   .tab-row défini en haut du CSS fonctionne sur fond clair ET sombre.
+   Le bloc précédent forçait un fond brun terne avec actif orange brique
+   qui jurait avec le reste du design.) */
+
 
 /* Profile-hero : lisibilité forte sur fond clair */
 .profile-hero{
@@ -8936,9 +8916,9 @@ document.addEventListener('error', function(e){
     <div id="visitor-cand-banner" style="display:none;margin-bottom:18px"></div>
     <div class="tab-row">
       <div class="tab-btn active" onclick="filterCandidatures('all',this)">Toutes</div>
-      <div class="tab-btn" onclick="filterCandidatures('en_attente',this)">En attente</div>
-      <div class="tab-btn" onclick="filterCandidatures('acceptee',this)">Acceptées</div>
-      <div class="tab-btn" onclick="filterCandidatures('refusee',this)">Refusées</div>
+      <div class="tab-btn t-orange" onclick="filterCandidatures('en_attente',this)">En attente</div>
+      <div class="tab-btn t-green" onclick="filterCandidatures('acceptee',this)">Acceptées</div>
+      <div class="tab-btn t-red" onclick="filterCandidatures('refusee',this)">Refusées</div>
     </div>
     <!-- VUE CARTES — fiches d'identité candidatures -->
     <div id="candidatures-cards" class="rec-cards"></div>
@@ -9326,10 +9306,10 @@ document.addEventListener('error', function(e){
     </div>
     <div class="tab-row">
       <div class="tab-btn active" onclick="filterPlaintes('all',this)">Toutes</div>
-      <div class="tab-btn" onclick="filterPlaintes('ouverte',this)">Ouvertes</div>
-      <div class="tab-btn" onclick="filterPlaintes('en_cours',this)">En cours</div>
-      <div class="tab-btn" onclick="filterPlaintes('transmise_tribunal',this)">⚖️ Au Tribunal</div>
-      <div class="tab-btn" onclick="filterPlaintes('fermee',this)">Fermées</div>
+      <div class="tab-btn t-orange" onclick="filterPlaintes('ouverte',this)">Ouvertes</div>
+      <div class="tab-btn t-blue" onclick="filterPlaintes('en_cours',this)">En cours</div>
+      <div class="tab-btn t-purple" onclick="filterPlaintes('transmise_tribunal',this)">⚖️ Au Tribunal</div>
+      <div class="tab-btn t-green" onclick="filterPlaintes('fermee',this)">Fermées</div>
     </div>
     <!-- VUE CARTES — fiches officielles de plaintes -->
     <div id="plaintes-cards" class="pl-cards"></div>
@@ -13855,9 +13835,9 @@ document.addEventListener('error', function(e){
         <input type="text" id="search-operations" class="form-control" placeholder="🔍 Rechercher une opération..." oninput="renderOperations()" style="max-width:260px;margin:0">
         <div class="tab-row" style="margin-bottom:0;flex:1;min-width:260px">
           <div class="tab-btn active" onclick="filterOperations('all',this)">Toutes</div>
-          <div class="tab-btn" onclick="filterOperations('Active',this)">🟢 Actives</div>
-          <div class="tab-btn" onclick="filterOperations('Planifiée',this)">🔵 Planif.</div>
-          <div class="tab-btn" onclick="filterOperations('Terminée',this)">✅ Terminées</div>
+          <div class="tab-btn t-green" onclick="filterOperations('Active',this)">🟢 Actives</div>
+          <div class="tab-btn t-blue" onclick="filterOperations('Planifiée',this)">🔵 Planif.</div>
+          <div class="tab-btn t-yellow" onclick="filterOperations('Terminée',this)">✅ Terminées</div>
         </div>
       </div>
     </div>
@@ -14973,10 +14953,10 @@ document.addEventListener('error', function(e){
         <input type="text" id="search-sanctions" class="form-control" placeholder="🔍 Rechercher..." oninput="renderSanctions()" style="max-width:220px;margin:0">
         <div class="tab-row" style="margin-bottom:0;flex:1;min-width:300px">
           <div class="tab-btn active" onclick="filterSanctions('all',this)">Toutes</div>
-          <div class="tab-btn" onclick="filterSanctions('Promotion',this)">Promos</div>
-          <div class="tab-btn" onclick="filterSanctions('Félicitation',this)">Félicitations</div>
-          <div class="tab-btn" onclick="filterSanctions('Avertissement',this)">Avert.</div>
-          <div class="tab-btn" onclick="filterSanctions('Exclusion',this)">Exclusions</div>
+          <div class="tab-btn t-green" onclick="filterSanctions('Promotion',this)">Promos</div>
+          <div class="tab-btn t-blue" onclick="filterSanctions('Félicitation',this)">Félicitations</div>
+          <div class="tab-btn t-orange" onclick="filterSanctions('Avertissement',this)">Avert.</div>
+          <div class="tab-btn t-red" onclick="filterSanctions('Exclusion',this)">Exclusions</div>
         </div>
       </div>
     </div>
