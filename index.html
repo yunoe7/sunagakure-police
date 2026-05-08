@@ -20815,12 +20815,9 @@ async function _flushSaveQueue(){
         await window._fbUpdate(window._fbRef(window._fbDB,"sunagakure"), partialPayload);
       }
     } else {
-      // BUG-FIX BINGOBOOK : on remplace _fbSet par _fbUpdate pour le mode full.
-      // _fbSet(racine, payload) supprime toutes les clés ABSENTES du payload :
-      // or bingobook/adoptions ne sont pas dans DB → ils seraient effacés à chaque save.
-      // _fbUpdate(racine, payload) ne touche qu'aux clés présentes → branches séparées préservées.
+      // Mode full (legacy) : réécrit toute la base
       const payload=JSON.parse(JSON.stringify(toSave));
-      await window._fbUpdate(window._fbRef(window._fbDB,"sunagakure"),payload);
+      await window._fbSet(window._fbRef(window._fbDB,"sunagakure"),payload);
     }
     // Reset du flag d'erreur Firebase si un save réussit
     if(window._fbWriteFailed){
@@ -31066,8 +31063,8 @@ function cancelAdoptionEdit(){
 
 // Charger les données d'une adoption dans le formulaire (mode "édition")
 function editAdoption(id){
-  if(typeof canModify === 'function' && !canModify()){
-    if(typeof showToast === 'function') showToast('⛔ Action réservée aux membres autorisés.','error');
+  if(typeof canEditAdoption === 'function' && !canEditAdoption()){
+    if(typeof showToast === 'function') showToast('⛔ Action réservée au Haut Commandement.','error');
     return;
   }
   _adInit();
@@ -31092,8 +31089,8 @@ function editAdoption(id){
 }
 
 function saveAdoption(){
-  if(typeof canModify === 'function' && !canModify()){
-    if(typeof showToast === 'function') showToast('⛔ Action réservée aux membres autorisés.','error');
+  if(typeof canEditAdoption === 'function' && !canEditAdoption()){
+    if(typeof showToast === 'function') showToast('⛔ Action réservée au Haut Commandement.','error');
     return;
   }
   _adInit();
@@ -31138,11 +31135,6 @@ function saveAdoption(){
     data.numero = _adNextNumero();   // nouveau numéro séquentiel
     DB.adoptions.push(data);
   }
-  // Garde anti-snapshot-fantôme : marquer l'heure et les IDs écrits
-  // (même pattern que le BingoBook) pour ignorer les snapshots Firebase
-  // pré-écriture renvoyés dans les ~3s qui suivent le save.
-  window._adLastWriteAt = Date.now();
-  window._adLastWriteIds = DB.adoptions.map(function(a){ return a && a.id; }).filter(function(x){ return x != null; });
   if(typeof saveData === 'function') saveData('adoptions');
   if(typeof addTimeline === 'function'){
     addTimeline((editId?'Adoption modifiée':'Adoption enregistrée')+' : '+adoptant+' → '+adopte);
@@ -31153,15 +31145,13 @@ function saveAdoption(){
 }
 
 function deleteAdoption(id){
-  if(typeof canModify === 'function' && !canModify()){
-    if(typeof showToast === 'function') showToast('⛔ Action réservée aux membres autorisés.','error');
+  if(typeof canEditAdoption === 'function' && !canEditAdoption()){
+    if(typeof showToast === 'function') showToast('⛔ Action réservée au Haut Commandement.','error');
     return;
   }
   askDelete('Supprimer définitivement cette adoption du registre ?', function(){
     _adInit();
     DB.adoptions = DB.adoptions.filter(function(x){ return String(x.id) !== String(id); });
-    window._adLastWriteAt = Date.now();
-    window._adLastWriteIds = DB.adoptions.map(function(a){ return a && a.id; }).filter(function(x){ return x != null; });
     if(typeof saveData === 'function') saveData('adoptions');
     renderAdoptions();
     if(typeof showToast === 'function') showToast('Adoption supprimée.','info');
@@ -31170,7 +31160,7 @@ function deleteAdoption(id){
 
 function renderAdoptions(){
   _adInit();
-  var canEdit = (typeof canModify === 'function') ? canModify() : false;
+  var canEdit = (typeof canEditAdoption === 'function') ? canEditAdoption() : false;
   var addPanel = document.getElementById('ad-add-panel');
   if(addPanel) addPanel.style.display = canEdit ? 'block' : 'none';
 
@@ -31741,25 +31731,6 @@ document.addEventListener('DOMContentLoaded', function(){
           }
           // Accepter aussi un tableau vide (suppression côté autre client)
           if(Array.isArray(v)){
-            // ─── Garde anti-snapshot-fantôme (même pattern que BingoBook) ───
-            // Si on vient juste d'écrire localement (< 15s) et que le snapshot
-            // reçu ne contient pas tous les IDs qu'on a écrits, c'est un snapshot
-            // pré-écriture qui annulerait notre ajout. On l'ignore.
-            try {
-              var lastWrite = window._adLastWriteAt || 0;
-              var lastIds = window._adLastWriteIds || [];
-              if (lastWrite && (Date.now() - lastWrite) < 15000 && lastIds.length > 0) {
-                var snapIds = v.map(function(a){ return a && a.id; }).filter(function(x){ return x != null; });
-                var snapIdSet = {};
-                snapIds.forEach(function(id){ snapIdSet[String(id)] = 1; });
-                var missingCount = 0;
-                lastIds.forEach(function(id){ if(!snapIdSet[String(id)]) missingCount++; });
-                if (missingCount > 0) {
-                  // Snapshot incomplet → on ignore, on garde notre version locale
-                  return;
-                }
-              }
-            } catch(e){}
             DB.adoptions = v;
             try{ localStorage.setItem(STORE, JSON.stringify(DB)); }catch(e){}
             // Re-render uniquement si la page adoptions est active
@@ -32414,6 +32385,17 @@ function renderHierarchie(){
 }
 
 function canModify(){return currentUser&&(currentUser.role==="admin"||currentUser.role==="hautcommandement"||currentUser.role==="gerant"||currentUser.role==="cogerant"||currentUser.role==="sergent"||currentUser.role==="officier")}
+// Adoptions : écriture/modification/suppression réservée au Haut Commandement uniquement
+function canEditAdoption(){
+  if(!currentUser) return false;
+  var r = currentUser.role;
+  var s = currentUser.section || 'police';
+  // Haut Commandement (toutes sections)
+  if(r==="admin"||r==="hautcommandement") return true;
+  // Membres actifs de la Police (pas visiteur)
+  if(s==="police" && r!=="visiteur") return true;
+  return false;
+}
 function isAdmin(){return currentUser&&currentUser.role==="admin"}
 // Permission renforcée : seuls Admin et Gérant peuvent modifier le grade/rôle d'un compte
 function canEditGrade(){return currentUser&&(currentUser.role==="admin"||currentUser.role==="gerant")}
@@ -38552,17 +38534,15 @@ function bbSaveNinjas(list) {
   if (window._fbDB && window._fbRef && window._fbSet) {
     try {
       var r = window._fbRef(window._fbDB, 'sunagakure/bingobook');
-      var p = window._fbSet(r, list);
-      if (p && typeof p.then === 'function') {
-        p.then(function() {
-          // Firebase a confirmé l'écriture → on réinitialise la garde
-          // pour ne plus bloquer les vrais snapshots des autres utilisateurs
-          window._bbLastWriteAt = 0;
-          window._bbLastWriteIds = [];
-        }).catch(function(err){
-          if(typeof showToast==='function') showToast('Échec de synchronisation (image trop lourde ?)', 'error');
-        });
-      } else if (p && typeof p.catch === 'function') {
+      // Firebase RTDB ne supporte pas les tableaux natifs : on envoie un objet
+      // indexé par id pour garantir la stabilité des clés et éviter les
+      // snapshots fantômes causés par la renumérotation automatique de Firebase.
+      var fbObj = {};
+      if (Array.isArray(list)) {
+        list.forEach(function(n){ if(n && n.id != null) fbObj[String(n.id)] = n; });
+      }
+      var p = window._fbSet(r, fbObj);
+      if (p && typeof p.catch === 'function') {
         p.catch(function(err){
           if(typeof showToast==='function') showToast('Échec de synchronisation (image trop lourde ?)', 'error');
         });
@@ -39791,7 +39771,7 @@ function bbSaveFiche() {
   // Re-render différé : si le listener Firebase pousse une mise à jour juste après
   // (ce qui peut écraser localStorage avec l'état pré-save), on force un nouveau
   // render après que tout soit stabilisé.
-  setTimeout(function(){ if(typeof bbRender === 'function') bbRender(); }, 600);
+  setTimeout(function(){ if(typeof bbRender === 'function') bbRender(); }, 2000);
 }
 
 function bbDeleteFiche() {
@@ -42643,6 +42623,8 @@ document.addEventListener('DOMContentLoaded', function(){
           // local restait obsolète → bbSaveNinjas pouvait écraser des fiches
           // créées par un autre admin.
           if (val && !Array.isArray(val) && typeof val === 'object') {
+            // Firebase renvoie un objet {id1:{..}, id2:{..}} (indexé par id)
+            // ou {0:..,1:..} (legacy tableau). Dans les deux cas Object.values() convient.
             val = Object.values(val).filter(Boolean);
           }
           // Important : accepter aussi un tableau VIDE.
@@ -42652,15 +42634,13 @@ document.addEventListener('DOMContentLoaded', function(){
           // affichées sur les autres appareils → bug bien réel.
           if (Array.isArray(val)) {
             // ─── Garde anti-snapshot-fantôme ───
-            // Si on vient juste d'écrire localement (< 15s) et que le snapshot reçu
+            // Si on vient juste d'écrire localement (< 3s) et que le snapshot reçu
             // ne contient PAS tous les IDs qu'on a écrits, c'est un snapshot fantôme
             // pré-écriture qui annulerait notre ajout. On l'ignore.
-            // Durée étendue à 15s car les fiches avec portrait (image) peuvent prendre
-            // plusieurs secondes à être confirmées par Firebase.
             try {
               var lastWrite = window._bbLastWriteAt || 0;
               var lastIds = window._bbLastWriteIds || [];
-              if (lastWrite && (Date.now() - lastWrite) < 15000 && lastIds.length > 0) {
+              if (lastWrite && (Date.now() - lastWrite) < 8000 && lastIds.length > 0) {
                 var snapIds = val.map(function(n){ return n && n.id; }).filter(function(x){return x!=null;});
                 var snapIdSet = {};
                 snapIds.forEach(function(id){ snapIdSet[String(id)] = 1; });
