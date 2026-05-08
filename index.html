@@ -31742,13 +31742,13 @@ document.addEventListener('DOMContentLoaded', function(){
           // Accepter aussi un tableau vide (suppression côté autre client)
           if(Array.isArray(v)){
             // ─── Garde anti-snapshot-fantôme (même pattern que BingoBook) ───
-            // Si on vient juste d'écrire localement (< 3s) et que le snapshot
+            // Si on vient juste d'écrire localement (< 15s) et que le snapshot
             // reçu ne contient pas tous les IDs qu'on a écrits, c'est un snapshot
             // pré-écriture qui annulerait notre ajout. On l'ignore.
             try {
               var lastWrite = window._adLastWriteAt || 0;
               var lastIds = window._adLastWriteIds || [];
-              if (lastWrite && (Date.now() - lastWrite) < 3000 && lastIds.length > 0) {
+              if (lastWrite && (Date.now() - lastWrite) < 15000 && lastIds.length > 0) {
                 var snapIds = v.map(function(a){ return a && a.id; }).filter(function(x){ return x != null; });
                 var snapIdSet = {};
                 snapIds.forEach(function(id){ snapIdSet[String(id)] = 1; });
@@ -38553,7 +38553,16 @@ function bbSaveNinjas(list) {
     try {
       var r = window._fbRef(window._fbDB, 'sunagakure/bingobook');
       var p = window._fbSet(r, list);
-      if (p && typeof p.catch === 'function') {
+      if (p && typeof p.then === 'function') {
+        p.then(function() {
+          // Firebase a confirmé l'écriture → on réinitialise la garde
+          // pour ne plus bloquer les vrais snapshots des autres utilisateurs
+          window._bbLastWriteAt = 0;
+          window._bbLastWriteIds = [];
+        }).catch(function(err){
+          if(typeof showToast==='function') showToast('Échec de synchronisation (image trop lourde ?)', 'error');
+        });
+      } else if (p && typeof p.catch === 'function') {
         p.catch(function(err){
           if(typeof showToast==='function') showToast('Échec de synchronisation (image trop lourde ?)', 'error');
         });
@@ -42643,13 +42652,15 @@ document.addEventListener('DOMContentLoaded', function(){
           // affichées sur les autres appareils → bug bien réel.
           if (Array.isArray(val)) {
             // ─── Garde anti-snapshot-fantôme ───
-            // Si on vient juste d'écrire localement (< 3s) et que le snapshot reçu
+            // Si on vient juste d'écrire localement (< 15s) et que le snapshot reçu
             // ne contient PAS tous les IDs qu'on a écrits, c'est un snapshot fantôme
             // pré-écriture qui annulerait notre ajout. On l'ignore.
+            // Durée étendue à 15s car les fiches avec portrait (image) peuvent prendre
+            // plusieurs secondes à être confirmées par Firebase.
             try {
               var lastWrite = window._bbLastWriteAt || 0;
               var lastIds = window._bbLastWriteIds || [];
-              if (lastWrite && (Date.now() - lastWrite) < 3000 && lastIds.length > 0) {
+              if (lastWrite && (Date.now() - lastWrite) < 15000 && lastIds.length > 0) {
                 var snapIds = val.map(function(n){ return n && n.id; }).filter(function(x){return x!=null;});
                 var snapIdSet = {};
                 snapIds.forEach(function(id){ snapIdSet[String(id)] = 1; });
