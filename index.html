@@ -104,6 +104,27 @@ body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:9997;
 .nav-item.active .icon{filter:drop-shadow(0 0 4px rgba(192,65,14,0.6))}
 .nav-item .icon{width:16px;text-align:center;font-size:14px;flex-shrink:0}
 .nav-badge{margin-left:auto;background:var(--red);color:#fff;font-size:9px;padding:1px 6px;border-radius:10px;font-family:'Share Tech Mono',monospace;font-weight:700}
+/* Point rouge "nouveau non vu" : utilisé en plus du chiffre quand on veut signaler
+   à la fois "X tâches en cours" et "Y nouvelles depuis ta dernière visite".
+   Ex : Plaintes ouvertes (rappel permanent) + nouvelles plaintes (notif éphémère).
+   Le point disparaît au clic sur la page, le chiffre reste tant qu'il y a du boulot. */
+.nav-new-dot{
+  display:inline-block;
+  width:8px;height:8px;
+  background:var(--red);
+  border-radius:50%;
+  margin-left:auto;
+  margin-right:6px;
+  box-shadow:0 0 6px rgba(239,68,68,0.6);
+  /* Légère animation de pulsation pour attirer l'œil */
+  animation:nav-new-pulse 1.8s ease-in-out infinite;
+  flex-shrink:0;
+}
+.nav-new-dot + .nav-badge{margin-left:0}
+@keyframes nav-new-pulse{
+  0%,100%{opacity:1;transform:scale(1)}
+  50%{opacity:0.55;transform:scale(0.85)}
+}
 
 .sidebar-footer{padding:12px 16px;border-top:1px solid rgba(180,140,20,0.15);background:rgba(0,0,0,0.15)}
 .user-pill{display:flex;align-items:center;gap:9px}
@@ -7514,8 +7535,8 @@ document.addEventListener('error', function(e){
     <div class="nav-section" data-sec="police">Registres</div>
     <div class="nav-item" role="button" tabindex="0" onclick="showPage('recensement')" data-page="recensement" data-sec="police"><span class="icon">📝</span> Recensement <span class="nav-badge" id="badge-recenses" style="background:var(--purple)">0</span></div>
     <div class="nav-item" role="button" tabindex="0" onclick="showPage('recrutement')" data-page="recrutement" data-sec="police"><span class="icon">🎖️</span> Recrutement <span class="nav-badge" id="badge-recrutement" style="background:var(--cyan);display:none">0</span></div>
-    <div class="nav-item" role="button" tabindex="0" onclick="showPage('plaintes')" data-page="plaintes" data-sec="police"><span class="icon">📋</span> Plaintes <span class="nav-badge" id="badge-plaintes">0</span></div>
-    <div class="nav-item" role="button" tabindex="0" onclick="showPage('dossiers')" data-page="dossiers" data-member-only="true" data-sec="police"><span class="icon">🗂️</span> Dossiers criminels <span class="nav-badge" id="badge-dossiers" style="background:var(--purple);display:none">0</span></div>
+    <div class="nav-item" role="button" tabindex="0" onclick="showPage('plaintes')" data-page="plaintes" data-sec="police"><span class="icon">📋</span> Plaintes <span class="nav-new-dot" id="newdot-plaintes" style="display:none"></span><span class="nav-badge" id="badge-plaintes">0</span></div>
+    <div class="nav-item" role="button" tabindex="0" onclick="showPage('dossiers')" data-page="dossiers" data-member-only="true" data-sec="police"><span class="icon">🗂️</span> Dossiers criminels <span class="nav-new-dot" id="newdot-dossiers" style="display:none"></span><span class="nav-badge" id="badge-dossiers" style="background:var(--purple);display:none">0</span></div>
     <div class="nav-item" role="button" tabindex="0" onclick="showPage('bingobook')" data-page="bingobook" data-sec="all"><span class="icon">📕</span> Bingo Book <span class="nav-badge" id="badge-bingobook" style="background:var(--red);display:none">0</span></div>
     <div class="nav-item" role="button" tabindex="0" onclick="showPage('diplo-laissezpasse')" data-page="diplo-laissezpasse" data-sec="all"><span class="icon">🪪</span> Laissez-passer <span class="nav-badge" id="badge-laissezpasse" style="background:var(--cyan);display:none">0</span></div>
     <div class="nav-item" role="button" tabindex="0" onclick="showPage('codepenal')" data-page="codepenal" data-sec="all"><span class="icon">📜</span> Code Pénal</div>
@@ -23848,6 +23869,14 @@ function updateBadges(){
   const nOp=(DB.operations||[]).filter(o=>o.statut==="Active").length;
   const nD=(DB.dossiers||[]).filter(d=>(d.statut||"").toLowerCase()==="recherché"||(d.statut||"")==="En garde à vue").length;
 
+  // ─── Points "nouveau non vu" pour Plaintes et Dossiers ───
+  // Mode hybride : le chiffre reste tant qu'il y a du travail en cours
+  // (rappel permanent), MAIS un point rouge éphémère s'affiche en plus
+  // quand il y a de nouvelles entrées non vues depuis la dernière visite.
+  // Le point disparaît au prochain clic sur la page (markPageRead).
+  const nPlNew = _countNewAuto((DB.plaintes||[]).filter(p=>p.statut==="ouverte"||p.statut==="en_cours"), "plaintes");
+  const nDoNew = _countNewAuto((DB.dossiers||[]).filter(d=>(d.statut||"").toLowerCase()==="recherché"||(d.statut||"")==="En garde à vue"), "dossiers");
+
   // Sidebar badges (annonces/recenses/plaintes toujours visibles si >0)
   const ba=el("badge-annonces");
   if(ba){ba.textContent=nA;ba.style.display=nA>0?"":"none";}
@@ -23858,6 +23887,12 @@ function updateBadges(){
   _setBadge("badge-recrutement",nRec,true);
   _setBadge("badge-operations",nOp,true);
   _setBadge("badge-dossiers",nD,true);
+
+  // Affiche/masque les points "nouveau non vu" à côté du chiffre des en-cours
+  const dotP = el("newdot-plaintes");
+  if(dotP) dotP.style.display = nPlNew > 0 ? "" : "none";
+  const dotD = el("newdot-dossiers");
+  if(dotD) dotD.style.display = nDoNew > 0 ? "" : "none";
   // Badge Tribunal — Affaires en cours : nouvelles affaires NON-CLÔTURÉES depuis dernière visite
   if(DB.tribunal && Array.isArray(DB.tribunal.affaires)){
     var affEnCours = DB.tribunal.affaires.filter(function(a){
@@ -23967,6 +24002,10 @@ function markPageRead(page){
     recrutement:"candidatures",
     "juge-affaires":"juge-affaires",
     "juge-plaintes":"juge-plaintes",
+    // — Plaintes et Dossiers : mode hybride (le chiffre reste, le point dispara
+    //   au clic) — voir le système nav-new-dot dans updateBadges()
+    plaintes:"plaintes",
+    dossiers:"dossiers",
     // — Nouvelles sections couvertes par les badges étendus —
     adoptions:"adoptions",
     equipes:"equipes",
