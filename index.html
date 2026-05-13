@@ -38597,6 +38597,12 @@ function bbSaveOne(ninja) {
     else list.unshift(ninja);
     localStorage.setItem('bb_ninjas', JSON.stringify(list));
     try{ localStorage.setItem('bb_ninjas_set', '1'); }catch(e){}
+    // Verrou anti-fantôme : on note l'état local pour que le listener Firebase
+    // refuse pendant 8s tout snapshot qui ne contiendrait pas cette fiche.
+    try {
+      window._bbLastWriteAt = Date.now();
+      window._bbLastWriteIds = list.map(function(n){ return n && n.id; }).filter(function(x){return x!=null;});
+    } catch(e){}
   } catch(e) {
     if(typeof showToast==='function') showToast('Stockage local plein — réduisez la taille des images', 'error');
     return false;
@@ -38629,6 +38635,17 @@ function bbDeleteOne(id) {
     var list = bbGetNinjas().filter(function(x){ return x && x.id !== id; });
     localStorage.setItem('bb_ninjas', JSON.stringify(list));
     try{ localStorage.setItem('bb_ninjas_set', '1'); }catch(e){}
+    // Verrou anti-fantôme : on note l'état local SANS la fiche supprimée
+    // pour que le listener Firebase refuse pendant 8s tout snapshot qui
+    // contiendrait encore cette fiche (= snapshot pré-suppression).
+    try {
+      window._bbLastWriteAt = Date.now();
+      window._bbLastWriteIds = list.map(function(n){ return n && n.id; }).filter(function(x){return x!=null;});
+      // On mémorise aussi l'ID qu'on vient de supprimer pour bloquer
+      // explicitement les snapshots qui le contiennent encore.
+      window._bbDeletedIds = window._bbDeletedIds || {};
+      window._bbDeletedIds[String(id)] = Date.now();
+    } catch(e){}
   } catch(e) {
     console.error('[BB-SYNC] Erreur suppression locale :', e);
   }
@@ -38643,9 +38660,8 @@ function bbDeleteOne(id) {
           console.error('[BB-SYNC] Échec suppression fiche #'+id+' :', err);
           if(typeof showToast==='function') showToast('⚠ Échec sync suppression : '+code, 'error');
         });
-      } else {
-        console.info('[BB-SYNC] ✓ Suppression fiche #'+id+' envoyée à Firebase');
       }
+      console.info('[BB-SYNC] ✓ Suppression fiche #'+id+' envoyée à Firebase');
     } catch(e) {
       console.error('[BB-SYNC] Exception suppression :', e);
     }
@@ -42738,6 +42754,33 @@ document.addEventListener('DOMContentLoaded', function(){
           // L'ancienne condition "&& val.length" laissait les anciennes fiches
           // affichées sur les autres appareils → bug bien réel.
           if (Array.isArray(val)) {
+            // ─── Filtre des fiches supprimées récemment ───
+            // Si on a supprimé localement une fiche il y a < 10s et que le
+            // snapshot Firebase la contient encore (= snapshot pré-suppression
+            // qui n'a pas encore intégré notre delete), on retire cette fiche
+            // du snapshot avant de l'appliquer. Évite le "flash" où la fiche
+            // réapparaît une demi-seconde avant que Firebase confirme la suppression.
+            try {
+              var deletedMap = window._bbDeletedIds || {};
+              var now = Date.now();
+              var stillDeleted = {};
+              var hasDeleted = false;
+              Object.keys(deletedMap).forEach(function(idStr){
+                if (now - deletedMap[idStr] < 10000) {
+                  stillDeleted[idStr] = 1;
+                  hasDeleted = true;
+                } else {
+                  delete deletedMap[idStr]; // expiration
+                }
+              });
+              if (hasDeleted) {
+                var beforeLen = val.length;
+                val = val.filter(function(n){ return !(n && stillDeleted[String(n.id)]); });
+                if (val.length < beforeLen) {
+                  console.info('[BB-SYNC] Snapshot nettoyé : '+(beforeLen - val.length)+' fiche(s) en cours de suppression filtrée(s)');
+                }
+              }
+            } catch(eFilter){}
             // ─── Garde anti-snapshot-fantôme ───
             // Si on vient juste d'écrire localement (< 8s) et que le snapshot reçu
             // ne contient PAS tous les IDs qu'on a écrits, c'est un snapshot fantôme
