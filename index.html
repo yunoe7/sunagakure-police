@@ -20881,7 +20881,7 @@ function initFirebaseSync(){
     if(data&&typeof data==="object"){
       // bug-fix : Firebase RTDB renvoie parfois des arrays sous forme d'objets
       // {0:{},1:{},2:{}} (cas des trous d'index). On normalise en arrays.
-      ['plaintes','dossiers','annonces','candidatures','operations','sanctions','recenses','infractions','timeline','users','loginHistory','laissezPasse'].forEach(function(k){
+      ['plaintes','dossiers','annonces','candidatures','operations','sanctions','recenses','infractions','timeline','users','loginHistory','laissezPasse','adoptions'].forEach(function(k){
         if(data[k] && !Array.isArray(data[k]) && typeof data[k] === 'object'){
           data[k] = Object.values(data[k]).filter(Boolean);
         }
@@ -21288,7 +21288,7 @@ function initFirebaseSync(){
       // la valeur par défaut (annonce de Bienvenue) → l'annonce supprimée revenait à chaque reload.
       // Solution : si Firebase contient au moins UNE donnée non-vide (= instance live),
       // alors une clé absente sur un array signifie "supprimé totalement" et non "valeur par défaut".
-      var ARRAY_KEYS_ALL = ['plaintes','dossiers','annonces','candidatures','operations','sanctions','recenses','infractions','timeline','users','loginHistory','laissezPasse'];
+      var ARRAY_KEYS_ALL = ['plaintes','dossiers','annonces','candidatures','operations','sanctions','recenses','infractions','timeline','users','loginHistory','laissezPasse','adoptions'];
       var fbIsLiveInstance = false;
       // Détection : Firebase est "live" si au moins une de ces clés array contient des données
       // OU si la clé `commissaire` est présente avec une valeur custom (= déjà configuré)
@@ -31733,16 +31733,24 @@ document.addEventListener('DOMContentLoaded', function(){
           if(Array.isArray(v)){
             DB.adoptions = v;
             try{ localStorage.setItem(STORE, JSON.stringify(DB)); }catch(e){}
-            // Re-render uniquement si la page adoptions est active
+            console.info('[AD-SYNC] '+v.length+' adoption(s) reçue(s) de Firebase');
+            // Re-render si la page adoptions est active (peu importe l'onglet)
             try{
               var active = document.querySelector('.page-content.active');
-              if(active && active.id === 'page-adoptions'){
+              if(active && active.id === 'page-adoptions' && typeof renderAdoptions === 'function'){
                 renderAdoptions();
               }
             }catch(e){}
+          } else if (v === null) {
+            // Firebase renvoie null = jamais initialisé OU branche supprimée
+            // On ne touche pas au localStorage : on garde ce qu'on a en cache
+            // (pour éviter de perdre les données en cas de coupure réseau)
+            console.info('[AD-SYNC] Firebase renvoie null (branche vide ou non initialisée)');
           }
         });
-      }catch(e){}
+      }catch(e){
+        console.error('[AD-SYNC] Échec attache listener adoptions :', e);
+      }
     } else if(w > 60){
       clearInterval(itv);
     }
