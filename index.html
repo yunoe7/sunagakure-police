@@ -23811,7 +23811,11 @@ function _countNewAuto(arr, section){
     // On essaie une liste ordonnée de champs candidats. Le premier non-vide gagne.
     const raw = x.createdAt || x.created || x.date || x.dateCreation
               || x.ts || x.timestamp || x.paidAt || x.statusTs
-              || x.modifiedAt || x.modified;
+              || x.modifiedAt || x.modified
+              // Champs spécifiques à certaines collections :
+              || x.creeLe        // missions (DB.missions)
+              || x.dateEmission  // laissez-passer (DB.laissezPasse)
+              || x.clotureLe;    // archives d'encaissements
     if(!raw) continue;
     let ts;
     if(typeof raw === 'number'){
@@ -32086,6 +32090,9 @@ document.addEventListener('DOMContentLoaded', function(){
                 renderAdoptions();
               }
             }catch(e){}
+            // Mettre à jour le badge de notification (peu importe la page active)
+            // Sans ça, le badge ne se rafraîchissait que sur F5 ou en visitant une page.
+            try{ if(typeof updateBadges === 'function') updateBadges(); }catch(e){}
           } else if (v === null) {
             // Firebase renvoie null = jamais initialisé OU branche supprimée
             // On ne touche pas au localStorage : on garde ce qu'on a en cache
@@ -40275,10 +40282,17 @@ function bbSaveFiche() {
   };
   if (bbEditingId) {
     data.id = bbEditingId;
+    // Préserver le createdAt original (sinon l'édition remettrait à zéro)
+    var prevCreatedAt = null;
+    try { var prev2 = list.find(function(x){return x.id===bbEditingId}); if(prev2) prevCreatedAt = prev2.createdAt; } catch(e){}
+    data.createdAt = prevCreatedAt || Date.now();
     if(typeof showToast==='function') showToast('✅ Fiche modifiée', 'success');
   } else {
     data.id = bbComputeNextId(list);
     bbNextId = data.id + 1;
+    // createdAt stable : utilisé par le système de notifs (badge "Bingo Book")
+    // pour distinguer les fiches NOUVELLES des fiches simplement modifiées.
+    data.createdAt = Date.now();
     if(typeof showToast==='function') showToast('✅ Fiche ajoutée au Bingo Book', 'success');
     // ─── Pont dossier ↔ BB : si la fiche vient d'un dossier criminel, créer le lien ───
     if(window._dcPendingDossierLink){
@@ -42894,6 +42908,8 @@ document.addEventListener('DOMContentLoaded', function(){
                 }
               }catch(e){}
             }
+            // Mettre à jour les badges de notification (audiences, jugements...)
+            try{ if(typeof updateBadges === 'function') updateBadges(); }catch(e){}
           }
         });
       }catch(e){}
@@ -43260,6 +43276,8 @@ document.addEventListener('DOMContentLoaded', function(){
             try { localStorage.setItem('bb_ninjas', JSON.stringify(val)); } catch(e){}
             if(typeof bbRender === 'function') bbRender();
             if(typeof lgRenderBingoBook === 'function') lgRenderBingoBook();
+            // Mettre à jour le badge de notification "Bingo Book"
+            try{ if(typeof updateBadges === 'function') updateBadges(); }catch(e){}
           } else if (val === null) {
             // Firebase a renvoyé null (= jamais initialisé OU branche supprimée).
             // On ne touche pas au localStorage : on garde ce qu'on a en cache.
