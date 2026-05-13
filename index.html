@@ -38055,19 +38055,122 @@ body.dark .comment-text{color:#94a3b8!important}
 .extra-row-btns{display:inline-flex;gap:3px;vertical-align:middle;margin-left:3px}
 .extra-row-btns button{padding:2px 6px!important;font-size:9.5px!important;line-height:1.4}
 
-/* ── COMPTEUR EN LIGNE ── */
+/* ── COMPTEUR EN LIGNE — cliquable, ouvre un panneau avec la liste détaillée ── */
 #online-counter{
   display:flex;align-items:center;gap:7px;padding:7px 14px;
   margin:8px 10px;border-radius:8px;
   border:1px solid rgba(21,128,61,0.2);background:rgba(21,128,61,0.06);
-  font-size:10px;color:var(--muted);cursor:default;
-  transition:all 0.2s;
+  font-size:10px;color:var(--muted);cursor:pointer;
+  transition:all 0.2s;user-select:none;
+  position:relative; /* ancrage du panneau popup */
 }
-#online-counter:hover{border-color:rgba(21,128,61,0.35);background:rgba(21,128,61,0.1)}
+#online-counter:hover{border-color:rgba(21,128,61,0.4);background:rgba(21,128,61,0.13);transform:translateY(-1px)}
+#online-counter.is-open{border-color:rgba(34,197,94,0.55);background:rgba(34,197,94,0.15)}
 #online-counter .oc-dot{width:7px;height:7px;border-radius:50%;background:var(--green);flex-shrink:0;animation:blink 2s infinite;box-shadow:0 0 5px rgba(21,128,61,0.5)}
 #online-counter .oc-label{font-family:'Share Tech Mono',monospace;font-size:9px;letter-spacing:0.5px;flex:1}
 #online-counter .oc-count{font-weight:700;color:var(--green);font-family:'Barlow Condensed',sans-serif;font-size:14px}
+#online-counter .oc-chevron{font-size:9px;color:rgba(34,197,94,0.55);transition:transform 0.2s;margin-left:2px}
+#online-counter.is-open .oc-chevron{transform:rotate(180deg)}
 body.dark #online-counter{border-color:rgba(21,128,61,0.22);background:rgba(21,128,61,0.07)}
+
+/* PANNEAU DÉROULANT DES MEMBRES EN LIGNE */
+#online-panel{
+  position:fixed; /* fixed pour échapper au flux de la sidebar */
+  z-index:200;
+  width:280px;
+  max-height:60vh;
+  overflow-y:auto;
+  background:linear-gradient(180deg,#1a1410 0%,#221c13 100%);
+  border:1px solid rgba(34,197,94,0.3);
+  border-radius:10px;
+  box-shadow:0 12px 40px rgba(0,0,0,0.6),0 0 0 1px rgba(34,197,94,0.08);
+  padding:8px 6px;
+  display:none;
+  animation:onlinePanelIn 0.2s ease-out;
+}
+#online-panel.show{display:block}
+@keyframes onlinePanelIn{
+  from{opacity:0;transform:translateY(6px)}
+  to{opacity:1;transform:translateY(0)}
+}
+#online-panel .op-header{
+  font-family:'Share Tech Mono',monospace;
+  font-size:9px;letter-spacing:2px;
+  color:rgba(34,197,94,0.7);
+  text-transform:uppercase;
+  padding:6px 10px 10px;
+  border-bottom:1px solid rgba(34,197,94,0.15);
+  margin-bottom:6px;
+  display:flex;justify-content:space-between;align-items:center;
+}
+#online-panel .op-header .op-count-pill{
+  background:rgba(34,197,94,0.18);
+  color:#86efac;
+  padding:2px 8px;border-radius:10px;
+  font-size:10px;font-weight:700;
+}
+#online-panel .op-empty{
+  padding:18px 12px;text-align:center;
+  color:var(--muted);font-size:11px;font-style:italic;
+}
+#online-panel .op-item{
+  display:flex;align-items:center;gap:10px;
+  padding:8px 10px;border-radius:7px;
+  transition:background 0.15s;
+  cursor:default;
+}
+#online-panel .op-item:hover{background:rgba(34,197,94,0.07)}
+#online-panel .op-item.is-me{background:rgba(201,162,39,0.08);border:1px solid rgba(201,162,39,0.18)}
+#online-panel .op-avatar{
+  width:34px;height:34px;border-radius:50%;flex-shrink:0;
+  background:linear-gradient(135deg,var(--accent),#b86010);
+  display:flex;align-items:center;justify-content:center;
+  color:#fff;font-weight:700;font-size:13px;
+  overflow:hidden;position:relative;
+  box-shadow:0 2px 6px rgba(0,0,0,0.3);
+}
+#online-panel .op-avatar img{width:100%;height:100%;object-fit:cover}
+#online-panel .op-avatar::after{
+  /* pastille verte "en ligne" */
+  content:'';position:absolute;bottom:-2px;right:-2px;
+  width:11px;height:11px;border-radius:50%;
+  background:var(--green);
+  border:2px solid #1a1410;
+  box-shadow:0 0 4px rgba(34,197,94,0.6);
+}
+#online-panel .op-info{flex:1;min-width:0}
+#online-panel .op-name{
+  font-size:12px;font-weight:600;color:var(--text);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+#online-panel .op-name .op-me-tag{
+  background:rgba(201,162,39,0.2);color:var(--gold2);
+  font-size:8px;padding:1px 5px;border-radius:6px;
+  margin-left:5px;font-family:'Share Tech Mono',monospace;letter-spacing:0.5px;
+  vertical-align:middle;
+}
+#online-panel .op-meta{
+  font-size:9.5px;color:var(--muted);
+  font-family:'Share Tech Mono',monospace;
+  letter-spacing:0.3px;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  margin-top:2px;
+}
+#online-panel .op-section-pill{
+  display:inline-block;
+  padding:1px 5px;border-radius:4px;
+  font-size:8.5px;font-weight:600;
+  text-transform:uppercase;letter-spacing:0.5px;
+  margin-right:4px;
+}
+/* Couleurs par section */
+.op-section-police{background:rgba(192,65,14,0.18);color:#fb923c}
+.op-section-juge{background:rgba(168,85,247,0.18);color:#c084fc}
+.op-section-avocat{background:rgba(59,130,246,0.18);color:#60a5fa}
+.op-section-medical{background:rgba(239,68,68,0.18);color:#f87171}
+.op-section-mission{background:rgba(20,184,166,0.18);color:#2dd4bf}
+.op-section-diplomatie{background:rgba(245,158,11,0.18);color:#fbbf24}
+.op-section-admin{background:rgba(201,162,39,0.22);color:var(--gold2)}
 
 /* ── BADGE NOTIFICATION AMÉLIORÉ ── */
 #notif-new-badge{
@@ -38657,9 +38760,31 @@ function _refreshArchiveToggleBtn() {
     if (sidebarNav && footer && !document.getElementById('online-counter')) {
       var counter = document.createElement('div');
       counter.id = 'online-counter';
-      counter.title = 'Membres connectés en ce moment';
-      counter.innerHTML = '<span class="oc-dot"></span><span class="oc-label">Membres en ligne</span><span class="oc-count" id="online-count">—</span>';
+      counter.title = 'Cliquez pour voir qui est connecté';
+      counter.innerHTML = '<span class="oc-dot"></span><span class="oc-label">Membres en ligne</span><span class="oc-count" id="online-count">—</span><span class="oc-chevron">▼</span>';
+      // Clic = toggle du panneau
+      counter.addEventListener('click', function(e){
+        e.stopPropagation();
+        renderOnlinePanel();
+      });
       footer.parentNode.insertBefore(counter, footer);
+    }
+
+    // Crée le panneau (une seule fois) à la fin du body
+    if (!document.getElementById('online-panel')) {
+      var panel = document.createElement('div');
+      panel.id = 'online-panel';
+      document.body.appendChild(panel);
+      // Clic hors du panneau → ferme
+      document.addEventListener('click', function(e){
+        var p = document.getElementById('online-panel');
+        var c = document.getElementById('online-counter');
+        if (!p || !c) return;
+        if (p.classList.contains('show') && !p.contains(e.target) && !c.contains(e.target)){
+          p.classList.remove('show');
+          c.classList.remove('is-open');
+        }
+      });
     }
 
     var userId = String(currentUser.id);
@@ -38697,17 +38822,43 @@ function _refreshArchiveToggleBtn() {
       } catch(e) {}
     });
 
+    // Liste globale des utilisateurs actuellement actifs.
+    // Stockée hors du callback pour que renderOnlinePanel y accède.
+    window._onlineUsers = window._onlineUsers || [];
+
     // Écoute de tous les utilisateurs en ligne
     window._fbOnValue(allPresenceRef, function(snap) {
       var data = snap && snap.val ? snap.val() : null;
       var countEl = document.getElementById('online-count');
-      if (!countEl) return;
-      if (!data) { countEl.textContent = '1'; return; }
       var now = Date.now();
-      var active = Object.values(data).filter(function(u) {
-        return u && u.ts && (now - u.ts) < STALE_THRESHOLD;
+      // Filtre les utilisateurs actifs (heartbeat < 70s)
+      var active = [];
+      if (data && typeof data === 'object') {
+        Object.keys(data).forEach(function(uid){
+          var u = data[uid];
+          if (u && u.ts && (now - u.ts) < STALE_THRESHOLD){
+            active.push({id: uid, nom: u.nom, grade: u.grade || '', ts: u.ts});
+          }
+        });
+      }
+      // S'assurer qu'on apparaît toujours nous-même dans la liste (notre
+      // propre heartbeat peut être en cours d'écriture quand le snapshot arrive)
+      var meIn = active.some(function(u){ return String(u.id) === userId; });
+      if (!meIn) {
+        active.push({id: userId, nom: currentUser.nom, grade: currentUser.grade || '', ts: now});
+      }
+      // Tri : moi en premier, puis par nom alphabétique
+      active.sort(function(a,b){
+        if (String(a.id) === userId) return -1;
+        if (String(b.id) === userId) return 1;
+        return (a.nom || '').localeCompare(b.nom || '');
       });
-      countEl.textContent = Math.max(1, active.length);
+      window._onlineUsers = active;
+      // Mettre à jour le compteur
+      if (countEl) countEl.textContent = Math.max(1, active.length);
+      // Si le panneau est ouvert, le re-render automatiquement (live)
+      var panel = document.getElementById('online-panel');
+      if (panel && panel.classList.contains('show')) renderOnlinePanel(true);
     });
 
     // Aussi mettre à jour le dashboard si visible
@@ -38716,6 +38867,99 @@ function _refreshArchiveToggleBtn() {
       if (!document.hidden) writePresence();
     });
   }
+
+  // Rend (ou re-rend) le panneau des membres en ligne.
+  // forceKeepOpen=true : ne toggle pas la visibilité, juste le contenu
+  // (utile quand le snapshot arrive pendant que le panneau est déjà ouvert).
+  window.renderOnlinePanel = function(forceKeepOpen) {
+    var panel = document.getElementById('online-panel');
+    var counter = document.getElementById('online-counter');
+    if (!panel || !counter) return;
+
+    // Toggle : si déjà ouvert et qu'on n'est pas en re-render forcé, fermer
+    if (!forceKeepOpen && panel.classList.contains('show')) {
+      panel.classList.remove('show');
+      counter.classList.remove('is-open');
+      return;
+    }
+
+    var list = window._onlineUsers || [];
+    var myId = (window.currentUser && String(currentUser.id)) || '';
+
+    // Helper pour récupérer les infos complètes d'un user depuis DB.users
+    function getUserDetails(uid){
+      if (!window.DB || !Array.isArray(DB.users)) return null;
+      return DB.users.find(function(u){ return u && String(u.id) === String(uid); });
+    }
+    // Helper pour échapper le HTML (sécurité XSS basique)
+    function escHTML(s){
+      if (s == null) return '';
+      return String(s).replace(/[&<>"']/g, function(c){
+        return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];
+      });
+    }
+    // Helper : depuis combien de temps un user est connecté ?
+    function timeAgo(ts){
+      var diff = Date.now() - ts;
+      if (diff < 60000) return 'à l\'instant';
+      var m = Math.floor(diff / 60000);
+      if (m < 60) return 'il y a '+m+' min';
+      var h = Math.floor(m / 60);
+      return 'il y a '+h+' h';
+    }
+
+    var bodyHTML = '';
+    if (list.length === 0) {
+      bodyHTML = '<div class="op-empty">— Aucun membre détecté —</div>';
+    } else {
+      bodyHTML = list.map(function(u){
+        var details = getUserDetails(u.id) || {};
+        var nom = u.nom || details.nom || '?';
+        var grade = u.grade || details.grade || '';
+        var section = (details.section || 'police').toLowerCase();
+        var role = details.role || '';
+        var photo = details.photo || '';
+        var initials = nom.split(' ').filter(Boolean).slice(0,2).map(function(w){ return w[0]||''; }).join('').toUpperCase() || '?';
+        var isMe = String(u.id) === myId;
+        var avatarHTML = photo
+          ? '<div class="op-avatar"><img src="'+escHTML(photo)+'" alt=""></div>'
+          : '<div class="op-avatar">'+escHTML(initials)+'</div>';
+        // Section pill : couleur selon la section RP
+        var sectionLabels = {
+          'police':'Police', 'juge':'Tribunal', 'avocat':'Avocat',
+          'medical':'Hôpital', 'mission':'Mission', 'diplomatie':'Diplomatie'
+        };
+        var sectionLbl = sectionLabels[section] || section;
+        var sectionPill = role === 'admin'
+          ? '<span class="op-section-pill op-section-admin">Admin</span>'
+          : '<span class="op-section-pill op-section-'+escHTML(section)+'">'+escHTML(sectionLbl)+'</span>';
+        return '<div class="op-item'+(isMe?' is-me':'')+'">'
+          + avatarHTML
+          + '<div class="op-info">'
+          +   '<div class="op-name">'+escHTML(nom)+(isMe?'<span class="op-me-tag">VOUS</span>':'')+'</div>'
+          +   '<div class="op-meta">'+sectionPill+escHTML(grade || '—')+' · '+timeAgo(u.ts)+'</div>'
+          + '</div>'
+          + '</div>';
+      }).join('');
+    }
+
+    panel.innerHTML =
+      '<div class="op-header">'
+      + '<span>🟢 Connectés</span>'
+      + '<span class="op-count-pill">'+list.length+'</span>'
+      + '</div>'
+      + bodyHTML;
+
+    // Positionner juste au-dessus du compteur, à droite de la sidebar
+    var rect = counter.getBoundingClientRect();
+    // Aligner verticalement : préfère afficher AU-DESSUS du counter
+    // (car il est tout en bas de la sidebar). Donc bottom = au-dessus du compteur.
+    panel.style.left = (rect.right + 8) + 'px';
+    panel.style.bottom = (window.innerHeight - rect.bottom) + 'px';
+    panel.style.top = 'auto';
+    panel.classList.add('show');
+    counter.classList.add('is-open');
+  };
 
   setTimeout(tryInit, 3000);
 })();
