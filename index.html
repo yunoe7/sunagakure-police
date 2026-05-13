@@ -38510,7 +38510,66 @@ function bbGetNinjas() {
     }
     list = dedup;
   }
+  // ─── Filtre tombstones (anti-zombie) ───
+  // Les fiches dont l'ID est dans la branche Firebase /sunagakure/bb_tombstones
+  // sont considérées comme définitivement supprimées. Même si un client avec
+  // un ancien code les re-pousse dans bingobook, on ne les affiche pas et on
+  // les retire activement du localStorage. Garantit la cohérence multi-clients.
+  try {
+    var tombs = bbGetTombstones();
+    if (tombs && Object.keys(tombs).length > 0) {
+      var beforeLen = list.length;
+      list = list.filter(function(n){ return !(n && tombs[String(n.id)]); });
+      // Si le filtre a retiré des entrées, on met à jour localStorage pour
+      // que la prochaine lecture soit plus rapide (pas besoin de re-filtrer).
+      if (list.length < beforeLen) {
+        try { localStorage.setItem('bb_ninjas', JSON.stringify(list)); } catch(e){}
+      }
+    }
+  } catch(eTomb){}
   return list;
+}
+
+// ─── TOMBSTONES (cimetière des fiches supprimées) ───────────────────────
+// Système anti-zombie : quand une fiche est supprimée, on inscrit son ID dans
+// /sunagakure/bb_tombstones avec un timestamp. Tous les clients (même ceux
+// avec une ancienne version du code) verront cette tombe et n'afficheront
+// plus la fiche. Évite que d'anciens navigateurs en cache ressuscitent des
+// fiches supprimées en re-poussant leur cache local vers Firebase.
+
+// Récupère la map des tombstones {id: timestamp} depuis localStorage
+function bbGetTombstones() {
+  try {
+    var raw = localStorage.getItem('bb_tombstones');
+    if (!raw) return {};
+    var obj = JSON.parse(raw);
+    return (obj && typeof obj === 'object' && !Array.isArray(obj)) ? obj : {};
+  } catch(e) { return {}; }
+}
+
+// Ajoute un ID au cimetière (localStorage + Firebase)
+function bbAddTombstone(id) {
+  if (id == null) return;
+  try {
+    var tombs = bbGetTombstones();
+    tombs[String(id)] = Date.now();
+    localStorage.setItem('bb_tombstones', JSON.stringify(tombs));
+  } catch(e){}
+  // Push ciblé Firebase
+  if (window._fbDB && window._fbRef && window._fbSet) {
+    try {
+      var r = window._fbRef(window._fbDB, 'sunagakure/bb_tombstones/' + String(id));
+      var p = window._fbSet(r, Date.now());
+      if (p && typeof p.catch === 'function') {
+        p.catch(function(err){
+          console.error('[BB-TOMB] Échec écriture tombe #'+id+' :', err);
+        });
+      }
+      console.info('[BB-TOMB] ✓ Tombe #'+id+' inscrite (anti-résurrection)');
+    } catch(e){
+      console.error('[BB-TOMB] Exception inscription tombe :', e);
+    }
+  }
 }
 function bbSaveNinjas(list) {
   var localOk = false;
@@ -38630,6 +38689,10 @@ function bbSaveOne(ninja) {
 // Supprime UNE seule fiche de Firebase (+ localStorage)
 function bbDeleteOne(id) {
   if (id == null) return false;
+  // 0) Inscription au cimetière AVANT la suppression : garantit que même si
+  //    un autre client (avec un ancien code) re-pousse la fiche, elle ne
+  //    sera plus affichée nulle part.
+  bbAddTombstone(id);
   // 1) Suppression localStorage
   try {
     var list = bbGetNinjas().filter(function(x){ return x && x.id !== id; });
@@ -42781,6 +42844,40 @@ document.addEventListener('DOMContentLoaded', function(){
                 }
               }
             } catch(eFilter){}
+            // ─── Filtre TOMBSTONES (anti-zombie permanent) ───
+            // Toute fiche dont l'ID est dans le cimetière est filtrée du
+            // snapshot avant écriture en local. Si un client avec un ancien
+            // code re-pousse une fiche supprimée, cette protection l'empêche
+            // de réapparaître sur les clients à jour. En bonus, on re-supprime
+            // la fiche zombie de Firebase pour nettoyer la base.
+            try {
+              var tombsMap = (typeof bbGetTombstones === 'function') ? bbGetTombstones() : {};
+              if (tombsMap && Object.keys(tombsMap).length > 0) {
+                var beforeT = val.length;
+                var zombies = [];
+                val = val.filter(function(n){
+                  if (n && tombsMap[String(n.id)]) {
+                    zombies.push(n.id);
+                    return false;
+                  }
+                  return true;
+                });
+                if (val.length < beforeT) {
+                  console.warn('[BB-TOMB] '+zombies.length+' fiche(s) zombie(s) filtrée(s) : IDs '+zombies.join(','));
+                  // Nettoyage actif : on re-supprime de Firebase les zombies
+                  // pour que la base soit propre (sans boucle car la tombe
+                  // existe déjà, donc même si on échoue ce n'est pas grave).
+                  if (window._fbDB && window._fbRef && window._fbSet) {
+                    zombies.forEach(function(zid){
+                      try {
+                        var rZ = window._fbRef(window._fbDB, 'sunagakure/bingobook/' + String(zid));
+                        window._fbSet(rZ, null);
+                      } catch(eZ){}
+                    });
+                  }
+                }
+              }
+            } catch(eTombFilter){}
             // ─── Garde anti-snapshot-fantôme ───
             // Si on vient juste d'écrire localement (< 8s) et que le snapshot reçu
             // ne contient PAS tous les IDs qu'on a écrits, c'est un snapshot fantôme
@@ -42817,6 +42914,41 @@ document.addEventListener('DOMContentLoaded', function(){
             // est temporairement indisponible.)
           }
         });
+
+        // ─── Listener TOMBSTONES (cimetière) ───
+        // Quand un autre client supprime une fiche, sa tombe est inscrite
+        // dans /sunagakure/bb_tombstones. On reçoit la mise à jour ici et
+        // on synchronise notre cache local pour que la fiche soit filtrée
+        // partout (y compris si un ancien navigateur l'a re-poussée).
+        try {
+          var rT = window._fbRef(window._fbDB, 'sunagakure/bb_tombstones');
+          window._fbOnValue(rT, function(snapT){
+            var valT = snapT.val();
+            if (!valT || typeof valT !== 'object') return;
+            try {
+              // Fusionner avec le cimetière local (on garde le timestamp le plus récent)
+              var local = (typeof bbGetTombstones === 'function') ? bbGetTombstones() : {};
+              var changed = false;
+              Object.keys(valT).forEach(function(idStr){
+                var ts = valT[idStr];
+                if (typeof ts === 'number' && (!local[idStr] || local[idStr] < ts)) {
+                  local[idStr] = ts;
+                  changed = true;
+                }
+              });
+              if (changed) {
+                try { localStorage.setItem('bb_tombstones', JSON.stringify(local)); } catch(eL){}
+                console.info('[BB-TOMB] Cimetière synchronisé : '+Object.keys(local).length+' tombe(s) connue(s)');
+                // Re-render pour appliquer le filtre (la liste affichée doit
+                // exclure les fiches dont l'ID vient d'être enterré).
+                if (typeof bbRender === 'function') bbRender();
+                if (typeof lgRenderBingoBook === 'function') lgRenderBingoBook();
+              }
+            } catch(eTombSync){}
+          });
+        } catch(eAttachTomb){
+          console.error('[BB-TOMB] Échec attache listener cimetière :', eAttachTomb);
+        }
       } catch(e){}
     } else if (bbWaits > 60) {
       // ~6 secondes : on abandonne sans casser la page (mode local pur)
