@@ -29562,12 +29562,24 @@ function removeRecruPhoto(id){
 function openRecrue(id){
   id=parseInt(id);
   const c=DB.candidatures.find(x=>String(x.id)===String(id));if(!c)return;
+  // Garde : vérifier que le modal existe bien dans le DOM avant de tenter
+  // de manipuler ses éléments. Sans ça, si on est sur une page qui ne contient
+  // pas le modal (ex: Effectifs), el(...) renvoie null et .textContent crashe.
+  const modalEl = el("modal-recrue-action");
+  if(!modalEl){
+    if(typeof showToast === 'function') showToast('⚠ Modal indisponible — rechargez la page.', 'error');
+    console.error('[openRecrue] Le modal #modal-recrue-action est absent du DOM. Page active :', document.querySelector('.page-content.active')?.id);
+    return;
+  }
   populateGradeSelects();
-  el("ra-id").value=id;
-  el("ra-title").textContent=`Gérer — ${c.nom}`;
-  el("ra-grade-cur").textContent=c.grade||"Stagiaire";
-  el("ra-grade").value=c.grade||getGrades()[0];
-  el("ra-motif").value="";
+  // Helpers tolérants : on évite les .textContent sur null
+  const setVal = function(eid, v){ var x = el(eid); if(x) x.value = v; };
+  const setText = function(eid, t){ var x = el(eid); if(x) x.textContent = t; };
+  setVal("ra-id", id);
+  setText("ra-title", `Gérer — ${c.nom}`);
+  setText("ra-grade-cur", c.grade||"Stagiaire");
+  setVal("ra-grade", c.grade||getGrades()[0]);
+  setVal("ra-motif", "");
   openModal("modal-recrue-action");
 }
 
