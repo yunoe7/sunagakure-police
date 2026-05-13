@@ -42696,19 +42696,54 @@ document.addEventListener('DOMContentLoaded', function(){
                   // Aucune suppression récente → on refuse l'écrasement
                   // qui ferait perdre des fiches.
                   console.warn('[BB-SYNC] Snapshot refusé : '+val.length+' fiches reçues vs '+localArr.length+' en local (pas de suppression récente)');
+
+                  // ─── Anti-boucle : on ne re-push que 3 fois max ───
+                  // Si Firebase refuse l'écriture (PERMISSION_DENIED, règles
+                  // de sécurité), re-pousser à chaque snapshot crée une boucle
+                  // infinie. On limite à 3 tentatives, puis on abandonne et
+                  // on prévient l'utilisateur que la sync est cassée.
+                  window._bbRePushCount = (window._bbRePushCount || 0) + 1;
+                  if (window._bbRePushCount > 3) {
+                    console.error('[BB-SYNC] ⛔ Re-push abandonné après 3 tentatives — Firebase refuse l\'écriture.');
+                    console.error('[BB-SYNC] Vérifiez les règles Firebase pour /sunagakure/bingobook et l\'auth anonyme.');
+                    if (!window._bbRePushWarned) {
+                      window._bbRePushWarned = true;
+                      if(typeof showToast==='function') showToast('⛔ Firebase refuse les écritures — vérifiez les règles de sécurité de la base.', 'error');
+                    }
+                    return; // on garde le local mais on n'essaie plus
+                  }
+
                   // On RE-pousse notre version locale vers Firebase pour
                   // restaurer la cohérence (le serveur avait un état obsolète).
                   try {
                     if (window._fbDB && window._fbRef && window._fbSet) {
                       var fbObj = {};
                       localArr.forEach(function(n){ if(n && n.id != null) fbObj[String(n.id)] = n; });
-                      window._fbSet(window._fbRef(window._fbDB, 'sunagakure/bingobook'), fbObj);
-                      console.info('[BB-SYNC] Re-poussé '+localArr.length+' fiches locales vers Firebase');
+                      var pPush = window._fbSet(window._fbRef(window._fbDB, 'sunagakure/bingobook'), fbObj);
+                      console.info('[BB-SYNC] Re-poussé '+localArr.length+' fiches locales vers Firebase (tentative '+window._bbRePushCount+'/3)');
+                      // CRITIQUE : on attache un .catch pour voir la VRAIE erreur
+                      // si Firebase refuse l'écriture (ex: PERMISSION_DENIED).
+                      if (pPush && typeof pPush.catch === 'function') {
+                        pPush.catch(function(errPush){
+                          var codePush = (errPush && errPush.code) || (errPush && errPush.message) || 'inconnue';
+                          console.error('[BB-SYNC] ❌ Re-push refusé par Firebase :', errPush);
+                          if (!window._bbRePushWarned) {
+                            window._bbRePushWarned = true;
+                            if(typeof showToast==='function') showToast('⛔ Firebase refuse les écritures : '+codePush, 'error');
+                          }
+                        });
+                      }
                     }
-                  } catch(ePush){}
+                  } catch(ePush){
+                    console.error('[BB-SYNC] Exception lors du re-push :', ePush);
+                  }
                   return;
                 }
               }
+              // Snapshot accepté (taille ≥ local OU suppression récente) → on
+              // remet à zéro le compteur de re-push pour les prochains cycles.
+              window._bbRePushCount = 0;
+              window._bbRePushWarned = false;
             } catch(eGuard){}
             try { localStorage.setItem('bb_ninjas', JSON.stringify(val)); } catch(e){}
             if(typeof bbRender === 'function') bbRender();
