@@ -3375,6 +3375,32 @@ html{-webkit-tap-highlight-color:transparent}
     0 6px 28px rgba(180,0,0,0.55),
     inset 0 0 0 1px rgba(255,55,55,0.12) !important;
 }
+/* === Variante DISPARU : orange ambré (incertitude, urgence non létale) === */
+.rcv2-card.is-missing{
+  border-color:rgba(245,158,11,0.45) !important;
+  box-shadow:0 4px 20px rgba(120,80,0,0.35),inset 0 0 0 1px rgba(255,200,80,0.06);
+  /* Légèrement désaturé pour signaler que la personne est introuvable, sans
+     virer au gris-mort comme les défunts (ils ne sont pas morts, ils manquent) */
+  filter:saturate(0.85) brightness(0.92);
+}
+.rcv2-card.is-missing:hover{
+  filter:saturate(0.95) brightness(1);
+  border-color:rgba(245,158,11,0.65) !important;
+  box-shadow:0 6px 28px rgba(140,90,0,0.45),inset 0 0 0 1px rgba(255,200,80,0.1);
+}
+.rcv2-card-defunt-stamp.is-missing{
+  background:rgba(180,110,0,0.1);
+  color:rgba(252,180,40,1);
+  border-color:rgba(252,180,40,0.9);
+  box-shadow:
+    inset 0 0 0 1px rgba(252,180,40,0.35),
+    0 2px 8px rgba(140,80,0,0.4),
+    0 0 10px rgba(252,180,40,0.2);
+  text-shadow:
+    0 0 2px rgba(252,180,40,0.85),
+    1px 1px 0 rgba(110,60,0,0.65);
+  filter:contrast(1.1) saturate(1.15);
+}
 .rcv2-card::before{
   content:'';position:absolute;inset:0;pointer-events:none;border-radius:inherit;
   background:linear-gradient(135deg,rgba(255,255,255,0.04) 0%,transparent 30%);
@@ -17193,15 +17219,32 @@ document.addEventListener('error', function(e){
 
     <!-- HISTORIQUE RÉCUPÉRATIONS DIRECTION (admin) -->
     <div class="imp-section" id="imp-recup-section" style="display:none;margin-top:20px">
-      <div class="imp-section-title"><span style="color:#d4b44a">👑</span>Historique récupérations Direction</div>
+      <div class="imp-section-title"><span style="color:#d4b44a">👑</span>Encaissements — Semaine en cours</div>
       <div style="display:flex;align-items:center;gap:6px;font-size:11px;color:rgba(255,255,255,0.45);margin-bottom:12px">
-        <span>🔒</span>Visible uniquement par Direction & Admin
+        <span>🔒</span>Visible par le haut commandement (co-gérant et plus)
       </div>
       <div class="imp-total-banner">
-        <div class="lbl">Total récupéré (toutes opérations)</div>
+        <div class="lbl">Total semaine en cours</div>
         <div class="val"><span id="imp-recup-total">0</span><span class="ryos">RYOS</span></div>
       </div>
+      <!-- Bouton de clôture de semaine (visible si encaissements en cours + permission) -->
+      <div style="display:flex;justify-content:flex-end;margin:10px 0 14px 0">
+        <button id="imp-close-week-btn"
+                class="btn btn-primary"
+                style="display:none;background:linear-gradient(135deg,#7c5a1a,#b8893a);border:1px solid rgba(212,180,74,0.4);font-weight:600;letter-spacing:0.5px"
+                onclick="impCloseWeek()"
+                title="Archive tous les encaissements en cours et redémarre la semaine à zéro">
+          📦 Clôturer la semaine
+        </button>
+      </div>
       <div id="imp-recup-list"></div>
+
+      <!-- ARCHIVES DES SEMAINES PRÉCÉDENTES -->
+      <div class="imp-section-title" style="margin-top:28px"><span style="color:#b8893a">📚</span>Archives des semaines précédentes</div>
+      <div style="font-size:11px;color:rgba(255,255,255,0.4);margin-bottom:12px;font-style:italic">
+        Historique des semaines clôturées — chaque entrée regroupe les encaissements de la semaine.
+      </div>
+      <div id="imp-archives-list"></div>
     </div>
   </div>
 
@@ -18591,6 +18634,7 @@ document.addEventListener('error', function(e){
           <label class="rcv2-fld-label">Statut de vie</label>
           <select id="r-defunt-statut" class="rcv2-input">
             <option value="">🟢 Vivant</option>
+            <option value="disparition">🟡 Disparu</option>
             <option value="defunt-suna">⚱️ Défunt de Suna (mort naturelle ou en mission)</option>
             <option value="execution">⚔️ Défunt par exécution</option>
           </select>
@@ -24634,13 +24678,26 @@ function renderRecensement(){
     const metierClanHTML = metierClanChips.length
       ? `<div class="rcv2-card-meta">${metierClanChips.join("")}</div>`
       : "";
-    // Statut défunt : tampon "DÉFUNT" rouge bordeaux ou "EXÉCUTÉ" rouge sang vif en diagonale
+    // Statut défunt/disparu : tampons en diagonale sur la carte
+    // - "Défunt" rouge bordeaux (mort naturelle)
+    // - "Exécuté" rouge sang vif (exécution)
+    // - "Disparu" orange ambré (disparition)
     const isDefunt = r.defuntStatut === "defunt-suna" || r.defuntStatut === "execution";
     const isExecuted = r.defuntStatut === "execution";
-    const defuntClass = isDefunt ? " is-defunt" + (isExecuted ? " is-executed" : "") : "";
-    const stampText = isExecuted ? "Exécuté" : "Défunt";
-    const stampClass = isExecuted ? "rcv2-card-defunt-stamp is-executed" : "rcv2-card-defunt-stamp";
-    const defuntBadge = isDefunt
+    const isMissing = r.defuntStatut === "disparition";
+    var defuntClass = "";
+    var stampText = "";
+    var stampClass = "";
+    if(isDefunt){
+      defuntClass = " is-defunt" + (isExecuted ? " is-executed" : "");
+      stampText = isExecuted ? "Exécuté" : "Défunt";
+      stampClass = isExecuted ? "rcv2-card-defunt-stamp is-executed" : "rcv2-card-defunt-stamp";
+    } else if(isMissing){
+      defuntClass = " is-missing";
+      stampText = "Disparu";
+      stampClass = "rcv2-card-defunt-stamp is-missing";
+    }
+    const defuntBadge = (isDefunt || isMissing)
       ? `<div class="${stampClass}">${stampText}</div>`
       : "";
 
@@ -24779,7 +24836,7 @@ function saveRecense(){
   // Clan : pareil
   const clanSel = v("r-clan") || "";
   const clan = (clanSel === "Autre") ? (v("r-clan-autre") || "Autre") : clanSel;
-  // Statut défunt : "" = vivant, "defunt-suna" = mort naturelle, "execution" = exécuté
+  // Statut défunt : "" = vivant, "disparition" = disparu, "defunt-suna" = mort naturelle, "execution" = exécuté
   const defuntStatut = v("r-defunt-statut") || "";
 
   if(_recenseEditId){
@@ -29969,6 +30026,11 @@ function impInitDB(){
   }
   if(!Array.isArray(DB.impots.ninjas))    DB.impots.ninjas    = [];
   if(!Array.isArray(DB.impots.recups))    DB.impots.recups    = [];
+  // ─── NOUVEAU : Archives hebdomadaires des encaissements ───
+  // Chaque entrée = une "semaine clôturée" : { id, label, debut, fin, cloturePar,
+  //   clotureLe, total, encaissements: [...] (les recups de cette semaine) }
+  // Le label est libre (généré auto avec dates fr-FR, ex: "S46 — 11/05 → 17/05").
+  if(!Array.isArray(DB.impots.recupsArchives)) DB.impots.recupsArchives = [];
   if(typeof DB.impots.totalHistorical !== 'number') DB.impots.totalHistorical = 0;
   // ─── MIGRATION : Hokage → Kazekage (le village de Sunagakure a un Kazekage) ───
   // Renomme l'entrée du barème + tous les ninjas qui ont l'ancien grade.
@@ -30077,13 +30139,37 @@ function impResyncAllFromRecenses(){
   DB.recenses.forEach(r => impSyncFromRecense(r));
 }
 
+// ─── Permissions Encaissements (Direction des Impôts) ──────────────────
+// Qui peut VOIR la section "Historique récupérations Direction" et les archives ?
+//   - admins du site
+//   - haut commandement de la Police
+//   - gérants et co-gérants de la Police
+// Note : les sergents/officiers n'ont PAS accès (info financière sensible).
+function impCanSeeRecups(){
+  if(!currentUser) return false;
+  if(currentUser.role === 'admin') return true;
+  if(currentUser.role === 'hautcommandement') return true;
+  // Pour gérant/co-gérant : doivent être de la Police (pas d'une autre section)
+  if((currentUser.section === 'police' || !currentUser.section)
+     && (currentUser.role === 'gerant' || currentUser.role === 'cogerant')){
+    return true;
+  }
+  return false;
+}
+// Qui peut CLÔTURER une semaine (= déclencher l'archivage) ?
+// Même permissions que la lecture — co-gérant et au-dessus.
+function impCanCloseWeek(){ return impCanSeeRecups(); }
+
 function renderImpots(){
   impInitDB();
   // Resync depuis les recensés existants (idempotent : ne crée que les manquants)
   if(typeof impResyncAllFromRecenses === 'function') impResyncAllFromRecenses();
   const isAdmin = currentUser && currentUser.role === 'admin';
-  const showDirection = isAdmin;
-  document.getElementById('imp-direction-panel').style.display = showDirection ? '' : 'none';
+  // Permission "Direction" élargie : admin, haut commandement, gérant, co-gérant.
+  // (avant : seul l'admin du site avait accès → désormais le haut commandement
+  // de la police peut aussi voir les encaissements et clôturer les semaines)
+  const showDirection = impCanSeeRecups();
+  document.getElementById('imp-direction-panel').style.display = isAdmin ? '' : 'none';
   document.getElementById('imp-add-panel').style.display = isAdmin ? '' : 'none';
   document.getElementById('imp-recup-section').style.display = showDirection ? '' : 'none';
 
@@ -30400,12 +30486,18 @@ function renderImpotsRecups(){
   const total = recups.reduce((s,r) => s + (r.total||0), 0);
   document.getElementById('imp-recup-total').textContent = impFmt(total);
 
+  // Affiche/masque le bouton "Clôturer la semaine" selon les permissions
+  // et selon qu'il y ait quelque chose à clôturer.
+  const closeBtn = document.getElementById('imp-close-week-btn');
+  if(closeBtn){
+    closeBtn.style.display = (impCanCloseWeek() && recups.length > 0) ? '' : 'none';
+  }
+
   const list = document.getElementById('imp-recup-list');
   if(!recups.length){
-    list.innerHTML = '<div class="imp-empty" style="border:1px dashed rgba(180,140,20,0.2);border-radius:8px">— Aucune récupération enregistrée —</div>';
-    return;
-  }
-  list.innerHTML = recups.map((r, idx) => {
+    list.innerHTML = '<div class="imp-empty" style="border:1px dashed rgba(180,140,20,0.2);border-radius:8px">— Aucune récupération en cours cette semaine —</div>';
+  } else {
+    list.innerHTML = recups.map((r, idx) => {
     const dateStr = new Date(r.date).toLocaleDateString('fr-FR');
     const detRows = (r.items||[]).map(it => {
       const gColor = impGradeColorFor(it.grade);
@@ -30422,14 +30514,17 @@ function renderImpotsRecups(){
       +   '<div class="det-foot"><button class="btn btn-danger btn-sm" onclick="impDeleteRecup('+r.id+')">🗑 Supprimer cette entrée</button></div>'
       + '</div>'
       + '</div>';
-  }).join('');
+    }).join('');
+  }
+  // Rendre la section des archives (peu importe si la semaine en cours est vide)
+  if(typeof impRenderArchives === 'function') impRenderArchives();
 }
 function impToggleRecup(idx){
   const card = document.querySelector('#imp-recup-list .imp-recup-card[data-idx="'+idx+'"]');
   if(card) card.classList.toggle('open');
 }
 function impDeleteRecup(id){
-  if(!currentUser || currentUser.role !== 'admin') return;
+  if(!impCanCloseWeek()) return;
   askDelete('Supprimer cette entrée d\'historique ? Le total historique sera ajusté.', function(){
     impInitDB();
     const r = DB.impots.recups.find(x => x.id === id);
@@ -30437,6 +30532,138 @@ function impDeleteRecup(id){
     DB.impots.recups = DB.impots.recups.filter(x => x.id !== id);
     saveData(); renderImpots();
     showToast('Entrée supprimée.', 'info');
+  }, '🗑 Supprimer');
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// ARCHIVES HEBDOMADAIRES DES ENCAISSEMENTS
+// ═══════════════════════════════════════════════════════════════════════
+// Concept : la liste DB.impots.recups représente "la semaine en cours".
+// Quand le haut commandement clique sur "Clôturer la semaine", tous les
+// encaissements en cours sont déplacés dans DB.impots.recupsArchives,
+// regroupés en une "archive de semaine". La liste courante repart à vide
+// et le total historique cumulé est préservé.
+//
+// Aucune date fixe de clôture : c'est manuel selon décision du haut commandement.
+
+// Génère un label lisible pour une archive de semaine en se basant sur les
+// dates min/max des encaissements qu'elle contient.
+function impWeekLabel(debut, fin){
+  if(!debut || !fin) return 'Semaine sans date';
+  const d1 = new Date(debut);
+  const d2 = new Date(fin);
+  const fmt = function(d){ return d.toLocaleDateString('fr-FR', {day:'2-digit', month:'2-digit', year:'numeric'}); };
+  // Si même jour, ne pas répéter
+  if(fmt(d1) === fmt(d2)) return fmt(d1);
+  return fmt(d1) + ' → ' + fmt(d2);
+}
+
+// Clôture la semaine en cours : déplace les recups vers les archives.
+// Appelé par le bouton "Clôturer la semaine" (haut commandement uniquement).
+function impCloseWeek(){
+  if(!impCanCloseWeek()){
+    showToast('⛔ Action réservée au haut commandement.', 'error');
+    return;
+  }
+  impInitDB();
+  const recups = DB.impots.recups || [];
+  if(!recups.length){
+    showToast('Aucun encaissement à archiver pour cette semaine.', 'info');
+    return;
+  }
+  const total = recups.reduce((s,r) => s + (r.total||0), 0);
+  const count = recups.length;
+  askDelete(
+    'Clôturer la semaine ?\n\n'
+    + count + ' encaissement(s) — '+impFmt(total)+' Ryos\n\n'
+    + 'Ils seront archivés et la nouvelle semaine repartira à zéro. Le total historique est conservé.',
+    function(){
+      // Calcul de la fourchette de dates
+      const dates = recups.map(r => r.date || 0).filter(d => d > 0);
+      const debut = dates.length ? Math.min.apply(null, dates) : Date.now();
+      const fin   = dates.length ? Math.max.apply(null, dates) : Date.now();
+      const archive = {
+        id: Date.now() + Math.floor(Math.random()*1000),
+        label: impWeekLabel(debut, fin),
+        debut: debut,
+        fin: fin,
+        cloturePar: (currentUser && (currentUser.nom || currentUser.login)) || '?',
+        clotureLe: Date.now(),
+        total: total,
+        count: count,
+        encaissements: JSON.parse(JSON.stringify(recups))
+      };
+      // Ajouter en tête (= plus récent en premier)
+      DB.impots.recupsArchives.unshift(archive);
+      // Vider la liste courante
+      DB.impots.recups = [];
+      saveData();
+      renderImpots();
+      showToast('📦 Semaine clôturée — '+impFmt(total)+' Ryos archivés.', 'success');
+    },
+    '📦 Clôturer'
+  );
+}
+
+// Re-render la zone des archives (la liste des semaines clôturées).
+// Appelée à la fin de renderImpotsRecups.
+function impRenderArchives(){
+  impInitDB();
+  const wrap = document.getElementById('imp-archives-list');
+  if(!wrap) return;
+  const archives = DB.impots.recupsArchives || [];
+  if(!archives.length){
+    wrap.innerHTML = '<div class="imp-empty" style="border:1px dashed rgba(180,140,20,0.2);border-radius:8px;padding:18px;text-align:center;color:rgba(255,255,255,0.4);font-style:italic">— Aucune semaine archivée pour le moment —</div>';
+    return;
+  }
+  wrap.innerHTML = archives.map(function(a, idx){
+    // Détail interne : chaque encaissement de la semaine
+    const detRows = (a.encaissements||[]).map(function(r){
+      const dateStr = r.date ? new Date(r.date).toLocaleDateString('fr-FR') : '—';
+      return '<div class="det-row">'
+        + '<div><span class="nm">'+esc(r.collectedBy||'?')+'</span>'
+        +   '<span class="grade-pill" style="background:rgba(212,180,74,0.15);color:#d4b44a;border:1px solid rgba(212,180,74,0.35)">sur '+esc(r.collecteur||r.nom||'?')+'</span>'
+        +   '<span style="font-size:10px;color:rgba(255,255,255,0.4);margin-left:8px">'+dateStr+'</span>'
+        + '</div>'
+        + '<div class="am">'+impFmt(r.total||0)+' Ryos</div>'
+        + '</div>';
+    }).join('');
+    const closeDate = a.clotureLe ? new Date(a.clotureLe).toLocaleDateString('fr-FR') : '—';
+    const canDelete = impCanCloseWeek();
+    return '<div class="imp-recup-card" data-idx="arch-'+idx+'">'
+      + '<div class="imp-recup-head" onclick="impToggleArchive('+idx+')">'
+      +   '<div class="imp-recup-avatar" style="background:linear-gradient(135deg,#7c5a1a,#b8893a);font-size:18px">📦</div>'
+      +   '<div class="imp-recup-info">'
+      +     '<div class="nm">'+esc(a.label||'Semaine archivée')+'</div>'
+      +     '<div class="sub">'+(a.count||0)+' encaissement(s) · clôturé par '+esc(a.cloturePar||'?')+' le '+closeDate+'</div>'
+      +   '</div>'
+      +   '<div class="imp-recup-amt">'+impFmt(a.total||0)+'<span class="lbl">Ryos</span></div>'
+      +   '<div class="imp-recup-arrow">▼</div>'
+      + '</div>'
+      + '<div class="imp-recup-detail">'+detRows
+      + (canDelete ? '<div class="det-foot"><button class="btn btn-danger btn-sm" onclick="impDeleteArchive('+a.id+')">🗑 Supprimer cette archive</button></div>' : '')
+      + '</div>'
+      + '</div>';
+  }).join('');
+}
+
+// Toggle l'ouverture/fermeture d'une carte d'archive
+function impToggleArchive(idx){
+  const card = document.querySelector('#imp-archives-list .imp-recup-card[data-idx="arch-'+idx+'"]');
+  if(card) card.classList.toggle('open');
+}
+
+// Supprime une archive de semaine (haut commandement uniquement).
+// ATTENTION : ne touche PAS au total historique (l'argent a bien été encaissé,
+// on supprime juste l'enregistrement archivé).
+function impDeleteArchive(id){
+  if(!impCanCloseWeek()) return;
+  askDelete('Supprimer définitivement cette archive de semaine ?\n\nLes encaissements en seront perdus (le total historique reste inchangé).', function(){
+    impInitDB();
+    DB.impots.recupsArchives = (DB.impots.recupsArchives||[]).filter(function(a){ return a.id !== id; });
+    saveData();
+    renderImpots();
+    showToast('Archive supprimée.', 'info');
   }, '🗑 Supprimer');
 }
 
