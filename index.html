@@ -38544,11 +38544,35 @@ function bbSaveNinjas(list) {
       var p = window._fbSet(r, fbObj);
       if (p && typeof p.catch === 'function') {
         p.catch(function(err){
-          if(typeof showToast==='function') showToast('Échec de synchronisation (image trop lourde ?)', 'error');
+          // Affiche le VRAI code d'erreur Firebase (au lieu du message générique
+          // "image trop lourde" qui masque les vraies causes : PERMISSION_DENIED,
+          // réseau, quota, etc.)
+          var code = (err && err.code) || (err && err.message) || 'inconnue';
+          console.error('[BB-SYNC] Échec écriture Firebase :', err);
+          if(typeof showToast==='function') showToast('⚠ Échec sync Firebase : '+code, 'error');
+          // ─── Retry automatique 1 fois après 2s ───
+          // Couvre les coupures réseau transitoires et les courses d'auth
+          // (auth pas encore prête à la première tentative).
+          setTimeout(function(){
+            try {
+              if (window._fbDB && window._fbRef && window._fbSet) {
+                var r2 = window._fbRef(window._fbDB, 'sunagakure/bingobook');
+                var p2 = window._fbSet(r2, fbObj);
+                if (p2 && typeof p2.catch === 'function') {
+                  p2.catch(function(err2){
+                    var code2 = (err2 && err2.code) || (err2 && err2.message) || 'inconnue';
+                    console.error('[BB-SYNC] Retry échec :', err2);
+                    if(typeof showToast==='function') showToast('⚠ Sync impossible : '+code2+' (sauvegardé en local uniquement)', 'error');
+                  });
+                }
+              }
+            } catch(e3){}
+          }, 2000);
         });
       }
     } catch(e) {
-      if(typeof showToast==='function') showToast('Erreur de synchronisation Firebase', 'error');
+      console.error('[BB-SYNC] Exception sync Firebase :', e);
+      if(typeof showToast==='function') showToast('Erreur sync Firebase : '+(e.message||e), 'error');
     }
   }
   // Mettre à jour la prévisualisation du Bingo Book sur la page login
@@ -39783,6 +39807,9 @@ function bbDeleteById(id) {
   // Garde de sécurité
   if(!bbCanEdit()){ if(typeof showToast==='function') showToast("⛔ Action réservée aux administrateurs et diplomates.", "error"); return; }
   askDelete('Supprimer cette fiche du Bingo Book ?', function() {
+    // Marqueur de suppression volontaire : autorise le listener Firebase à
+    // accepter un snapshot plus court que le cache local pendant 15s.
+    try { window._bbLastDeleteAt = Date.now(); } catch(e){}
     var list = bbGetNinjas().filter(function(x){return x.id!==id});
     bbSaveNinjas(list);
     bbRender();
@@ -42634,7 +42661,7 @@ document.addEventListener('DOMContentLoaded', function(){
           // affichées sur les autres appareils → bug bien réel.
           if (Array.isArray(val)) {
             // ─── Garde anti-snapshot-fantôme ───
-            // Si on vient juste d'écrire localement (< 3s) et que le snapshot reçu
+            // Si on vient juste d'écrire localement (< 8s) et que le snapshot reçu
             // ne contient PAS tous les IDs qu'on a écrits, c'est un snapshot fantôme
             // pré-écriture qui annulerait notre ajout. On l'ignore.
             try {
@@ -42648,10 +42675,41 @@ document.addEventListener('DOMContentLoaded', function(){
                 lastIds.forEach(function(id){ if(!snapIdSet[String(id)]) missingCount++; });
                 if (missingCount > 0) {
                   // Snapshot incomplet → on ignore et on garde notre version locale
+                  console.warn('[BB-SYNC] Snapshot ignoré : '+missingCount+' fiche(s) manquante(s) (anti-fantôme 8s)');
                   return;
                 }
               }
             } catch(e){}
+            // ─── Garde renforcée : refus de "shrink" non intentionnel ───
+            // Si le snapshot reçu est STRICTEMENT plus court que notre cache local
+            // ET qu'aucune suppression locale n'a été faite récemment (< 15s),
+            // on refuse l'écrasement. Couvre le cas où Firebase renvoie une
+            // version obsolète (avant écriture) et tente d'écraser des fiches
+            // valides en local.
+            try {
+              var localRaw = localStorage.getItem('bb_ninjas');
+              var localArr = localRaw ? JSON.parse(localRaw) : null;
+              if (Array.isArray(localArr) && localArr.length > val.length) {
+                var lastDelete = window._bbLastDeleteAt || 0;
+                var sinceDelete = Date.now() - lastDelete;
+                if (lastDelete === 0 || sinceDelete > 15000) {
+                  // Aucune suppression récente → on refuse l'écrasement
+                  // qui ferait perdre des fiches.
+                  console.warn('[BB-SYNC] Snapshot refusé : '+val.length+' fiches reçues vs '+localArr.length+' en local (pas de suppression récente)');
+                  // On RE-pousse notre version locale vers Firebase pour
+                  // restaurer la cohérence (le serveur avait un état obsolète).
+                  try {
+                    if (window._fbDB && window._fbRef && window._fbSet) {
+                      var fbObj = {};
+                      localArr.forEach(function(n){ if(n && n.id != null) fbObj[String(n.id)] = n; });
+                      window._fbSet(window._fbRef(window._fbDB, 'sunagakure/bingobook'), fbObj);
+                      console.info('[BB-SYNC] Re-poussé '+localArr.length+' fiches locales vers Firebase');
+                    }
+                  } catch(ePush){}
+                  return;
+                }
+              }
+            } catch(eGuard){}
             try { localStorage.setItem('bb_ninjas', JSON.stringify(val)); } catch(e){}
             if(typeof bbRender === 'function') bbRender();
             if(typeof lgRenderBingoBook === 'function') lgRenderBingoBook();
