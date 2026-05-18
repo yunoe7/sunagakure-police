@@ -1,0 +1,298 @@
+/* ════════════════════════════════════════════════════════════════
+   CAISSE POLICE — Comptabilité
+   ════════════════════════════════════════════════════════════════ */
+
+/* ─── HERO : SOLDE ET STATS ─── */
+.heroBox {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr;
+  gap: 16px;
+  margin-bottom: 22px;
+}
+@media (max-width: 700px) {
+  .heroBox { grid-template-columns: 1fr; }
+}
+
+.soldeBox {
+  background: linear-gradient(180deg, #15110b, #1a140c);
+  border: 1px solid rgba(212,180,74,0.3);
+  border-radius: 12px;
+  padding: 22px 26px;
+  position: relative;
+  overflow: hidden;
+}
+.soldeBox::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--gold2), transparent);
+}
+.soldeLabel {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 2px;
+  color: rgba(212,180,74,0.7);
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+.soldeValue {
+  font-family: 'Cinzel', serif;
+  font-size: 42px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  line-height: 1.1;
+  margin-bottom: 6px;
+}
+.positif {
+  color: var(--gold2);
+  text-shadow: 0 0 24px rgba(212,180,74,0.4);
+}
+.negatif {
+  color: #fca5a5;
+  text-shadow: 0 0 24px rgba(239,68,68,0.4);
+}
+.soldeSub {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 11px;
+  color: var(--muted);
+  letter-spacing: 0.5px;
+}
+
+.statsRight {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.statBox {
+  flex: 1;
+  background: linear-gradient(180deg, #15110b, #1a140c);
+  border: 1px solid rgba(180,140,20,0.22);
+  border-radius: 10px;
+  padding: 14px 18px;
+  position: relative;
+  overflow: hidden;
+}
+.statBox::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+}
+.statEntrees::before { background: linear-gradient(90deg, transparent, #22c55e, transparent); }
+.statSorties::before { background: linear-gradient(90deg, transparent, #ef4444, transparent); }
+
+.statHead {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 9.5px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  margin-bottom: 6px;
+}
+.statEntrees .statHead { color: #86efac; }
+.statSorties .statHead { color: #fca5a5; }
+
+.statValue {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+.statEntrees .statValue { color: #86efac; }
+.statSorties .statValue { color: #fca5a5; }
+
+/* ─── FILTRES ─── */
+.filters {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 18px;
+  flex-wrap: wrap;
+}
+.fbtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 13px;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(212,180,74,0.18);
+  border-radius: 6px;
+  color: var(--text2);
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.fbtn:hover {
+  background: rgba(212,180,74,0.1);
+  border-color: rgba(212,180,74,0.35);
+}
+.fbtnOn {
+  background: linear-gradient(180deg, rgba(212,180,74,0.22), rgba(212,180,74,0.1));
+  border-color: rgba(212,180,74,0.55);
+  color: var(--gold2);
+}
+.fbtnEntree.fbtnOn {
+  background: linear-gradient(180deg, rgba(34,197,94,0.25), rgba(34,197,94,0.1));
+  border-color: rgba(34,197,94,0.5);
+  color: #86efac;
+}
+.fbtnSortie.fbtnOn {
+  background: linear-gradient(180deg, rgba(239,68,68,0.25), rgba(239,68,68,0.1));
+  border-color: rgba(239,68,68,0.5);
+  color: #fca5a5;
+}
+
+/* ─── EMPTY ─── */
+.empty {
+  text-align: center;
+  padding: 60px 20px;
+  color: var(--muted);
+  font-style: italic;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+}
+
+/* ─── TABLE TRANSACTIONS ─── */
+.txTable {
+  width: 100%;
+  border-collapse: collapse;
+  background: linear-gradient(180deg, #15110b, #1a140c);
+  border: 1px solid rgba(180,140,20,0.22);
+  border-radius: 8px;
+  overflow: hidden;
+}
+.txTable th {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--gold2);
+  padding: 12px 14px;
+  text-align: left;
+  background: rgba(0,0,0,0.3);
+  border-bottom: 1px solid rgba(212,180,74,0.2);
+}
+.txTable td {
+  padding: 11px 14px;
+  font-size: 13px;
+  color: var(--text);
+  border-bottom: 1px solid rgba(201,162,39,0.06);
+}
+.txTable tbody tr {
+  cursor: pointer;
+  transition: background 0.12s;
+}
+.txTable tbody tr:hover {
+  background: rgba(212,180,74,0.05);
+}
+.txTable tbody tr:last-child td { border-bottom: none; }
+
+.mono {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 11.5px;
+  color: var(--text2);
+}
+.muted {
+  color: var(--muted);
+  font-size: 11.5px;
+}
+
+.typeChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  border-radius: 4px;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 9.5px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  font-weight: 700;
+}
+.chipEntree {
+  background: rgba(34,197,94,0.15);
+  color: #86efac;
+  border: 1px solid rgba(34,197,94,0.4);
+}
+.chipSortie {
+  background: rgba(239,68,68,0.15);
+  color: #fca5a5;
+  border: 1px solid rgba(239,68,68,0.4);
+}
+
+.amountCell {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+.amtPos { color: #86efac; }
+.amtNeg { color: #fca5a5; }
+
+.deleteBtn {
+  padding: 5px 7px;
+  border-radius: 4px;
+  color: var(--muted);
+  background: transparent;
+  transition: all 0.15s;
+  border: none;
+  cursor: pointer;
+}
+.deleteBtn:hover {
+  color: var(--red);
+  background: rgba(239,68,68,0.1);
+}
+
+/* ─── FORMULAIRE ─── */
+.formFields {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.formFields label {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: rgba(212,180,74,0.85);
+  font-weight: 700;
+}
+.formFields input,
+.formFields select {
+  padding: 10px 12px;
+  background: rgba(0,0,0,0.4);
+  border: 1px solid rgba(180,140,20,0.35);
+  border-radius: 6px;
+  color: var(--text);
+  font-size: 13px;
+  font-family: 'Barlow', sans-serif;
+  text-transform: none;
+  letter-spacing: normal;
+  font-weight: normal;
+}
+.formFields input:focus,
+.formFields select:focus {
+  outline: none;
+  border-color: rgba(212,180,74,0.65);
+  background: rgba(0,0,0,0.55);
+  box-shadow: 0 0 0 3px rgba(212,180,74,0.1);
+}
+
+.row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}

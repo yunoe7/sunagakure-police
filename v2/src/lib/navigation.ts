@@ -31,10 +31,10 @@ export const NAV_SECTIONS: NavSection[] = [
   {
     title: 'POLICE',
     items: [
-      { label: 'Casiers', href: '/police/casiers', icon: 'FileText' },
-      { label: 'Dossiers', href: '/police/dossiers', icon: 'Folder' },
+      { label: 'Casiers', href: '/casiers', icon: 'FileText' },
+      { label: 'Dossiers', href: '/dossiers', icon: 'Folder' },
       { label: 'Bingo Book', href: '/bingobook', icon: 'BookMarked' },
-      { label: 'Caisse', href: '/police/caisse', icon: 'Wallet' },
+      { label: 'Caisse', href: '/caisse', icon: 'Wallet' },
     ],
   },
   {
