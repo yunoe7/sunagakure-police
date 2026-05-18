@@ -7559,16 +7559,19 @@ document.addEventListener('error', function(e){
     <div class="nav-item" role="button" tabindex="0" onclick="showPage('juge-jugements')" data-page="juge-jugements" data-sec="juge"><span class="icon">⚖️</span> Jugements rendus <span class="nav-badge" id="badge-juge-jugements" style="background:var(--accent);display:none">0</span></div>
     <div class="nav-item" role="button" tabindex="0" onclick="showPage('juge-procedure')" data-page="juge-procedure" data-sec="juge"><span class="icon">📜</span> Code de procédure</div>
     <div class="nav-item" role="button" tabindex="0" onclick="showPage('juge-archives')" data-page="juge-archives" data-sec="juge"><span class="icon">📚</span> Archives</div>
+    <div class="nav-item" role="button" tabindex="0" onclick="showPage('juge-comptabilite')" data-page="juge-comptabilite" data-sec="juge"><span class="icon">💰</span> Comptabilité</div>
     <!-- AVOCAT -->
     <div class="nav-section" data-sec="avocat">Cabinet d'avocats</div>
     <div class="nav-item" role="button" tabindex="0" onclick="showPage('avocat-clients')" data-page="avocat-clients" data-sec="avocat"><span class="icon">👥</span> Mes clients <span class="nav-badge" id="badge-avocat-clients" style="background:var(--purple);display:none">0</span></div>
     <div class="nav-item" role="button" tabindex="0" onclick="showPage('avocat-affaires')" data-page="avocat-affaires" data-sec="avocat"><span class="icon">📁</span> Affaires en cours <span class="nav-badge" id="badge-avocat-affaires" style="background:var(--accent);display:none">0</span></div>
     <div class="nav-item" role="button" tabindex="0" onclick="showPage('avocat-plaidoiries')" data-page="avocat-plaidoiries" data-sec="avocat"><span class="icon">🗣️</span> Plaidoiries <span class="nav-badge" id="badge-avocat-plaidoiries" style="background:var(--cyan);display:none">0</span></div>
+    <div class="nav-item" role="button" tabindex="0" onclick="showPage('avocat-comptabilite')" data-page="avocat-comptabilite" data-sec="avocat"><span class="icon">💰</span> Comptabilité</div>
     <!-- MISSION -->
     <div class="nav-section" data-sec="mission">Missions</div>
     <div class="nav-item" role="button" tabindex="0" onclick="showPage('mission-disponibles')" data-page="mission-disponibles" data-sec="mission"><span class="icon">📋</span> Missions disponibles <span class="nav-badge" id="badge-mission-disponibles" style="background:var(--green);display:none">0</span></div>
     <div class="nav-item" role="button" tabindex="0" onclick="showPage('mission-actives')" data-page="mission-actives" data-sec="mission"><span class="icon">🎯</span> Mes missions <span class="nav-badge" id="badge-mission-actives" style="background:var(--accent);display:none">0</span></div>
     <div class="nav-item" role="button" tabindex="0" onclick="showPage('mission-recompenses')" data-page="mission-recompenses" data-sec="mission"><span class="icon">💰</span> Récompenses</div>
+    <div class="nav-item" role="button" tabindex="0" onclick="showPage('mission-comptabilite')" data-page="mission-comptabilite" data-sec="mission"><span class="icon">📊</span> Comptabilité</div>
     <!-- HÔPITAL -->
     <div class="nav-section" data-sec="medical">Hôpital</div>
     <div class="nav-item" role="button" tabindex="0" onclick="showPage('medical-patients')" data-page="medical-patients" data-sec="medical"><span class="icon">🛌</span> Patients <span class="nav-badge" id="badge-medical-patients" style="background:var(--purple);display:none">0</span></div>
@@ -7591,6 +7594,8 @@ document.addEventListener('error', function(e){
     <div class="nav-item" role="button" tabindex="0" onclick="showPage('diplo-comptabilite')" data-page="diplo-comptabilite" data-sec="diplomatie"><span class="icon">💰</span> Comptabilité</div>
 
     <div class="nav-section" data-member-only="true" data-sec="all">Administration</div>
+    <div class="nav-item" role="button" tabindex="0" id="nav-tresor" onclick="showPage('tresor-central')" style="display:none" data-sec="all"><span class="icon">🏛️</span> Trésor Central</div>
+    <div class="nav-item" role="button" tabindex="0" id="nav-caisse-police" onclick="showPage('caisse-police')" style="display:none" data-sec="all"><span class="icon">💴</span> Caisse Police</div>
     <div class="nav-item" role="button" tabindex="0" id="nav-casiers" onclick="showPage('casiers')" style="display:none" data-sec="all"><span class="icon">🗃️</span> Tous les casiers</div>
     <div class="nav-item" role="button" tabindex="0" id="nav-admin" onclick="showPage('admin')" style="display:none" data-sec="all"><span class="icon">⚙️</span> Panel Admin</div>
     <div class="nav-item" role="button" tabindex="0" onclick="showPage('profil')" data-page="profil" data-sec="all"><span class="icon">📋</span> Casier personnel</div>
@@ -14251,6 +14256,21 @@ document.addEventListener('error', function(e){
       <div id="trib-jur-list"></div>
     </div>
   </div>
+
+  <!-- JUGE — Comptabilité (auto-injected by section-compta module) -->
+  <div class="page-content" id="page-juge-comptabilite" data-sec-page="juge"></div>
+
+  <!-- AVOCAT — Comptabilité (auto-injected) -->
+  <div class="page-content" id="page-avocat-comptabilite" data-sec-page="avocat"></div>
+
+  <!-- MISSION — Comptabilité (auto-injected) -->
+  <div class="page-content" id="page-mission-comptabilite" data-sec-page="mission"></div>
+
+  <!-- CAISSE POLICE — Comptabilité (auto-injected) -->
+  <div class="page-content" id="page-caisse-police" data-sec-page="police"></div>
+
+  <!-- TRÉSOR CENTRAL — Vue agrégée hauts gradés (auto-injected) -->
+  <div class="page-content" id="page-tresor-central"></div>
 
   <!-- AVOCAT — Mes clients -->
   <div class="page-content" id="page-avocat-clients" data-sec-page="avocat">
@@ -21213,6 +21233,38 @@ function initFirebaseSync(){
             _changedKeys.add('diploComptabilite');
           }
         }
+        // [MODULE PATCH v2] DB.sectionsCompta — comptabilité partagée Tribunal/Avocat/Mission/Police
+        if(data.sectionsCompta && typeof data.sectionsCompta === 'object'){
+          // Normaliser les sous-arrays (Firebase RTDB peut renvoyer {0:...,1:...})
+          try{
+            ['juge','avocat','mission','police'].forEach(function(s){
+              if(data.sectionsCompta[s] && typeof data.sectionsCompta[s]==='object'){
+                ['transactions','archives'].forEach(function(k){
+                  var arr = data.sectionsCompta[s][k];
+                  if(arr && !Array.isArray(arr) && typeof arr === 'object'){
+                    data.sectionsCompta[s][k] = Object.values(arr).filter(Boolean);
+                  }
+                });
+              }
+            });
+          }catch(_e){}
+          var _scxChanged = JSON.stringify(DB.sectionsCompta||{}) !== JSON.stringify(data.sectionsCompta);
+          if(_scxChanged){
+            DB.sectionsCompta = data.sectionsCompta;
+            _changedKeys.add('sectionsCompta');
+          }
+        }
+        // [MODULE PATCH v2] DB.tresorCentral — trésor centralisé hauts gradés
+        if(data.tresorCentral && typeof data.tresorCentral === 'object'){
+          if(data.tresorCentral.mouvements && !Array.isArray(data.tresorCentral.mouvements) && typeof data.tresorCentral.mouvements === 'object'){
+            data.tresorCentral.mouvements = Object.values(data.tresorCentral.mouvements).filter(Boolean);
+          }
+          var _tcChanged = JSON.stringify(DB.tresorCentral||{}) !== JSON.stringify(data.tresorCentral);
+          if(_tcChanged){
+            DB.tresorCentral = data.tresorCentral;
+            _changedKeys.add('tresorCentral');
+          }
+        }
         try{localStorage.setItem(STORE,JSON.stringify(DB));}catch(e){}
 
         // ═══ BUG-FIX MAJEUR : RE-RENDER DE LA PAGE COURANTE SI SES DONNÉES ONT CHANGÉ ═══
@@ -21280,7 +21332,13 @@ function initFirebaseSync(){
               'mission-disponibles': { fn: 'msRender',           keys: ['missions'] },
               'mission-actives':     { fn: 'msRender',           keys: ['missions'] },
               'mission-recompenses': { fn: 'msRender',           keys: ['missions'] },
-              'juge-plaintes': { fn: 'tribRenderPlaintes', keys: ['plaintes','tribunal'] }
+              'juge-plaintes': { fn: 'tribRenderPlaintes', keys: ['plaintes','tribunal'] },
+              // [MODULE PATCH v2] Comptas de section
+              'juge-comptabilite':    { fn: '_scxRenderJuge',    keys: ['sectionsCompta'] },
+              'avocat-comptabilite':  { fn: '_scxRenderAvocat',  keys: ['sectionsCompta'] },
+              'mission-comptabilite': { fn: '_scxRenderMission', keys: ['sectionsCompta'] },
+              'caisse-police':        { fn: '_scxRenderPolice',  keys: ['sectionsCompta'] },
+              'tresor-central':       { fn: '_scxRenderTresor',  keys: ['sectionsCompta','tresorCentral','diploComptabilite','hospital'] }
               // 'histoire' : pas de sync auto (lecture seule)
             };
             // Re-render uniquement la page active si une de ses collections a changé
@@ -23505,7 +23563,10 @@ const PAGES={dashboard:"Tableau de bord",annonces:"Annonces",recensement:"Recens
   "sci-rapports":"Salon scientifique","sci-morgue":"Morgue",
   "compta-paiements":"Paiements (Ryōs)",
   // Diplomatie
-  "diplo-villages":"Villages alliés","diplo-traites":"Traités","diplo-communications":"Communications","diplo-laissezpasse":"Laissez-passer","diplo-comptabilite":"Comptabilité"
+  "diplo-villages":"Villages alliés","diplo-traites":"Traités","diplo-communications":"Communications","diplo-laissezpasse":"Laissez-passer","diplo-comptabilite":"Comptabilité",
+  // Nouvelles comptas + Trésor (module patch)
+  "juge-comptabilite":"Comptabilité","avocat-comptabilite":"Comptabilité","mission-comptabilite":"Comptabilité",
+  "caisse-police":"Caisse Police","tresor-central":"Trésor Central"
 };
 const VISITOR_PAGES=["dashboard","annonces","recensement","recrutement","plaintes","codepenal","adoptions","histoire","profil","bingobook","equipes",
   // Pages des sections : visibles par les visiteurs de leur section (les visiteurs des autres sections ne pourront pas y accéder via _applySectionUI)
@@ -23516,7 +23577,9 @@ const VISITOR_PAGES=["dashboard","annonces","recensement","recrutement","plainte
   "medical-patients","medical-consultations","medical-pharmacie","medical-psy","medical-dons",
   "sci-rapports","sci-morgue",
   "compta-paiements",
-  "diplo-villages","diplo-traites","diplo-communications","diplo-laissezpasse"
+  "diplo-villages","diplo-traites","diplo-communications","diplo-laissezpasse",
+  // Nouvelles comptas section (module patch) — accessibles aux membres de la section
+  "juge-comptabilite","avocat-comptabilite","mission-comptabilite"
 ];
 
 // Mapping page → bnav-item id (pour les 4 onglets directs de la barre)
@@ -43656,6 +43719,1281 @@ document.addEventListener('DOMContentLoaded', function(){
     </div>
   </div>
 </div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     MODULE PATCH — v2 (bug-fixed)
+     Ajoute :
+       1. Compta partagée pour Tribunal / Avocat / Mission / Police
+       2. Auto-tracking des encaissements Police vers la Caisse Police
+          (via hook sur saveData, pas de polling)
+       3. Trésor Central pour hauts gradés (filtré par section)
+       4. Multi-sections (user.sections array) + UI de gestion dans le panel admin
+       5. Bug-fix re-render : pas de double-listener, juste reconcile léger
+     ═══════════════════════════════════════════════════════════════════════════ -->
+<style>
+.scx-hero{
+  background:linear-gradient(135deg,rgba(180,140,20,0.10),rgba(192,65,14,0.08));
+  border:1px solid rgba(180,140,20,0.25);border-radius:14px;
+  padding:22px 24px;margin-bottom:18px;position:relative;overflow:hidden;
+}
+.scx-hero::before{content:"";position:absolute;inset:0;background:radial-gradient(circle at 90% 10%,rgba(212,180,74,0.10),transparent 55%);pointer-events:none}
+.scx-hero-inner{display:flex;align-items:center;gap:18px;flex-wrap:wrap;position:relative;z-index:1}
+.scx-hero-icon{
+  width:62px;height:62px;border-radius:14px;
+  background:linear-gradient(135deg,rgba(212,180,74,0.22),rgba(192,65,14,0.18));
+  border:1px solid rgba(212,180,74,0.4);
+  display:flex;align-items:center;justify-content:center;font-size:32px;flex-shrink:0;
+}
+.scx-hero-text{flex:1;min-width:200px}
+.scx-hero-tag{font-family:'Share Tech Mono',monospace;font-size:10px;letter-spacing:2px;color:rgba(212,180,74,0.7);text-transform:uppercase;margin-bottom:4px}
+.scx-hero-title{font-family:'Cinzel',serif;font-size:24px;font-weight:700;color:var(--gold2);letter-spacing:1px}
+.scx-hero-sub{font-size:12.5px;color:var(--muted);margin-top:4px}
+.scx-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:14px}
+.scx-stat{background:rgba(20,16,9,0.6);border:1px solid rgba(180,140,20,0.18);border-radius:10px;padding:14px 16px;position:relative}
+.scx-stat-lbl{font-family:'Share Tech Mono',monospace;font-size:9px;letter-spacing:1.5px;color:rgba(255,255,255,0.5);text-transform:uppercase;margin-bottom:6px}
+.scx-stat-val{font-family:'Cinzel',serif;font-size:20px;font-weight:700;color:var(--text);line-height:1}
+.scx-stat-val .unit{font-size:11px;color:rgba(255,255,255,0.45);font-weight:400;margin-left:4px}
+.scx-stat[data-tone="green"] .scx-stat-val{color:#86efac}
+.scx-stat[data-tone="red"] .scx-stat-val{color:#fca5a5}
+.scx-stat[data-tone="gold"] .scx-stat-val{color:#f0d060}
+.scx-stat[data-tone="blue"] .scx-stat-val{color:#93c5fd}
+.scx-stat[data-tone="orange"] .scx-stat-val{color:#fbbf24}
+.scx-actions-bar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:14px;padding:12px 14px;background:rgba(20,16,9,0.5);border:1px solid rgba(180,140,20,0.15);border-radius:10px}
+.scx-btn{padding:9px 16px;border-radius:8px;font-family:'Share Tech Mono',monospace;font-size:11px;letter-spacing:1px;text-transform:uppercase;cursor:pointer;border:1px solid;transition:all 0.18s}
+.scx-btn-entry{background:rgba(34,197,94,0.15);border-color:rgba(34,197,94,0.45);color:#86efac}
+.scx-btn-entry:hover{background:rgba(34,197,94,0.28)}
+.scx-btn-out{background:rgba(239,68,68,0.15);border-color:rgba(239,68,68,0.45);color:#fca5a5}
+.scx-btn-out:hover{background:rgba(239,68,68,0.28)}
+.scx-btn-close{background:rgba(168,85,247,0.15);border-color:rgba(168,85,247,0.45);color:#c4b5fd}
+.scx-btn-close:hover{background:rgba(168,85,247,0.28)}
+.scx-tax-cfg{display:flex;align-items:center;gap:6px;margin-left:auto;font-size:11px;color:var(--muted)}
+.scx-tax-cfg input{width:60px;padding:4px 6px;background:rgba(0,0,0,0.4);border:1px solid rgba(180,140,20,0.25);border-radius:5px;color:var(--text);text-align:center;font-family:'Share Tech Mono',monospace}
+.scx-search{flex:1;min-width:160px;padding:8px 12px;background:rgba(0,0,0,0.4);border:1px solid rgba(180,140,20,0.25);border-radius:6px;color:var(--text);font-size:13px}
+.scx-filter{padding:8px 12px;background:rgba(0,0,0,0.4);border:1px solid rgba(180,140,20,0.25);border-radius:6px;color:var(--text);font-size:13px;cursor:pointer}
+.scx-list{display:flex;flex-direction:column;gap:10px}
+.scx-card{background:rgba(20,16,9,0.6);border:1px solid rgba(180,140,20,0.15);border-radius:10px;padding:14px 16px;display:grid;grid-template-columns:auto 1fr auto;gap:14px;align-items:center;transition:border-color 0.18s}
+.scx-card:hover{border-color:rgba(180,140,20,0.35)}
+.scx-card[data-type="entree"]{border-left:3px solid rgba(34,197,94,0.6)}
+.scx-card[data-type="sortie"]{border-left:3px solid rgba(239,68,68,0.6)}
+.scx-card[data-type="auto"]{border-left:3px solid rgba(212,180,74,0.6);background:linear-gradient(90deg,rgba(212,180,74,0.06),rgba(20,16,9,0.6))}
+.scx-card-id{display:flex;flex-direction:column;align-items:center;gap:4px;min-width:64px}
+.scx-card-id-num{font-family:'Share Tech Mono',monospace;font-size:10px;color:rgba(255,255,255,0.5);letter-spacing:1px}
+.scx-card-id-ico{font-size:24px}
+.scx-card-id-tag{font-family:'Share Tech Mono',monospace;font-size:9px;color:rgba(255,255,255,0.5);text-transform:uppercase}
+.scx-card-body{min-width:0;flex:1}
+.scx-card-amount{font-family:'Cinzel',serif;font-size:22px;font-weight:700;line-height:1.1}
+.scx-card-amount .sign{margin-right:4px}
+.scx-card-amount .unit{font-size:11px;color:rgba(255,255,255,0.5);margin-left:4px;font-weight:400}
+.scx-card[data-type="entree"] .scx-card-amount{color:#86efac}
+.scx-card[data-type="sortie"] .scx-card-amount{color:#fca5a5}
+.scx-card[data-type="auto"] .scx-card-amount{color:#f0d060}
+.scx-card-meta{display:flex;gap:14px;flex-wrap:wrap;font-size:11px;color:var(--muted);margin-top:5px}
+.scx-card-justif{margin-top:6px;font-size:12px;color:rgba(240,232,208,0.7);font-style:italic;word-break:break-word}
+.scx-card-footer{margin-top:6px;font-size:10px;color:rgba(255,255,255,0.4);font-family:'Share Tech Mono',monospace;display:flex;gap:12px;flex-wrap:wrap}
+.scx-card-actions{display:flex;gap:6px;flex-shrink:0}
+.scx-act-btn{width:32px;height:32px;border-radius:7px;border:1px solid rgba(180,140,20,0.25);background:rgba(0,0,0,0.3);color:rgba(255,255,255,0.7);font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.18s}
+.scx-act-btn:hover{background:rgba(180,140,20,0.18);color:#fff}
+.scx-act-btn.is-delete:hover{background:rgba(239,68,68,0.25);border-color:rgba(239,68,68,0.5)}
+.scx-act-btn.is-paid{background:rgba(34,197,94,0.18);border-color:rgba(34,197,94,0.5);color:#86efac}
+.scx-empty{text-align:center;padding:40px 20px;color:rgba(255,255,255,0.35);font-family:'Share Tech Mono',monospace;font-size:11px}
+.scx-empty-ico{font-size:42px;margin-bottom:10px;opacity:0.4}
+@media(max-width:680px){.scx-card{grid-template-columns:1fr;gap:10px}.scx-card-actions{justify-content:flex-end}.scx-card-amount{font-size:19px}}
+.scx-archives-section{margin-top:24px;border-top:1px dashed rgba(180,140,20,0.18);padding-top:18px}
+.scx-archives-section h3{font-family:'Cinzel',serif;font-size:15px;color:var(--gold2);margin-bottom:12px}
+.scx-archive-card{background:rgba(20,16,9,0.45);border:1px solid rgba(168,85,247,0.18);border-radius:10px;padding:12px 14px;margin-bottom:10px}
+.scx-archive-card-header{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:6px}
+.scx-archive-card-title{font-family:'Cinzel',serif;font-size:14px;color:#c4b5fd;font-weight:600}
+.scx-archive-card-total{font-family:'Share Tech Mono',monospace;font-size:13px;color:#f0d060}
+.scx-archive-card-meta{font-size:10px;color:rgba(255,255,255,0.45);font-family:'Share Tech Mono',monospace}
+.scx-modal-form{display:grid;gap:12px}
+.scx-modal-form label{font-family:'Share Tech Mono',monospace;font-size:10px;letter-spacing:1px;color:rgba(255,255,255,0.55);text-transform:uppercase;display:block;margin-bottom:4px}
+.scx-modal-form input,.scx-modal-form textarea,.scx-modal-form select{width:100%;padding:9px 11px;background:rgba(0,0,0,0.4);border:1px solid rgba(180,140,20,0.25);border-radius:6px;color:var(--text);font-size:13px;font-family:inherit}
+.scx-modal-form textarea{resize:vertical;min-height:60px}
+.scx-tax-preview{padding:10px 12px;background:rgba(251,191,36,0.1);border:1px solid rgba(251,191,36,0.35);border-radius:7px;font-size:12px;color:#fde68a}
+.tc-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px;margin-bottom:18px}
+.tc-section-card{background:linear-gradient(135deg,rgba(20,16,9,0.7),rgba(28,22,12,0.5));border:1px solid rgba(180,140,20,0.22);border-radius:12px;padding:18px;position:relative;cursor:pointer;transition:all 0.2s}
+.tc-section-card:hover{border-color:rgba(212,180,74,0.5);transform:translateY(-2px)}
+.tc-section-card[data-section="police"]{border-left:4px solid #c9a227}
+.tc-section-card[data-section="juge"]{border-left:4px solid #7c3aed}
+.tc-section-card[data-section="avocat"]{border-left:4px solid #0ea5e9}
+.tc-section-card[data-section="mission"]{border-left:4px solid #f59e0b}
+.tc-section-card[data-section="medical"]{border-left:4px solid #dc2626}
+.tc-section-card[data-section="diplomatie"]{border-left:4px solid #16a34a}
+.tc-section-header{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.tc-section-icon{font-size:26px}
+.tc-section-name{font-family:'Cinzel',serif;font-size:16px;font-weight:700;color:var(--gold2)}
+.tc-section-stats{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px}
+.tc-section-stat{padding:8px 10px;background:rgba(0,0,0,0.35);border-radius:7px}
+.tc-section-stat-lbl{font-family:'Share Tech Mono',monospace;font-size:8px;letter-spacing:1.2px;color:rgba(255,255,255,0.45);text-transform:uppercase}
+.tc-section-stat-val{font-family:'Cinzel',serif;font-size:15px;font-weight:700;margin-top:2px}
+.tc-section-stat-val.green{color:#86efac}
+.tc-section-stat-val.red{color:#fca5a5}
+.tc-section-stat-val.gold{color:#f0d060}
+.tc-solde-row{display:flex;justify-content:space-between;align-items:center;padding-top:10px;border-top:1px dashed rgba(180,140,20,0.18)}
+.tc-solde-lbl{font-family:'Share Tech Mono',monospace;font-size:10px;color:rgba(255,255,255,0.55);letter-spacing:1.5px;text-transform:uppercase}
+.tc-solde-val{font-family:'Cinzel',serif;font-size:18px;font-weight:700;color:#f0d060}
+.tc-total-bar{background:linear-gradient(135deg,rgba(212,180,74,0.18),rgba(192,65,14,0.10));border:1px solid rgba(212,180,74,0.4);border-radius:12px;padding:18px 22px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:14px;margin-bottom:18px}
+.tc-total-label{font-family:'Cinzel',serif;font-size:15px;color:var(--gold2);letter-spacing:1.5px;text-transform:uppercase}
+.tc-total-val{font-family:'Cinzel',serif;font-size:32px;font-weight:700;color:#f0d060}
+.tc-total-val .unit{font-size:14px;color:rgba(255,255,255,0.6);margin-left:6px;font-weight:400}
+.ms-switcher{display:flex;gap:6px;flex-wrap:wrap;padding:8px 12px;margin:8px;background:rgba(180,140,20,0.04);border:1px dashed rgba(180,140,20,0.18);border-radius:8px}
+.ms-sw-label{font-family:'Share Tech Mono',monospace;font-size:9px;color:rgba(255,255,255,0.45);letter-spacing:1.5px;text-transform:uppercase;display:flex;align-items:center;margin-right:4px}
+.ms-sw-btn{padding:5px 10px;font-family:'Share Tech Mono',monospace;font-size:10px;letter-spacing:1px;background:transparent;border:1px solid rgba(180,140,20,0.25);border-radius:5px;color:rgba(255,255,255,0.65);cursor:pointer;transition:all 0.18s;text-transform:uppercase}
+.ms-sw-btn:hover{background:rgba(180,140,20,0.10);color:#fff}
+.ms-sw-btn.active{background:rgba(212,180,74,0.22);border-color:rgba(212,180,74,0.55);color:#f0d060;font-weight:700}
+</style>
+
+<!-- Modale partagée -->
+<div id="scx-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:10000;align-items:center;justify-content:center;padding:20px">
+  <div style="background:linear-gradient(180deg,#1a1308,#15100a);border:1px solid rgba(201,162,39,0.35);border-radius:14px;max-width:480px;width:100%;padding:24px;box-shadow:0 30px 80px rgba(0,0,0,0.6)">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px">
+      <h3 id="scx-modal-title" style="font-family:'Cinzel',serif;font-size:18px;color:var(--gold2);margin:0">Nouvelle entrée</h3>
+      <button type="button" onclick="window.scxCloseModal()" style="background:transparent;border:none;color:rgba(255,255,255,0.6);font-size:22px;cursor:pointer">✕</button>
+    </div>
+    <div class="scx-modal-form">
+      <input type="hidden" id="scx-form-section">
+      <input type="hidden" id="scx-form-type">
+      <input type="hidden" id="scx-form-edit-id">
+      <div><label>Montant (Ryōs) *</label><input type="number" id="scx-form-amount" min="1" step="1" oninput="window.scxUpdateTaxPreview()"></div>
+      <div><label id="scx-form-passeur-lbl">Qui ? *</label><input type="text" id="scx-form-passeur"></div>
+      <div><label id="scx-form-justif-lbl">Justificatif *</label><textarea id="scx-form-justif" rows="2"></textarea></div>
+      <div><label>Date</label><input type="date" id="scx-form-date"></div>
+      <div id="scx-form-tax-preview" class="scx-tax-preview" style="display:none"><span id="scx-form-tax-preview-text"></span></div>
+      <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:10px">
+        <button type="button" onclick="window.scxCloseModal()" class="btn btn-outline btn-sm">Annuler</button>
+        <button type="button" onclick="window.scxSaveEntry()" class="btn btn-primary btn-sm">💾 Enregistrer</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+'use strict';
+
+if(window._scxModuleLoaded){ return; }
+window._scxModuleLoaded = true;
+
+/* ── Métadonnées des sections ── */
+var SECTIONS_COMPTA = {
+  juge:       { key:'juge',       icon:'⚖️', name:'Tribunal',          color:'#7c3aed', defaultTax:0  },
+  avocat:     { key:'avocat',     icon:'👨‍💼', name:"Cabinet d'avocats", color:'#0ea5e9', defaultTax:5  },
+  mission:    { key:'mission',    icon:'🎯', name:'Missions',           color:'#f59e0b', defaultTax:10 },
+  medical:    { key:'medical',    icon:'⚕️', name:'Pôle Médical',       color:'#dc2626', defaultTax:0  },
+  diplomatie: { key:'diplomatie', icon:'🤝', name:'Diplomatie',         color:'#16a34a', defaultTax:10 },
+  police:     { key:'police',     icon:'👮', name:'Police',             color:'#c9a227', defaultTax:0  }
+};
+var SCX_SECTIONS = ['juge','avocat','mission','police'];        // celles qu'on gère nous-mêmes
+var TRESOR_DEFAULT_RATE = 15;
+
+/* ── Helpers ── */
+function scxFmt(n){ n=parseInt(n,10)||0; return n.toLocaleString('fr-FR').replace(/\u202f/g,' '); }
+function scxFmtDate(ts){ if(!ts) return '—'; try{ return new Date(ts).toLocaleDateString('fr-FR'); }catch(e){ return '—'; } }
+function scxEsc(s){ if(typeof esc==='function') return esc(s); return String(s==null?'':s).replace(/[&<>"']/g,function(c){return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]}); }
+function scxToast(msg, type){ if(typeof showToast==='function'){ try{ showToast(msg, type||'info'); }catch(e){} } }
+function scxSave(){ if(typeof saveData==='function'){ try{ saveData(); }catch(e){ try{ saveData(); }catch(e2){} } } }
+function scxNow(){ return Date.now(); }
+function scxIsModalOpen(){
+  if(document.querySelector('.modal-overlay.open')) return true;
+  var m = document.getElementById('scx-modal');
+  if(m && m.style.display === 'flex') return true;
+  return false;
+}
+
+/* ── Init DB ── */
+function scxInitDB(){
+  if(typeof DB === 'undefined' || !DB) return;
+  if(!DB.sectionsCompta || typeof DB.sectionsCompta !== 'object') DB.sectionsCompta = {};
+  SCX_SECTIONS.forEach(function(k){
+    var d = DB.sectionsCompta[k];
+    if(!d || typeof d !== 'object'){
+      d = DB.sectionsCompta[k] = { taxRate: SECTIONS_COMPTA[k].defaultTax, transactions:[], archives:[] };
+    }
+    if(typeof d.taxRate !== 'number') d.taxRate = SECTIONS_COMPTA[k].defaultTax;
+    // Firebase peut renvoyer {0:..,1:..} au lieu d'array
+    ['transactions','archives'].forEach(function(key){
+      var arr = d[key];
+      if(!Array.isArray(arr)){
+        if(arr && typeof arr === 'object') d[key] = Object.values(arr).filter(Boolean);
+        else d[key] = [];
+      }
+    });
+  });
+  if(!DB.tresorCentral || typeof DB.tresorCentral !== 'object'){
+    DB.tresorCentral = { prelevementRate: TRESOR_DEFAULT_RATE, mouvements:[] };
+  }
+  if(typeof DB.tresorCentral.prelevementRate !== 'number') DB.tresorCentral.prelevementRate = TRESOR_DEFAULT_RATE;
+  if(!Array.isArray(DB.tresorCentral.mouvements)){
+    if(DB.tresorCentral.mouvements && typeof DB.tresorCentral.mouvements === 'object'){
+      DB.tresorCentral.mouvements = Object.values(DB.tresorCentral.mouvements).filter(Boolean);
+    } else DB.tresorCentral.mouvements = [];
+  }
+}
+
+/* ── Permissions ──
+   - userSections(u) : retourne le tableau des sections accessibles à u
+   - hasAccessToSection : true si u a accès à `section`
+   - canModifySection : true si u peut éditer la compta de `section` (non visiteur, dans la section ou admin/HC)
+   - canCloseWeek : true si u peut clôturer la semaine d'une section
+   - canSeeTresor : true si u peut voir le Trésor Central (vue agrégée toutes sections)
+   - canSeeSectionCaisse : true si u peut voir la Caisse Police (= haut gradé Police OU admin/HC)
+*/
+function scxCurrentUser(){ return (typeof currentUser !== 'undefined') ? currentUser : null; }
+function scxUserSections(u){
+  u = u || scxCurrentUser();
+  if(!u) return [];
+  var list = [];
+  if(Array.isArray(u.sections)) list = u.sections.slice();
+  if(u.section && list.indexOf(u.section) === -1) list.push(u.section);
+  if(!list.length && u.section) list.push(u.section);
+  if(!list.length) list.push('police');
+  // Admin/HC : accès à toutes les sections
+  if(u.role === 'admin' || u.role === 'hautcommandement'){
+    return ['police','juge','avocat','mission','medical','diplomatie'];
+  }
+  return list;
+}
+function scxHasAccessToSection(section){
+  var u = scxCurrentUser(); if(!u) return false;
+  return scxUserSections(u).indexOf(section) !== -1;
+}
+function scxIsVisiteur(){
+  var u = scxCurrentUser(); if(!u) return true;
+  return u.role === 'visiteur' || u.grade === 'Visiteur';
+}
+function scxCanModifySection(section){
+  if(!scxHasAccessToSection(section)) return false;
+  if(scxIsVisiteur()) return false;
+  return true;
+}
+function scxIsHautGradeRole(){
+  var u = scxCurrentUser(); if(!u) return false;
+  return u.role === 'admin' || u.role === 'hautcommandement' || u.role === 'gerant' || u.role === 'cogerant';
+}
+function scxCanCloseWeek(section){
+  var u = scxCurrentUser(); if(!u) return false;
+  if(u.role === 'admin' || u.role === 'hautcommandement') return true;
+  if(u.role === 'gerant' || u.role === 'cogerant'){
+    return scxHasAccessToSection(section);
+  }
+  return false;
+}
+// Trésor Central : admin & HC voient tout. Gérants/Co-gérants voient SEULEMENT les sections où ils ont accès (vue restreinte).
+function scxCanSeeTresor(){
+  return scxIsHautGradeRole();
+}
+function scxSectionsVisibleInTresor(){
+  var u = scxCurrentUser(); if(!u) return [];
+  if(u.role === 'admin' || u.role === 'hautcommandement'){
+    return ['police','juge','avocat','mission','medical','diplomatie'];
+  }
+  // Gérant / Co-gérant : que les sections où ils sont (filtrage par accès)
+  return scxUserSections(u);
+}
+// Caisse Police : visible aux gérants police et au-dessus (admin/HC)
+function scxCanSeeCaissePolice(){
+  var u = scxCurrentUser(); if(!u) return false;
+  if(u.role === 'admin' || u.role === 'hautcommandement') return true;
+  if((u.role === 'gerant' || u.role === 'cogerant') && scxHasAccessToSection('police')) return true;
+  return false;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   AUTO-TRACKING POLICE — Hook propre sur saveData (pas de polling)
+   Chaque fois que DB.impots.recups change, on calcule le delta et on
+   ajoute les nouvelles entrées dans la Caisse Police automatiquement.
+   ═══════════════════════════════════════════════════════════════════════════ */
+var _scxLastRecupIds = null;
+function scxSyncPoliceFromImpots(force){
+  if(typeof DB === 'undefined' || !DB || !DB.impots) return;
+  scxInitDB();
+  var policeData = DB.sectionsCompta.police;
+  // Construire le set des sourceIds déjà présents
+  var existingSources = new Set(
+    (policeData.transactions||[])
+      .filter(function(t){ return t.auto && t.sourceId; })
+      .map(function(t){ return t.sourceId; })
+  );
+  var added = 0;
+
+  function addIfNew(r, archiveLabel){
+    if(!r || !r.id) return;
+    var srcId = 'imp-recup-' + String(r.id);
+    if(existingSources.has(srcId)) return;
+    var amt = parseInt(r.total||0, 10); if(!amt || amt <= 0) return;
+    var details = '';
+    if(Array.isArray(r.lignes) && r.lignes.length){
+      details = r.lignes.map(function(l){ return (l.nom||'?') + (l.grade?' ('+l.grade+')':''); }).join(', ');
+    }
+    policeData.transactions.push({
+      id: 'TX-' + scxNow() + '-' + Math.random().toString(36).slice(2,6),
+      type: 'entree',
+      amount: amt,
+      passeur: r.collectedBy || r.collecteur || '?',
+      justif: '[Auto] Impôt encaissé sur ' + (r.collecteur || r.nom || '?') + (details ? ' · ' + details : '') + (archiveLabel ? ' · Archive : ' + archiveLabel : ''),
+      date: r.date ? new Date(r.date).toISOString().slice(0,10) : new Date().toISOString().slice(0,10),
+      taxRateAtCreation: 0,
+      taxAmount: 0,
+      taxPaid: true,
+      auto: true,
+      sourceId: srcId,
+      createdAt: r.date || scxNow(),
+      createdBy: r.collectedBy || '?'
+    });
+    existingSources.add(srcId);
+    added++;
+  }
+
+  (DB.impots.recups||[]).forEach(function(r){ addIfNew(r, ''); });
+  (DB.impots.recupsArchives||[]).forEach(function(a){
+    (a.encaissements||[]).forEach(function(r){ addIfNew(r, a.label||''); });
+  });
+
+  if(added > 0){
+    scxSave();
+    // Re-render si on est sur caisse-police
+    var ap = document.querySelector('.page-content.active');
+    if(ap && ap.id === 'page-caisse-police') window.scxRender('police');
+  }
+}
+// Hook : on intercepte saveData pour faire la sync APRÈS chaque save
+// (pas un wrap, juste un appel périodique léger : 1× par changement)
+function scxInstallImpotsHook(){
+  if(window._scxImpotsHookInstalled) return;
+  window._scxImpotsHookInstalled = true;
+  // Synchronisation initiale + à chaque sync Firebase via un changement détecté.
+  // On utilise un "fingerprint" de DB.impots.recups pour ne déclencher que sur changement.
+  var lastFingerprint = '';
+  function check(){
+    try{
+      if(typeof DB === 'undefined' || !DB || !DB.impots){ return; }
+      var fp = JSON.stringify({
+        r: (DB.impots.recups||[]).map(function(x){return [x.id, x.total];}),
+        a: (DB.impots.recupsArchives||[]).map(function(a){return [a.id, (a.encaissements||[]).map(function(x){return [x.id,x.total];})];})
+      });
+      if(fp !== lastFingerprint){
+        lastFingerprint = fp;
+        scxSyncPoliceFromImpots();
+      }
+    }catch(e){ /* silencieux */ }
+  }
+  // Premier check à T+1s, puis toutes les 10s (bien plus léger que 2.5s)
+  setTimeout(check, 1000);
+  setInterval(check, 10000);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   RENDU D'UNE PAGE COMPTA
+   ═══════════════════════════════════════════════════════════════════════════ */
+function scxBuildPageHTML(section){
+  var meta = SECTIONS_COMPTA[section] || { icon:'💰', name:section };
+  var isPolice = section === 'police';
+  var subtitle = isPolice
+    ? "Caisse automatique de la Police — alimentée par les encaissements d'impôts"
+    : 'Suivi des entrées, sorties et taxes du service ' + meta.name;
+  return '<div class="scx-hero">'+
+      '<div class="scx-hero-inner">'+
+        '<div class="scx-hero-icon">'+meta.icon+'</div>'+
+        '<div class="scx-hero-text">'+
+          '<div class="scx-hero-tag">'+meta.name+'</div>'+
+          '<div class="scx-hero-title">'+(isPolice?'Caisse Police':'Comptabilité')+'</div>'+
+          '<div class="scx-hero-sub">'+subtitle+'</div>'+
+        '</div>'+
+      '</div>'+
+    '</div>'+
+    '<div class="scx-stats">'+
+      '<div class="scx-stat" data-tone="gold"><div class="scx-stat-lbl">Solde actuel</div><div class="scx-stat-val" id="scx-'+section+'-solde">0<span class="unit">Ryōs</span></div></div>'+
+      '<div class="scx-stat" data-tone="green"><div class="scx-stat-lbl">Total entrées</div><div class="scx-stat-val" id="scx-'+section+'-entrees">0<span class="unit">Ryōs</span></div></div>'+
+      '<div class="scx-stat" data-tone="red"><div class="scx-stat-lbl">Total retraits</div><div class="scx-stat-val" id="scx-'+section+'-sorties">0<span class="unit">Ryōs</span></div></div>'+
+      '<div class="scx-stat" data-tone="orange"><div class="scx-stat-lbl">Taxes dues</div><div class="scx-stat-val" id="scx-'+section+'-taxdue">0<span class="unit">Ryōs</span></div></div>'+
+      '<div class="scx-stat" data-tone="blue"><div class="scx-stat-lbl">Cette semaine</div><div class="scx-stat-val" id="scx-'+section+'-week">0<span class="unit">Ryōs</span></div></div>'+
+    '</div>'+
+    '<div class="scx-actions-bar">'+
+      '<button type="button" class="scx-btn scx-btn-entry" id="scx-'+section+'-add-entry" onclick="window.scxOpenForm(\''+section+'\',\'entree\')">+ Entrée</button>'+
+      '<button type="button" class="scx-btn scx-btn-out" id="scx-'+section+'-add-out" onclick="window.scxOpenForm(\''+section+'\',\'sortie\')">− Retrait</button>'+
+      '<button type="button" class="scx-btn scx-btn-close" id="scx-'+section+'-close" onclick="window.scxCloseWeek(\''+section+'\')">📦 Clôturer la semaine</button>'+
+      '<span class="scx-tax-cfg">Taxe : <input type="number" id="scx-'+section+'-taxrate" min="0" max="100" step="0.5" onchange="window.scxSetTaxRate(\''+section+'\',this.value)"> %</span>'+
+      '<input type="text" class="scx-search" id="scx-'+section+'-search" placeholder="🔍 Rechercher..." oninput="window.scxRender(\''+section+'\')">'+
+      '<select class="scx-filter" id="scx-'+section+'-filter" onchange="window.scxRender(\''+section+'\')">'+
+        '<option value="all">Tout</option>'+
+        '<option value="entree">Entrées</option>'+
+        '<option value="sortie">Sorties</option>'+
+        '<option value="auto">Automatiques</option>'+
+        '<option value="tax-due">Taxes dues</option>'+
+      '</select>'+
+    '</div>'+
+    '<div class="scx-list" id="scx-'+section+'-list"></div>'+
+    '<div class="scx-archives-section">'+
+      '<h3>📦 Semaines archivées</h3>'+
+      '<div id="scx-'+section+'-archives"></div>'+
+    '</div>';
+}
+
+window.scxRender = function(section){
+  if(typeof DB === 'undefined' || !DB) return;
+  scxInitDB();
+  var pageId = (section === 'police') ? 'page-caisse-police' : 'page-' + section + '-comptabilite';
+  var page = document.getElementById(pageId);
+  if(!page) return;
+  if(!page.querySelector('.scx-hero')){
+    page.innerHTML = scxBuildPageHTML(section);
+  }
+  var data = DB.sectionsCompta[section];
+  if(!data) return;
+
+  // Sync tax input
+  var rateInput = document.getElementById('scx-'+section+'-taxrate');
+  if(rateInput && document.activeElement !== rateInput) rateInput.value = data.taxRate;
+
+  var canEdit = scxCanModifySection(section);
+  var canClose = scxCanCloseWeek(section);
+
+  var addE = document.getElementById('scx-'+section+'-add-entry');
+  var addO = document.getElementById('scx-'+section+'-add-out');
+  var cls  = document.getElementById('scx-'+section+'-close');
+  if(addE) addE.style.display = (canEdit && section !== 'police') ? '' : 'none';  // police = auto only
+  if(addO) addO.style.display = canEdit ? '' : 'none';
+  if(cls)  cls.style.display  = canClose ? '' : 'none';
+  if(rateInput) rateInput.disabled = !canEdit;
+
+  var transactions = data.transactions || [];
+
+  // Stats
+  var totalEntrees = 0, totalSorties = 0, totalTaxDue = 0;
+  var weekAgo = scxNow() - 7*24*3600*1000;
+  var weekTotal = 0;
+  transactions.forEach(function(t){
+    var amt = parseInt(t.amount,10)||0;
+    if(t.type === 'entree') totalEntrees += amt;
+    else if(t.type === 'sortie') totalSorties += amt;
+    var tax = parseInt(t.taxAmount,10)||0;
+    if(tax > 0 && !t.taxPaid) totalTaxDue += tax;
+    if((t.createdAt||0) >= weekAgo){
+      if(t.type === 'entree') weekTotal += amt;
+      else if(t.type === 'sortie') weekTotal -= amt;
+    }
+  });
+  var solde = totalEntrees - totalSorties;
+  function setStat(id, val){
+    var e = document.getElementById(id); if(e) e.innerHTML = scxFmt(val) + '<span class="unit">Ryōs</span>';
+  }
+  setStat('scx-'+section+'-solde', solde);
+  setStat('scx-'+section+'-entrees', totalEntrees);
+  setStat('scx-'+section+'-sorties', totalSorties);
+  setStat('scx-'+section+'-taxdue', totalTaxDue);
+  setStat('scx-'+section+'-week', weekTotal);
+
+  // Filtre + recherche
+  var q = ((document.getElementById('scx-'+section+'-search')||{}).value||'').toLowerCase();
+  var f = (document.getElementById('scx-'+section+'-filter')||{}).value || 'all';
+  var filtered = transactions.slice();
+  if(f === 'entree') filtered = filtered.filter(function(t){return t.type==='entree' && !t.auto;});
+  else if(f === 'sortie') filtered = filtered.filter(function(t){return t.type==='sortie';});
+  else if(f === 'auto') filtered = filtered.filter(function(t){return t.auto;});
+  else if(f === 'tax-due') filtered = filtered.filter(function(t){return (t.taxAmount||0)>0 && !t.taxPaid;});
+  if(q){
+    filtered = filtered.filter(function(t){
+      return ((t.passeur||'')+(t.justif||'')+(t.amount||'')+(t.createdBy||'')).toLowerCase().indexOf(q) !== -1;
+    });
+  }
+  filtered.sort(function(a,b){ return (b.createdAt||0) - (a.createdAt||0); });
+
+  var box = document.getElementById('scx-'+section+'-list');
+  if(!box) return;
+  if(!filtered.length){
+    box.innerHTML = '<div class="scx-empty"><div class="scx-empty-ico">💰</div>— Aucune transaction —</div>';
+  } else {
+    var all = transactions.slice().sort(function(a,b){ return (a.createdAt||0)-(b.createdAt||0); });
+    var idxBy = {}; all.forEach(function(t,i){ idxBy[t.id]=i+1; });
+    var pref = section.toUpperCase().slice(0,3);
+    box.innerHTML = filtered.map(function(t){
+      var year = (function(){ try{ return new Date(t.date).getFullYear() || new Date().getFullYear(); }catch(e){ return new Date().getFullYear(); } })();
+      var num = pref+'-'+year+'-'+String(idxBy[t.id]||1).padStart(3,'0');
+      var dataType = t.auto ? 'auto' : t.type;
+      var ico = t.auto ? '🤖' : (t.type==='entree'?'💵':'💸');
+      var sign = t.type==='entree' ? '+' : '−';
+      var label = t.auto ? 'Auto' : (t.type==='entree'?'Entrée':'Retrait');
+      var hasTax = (t.taxAmount||0)>0;
+      var actionsBtns = '';
+      if(canEdit && !t.auto){
+        if(hasTax){
+          actionsBtns += '<button type="button" class="scx-act-btn '+(t.taxPaid?'is-paid':'')+'" onclick="window.scxToggleTaxPaid(\''+section+'\',\''+t.id+'\')" title="'+(t.taxPaid?'Marquer non payée':'Marquer payée')+'">'+(t.taxPaid?'✅':'💰')+'</button>';
+        }
+        actionsBtns += '<button type="button" class="scx-act-btn" onclick="window.scxEditEntry(\''+section+'\',\''+t.id+'\')" title="Modifier">✏️</button>';
+        actionsBtns += '<button type="button" class="scx-act-btn is-delete" onclick="window.scxDeleteEntry(\''+section+'\',\''+t.id+'\')" title="Supprimer">🗑</button>';
+      }
+      return '<div class="scx-card" data-type="'+dataType+'">'+
+        '<div class="scx-card-id">'+
+          '<div class="scx-card-id-num">'+num+'</div>'+
+          '<div class="scx-card-id-ico">'+ico+'</div>'+
+          '<div class="scx-card-id-tag">'+label+'</div>'+
+        '</div>'+
+        '<div class="scx-card-body">'+
+          '<div class="scx-card-amount"><span class="sign">'+sign+'</span>'+scxFmt(t.amount)+'<span class="unit">Ryōs</span></div>'+
+          '<div class="scx-card-meta">'+
+            '<span>📅 '+scxFmtDate(t.date)+'</span>'+
+            '<span>'+(t.type==='entree'?'👤':'🧾')+' '+scxEsc(t.passeur||'—')+'</span>'+
+            (hasTax ? (t.taxPaid?'<span style="color:#86efac">✅ Taxe payée — '+scxFmt(t.taxAmount)+' Ryōs</span>':'<span style="color:#fbbf24">⚠️ Taxe due — '+scxFmt(t.taxAmount)+' Ryōs ('+(t.taxRateAtCreation||0)+'%)</span>') : '')+
+          '</div>'+
+          (t.justif ? '<div class="scx-card-justif">'+scxEsc(t.justif)+'</div>' : '')+
+          '<div class="scx-card-footer">'+
+            '<span>📝 '+scxEsc(t.createdBy||'?')+'</span>'+
+            (t.editedAt ? '<span>✏️ Modifiée le '+scxFmtDate(t.editedAt)+'</span>' : '')+
+          '</div>'+
+        '</div>'+
+        '<div class="scx-card-actions">'+actionsBtns+'</div>'+
+      '</div>';
+    }).join('');
+  }
+
+  // Archives
+  var archBox = document.getElementById('scx-'+section+'-archives');
+  if(archBox){
+    var arch = data.archives || [];
+    if(!arch.length){
+      archBox.innerHTML = '<div class="scx-empty" style="padding:20px"><span style="font-size:12px;color:rgba(255,255,255,0.4)">Aucune semaine archivée.</span></div>';
+    } else {
+      archBox.innerHTML = arch.map(function(a){
+        return '<div class="scx-archive-card">'+
+          '<div class="scx-archive-card-header">'+
+            '<div class="scx-archive-card-title">📦 '+scxEsc(a.label||'Semaine')+'</div>'+
+            '<div class="scx-archive-card-total">+'+scxFmt(a.total||0)+' Ryōs ('+scxEsc(String(a.count||0))+' tx)</div>'+
+          '</div>'+
+          '<div class="scx-archive-card-meta">'+
+            'Clôturée le '+scxFmtDate(a.clotureLe)+' par '+scxEsc(a.cloturePar||'?')+
+            ' · Prélèvement HG : '+scxFmt(a.tresorPrelevement||0)+' Ryōs ('+(a.tresorRate||0)+'%)'+
+          '</div>'+
+        '</div>';
+      }).join('');
+    }
+  }
+};
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   ACTIONS COMPTA
+   ═══════════════════════════════════════════════════════════════════════════ */
+window.scxSetTaxRate = function(section, val){
+  if(!scxCanModifySection(section)){ scxToast('⛔ Action réservée','error'); return; }
+  scxInitDB();
+  var r = parseFloat(val); if(isNaN(r)||r<0) r=0; if(r>100) r=100;
+  DB.sectionsCompta[section].taxRate = r;
+  scxSave();
+  window.scxRender(section);
+  scxToast('Taux : '+r+'%','success');
+};
+
+window.scxUpdateTaxPreview = function(){
+  var section = document.getElementById('scx-form-section').value;
+  var type = document.getElementById('scx-form-type').value;
+  var amt = parseInt(document.getElementById('scx-form-amount').value,10) || 0;
+  var prev = document.getElementById('scx-form-tax-preview');
+  var txt = document.getElementById('scx-form-tax-preview-text');
+  if(!prev || !txt || !section) return;
+  var rate = (DB.sectionsCompta[section] && DB.sectionsCompta[section].taxRate) || 0;
+  if(type === 'entree' && amt > 0 && rate > 0){
+    var taxAmount = Math.round(amt * rate / 100);
+    txt.innerHTML = '⚠️ Taxe due : <strong>'+scxFmt(taxAmount)+' Ryōs</strong> ('+rate+'% de '+scxFmt(amt)+')';
+    prev.style.display = 'block';
+  } else {
+    prev.style.display = 'none';
+  }
+};
+
+window.scxOpenForm = function(section, type, editId){
+  if(!scxCanModifySection(section)){ scxToast('⛔ Action réservée','error'); return; }
+  scxInitDB();
+  var modal = document.getElementById('scx-modal'); if(!modal) return;
+  document.getElementById('scx-form-section').value = section;
+  document.getElementById('scx-form-type').value = type;
+  document.getElementById('scx-form-edit-id').value = editId || '';
+  document.getElementById('scx-modal-title').textContent = (editId?'Modifier':'Nouvelle')+' '+(type==='entree'?'entrée':'sortie');
+  document.getElementById('scx-form-passeur-lbl').textContent = type==='entree' ? "Qui a apporté l'argent ? *" : "Qui a retiré l'argent ? *";
+  document.getElementById('scx-form-justif-lbl').textContent = type==='entree' ? 'Origine / Justificatif *' : 'Motif du retrait *';
+  if(editId){
+    var tx = (DB.sectionsCompta[section].transactions||[]).find(function(t){return t.id===editId;});
+    if(tx){
+      document.getElementById('scx-form-amount').value = tx.amount || '';
+      document.getElementById('scx-form-passeur').value = tx.passeur || '';
+      document.getElementById('scx-form-justif').value = tx.justif || '';
+      document.getElementById('scx-form-date').value = tx.date || new Date().toISOString().slice(0,10);
+    }
+  } else {
+    document.getElementById('scx-form-amount').value = '';
+    document.getElementById('scx-form-passeur').value = '';
+    document.getElementById('scx-form-justif').value = '';
+    document.getElementById('scx-form-date').value = new Date().toISOString().slice(0,10);
+  }
+  window.scxUpdateTaxPreview();
+  modal.style.display = 'flex';
+};
+window.scxCloseModal = function(){
+  var m = document.getElementById('scx-modal'); if(m) m.style.display = 'none';
+};
+window.scxSaveEntry = function(){
+  var section = document.getElementById('scx-form-section').value;
+  if(!scxCanModifySection(section)){ scxToast('⛔ Action réservée','error'); return; }
+  scxInitDB();
+  var type = document.getElementById('scx-form-type').value;
+  var editId = document.getElementById('scx-form-edit-id').value;
+  var amount = parseInt(document.getElementById('scx-form-amount').value,10);
+  var passeur = (document.getElementById('scx-form-passeur').value||'').trim();
+  var justif = (document.getElementById('scx-form-justif').value||'').trim();
+  var date = document.getElementById('scx-form-date').value || new Date().toISOString().slice(0,10);
+  if(!amount || amount<=0){ scxToast('Montant invalide','error'); return; }
+  if(!passeur){ scxToast('Nom requis','error'); return; }
+  if(!justif){ scxToast('Justificatif requis','error'); return; }
+  var data = DB.sectionsCompta[section];
+  if(editId){
+    var idx = data.transactions.findIndex(function(t){return t.id===editId;});
+    if(idx === -1){ scxToast('Introuvable','error'); return; }
+    var ex = data.transactions[idx];
+    data.transactions[idx] = Object.assign({}, ex, {
+      type:type, amount:amount, passeur:passeur, justif:justif, date:date,
+      editedAt: scxNow(), editedBy: ((scxCurrentUser()||{}).nom)||'?'
+    });
+    scxToast('Mis à jour','success');
+  } else {
+    var taxAmount = (type==='entree' && data.taxRate>0) ? Math.round(amount*data.taxRate/100) : 0;
+    data.transactions.push({
+      id: 'TX-'+scxNow()+'-'+Math.random().toString(36).slice(2,6),
+      type:type, amount:amount, passeur:passeur, justif:justif, date:date,
+      taxRateAtCreation: data.taxRate, taxAmount:taxAmount, taxPaid:false,
+      auto:false,
+      createdAt: scxNow(),
+      createdBy: ((scxCurrentUser()||{}).nom)||'?'
+    });
+    scxToast((type==='entree'?'Entrée':'Sortie')+' enregistrée'+(taxAmount>0?' (taxe : '+scxFmt(taxAmount)+' Ryōs)':''),'success');
+  }
+  scxSave();
+  window.scxCloseModal();
+  window.scxRender(section);
+};
+window.scxEditEntry = function(section,id){
+  scxInitDB();
+  var tx = (DB.sectionsCompta[section].transactions||[]).find(function(t){return t.id===id;});
+  if(!tx) return;
+  window.scxOpenForm(section, tx.type||'entree', id);
+};
+window.scxDeleteEntry = function(section,id){
+  if(!scxCanModifySection(section)){ scxToast('⛔ Action réservée','error'); return; }
+  scxInitDB();
+  var tx = (DB.sectionsCompta[section].transactions||[]).find(function(t){return t.id===id;});
+  if(!tx) return;
+  var msg = 'Supprimer '+(tx.type==='entree'?"l'entrée":"la sortie")+' de '+scxFmt(tx.amount)+' Ryōs ?\n\nIrréversible.';
+  var go = function(){
+    DB.sectionsCompta[section].transactions = (DB.sectionsCompta[section].transactions||[]).filter(function(t){return t.id!==id;});
+    scxSave(); window.scxRender(section); scxToast('Supprimée','info');
+  };
+  if(typeof askDelete==='function') askDelete(msg, go, '🗑 Supprimer');
+  else if(confirm(msg)) go();
+};
+window.scxToggleTaxPaid = function(section,id){
+  if(!scxCanModifySection(section)){ scxToast('⛔ Action réservée','error'); return; }
+  scxInitDB();
+  var tx = (DB.sectionsCompta[section].transactions||[]).find(function(t){return t.id===id;});
+  if(!tx) return;
+  tx.taxPaid = !tx.taxPaid;
+  tx.taxPaidAt = tx.taxPaid ? scxNow() : null;
+  tx.taxPaidBy = tx.taxPaid ? (((scxCurrentUser())||{}).nom)||'?' : null;
+  scxSave(); window.scxRender(section);
+  scxToast(tx.taxPaid?'Taxe payée':'Taxe en attente','success');
+};
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   CLÔTURE DE SEMAINE
+   ═══════════════════════════════════════════════════════════════════════════ */
+window.scxCloseWeek = function(section){
+  if(!scxCanCloseWeek(section)){ scxToast('⛔ Réservée aux hauts gradés','error'); return; }
+  scxInitDB();
+  var data = DB.sectionsCompta[section];
+  var transactions = data.transactions || [];
+  if(!transactions.length){ scxToast('Aucune transaction à archiver','info'); return; }
+  var totalEntrees = 0, totalSorties = 0;
+  transactions.forEach(function(t){
+    var amt = parseInt(t.amount,10)||0;
+    if(t.type==='entree') totalEntrees += amt;
+    else if(t.type==='sortie') totalSorties += amt;
+  });
+  var solde = totalEntrees - totalSorties;
+  var rate = (DB.tresorCentral && typeof DB.tresorCentral.prelevementRate === 'number') ? DB.tresorCentral.prelevementRate : TRESOR_DEFAULT_RATE;
+  var prelevement = solde > 0 ? Math.round(solde * rate / 100) : 0;
+  var msg = 'Clôturer la semaine ?\n\n'+
+    '• '+transactions.length+' transactions\n'+
+    '• Entrées : '+scxFmt(totalEntrees)+' Ryōs\n'+
+    '• Sorties : '+scxFmt(totalSorties)+' Ryōs\n'+
+    '• Solde net : '+scxFmt(solde)+' Ryōs\n'+
+    '• Prélèvement Trésor ('+rate+'%) : '+scxFmt(prelevement)+' Ryōs\n\n'+
+    'Toutes les transactions seront archivées.';
+  var go = function(){
+    var arch = {
+      id: 'AR-'+scxNow(),
+      label: 'Semaine du '+new Date(scxNow()-7*86400000).toLocaleDateString('fr-FR')+' au '+new Date().toLocaleDateString('fr-FR'),
+      clotureLe: scxNow(),
+      cloturePar: ((scxCurrentUser())||{}).nom||'?',
+      total: solde,
+      totalEntrees: totalEntrees,
+      totalSorties: totalSorties,
+      count: transactions.length,
+      tresorRate: rate,
+      tresorPrelevement: prelevement,
+      transactions: JSON.parse(JSON.stringify(transactions))
+    };
+    data.archives = data.archives || [];
+    data.archives.unshift(arch);
+    data.transactions = [];
+    scxInitDB(); // garantit tresorCentral
+    if(prelevement > 0){
+      DB.tresorCentral.mouvements.push({
+        id: 'TC-'+scxNow(),
+        section: section,
+        amount: prelevement,
+        date: scxNow(),
+        archiveId: arch.id,
+        archiveLabel: arch.label,
+        rate: rate,
+        soldeOrigine: solde
+      });
+    }
+    scxSave();
+    window.scxRender(section);
+    scxToast('📦 Semaine clôturée — '+scxFmt(prelevement)+' Ryōs versés au Trésor','success');
+  };
+  if(typeof askDelete==='function') askDelete(msg, go, '📦 Clôturer');
+  else if(confirm(msg)) go();
+};
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   TRÉSOR CENTRAL
+   ═══════════════════════════════════════════════════════════════════════════ */
+function scxComputeSectionSummary(section){
+  scxInitDB();
+  var sum = { entrees:0, sorties:0, solde:0, txCount:0, weekTotal:0, archivesCount:0, prelevements:0 };
+  var data = null;
+  if(section === 'diplomatie'){
+    if(DB.diploComptabilite && Array.isArray(DB.diploComptabilite.transactions)){
+      data = { transactions: DB.diploComptabilite.transactions, archives:[] };
+    }
+  } else if(section === 'medical'){
+    if(DB.hospital && Array.isArray(DB.hospital.paiements)){
+      var tx = DB.hospital.paiements.map(function(p){
+        return { type:'entree', amount: p.montant||p.amount||0, createdAt: p.date||p.createdAt||scxNow() };
+      });
+      data = { transactions: tx, archives:[] };
+    }
+  } else {
+    data = DB.sectionsCompta && DB.sectionsCompta[section];
+  }
+  if(!data) return sum;
+  var weekAgo = scxNow() - 7*86400000;
+  (data.transactions||[]).forEach(function(t){
+    var amt = parseInt(t.amount,10)||0;
+    if(t.type==='entree') sum.entrees += amt;
+    else if(t.type==='sortie') sum.sorties += amt;
+    sum.txCount++;
+    if((t.createdAt||0) >= weekAgo){
+      if(t.type==='entree') sum.weekTotal += amt;
+      else if(t.type==='sortie') sum.weekTotal -= amt;
+    }
+  });
+  sum.solde = sum.entrees - sum.sorties;
+  sum.archivesCount = (data.archives||[]).length;
+  if(DB.tresorCentral && Array.isArray(DB.tresorCentral.mouvements)){
+    DB.tresorCentral.mouvements.forEach(function(m){
+      if(m.section === section) sum.prelevements += m.amount||0;
+    });
+  }
+  return sum;
+}
+
+window.scxRenderTresor = function(){
+  if(typeof DB === 'undefined' || !DB) return;
+  scxInitDB();
+  var page = document.getElementById('page-tresor-central');
+  if(!page) return;
+  if(!scxCanSeeTresor()){
+    page.innerHTML = '<div class="card" style="padding:30px;text-align:center"><div style="font-size:38px;margin-bottom:10px">🔒</div><h3 style="color:var(--gold2);font-family:Cinzel,serif">Accès restreint</h3><p style="color:var(--muted);margin-top:8px">Cette page est réservée aux hauts gradés.</p></div>';
+    return;
+  }
+
+  var visibleSections = scxSectionsVisibleInTresor();
+  var summaries = {};
+  var totalSolde = 0, totalPrelev = 0;
+  visibleSections.forEach(function(s){
+    var sum = scxComputeSectionSummary(s);
+    summaries[s] = sum;
+    totalSolde += sum.solde;
+    totalPrelev += sum.prelevements;
+  });
+
+  var rate = DB.tresorCentral.prelevementRate || TRESOR_DEFAULT_RATE;
+  var isFull = (function(){ var u=scxCurrentUser(); return u && (u.role==='admin'||u.role==='hautcommandement'); })();
+  var html = '';
+  html += '<div class="scx-hero">'+
+    '<div class="scx-hero-inner">'+
+      '<div class="scx-hero-icon">🏛️</div>'+
+      '<div class="scx-hero-text">'+
+        '<div class="scx-hero-tag">Vue Haut Commandement</div>'+
+        '<div class="scx-hero-title">Trésor Central</div>'+
+        '<div class="scx-hero-sub">Vue d\'ensemble des comptabilités '+(isFull?'de toutes les sections':'de vos sections')+'</div>'+
+      '</div>'+
+    '</div>'+
+  '</div>';
+
+  html += '<div class="tc-total-bar">'+
+    '<div>'+
+      '<div class="tc-total-label">💰 Caisse du Trésor</div>'+
+      '<div style="font-size:11px;color:rgba(255,255,255,0.5);margin-top:4px">'+(isFull?'Total des prélèvements (toutes sections)':'Total visible pour vos sections')+'</div>'+
+    '</div>'+
+    '<div class="tc-total-val">'+scxFmt(totalPrelev)+'<span class="unit">Ryōs</span></div>'+
+  '</div>';
+
+  html += '<div class="scx-actions-bar">';
+  if(isFull){
+    html += '<span class="scx-tax-cfg" style="margin-left:0">'+
+      'Taux prélèvement à la clôture : '+
+      '<input type="number" id="tc-rate" min="0" max="100" step="0.5" value="'+rate+'" onchange="window.scxSetTresorRate(this.value)">'+
+      ' %'+
+    '</span>';
+  } else {
+    html += '<span class="scx-tax-cfg" style="margin-left:0;opacity:0.6">Taux prélèvement actuel : <strong>'+rate+'%</strong></span>';
+  }
+  html += '<div style="flex:1"></div>'+
+    '<div style="font-family:Share Tech Mono,monospace;font-size:11px;color:var(--muted)">'+
+      'Solde net visible : <strong style="color:'+(totalSolde>=0?'#86efac':'#fca5a5')+'">'+scxFmt(totalSolde)+' Ryōs</strong>'+
+    '</div>'+
+  '</div>';
+
+  html += '<div class="tc-grid">';
+  visibleSections.forEach(function(s){
+    var meta = SECTIONS_COMPTA[s] || { icon:'❓', name:s };
+    var sum = summaries[s];
+    html += '<div class="tc-section-card" data-section="'+s+'" onclick="window.scxGoToSection(\''+s+'\')">'+
+      '<div class="tc-section-header">'+
+        '<div class="tc-section-icon">'+meta.icon+'</div>'+
+        '<div class="tc-section-name">'+meta.name+'</div>'+
+      '</div>'+
+      '<div class="tc-section-stats">'+
+        '<div class="tc-section-stat"><div class="tc-section-stat-lbl">Entrées</div><div class="tc-section-stat-val green">'+scxFmt(sum.entrees)+'</div></div>'+
+        '<div class="tc-section-stat"><div class="tc-section-stat-lbl">Sorties</div><div class="tc-section-stat-val red">'+scxFmt(sum.sorties)+'</div></div>'+
+        '<div class="tc-section-stat"><div class="tc-section-stat-lbl">Cette semaine</div><div class="tc-section-stat-val '+(sum.weekTotal>=0?'green':'red')+'">'+scxFmt(sum.weekTotal)+'</div></div>'+
+        '<div class="tc-section-stat"><div class="tc-section-stat-lbl">Prélevé HG</div><div class="tc-section-stat-val gold">'+scxFmt(sum.prelevements)+'</div></div>'+
+      '</div>'+
+      '<div class="tc-solde-row">'+
+        '<div class="tc-solde-lbl">Solde actuel</div>'+
+        '<div class="tc-solde-val">'+scxFmt(sum.solde)+' Ryōs</div>'+
+      '</div>'+
+    '</div>';
+  });
+  html += '</div>';
+
+  html += '<div class="card" style="padding:18px 20px;margin-top:18px">';
+  html += '<h3 style="color:var(--gold2);font-family:Cinzel,serif;margin-bottom:14px">📜 Historique des prélèvements</h3>';
+  var allMvts = (DB.tresorCentral.mouvements||[]).slice().filter(function(m){
+    return visibleSections.indexOf(m.section) !== -1;
+  }).reverse();
+  if(!allMvts.length){
+    html += '<div class="scx-empty"><div class="scx-empty-ico">📭</div>Aucun prélèvement enregistré pour le moment.<br><span style="font-size:10px">Les prélèvements se feront lors des clôtures hebdomadaires.</span></div>';
+  } else {
+    html += '<div style="display:flex;flex-direction:column;gap:8px">';
+    allMvts.slice(0,30).forEach(function(m){
+      var smeta = SECTIONS_COMPTA[m.section] || { icon:'❓', name:m.section };
+      html += '<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 12px;background:rgba(20,16,9,0.6);border:1px solid rgba(180,140,20,0.15);border-radius:8px;gap:10px;flex-wrap:wrap">'+
+        '<div style="display:flex;align-items:center;gap:10px;min-width:0;flex:1">'+
+          '<span style="font-size:20px">'+smeta.icon+'</span>'+
+          '<div style="min-width:0">'+
+            '<div style="font-weight:600;color:var(--text)">'+smeta.name+'</div>'+
+            '<div style="font-size:10px;color:rgba(255,255,255,0.45);font-family:Share Tech Mono,monospace">'+scxEsc(m.archiveLabel||'')+' · '+scxFmtDate(m.date)+'</div>'+
+          '</div>'+
+        '</div>'+
+        '<div style="text-align:right;flex-shrink:0">'+
+          '<div style="font-family:Cinzel,serif;font-size:16px;font-weight:700;color:#f0d060">+'+scxFmt(m.amount)+' Ryōs</div>'+
+          '<div style="font-size:9px;color:rgba(255,255,255,0.4);font-family:Share Tech Mono,monospace">'+(m.rate||0)+'% de '+scxFmt(m.soldeOrigine||0)+'</div>'+
+        '</div>'+
+      '</div>';
+    });
+    html += '</div>';
+    if(allMvts.length > 30) html += '<div style="text-align:center;margin-top:10px;font-size:11px;color:rgba(255,255,255,0.45)">… et '+(allMvts.length-30)+' autres mouvements plus anciens</div>';
+  }
+  html += '</div>';
+
+  page.innerHTML = html;
+};
+
+window.scxSetTresorRate = function(val){
+  var u = scxCurrentUser();
+  if(!u || (u.role!=='admin' && u.role!=='hautcommandement')){ scxToast('⛔ Réservé Admin / Haut Commandement','error'); return; }
+  scxInitDB();
+  var r = parseFloat(val); if(isNaN(r)||r<0) r=0; if(r>100) r=100;
+  DB.tresorCentral.prelevementRate = r;
+  scxSave();
+  scxToast('Taux : '+r+'%','success');
+  window.scxRenderTresor();
+};
+
+window.scxGoToSection = function(section){
+  var page = (section==='police') ? 'caisse-police'
+           : (section==='diplomatie') ? 'diplo-comptabilite'
+           : (section==='medical') ? 'compta-paiements'
+           : section + '-comptabilite';
+  if(typeof showPage==='function'){
+    // Pour basculer vers une section non-courante, on peut switcher au passage
+    var u = scxCurrentUser();
+    if(u && u.role !== 'admin' && u.role !== 'hautcommandement'){
+      if(u.section !== section && scxHasAccessToSection(section)){
+        window.scxSwitchSection(section, true); // silent
+        // Laisser le DOM se mettre à jour avant de showPage
+        setTimeout(function(){ showPage(page); }, 100);
+        return;
+      }
+    }
+    showPage(page);
+  }
+};
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   HOOK SHOWPAGE
+   On wrappe le natif. Pour les pages classiques (juge-comptabilite, etc.),
+   le natif a déjà la regex /^juge-/ etc., donc il les accepte. On le laisse
+   faire son boulot puis on rend la page. Pour tresor-central et caisse-police,
+   on bypass l'engine de routage natif et on reproduit ce qu'il fait.
+   ═══════════════════════════════════════════════════════════════════════════ */
+function scxShowPageInternal(name){
+  // Reproduit le comportement du natif : désactive .active sur pages + nav,
+  // active la page demandée, met à jour topbar, sessionStorage, markPageRead, badges.
+  document.querySelectorAll('.page-content').forEach(function(p){ p.classList.remove('active'); });
+  document.querySelectorAll('.nav-item').forEach(function(n){ n.classList.remove('active'); });
+  // Cacher les sections admin restreintes si on quitte admin
+  var restricted = document.getElementById('admin-restricted-sections');
+  if(restricted) restricted.style.display = 'none';
+  var page = document.getElementById('page-'+name);
+  if(page) page.classList.add('active');
+  // Topbar
+  var label = (typeof PAGES !== 'undefined' && PAGES[name]) ? PAGES[name] : name;
+  var tt = document.getElementById('topbar-title'); if(tt) tt.textContent = label;
+  var tp = document.getElementById('topbar-path'); if(tp) tp.textContent = 'Sunagakure / ' + label;
+  // Active nav-item
+  document.querySelectorAll('.nav-item').forEach(function(n){
+    var onc = n.getAttribute('onclick') || '';
+    if(onc.indexOf("'"+name+"'") !== -1) n.classList.add('active');
+  });
+  try{ sessionStorage.setItem('suna_active_page', name); }catch(e){}
+  if(typeof markPageRead === 'function'){ try{ markPageRead(name); }catch(e){} }
+  if(typeof updateBadges === 'function'){ try{ updateBadges(); }catch(e){} }
+  if(typeof syncBottomNavBadges === 'function'){ try{ syncBottomNavBadges(); }catch(e){} }
+  if(typeof updateBottomNav === 'function'){ try{ updateBottomNav(name); }catch(e){} }
+}
+
+function scxHookShowPage(){
+  if(window.showPage && window.showPage._scxWrapped) return;
+  var orig = window.showPage;
+  if(typeof orig !== 'function'){ return false; }
+  var wrapped = function(name){
+    var u = scxCurrentUser();
+    if(!u){ return orig.apply(this, arguments); }
+
+    // Pages spéciales (cross-section)
+    if(name === 'tresor-central'){
+      if(!scxCanSeeTresor()){ scxToast('⛔ Accès réservé aux hauts gradés','error'); return; }
+      scxShowPageInternal(name);
+      window.scxRenderTresor();
+      return;
+    }
+    if(name === 'caisse-police'){
+      if(!scxCanSeeCaissePolice()){ scxToast('⛔ Réservé aux hauts gradés de la Police','error'); return; }
+      scxShowPageInternal(name);
+      window.scxRender('police');
+      return;
+    }
+    // Pages compta des sections : laisser le natif faire la sécurité (regex /^juge-/ etc.) puis render
+    var ret = orig.apply(this, arguments);
+    if(name === 'juge-comptabilite') window.scxRender('juge');
+    else if(name === 'avocat-comptabilite') window.scxRender('avocat');
+    else if(name === 'mission-comptabilite') window.scxRender('mission');
+    return ret;
+  };
+  wrapped._scxWrapped = true;
+  window.showPage = wrapped;
+  return true;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   NAV ITEMS HAUTS GRADÉS (Trésor + Caisse Police)
+   ═══════════════════════════════════════════════════════════════════════════ */
+function scxUpdateNavItems(){
+  var u = scxCurrentUser(); if(!u) return;
+  var nT = document.getElementById('nav-tresor');
+  if(nT) nT.style.display = scxCanSeeTresor() ? '' : 'none';
+  var nC = document.getElementById('nav-caisse-police');
+  if(nC) nC.style.display = scxCanSeeCaissePolice() ? '' : 'none';
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   MULTI-SECTIONS
+   Le user.sections (array) liste les sections accessibles. La section "active"
+   est currentUser.section. Pour switcher, on met à jour currentUser.section
+   en SESSION uniquement (pas en DB par défaut) sauf si forceSave=true.
+   ═══════════════════════════════════════════════════════════════════════════ */
+function scxRenderSectionSwitcher(){
+  var u = scxCurrentUser(); if(!u) return;
+  var existing = document.getElementById('ms-switcher');
+  if(existing) existing.remove();
+  // Sections disponibles
+  var available;
+  if(u.role === 'admin' || u.role === 'hautcommandement'){
+    available = ['police','juge','avocat','mission','medical','diplomatie'];
+  } else if(Array.isArray(u.sections) && u.sections.length > 1){
+    available = u.sections.slice();
+    if(u.section && available.indexOf(u.section) === -1) available.push(u.section);
+  } else {
+    return; // pas de switch nécessaire
+  }
+  var sidebar = document.getElementById('sidebar'); if(!sidebar) return;
+  var current = u.section || (available[0]||'police');
+  var html = '<div class="ms-switcher" id="ms-switcher">'+
+    '<span class="ms-sw-label">Section :</span>'+
+    available.map(function(s){
+      var meta = SECTIONS_COMPTA[s] || { icon:'❓', name:s };
+      var active = (s === current) ? ' active' : '';
+      return '<button type="button" class="ms-sw-btn'+active+'" data-sec="'+s+'" onclick="window.scxSwitchSection(\''+s+'\')" title="'+meta.name+'">'+meta.icon+'</button>';
+    }).join('')+
+  '</div>';
+  var logo = sidebar.querySelector('.sidebar-logo');
+  if(logo) logo.insertAdjacentHTML('afterend', html);
+}
+
+window.scxSwitchSection = function(newSection, silent){
+  var u = scxCurrentUser(); if(!u) return;
+  if(u.section === newSection){ return; }
+  // Vérifier le droit
+  if(u.role !== 'admin' && u.role !== 'hautcommandement'){
+    var allowed = (Array.isArray(u.sections) && u.sections.indexOf(newSection) !== -1) || u.section === newSection;
+    if(!allowed){
+      scxToast("⛔ Vous n'avez pas accès à cette section",'error');
+      return;
+    }
+  }
+  // On NE persiste PAS la section en DB : c'est juste un override de session.
+  // Cela évite d'écraser la "vraie" section du compte (visible pour les autres admins).
+  // L'override est rétabli au prochain login si on ne save pas.
+  u.section = newSection;
+  // Re-appliquer l'UI de section
+  if(typeof _applySectionUI === 'function'){ try{ _applySectionUI(); }catch(e){} }
+  scxUpdateNavItems();
+  scxRenderSectionSwitcher();
+  if(!silent){
+    scxToast('Section active : '+((SECTIONS_COMPTA[newSection]||{}).name||newSection),'success');
+    if(typeof showPage === 'function') showPage('dashboard');
+  }
+};
+
+/* Panel Admin : éditer les sections d'un utilisateur
+   On ajoute un bouton "📂 Sections" dans la liste des membres admin.
+   Pour faire simple, on ajoute juste une commande globale appelable
+   depuis la console : scxSetUserSections('login', ['police','juge'])
+*/
+window.scxSetUserSections = function(userIdOrLogin, sections){
+  var u = scxCurrentUser();
+  if(!u || u.role !== 'admin'){ scxToast('⛔ Admin uniquement','error'); return; }
+  if(!Array.isArray(sections)){ scxToast('Format : tableau de sections','error'); return; }
+  var valid = ['police','juge','avocat','mission','medical','diplomatie'];
+  sections = sections.filter(function(s){ return valid.indexOf(s) !== -1; });
+  if(!sections.length){ scxToast('Aucune section valide','error'); return; }
+  var target = (DB.users||[]).find(function(x){
+    return String(x.id) === String(userIdOrLogin) || x.login === userIdOrLogin || x.nom === userIdOrLogin;
+  });
+  if(!target){ scxToast('Utilisateur introuvable','error'); return; }
+  target.sections = sections;
+  if(sections.indexOf(target.section) === -1) target.section = sections[0];
+  scxSave();
+  scxToast('Sections de '+(target.nom||target.login)+' : '+sections.join(', '),'success');
+  return true;
+};
+
+/* Helper console pour lister les comptes et leurs sections */
+window.scxListUserSections = function(){
+  if(typeof DB === 'undefined' || !DB || !Array.isArray(DB.users)){ console.log('DB indisponible'); return; }
+  var rows = DB.users.map(function(u){
+    return {
+      id: u.id,
+      login: u.login,
+      nom: u.nom,
+      section_principale: u.section || '—',
+      multi_sections: Array.isArray(u.sections) ? u.sections.join(', ') : '(aucune)',
+      role: u.role
+    };
+  });
+  console.table(rows);
+  console.log('Pour ajouter du multi-sections à un user :');
+  console.log("  scxSetUserSections('LOGIN', ['police', 'juge'])");
+  return rows;
+};
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   RECONCILE LÉGER (bug-fix re-render)
+   - Pas de double listener Firebase (on s'appuie sur le natif).
+   - Toutes les 6s, si on est sur une page de notre module et qu'aucune modale
+     n'est ouverte, on re-render. Si DB a changé via le sync natif, ça se voit.
+   ═══════════════════════════════════════════════════════════════════════════ */
+var _scxReconcileFingerprints = {};
+function scxReconcileTick(){
+  try{
+    if(!scxCurrentUser()) return;
+    if(scxIsModalOpen()) return;
+    var ap = document.querySelector('.page-content.active');
+    if(!ap) return;
+    var id = ap.id.replace(/^page-/, '');
+    var sectionToRender = null, isTresor = false;
+    if(id === 'juge-comptabilite') sectionToRender = 'juge';
+    else if(id === 'avocat-comptabilite') sectionToRender = 'avocat';
+    else if(id === 'mission-comptabilite') sectionToRender = 'mission';
+    else if(id === 'caisse-police') sectionToRender = 'police';
+    else if(id === 'tresor-central') isTresor = true;
+    if(!sectionToRender && !isTresor) return;
+    // Fingerprint des données pour ne re-render que si elles ont vraiment changé
+    var fp;
+    if(isTresor){
+      fp = JSON.stringify({
+        c: DB.sectionsCompta || {},
+        d: (DB.diploComptabilite && DB.diploComptabilite.transactions) || [],
+        h: (DB.hospital && DB.hospital.paiements) || [],
+        t: DB.tresorCentral || {}
+      });
+    } else {
+      fp = JSON.stringify(DB.sectionsCompta && DB.sectionsCompta[sectionToRender] || {});
+    }
+    if(_scxReconcileFingerprints[id] === fp) return;
+    _scxReconcileFingerprints[id] = fp;
+    if(isTresor) window.scxRenderTresor();
+    else window.scxRender(sectionToRender);
+  }catch(e){ /* silencieux */ }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   AJOUT AUTOMATIQUE DE sectionsCompta ET tresorCentral AUX SYNC_KEYS NATIFS
+   Le natif a une liste SYNC_KEYS locale dans son listener onValue. Pour qu'il
+   propage les changements à DB.sectionsCompta et DB.tresorCentral comme il le
+   fait pour DB.diploComptabilite, on ajoute ces clés manuellement.
+   ═══════════════════════════════════════════════════════════════════════════ */
+function scxPropagateFromFirebase(){
+  // Pas de listener supplémentaire — on hook un setInterval qui regarde
+  // _lastFbArrays ou le snapshot Firebase ne suffit pas car les clés objets
+  // ne sont pas dans _lastFbArrays. On se contente de re-init de DB pour
+  // garantir la structure et le reconcile détectera les changements.
+  // (Le sync entre clients passe par le listener natif + saveData full.)
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   BOOT
+   ═══════════════════════════════════════════════════════════════════════════ */
+function scxBoot(){
+  if(window._scxBooted){
+    // Re-init UI seulement (cas re-login)
+    try{ scxInitDB(); }catch(e){}
+    try{ scxUpdateNavItems(); }catch(e){}
+    try{ scxRenderSectionSwitcher(); }catch(e){}
+    return;
+  }
+  if(typeof currentUser === 'undefined' || !currentUser){
+    // Pas encore connecté : on retentera
+    return;
+  }
+  window._scxBooted = true;
+  try{ scxInitDB(); }catch(e){ console.warn('[scx] init',e); }
+  try{ scxHookShowPage(); }catch(e){ console.warn('[scx] hookShowPage',e); }
+  try{ scxUpdateNavItems(); }catch(e){ console.warn('[scx] nav',e); }
+  try{ scxRenderSectionSwitcher(); }catch(e){ console.warn('[scx] switcher',e); }
+  try{ scxInstallImpotsHook(); }catch(e){ console.warn('[scx] impotsHook',e); }
+  // Reconcile : toutes les 6 secondes, seulement si on est sur une page du module
+  if(!window._scxReconcileInstalled){
+    window._scxReconcileInstalled = true;
+    setInterval(scxReconcileTick, 6000);
+  }
+}
+
+/* Tentatives multiples de boot (currentUser peut arriver tardivement) */
+function scxStartBootLoop(){
+  if(window._scxBootLoopStarted) return;
+  window._scxBootLoopStarted = true;
+  var tries = 0;
+  var maxTries = 120; // 3 minutes
+  var iv = setInterval(function(){
+    tries++;
+    if(window._scxBooted){ clearInterval(iv); return; }
+    if(tries >= maxTries){ clearInterval(iv); return; }
+    if(typeof currentUser !== 'undefined' && currentUser){
+      scxBoot();
+    }
+  }, 1500);
+}
+
+if(document.readyState === 'loading'){
+  document.addEventListener('DOMContentLoaded', function(){ setTimeout(scxStartBootLoop, 500); });
+} else {
+  setTimeout(scxStartBootLoop, 500);
+}
+
+/* Wrap applyLogin (avec protection contre double-wrap) */
+function scxWrapApplyLogin(){
+  if(typeof window.applyLogin !== 'function') return;
+  if(window.applyLogin._scxWrapped) return;
+  var orig = window.applyLogin;
+  var w = function(){
+    var r = orig.apply(this, arguments);
+    setTimeout(function(){
+      try{ scxBoot(); scxUpdateNavItems(); scxRenderSectionSwitcher(); }catch(e){}
+    }, 600);
+    return r;
+  };
+  w._scxWrapped = true;
+  w._wrapped = orig._wrapped || false; // préserve le flag du natif
+  window.applyLogin = w;
+}
+// Tenter de wrap dès que possible
+setTimeout(scxWrapApplyLogin, 1500);
+setTimeout(scxWrapApplyLogin, 4000);
+
+/* Wrap doLogout pour reset l'état du switcher */
+function scxWrapDoLogout(){
+  if(typeof window.doLogout !== 'function') return;
+  if(window.doLogout._scxWrapped) return;
+  var orig = window.doLogout;
+  var w = function(){
+    try{
+      var sw = document.getElementById('ms-switcher'); if(sw) sw.remove();
+      window._scxBooted = false; // permet un nouveau boot à la prochaine connexion
+    }catch(e){}
+    return orig.apply(this, arguments);
+  };
+  w._scxWrapped = true;
+  w._wrapped = orig._wrapped || false;
+  window.doLogout = w;
+}
+setTimeout(scxWrapDoLogout, 1500);
+
+// Expose pour debug
+window._scxModule = {
+  init: scxInitDB,
+  render: function(s){ return window.scxRender(s); },
+  renderTresor: function(){ return window.scxRenderTresor(); },
+  userSections: scxUserSections,
+  canSeeTresor: scxCanSeeTresor,
+  canSeeCaissePolice: scxCanSeeCaissePolice,
+  sectionsVisibleInTresor: scxSectionsVisibleInTresor,
+  setUserSections: window.scxSetUserSections,
+  listUserSections: window.scxListUserSections,
+  syncPolice: scxSyncPoliceFromImpots,
+  SECTIONS: SECTIONS_COMPTA
+};
+
+// Shortcuts pour le pageRenderers natif (intégration sync Firebase)
+window._scxRenderJuge    = function(){ window.scxRender('juge'); };
+window._scxRenderAvocat  = function(){ window.scxRender('avocat'); };
+window._scxRenderMission = function(){ window.scxRender('mission'); };
+window._scxRenderPolice  = function(){ window.scxRender('police'); };
+window._scxRenderTresor  = function(){ window.scxRenderTresor(); };
+
+})();
+</script>
 
 </body>
 </html>
