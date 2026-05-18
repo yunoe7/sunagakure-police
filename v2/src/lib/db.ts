@@ -63,11 +63,32 @@ export async function dbGet<T = unknown>(path: string): Promise<T | null> {
   const snap = await get(getRef(path));
   return snap.exists() ? (snap.val() as T) : null;
 }
-
+/**
+ * Firebase RTDB refuse les valeurs `undefined`. Cette fonction parcourt
+ * récursivement un objet et retire toutes les clés dont la valeur est undefined.
+ * Les chaînes vides et 0 sont conservés (ce sont des valeurs valides).
+ */
+function stripUndefined<T>(value: T): T {
+  if (value === undefined || value === null) return value;
+  if (Array.isArray(value)) {
+    return value.map(stripUndefined).filter((v) => v !== undefined) as T;
+  }
+  if (typeof value === 'object') {
+    const cleaned: Record<string, unknown> = {};
+    for (const [k, v] of Object.entries(value as Record<string, unknown>)) {
+      if (v !== undefined) {
+        cleaned[k] = stripUndefined(v);
+      }
+    }
+    return cleaned as T;
+  }
+  return value;
+}
 export async function dbSet<T>(path: string, value: T): Promise<void> {
   await ensureAuthReady();
-  await set(getRef(path), value);
+  await set(getRef(path), stripUndefined(value));
 }
+
 
 export async function dbUpdate(path: string, updates: Record<string, unknown>): Promise<void> {
   await ensureAuthReady();

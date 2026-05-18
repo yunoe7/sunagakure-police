@@ -33,7 +33,7 @@ export const NAV_SECTIONS: NavSection[] = [
     items: [
       { label: 'Casiers', href: '/police/casiers', icon: 'FileText' },
       { label: 'Dossiers', href: '/police/dossiers', icon: 'Folder' },
-      { label: 'Bingo Book', href: '/police/bingobook', icon: 'BookMarked' },
+      { label: 'Bingo Book', href: '/bingobook', icon: 'BookMarked' },
       { label: 'Caisse', href: '/police/caisse', icon: 'Wallet' },
     ],
   },
