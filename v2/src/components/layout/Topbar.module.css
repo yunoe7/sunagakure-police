@@ -1,0 +1,51 @@
+.topbar {
+  height: var(--topbar-height);
+  background: rgba(10, 8, 6, 0.88);
+  backdrop-filter: blur(16px);
+  border-bottom: 1px solid rgba(201, 162, 39, 0.15);
+  display: flex;
+  align-items: center;
+  padding: 0 26px;
+  gap: 14px;
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  box-shadow: 0 1px 20px rgba(0, 0, 0, 0.4);
+}
+
+.statusDot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--green);
+  animation: blink 2s infinite;
+  flex-shrink: 0;
+  box-shadow: 0 0 6px rgba(22, 163, 74, 0.5);
+}
+
+.statusDot.offline {
+  background: #f59e0b;
+  box-shadow: 0 0 8px rgba(245, 158, 11, 0.7);
+  animation: blink 0.9s infinite;
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+.title {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--gold2);
+}
+
+.path {
+  color: var(--muted);
+  font-size: 10px;
+  font-family: 'Share Tech Mono', monospace;
+  margin-left: auto;
+}

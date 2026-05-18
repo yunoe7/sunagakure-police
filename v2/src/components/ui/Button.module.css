@@ -1,0 +1,73 @@
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border-radius: 6px;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-weight: 600;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  border: 1px solid transparent;
+  white-space: nowrap;
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Tailles */
+.sm { padding: 5px 10px; font-size: 11px; }
+.md { padding: 8px 14px; font-size: 12px; }
+.lg { padding: 11px 20px; font-size: 14px; }
+
+/* Variantes */
+.primary {
+  background: linear-gradient(180deg, var(--accent2), var(--accent));
+  color: #fff;
+  box-shadow: 0 2px 6px rgba(192, 65, 14, 0.3);
+}
+.primary:hover:not(:disabled) {
+  background: linear-gradient(180deg, #ee6a25, var(--accent2));
+  box-shadow: 0 4px 12px rgba(192, 65, 14, 0.4);
+  transform: translateY(-1px);
+}
+
+.secondary {
+  background: rgba(201, 162, 39, 0.15);
+  color: var(--gold2);
+  border-color: rgba(201, 162, 39, 0.35);
+}
+.secondary:hover:not(:disabled) {
+  background: rgba(201, 162, 39, 0.25);
+}
+
+.outline {
+  background: transparent;
+  color: var(--text2);
+  border-color: var(--border2);
+}
+.outline:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text);
+}
+
+.danger {
+  background: var(--red);
+  color: #fff;
+}
+.danger:hover:not(:disabled) {
+  background: #dc2626;
+}
+
+.ghost {
+  background: transparent;
+  color: var(--text2);
+}
+.ghost:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text);
+}
