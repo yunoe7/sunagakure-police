@@ -45739,7 +45739,8 @@ window.scxSwitchSection = function(newSection, silent){
   scxUpdateNavItems();
   scxRenderSectionSwitcher();
   if(!silent){
-    scxToast('Section active : '+((SECTIONS_COMPTA[newSection]||{}).name||newSection),'success');
+    // Pas de toast : le changement est déjà visible dans la sidebar (nom de la section)
+    // et dans la page qui change. Toast = polluant si on switche plusieurs fois.
     // Aller sur la PAGE PRINCIPALE de la section (pas dashboard) pour bien voir le changement
     var landingPage = {
       'police':     'annonces',
