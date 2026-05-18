@@ -73,7 +73,7 @@ export const NAV_SECTIONS: NavSection[] = [
     items: [
       { label: 'Villages', href: '/diplo/villages', icon: 'Globe' },
       { label: 'Traités', href: '/diplo/traites', icon: 'FileSignature' },
-      { label: 'Laissez-passer', href: '/diplo/laissezpasse', icon: 'BadgeCheck' },
+      { label: 'Laissez-passer', href: '/diplo/laissez-passer', icon: 'BadgeCheck' },
       { label: 'Communications', href: '/diplo/communications', icon: 'Radio' },
     ],
   },
