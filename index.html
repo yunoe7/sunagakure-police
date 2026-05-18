@@ -27623,6 +27623,8 @@ function saveDossier(force){
 
   addTimeline(`Dossier ouvert sur ${nom}` + (defunt ? ' (⚱ défunt)' : ''));
   saveData(['dossiers','timeline']);
+  // [MODULE PATCH v2] Sync immédiate Caisse Police si amende payée
+  try{ if(typeof scxSyncPoliceFromDossiers === 'function') scxSyncPoliceFromDossiers(); }catch(e){}
   closeModal("modal-dossier");
   renderDossiers();
   syncDashboard();
@@ -27686,7 +27688,15 @@ function clearDossierPhoto(){
 }
 function deleteDossier(id){
   if(typeof canModify === 'function' && !canModify()){ showToast('⛔ Action réservée aux modérateurs.','error'); return; }
-  id=parseInt(id);askDelete("Supprimer ce dossier criminel ?",()=>{_markDeleted("dossiers",id);DB.dossiers=DB.dossiers.filter(d=>String(d.id)!==String(id));saveData('dossiers');renderDossiers();syncDashboard()})
+  id=parseInt(id);askDelete("Supprimer ce dossier criminel ?",()=>{
+    _markDeleted("dossiers",id);
+    DB.dossiers=DB.dossiers.filter(d=>String(d.id)!==String(id));
+    saveData('dossiers');
+    // [MODULE PATCH v2] Resync Caisse Police (retire les tx auto liées aux incidents du dossier supprimé)
+    try{ if(typeof scxSyncPoliceFromDossiers === 'function') scxSyncPoliceFromDossiers(); }catch(e){}
+    renderDossiers();
+    syncDashboard();
+  })
 }
 
 function openEditDossier(id){
@@ -27805,6 +27815,8 @@ function dcAddIncidentPayment(dossierId, incidentId){
   d.amendeImpayee = dcDossierTotalImpaye(d);
   addTimeline(`Paiement de ${amount.toLocaleString('fr-FR')} Ryos sur le dossier de ${d.nom}`);
   saveData(['dossiers','timeline']);
+  // [MODULE PATCH v2] Sync immédiate Caisse Police
+  try{ if(typeof scxSyncPoliceFromDossiers === 'function') scxSyncPoliceFromDossiers(); }catch(e){}
   // Re-render
   dcRenderIncidentsListInEdit(d);
   dcUpdateRecapGlobal(d);
@@ -27834,6 +27846,8 @@ function dcDeleteIncident(dossierId, incidentId){
       }).filter(Boolean).join(' | ');
       addTimeline(`Incident retiré du dossier de ${d.nom}`);
       saveData(['dossiers','timeline']);
+      // [MODULE PATCH v2] Resync Caisse Police (retire la tx auto orpheline)
+      try{ if(typeof scxSyncPoliceFromDossiers === 'function') scxSyncPoliceFromDossiers(); }catch(e){}
       dcRenderIncidentsListInEdit(d);
       dcUpdateRecapGlobal(d);
       renderDossiers();
@@ -27935,6 +27949,8 @@ function dcSaveNewIncident(){
 
   addTimeline(`Nouvel incident ajouté au dossier de ${d.nom} (${fmtDate(incidentDate)})`);
   saveData(['dossiers','timeline']);
+  // [MODULE PATCH v2] Sync immédiate Caisse Police si amende payée
+  try{ if(typeof scxSyncPoliceFromDossiers === 'function') scxSyncPoliceFromDossiers(); }catch(e){}
   dcCancelNewIncident('ed');
   dcRenderIncidentsListInEdit(d);
   dcUpdateRecapGlobal(d);
@@ -27974,6 +27990,8 @@ function updateDossier(){
     addTimeline(`Dossier de ${d.nom} modifié par ${currentUser.nom}`);
   }
   saveData();
+  // [MODULE PATCH v2] Resync Caisse Police (dossier modifié peut avoir affecté un montant)
+  try{ if(typeof scxSyncPoliceFromDossiers === 'function') scxSyncPoliceFromDossiers(); }catch(e){}
   renderDossiers();
   syncDashboard();
   closeModal("modal-edit-dossier");
@@ -44729,6 +44747,114 @@ function scxSyncPoliceFromImpots(force){
     if(ap && ap.id === 'page-caisse-police') window.scxRender('police');
   }
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   AUTO-TRACKING POLICE — Dossiers criminels (amendes encaissées)
+   Pour chaque dossier, pour chaque incident, pour chaque "tranche" de paiement
+   (amendePayee), on génère 1 entrée auto dans la Caisse Police.
+   Comme on n'a pas l'historique granulaire des paiements (seul amendePayee final
+   est stocké), on enregistre 1 seule entrée par incident, et on la met à jour
+   si le montant change. SourceId = 'dossier-INCIDENTID'.
+   ═══════════════════════════════════════════════════════════════════════════ */
+function scxSyncPoliceFromDossiers(){
+  if(typeof DB === 'undefined' || !DB || !Array.isArray(DB.dossiers)) return;
+  scxInitDB();
+  var policeData = DB.sectionsCompta.police;
+  var existing = {};
+  (policeData.transactions||[]).forEach(function(t){
+    if(t.auto && t.sourceId && t.sourceId.indexOf('dossier-') === 0){
+      existing[t.sourceId] = t;
+    }
+  });
+  var changed = false;
+  // Construire l'index des incidents existants pour détecter les suppressions
+  var validSourceIds = {};
+  DB.dossiers.forEach(function(d){
+    if(!d || !Array.isArray(d.incidents)) return;
+    d.incidents.forEach(function(inc){
+      var paye = parseInt(inc.amendePayee, 10) || 0;
+      if(paye <= 0) return; // pas encaissé → pas tracé
+      var srcId = 'dossier-' + inc.id;
+      validSourceIds[srcId] = true;
+      var existingTx = existing[srcId];
+      var label = '[Auto] Amende encaissée sur ' + (d.nom||'?') + (inc.notes ? ' · ' + inc.notes : '');
+      var infrNames = [];
+      if(Array.isArray(inc.infractions)){
+        infrNames = inc.infractions.map(function(x){return x.nom||'?';});
+      }
+      if(inc.infractionsLibres){
+        infrNames = infrNames.concat(inc.infractionsLibres.split(',').map(function(s){return s.trim();}).filter(Boolean));
+      }
+      var details = infrNames.length ? ' · ' + infrNames.join(', ') : '';
+      var dateStr;
+      try{ dateStr = new Date(inc.date || d.date || scxNow()).toISOString().slice(0,10); }
+      catch(e){ dateStr = new Date().toISOString().slice(0,10); }
+
+      if(!existingTx){
+        policeData.transactions.push({
+          id: 'TX-' + scxNow() + '-' + Math.random().toString(36).slice(2,6),
+          type: 'entree',
+          amount: paye,
+          passeur: inc.auteur || d.auteur || '?',
+          justif: label + details,
+          date: dateStr,
+          taxRateAtCreation: 0,
+          taxAmount: 0,
+          taxPaid: true,
+          auto: true,
+          autoSource: 'dossier',
+          sourceId: srcId,
+          dossierId: d.id,
+          incidentId: inc.id,
+          createdAt: inc.date || d.date || scxNow(),
+          createdBy: inc.auteur || d.auteur || '?'
+        });
+        changed = true;
+      } else if(existingTx.amount !== paye){
+        existingTx.amount = paye;
+        existingTx.justif = label + details;
+        existingTx.editedAt = scxNow();
+        existingTx.editedBy = ((scxCurrentUser()||{}).nom)||'?';
+        changed = true;
+      }
+    });
+  });
+
+  // Retirer les transactions auto-dossier dont l'incident a été supprimé (ou amende remise à 0)
+  var beforeLen = policeData.transactions.length;
+  policeData.transactions = policeData.transactions.filter(function(t){
+    if(!t.auto || !t.sourceId || t.sourceId.indexOf('dossier-') !== 0) return true;
+    return !!validSourceIds[t.sourceId];
+  });
+  if(policeData.transactions.length !== beforeLen) changed = true;
+
+  if(changed){
+    scxSave();
+    var ap = document.querySelector('.page-content.active');
+    if(ap && ap.id === 'page-caisse-police') window.scxRender('police');
+  }
+}
+
+// Hook polling sur les dossiers (fingerprint pour ne déclencher que sur changement)
+function scxInstallDossiersHook(){
+  if(window._scxDossiersHookInstalled) return;
+  window._scxDossiersHookInstalled = true;
+  var lastFingerprint = '';
+  function check(){
+    try{
+      if(typeof DB === 'undefined' || !DB || !Array.isArray(DB.dossiers)){ return; }
+      var fp = JSON.stringify(DB.dossiers.map(function(d){
+        return [d.id, (d.incidents||[]).map(function(i){return [i.id, i.amendePayee||0];})];
+      }));
+      if(fp !== lastFingerprint){
+        lastFingerprint = fp;
+        scxSyncPoliceFromDossiers();
+      }
+    }catch(e){ /* silencieux */ }
+  }
+  setTimeout(check, 1500); // premier check après les impôts
+  setInterval(check, 10000);
+}
 // Hook : on intercepte saveData pour faire la sync APRÈS chaque save
 // (pas un wrap, juste un appel périodique léger : 1× par changement)
 function scxInstallImpotsHook(){
@@ -45591,6 +45717,7 @@ function scxBoot(){
   try{ scxUpdateNavItems(); }catch(e){ console.warn('[scx] nav',e); }
   try{ scxRenderSectionSwitcher(); }catch(e){ console.warn('[scx] switcher',e); }
   try{ scxInstallImpotsHook(); }catch(e){ console.warn('[scx] impotsHook',e); }
+  try{ scxInstallDossiersHook(); }catch(e){ console.warn('[scx] dossiersHook',e); }
   // Reconcile : toutes les 6 secondes, seulement si on est sur une page du module
   if(!window._scxReconcileInstalled){
     window._scxReconcileInstalled = true;
