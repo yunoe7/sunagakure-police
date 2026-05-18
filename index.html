@@ -46116,6 +46116,29 @@ window._scxRenderTresor  = function(){ window.scxRenderTresor(); };
   background:rgba(212,180,74,0.10);
   border-color:rgba(212,180,74,0.35);
 }
+
+/* ─── FILTRES *-fbtn (Dossiers, Annonces, Bingo Book, Impôts, Laissez-passer)
+   Tous suivent le même pattern : fond/bordure transparents par défaut.
+   On rend les boutons NON-actifs plus visibles avec un léger fond et bordure. ─── */
+.dc-fbtn:not(.active),
+.ann-fbtn:not(.active),
+.bb-fbtn:not(.active),
+.imp-fbtn:not(.active),
+.lp-fbtn:not(.active){
+  background:rgba(255,255,255,0.40) !important;
+  border:1px solid rgba(139,105,20,0.22) !important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,0.35);
+}
+/* Hover : amplifie le fond mais garde la teinte du natif */
+.dc-fbtn:not(.active):hover,
+.ann-fbtn:not(.active):hover,
+.bb-fbtn:not(.active):hover,
+.imp-fbtn:not(.active):hover,
+.lp-fbtn:not(.active):hover{
+  border-color:rgba(139,105,20,0.50) !important;
+  transform:translateY(-1px);
+  box-shadow:0 2px 6px rgba(0,0,0,0.10), inset 0 1px 0 rgba(255,255,255,0.40);
+}
 </style>
 
 
