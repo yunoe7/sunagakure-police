@@ -1,0 +1,252 @@
+/* PHARMACIE — Style pharmacie */
+
+.statGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+  margin-bottom: 20px;
+}
+.statCard {
+  background: linear-gradient(180deg, #15110b, #1a140c);
+  border: 1px solid rgba(180,140,20,0.22);
+  border-radius: 10px;
+  padding: 14px 16px;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+.statCard::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+}
+.scGold::before   { background: linear-gradient(90deg, transparent, var(--gold2), transparent); }
+.scWarn::before   { background: linear-gradient(90deg, transparent, #f59e0b, transparent); }
+.scDanger::before { background: linear-gradient(90deg, transparent, #ef4444, transparent); }
+.scGreen::before  { background: linear-gradient(90deg, transparent, #22c55e, transparent); }
+
+.statCard > svg {
+  color: var(--muted);
+  margin-bottom: 4px;
+}
+.scGold > svg   { color: var(--gold2); }
+.scWarn > svg   { color: #fcd34d; }
+.scDanger > svg { color: #fca5a5; }
+.scGreen > svg  { color: #86efac; }
+
+.statVal {
+  font-family: 'Cinzel', serif;
+  font-size: 22px;
+  font-weight: 700;
+  line-height: 1;
+  margin: 4px 0;
+  color: var(--text);
+}
+.scGold .statVal   { color: var(--gold2); }
+.scWarn .statVal   { color: #fcd34d; }
+.scDanger .statVal { color: #fca5a5; }
+.scGreen .statVal  { color: #86efac; }
+.statLbl {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 1.5px;
+  color: var(--muted);
+  text-transform: uppercase;
+}
+
+.toolbar {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.searchBox {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 12px;
+  background: rgba(0,0,0,0.4);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--muted);
+  flex: 1;
+  min-width: 200px;
+  max-width: 300px;
+}
+.searchBox input {
+  background: transparent;
+  border: none;
+  outline: none;
+  color: var(--text);
+  font-size: 13px;
+  flex: 1;
+}
+.filterSelect {
+  padding: 8px 12px;
+  background: rgba(0,0,0,0.4);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text);
+  font-size: 12.5px;
+  font-family: 'Barlow', sans-serif;
+  cursor: pointer;
+}
+
+.empty {
+  text-align: center;
+  padding: 60px 20px;
+  color: var(--muted);
+  font-style: italic;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+}
+
+/* Table */
+.medTable {
+  width: 100%;
+  border-collapse: collapse;
+  background: linear-gradient(180deg, #15110b, #1a140c);
+  border: 1px solid rgba(180,140,20,0.22);
+  border-radius: 8px;
+  overflow: hidden;
+}
+.medTable th {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--gold2);
+  padding: 12px 14px;
+  text-align: left;
+  background: rgba(0,0,0,0.3);
+  border-bottom: 1px solid rgba(212,180,74,0.2);
+}
+.medTable td {
+  padding: 12px 14px;
+  font-size: 13px;
+  color: var(--text);
+  border-bottom: 1px solid rgba(201,162,39,0.06);
+}
+.medTable tbody tr:hover {
+  background: rgba(212,180,74,0.04);
+}
+.medTable tbody tr:last-child td { border-bottom: none; }
+
+.rowAlerte { background: rgba(245,158,11,0.05); }
+.rowAlerte:hover { background: rgba(245,158,11,0.1) !important; }
+.rowRupture { background: rgba(239,68,68,0.06); }
+.rowRupture:hover { background: rgba(239,68,68,0.12) !important; }
+
+.notes { font-size: 11px; color: var(--muted); margin-top: 2px; font-style: italic; }
+
+.catChip {
+  display: inline-flex;
+  padding: 3px 9px;
+  background: rgba(168,85,247,0.12);
+  color: #c4b5fd;
+  border: 1px solid rgba(168,85,247,0.3);
+  border-radius: 4px;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 9.5px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  font-weight: 700;
+}
+
+/* Stock control */
+.stockControl {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.stockBtn {
+  width: 24px;
+  height: 24px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0,0,0,0.4);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text2);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.stockBtn:hover:not(:disabled) {
+  background: rgba(212,180,74,0.15);
+  border-color: rgba(212,180,74,0.5);
+  color: var(--gold2);
+}
+.stockBtn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+.stockVal {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text);
+  min-width: 50px;
+  text-align: center;
+}
+.stockVal small {
+  font-size: 10px;
+  color: var(--muted);
+  font-weight: normal;
+}
+.stockAlerte { color: #fcd34d; }
+.stockRupture { color: #fca5a5; }
+
+.mono {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 12px;
+  color: var(--gold2);
+}
+.muted { color: var(--muted); font-size: 12px; }
+
+.deleteBtn {
+  padding: 5px 7px;
+  border-radius: 4px;
+  color: var(--muted);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.deleteBtn:hover { color: var(--red); background: rgba(239,68,68,0.1); }
+
+/* Formulaire */
+.formFields { display: flex; flex-direction: column; gap: 14px; }
+.formFields label {
+  display: flex; flex-direction: column; gap: 5px;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase;
+  color: rgba(212,180,74,0.85); font-weight: 700;
+}
+.formFields input,
+.formFields textarea,
+.formFields select {
+  padding: 10px 12px;
+  background: rgba(0,0,0,0.4);
+  border: 1px solid rgba(180,140,20,0.35);
+  border-radius: 6px;
+  color: var(--text);
+  font-size: 13px;
+  font-family: 'Barlow', sans-serif;
+  text-transform: none; letter-spacing: normal; font-weight: normal;
+}
+.formFields input:focus,
+.formFields textarea:focus,
+.formFields select:focus {
+  outline: none;
+  border-color: rgba(212,180,74,0.65);
+  background: rgba(0,0,0,0.55);
+  box-shadow: 0 0 0 3px rgba(212,180,74,0.1);
+}
+.formFields textarea { resize: vertical; min-height: 80px; }
+.row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.row3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }

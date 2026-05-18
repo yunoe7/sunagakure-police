@@ -1,0 +1,246 @@
+/* DONS DU SANG — Style sang/médical */
+
+/* Grille des 8 groupes sanguins */
+.bloodGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+  gap: 10px;
+  margin-bottom: 16px;
+}
+.bloodCard {
+  background: linear-gradient(180deg, #15110b, #1a140c);
+  border: 1px solid rgba(180,140,20,0.22);
+  border-radius: 10px;
+  padding: 12px 8px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.18s;
+  position: relative;
+  overflow: hidden;
+}
+.bloodCard::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, #ef4444, transparent);
+}
+.bloodCard:hover {
+  transform: translateY(-2px);
+  border-color: rgba(239,68,68,0.4);
+  box-shadow: 0 6px 18px rgba(239,68,68,0.15);
+}
+
+.bloodGroup {
+  font-family: 'Cinzel', serif;
+  font-size: 24px;
+  font-weight: 700;
+  color: #fca5a5;
+  text-shadow: 0 0 16px rgba(239,68,68,0.4);
+  line-height: 1;
+  margin-bottom: 4px;
+}
+.bloodCount {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 1px;
+  color: var(--muted);
+  text-transform: uppercase;
+  margin-bottom: 2px;
+}
+.bloodVolume {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.bloodLow {
+  border-color: rgba(245,158,11,0.4);
+}
+.bloodLow .bloodGroup {
+  color: #fcd34d;
+  text-shadow: 0 0 16px rgba(245,158,11,0.4);
+}
+.bloodLow::before {
+  background: linear-gradient(90deg, transparent, #f59e0b, transparent);
+}
+
+.bloodEmpty {
+  opacity: 0.5;
+}
+.bloodEmpty .bloodGroup {
+  color: var(--muted);
+  text-shadow: none;
+}
+.bloodEmpty::before { display: none; }
+
+/* Total box */
+.totalBox {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 16px;
+  background: rgba(239,68,68,0.08);
+  border: 1px solid rgba(239,68,68,0.25);
+  border-radius: 8px;
+  margin-bottom: 18px;
+  color: #fca5a5;
+  font-size: 13px;
+  font-family: 'Barlow', sans-serif;
+}
+.totalBox strong {
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.toolbar {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.searchBox {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 12px;
+  background: rgba(0,0,0,0.4);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--muted);
+  flex: 1;
+  min-width: 220px;
+  max-width: 320px;
+}
+.searchBox input {
+  background: transparent;
+  border: none;
+  outline: none;
+  color: var(--text);
+  font-size: 13px;
+  flex: 1;
+}
+
+.clearFilter {
+  padding: 7px 12px;
+  background: rgba(239,68,68,0.15);
+  border: 1px solid rgba(239,68,68,0.4);
+  border-radius: 6px;
+  color: #fca5a5;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.empty {
+  text-align: center;
+  padding: 60px 20px;
+  color: var(--muted);
+  font-style: italic;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+}
+
+/* Table */
+.donTable {
+  width: 100%;
+  border-collapse: collapse;
+  background: linear-gradient(180deg, #15110b, #1a140c);
+  border: 1px solid rgba(180,140,20,0.22);
+  border-radius: 8px;
+  overflow: hidden;
+}
+.donTable th {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--gold2);
+  padding: 12px 14px;
+  text-align: left;
+  background: rgba(0,0,0,0.3);
+  border-bottom: 1px solid rgba(212,180,74,0.2);
+}
+.donTable td {
+  padding: 11px 14px;
+  font-size: 13px;
+  color: var(--text);
+  border-bottom: 1px solid rgba(201,162,39,0.06);
+}
+.donTable tbody tr:hover {
+  background: rgba(239,68,68,0.04);
+}
+.donTable tbody tr:last-child td { border-bottom: none; }
+
+.mono {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 11.5px;
+  color: var(--text2);
+}
+.muted { color: var(--muted); font-size: 12px; }
+
+.groupeChip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 36px;
+  padding: 4px 10px;
+  background: rgba(239,68,68,0.18);
+  color: #fca5a5;
+  border: 1px solid rgba(239,68,68,0.45);
+  border-radius: 5px;
+  font-family: 'Cinzel', serif;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+
+.deleteBtn {
+  padding: 5px 7px;
+  border-radius: 4px;
+  color: var(--muted);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.deleteBtn:hover { color: var(--red); background: rgba(239,68,68,0.1); }
+
+/* Formulaire */
+.formFields { display: flex; flex-direction: column; gap: 14px; }
+.formFields label {
+  display: flex; flex-direction: column; gap: 5px;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase;
+  color: rgba(212,180,74,0.85); font-weight: 700;
+}
+.formFields input,
+.formFields textarea,
+.formFields select {
+  padding: 10px 12px;
+  background: rgba(0,0,0,0.4);
+  border: 1px solid rgba(180,140,20,0.35);
+  border-radius: 6px;
+  color: var(--text);
+  font-size: 13px;
+  font-family: 'Barlow', sans-serif;
+  text-transform: none; letter-spacing: normal; font-weight: normal;
+}
+.formFields input:focus,
+.formFields textarea:focus,
+.formFields select:focus {
+  outline: none;
+  border-color: rgba(212,180,74,0.65);
+  background: rgba(0,0,0,0.55);
+  box-shadow: 0 0 0 3px rgba(212,180,74,0.1);
+}
+.formFields textarea { resize: vertical; min-height: 80px; }
+.row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.row3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
