@@ -44394,36 +44394,105 @@ document.addEventListener('DOMContentLoaded', function(){
 }
 .scx-modal-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:10px}
 
-/* ─── SWITCHER MULTI-SECTIONS (dans sidebar sombre) ─── */
+/* ─── SWITCHER MULTI-SECTIONS — style "dock" épuré ─── */
 .ms-switcher{
-  display:flex;gap:6px;flex-wrap:wrap;padding:8px 12px;margin:8px;
-  background:rgba(180,140,20,0.06);
-  border:1px dashed rgba(180,140,20,0.30);
-  border-radius:8px;
+  margin:10px 12px 14px;
+  display:flex;flex-direction:column;gap:8px;
 }
-.ms-sw-label{
-  font-family:'Share Tech Mono',monospace;font-size:9px;
-  color:rgba(255,255,255,0.55);letter-spacing:1.5px;
-  text-transform:uppercase;display:flex;align-items:center;margin-right:4px;
+
+/* En-tête : label + nom de la section active */
+.ms-sw-head{
+  display:flex;flex-direction:column;gap:1px;
+  padding:0 4px;
 }
+.ms-sw-head-tag{
+  font-family:'Share Tech Mono',monospace;font-size:8.5px;
+  color:rgba(212,180,74,0.55);
+  letter-spacing:2px;text-transform:uppercase;
+}
+.ms-sw-head-name{
+  font-family:'Cinzel',serif;font-size:13px;font-weight:700;
+  color:#f0d060;letter-spacing:1px;line-height:1.1;
+  transition:color 0.25s;
+}
+
+/* Dock : barre horizontale avec gradient subtil */
+.ms-sw-dock{
+  display:flex;align-items:center;justify-content:space-between;
+  gap:4px;padding:6px 8px;
+  background:linear-gradient(180deg, rgba(20,16,9,0.5), rgba(0,0,0,0.3));
+  border:1px solid rgba(180,140,20,0.20);
+  border-radius:10px;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,0.04), 0 1px 3px rgba(0,0,0,0.3);
+}
+
+/* Chaque icône : pictogramme cliquable, transition douce */
 .ms-sw-btn{
-  padding:6px 11px;font-family:'Share Tech Mono',monospace;font-size:13px;
-  letter-spacing:1px;
-  background:rgba(255,255,255,0.04);
-  border:1px solid rgba(180,140,20,0.30);border-radius:6px;
-  color:rgba(255,255,255,0.85);cursor:pointer;
-  transition:all 0.18s;text-transform:uppercase;
-  line-height:1;min-width:32px;text-align:center;
+  flex:1;min-width:0;
+  position:relative;
+  display:flex;align-items:center;justify-content:center;
+  padding:8px 0;
+  background:transparent;
+  border:none;
+  border-radius:7px;
+  cursor:pointer;
+  transition:all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+  outline:none;
 }
+.ms-sw-btn-ico{
+  font-size:18px;line-height:1;
+  filter:grayscale(0.45) opacity(0.65);
+  transition:all 0.25s ease;
+  display:block;
+}
+
+/* Hover : on agrandit l'icône, on enlève le grayscale */
 .ms-sw-btn:hover{
-  background:rgba(180,140,20,0.18);color:#fff;
-  border-color:rgba(212,180,74,0.55);
+  background:rgba(212,180,74,0.10);
+  transform:translateY(-2px);
 }
+.ms-sw-btn:hover .ms-sw-btn-ico{
+  filter:grayscale(0) opacity(1);
+  transform:scale(1.15);
+}
+
+/* Actif : fond doré radial, ombre dorée sous l'icône, icône en pleine couleur */
 .ms-sw-btn.active{
-  background:linear-gradient(135deg, rgba(212,180,74,0.40), rgba(192,65,14,0.25));
-  border-color:rgba(212,180,74,0.75);color:#f0d060;
-  box-shadow:0 2px 8px rgba(212,180,74,0.30), inset 0 1px 0 rgba(255,255,255,0.10);
-  font-weight:700;
+  background:radial-gradient(ellipse at center top, rgba(212,180,74,0.30) 0%, rgba(192,65,14,0.15) 70%, transparent 100%);
+  box-shadow:inset 0 -2px 0 rgba(212,180,74,0.85), 0 2px 8px rgba(212,180,74,0.20);
+}
+.ms-sw-btn.active .ms-sw-btn-ico{
+  filter:grayscale(0) opacity(1) drop-shadow(0 0 6px rgba(212,180,74,0.6));
+  transform:scale(1.1);
+}
+
+/* Tooltip qui apparaît au survol */
+.ms-sw-btn-tooltip{
+  position:absolute;
+  bottom:calc(100% + 6px);left:50%;
+  transform:translateX(-50%) translateY(4px);
+  background:linear-gradient(180deg, #2a1f10, #1a1308);
+  border:1px solid rgba(212,180,74,0.45);
+  border-radius:5px;
+  padding:5px 10px;
+  font-family:'Share Tech Mono',monospace;font-size:9.5px;
+  letter-spacing:1.2px;text-transform:uppercase;font-weight:700;
+  color:#f0d060;
+  white-space:nowrap;
+  opacity:0;pointer-events:none;
+  transition:all 0.18s ease;
+  box-shadow:0 4px 12px rgba(0,0,0,0.5);
+  z-index:100;
+}
+.ms-sw-btn-tooltip::after{
+  content:'';position:absolute;
+  top:100%;left:50%;transform:translateX(-50%);
+  border:4px solid transparent;
+  border-top-color:rgba(212,180,74,0.45);
+}
+.ms-sw-btn:hover .ms-sw-btn-tooltip{
+  opacity:1;
+  transform:translateX(-50%) translateY(0);
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -45629,13 +45698,22 @@ function scxRenderSectionSwitcher(){
   }
   var sidebar = document.getElementById('sidebar'); if(!sidebar) return;
   var current = u.section || (available[0]||'police');
+  var currentMeta = SECTIONS_COMPTA[current] || { icon:'❓', name:current };
   var html = '<div class="ms-switcher" id="ms-switcher">'+
-    '<span class="ms-sw-label">Section :</span>'+
-    available.map(function(s){
-      var meta = SECTIONS_COMPTA[s] || { icon:'❓', name:s };
-      var active = (s === current) ? ' active' : '';
-      return '<button type="button" class="ms-sw-btn'+active+'" data-sec="'+s+'" onclick="window.scxSwitchSection(\''+s+'\')" title="'+meta.name+'">'+meta.icon+'</button>';
-    }).join('')+
+    '<div class="ms-sw-head">'+
+      '<span class="ms-sw-head-tag">Section active</span>'+
+      '<span class="ms-sw-head-name" id="ms-sw-current-name">'+(currentMeta.name||'?')+'</span>'+
+    '</div>'+
+    '<div class="ms-sw-dock">'+
+      available.map(function(s){
+        var meta = SECTIONS_COMPTA[s] || { icon:'❓', name:s };
+        var active = (s === current) ? ' active' : '';
+        return '<button type="button" class="ms-sw-btn'+active+'" data-sec="'+s+'" onclick="window.scxSwitchSection(\''+s+'\')" aria-label="'+meta.name+'">'+
+          '<span class="ms-sw-btn-ico">'+meta.icon+'</span>'+
+          '<span class="ms-sw-btn-tooltip">'+meta.name+'</span>'+
+        '</button>';
+      }).join('')+
+    '</div>'+
   '</div>';
   var logo = sidebar.querySelector('.sidebar-logo');
   if(logo) logo.insertAdjacentHTML('afterend', html);
