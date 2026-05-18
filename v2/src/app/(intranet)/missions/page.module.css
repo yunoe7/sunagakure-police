@@ -1,0 +1,402 @@
+/* ════════════════════════════════════════════════════════════════
+   MISSIONS — Tableau de répartition
+   ════════════════════════════════════════════════════════════════ */
+
+/* ─── ONGLETS ─── */
+.tabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 18px;
+  padding: 4px;
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  width: fit-content;
+}
+.tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 16px;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 7px;
+  color: var(--muted);
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.tab:hover {
+  color: var(--text2);
+  background: rgba(255, 255, 255, 0.04);
+}
+.tabActive {
+  background: linear-gradient(180deg, rgba(212, 180, 74, 0.2), rgba(212, 180, 74, 0.08));
+  border-color: rgba(212, 180, 74, 0.45);
+  color: var(--gold2);
+}
+.tabCount {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 22px;
+  height: 18px;
+  padding: 0 6px;
+  border-radius: 9px;
+  background: rgba(0, 0, 0, 0.5);
+  color: var(--gold2);
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 10px;
+  font-weight: 700;
+  border: 1px solid rgba(212, 180, 74, 0.3);
+}
+
+/* ─── TOOLBAR ─── */
+.toolbar {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.searchBox {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 12px;
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--muted);
+  flex: 1;
+  min-width: 220px;
+  max-width: 280px;
+}
+.searchBox input {
+  background: transparent;
+  border: none;
+  outline: none;
+  color: var(--text);
+  font-size: 13px;
+  flex: 1;
+}
+
+.filters {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.fbtn {
+  padding: 7px 12px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(212, 180, 74, 0.18);
+  border-radius: 6px;
+  color: var(--text2);
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.fbtn:hover {
+  background: rgba(212, 180, 74, 0.1);
+  border-color: rgba(212, 180, 74, 0.35);
+}
+.fbtnOn {
+  background: linear-gradient(180deg, rgba(212, 180, 74, 0.22), rgba(212, 180, 74, 0.1));
+  border-color: rgba(212, 180, 74, 0.55);
+  color: var(--gold2);
+}
+
+/* Couleurs spéciales pour les filtres de rang */
+.rang-D.fbtnOn { background: linear-gradient(180deg, rgba(34, 197, 94, 0.25), rgba(34, 197, 94, 0.1)); border-color: rgba(34, 197, 94, 0.5); color: #86efac; }
+.rang-C.fbtnOn { background: linear-gradient(180deg, rgba(59, 130, 246, 0.25), rgba(59, 130, 246, 0.1)); border-color: rgba(59, 130, 246, 0.5); color: #93c5fd; }
+.rang-B.fbtnOn { background: linear-gradient(180deg, rgba(168, 85, 247, 0.25), rgba(168, 85, 247, 0.1)); border-color: rgba(168, 85, 247, 0.5); color: #c4b5fd; }
+.rang-A.fbtnOn { background: linear-gradient(180deg, rgba(245, 158, 11, 0.25), rgba(245, 158, 11, 0.1)); border-color: rgba(245, 158, 11, 0.5); color: #fcd34d; }
+.rang-S.fbtnOn { background: linear-gradient(180deg, rgba(239, 68, 68, 0.3), rgba(239, 68, 68, 0.12)); border-color: rgba(239, 68, 68, 0.55); color: #fca5a5; }
+
+/* ─── EMPTY ─── */
+.empty {
+  text-align: center;
+  padding: 70px 20px;
+  color: var(--muted);
+  font-style: italic;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+}
+
+/* ─── GRILLE DE MISSIONS ─── */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(310px, 1fr));
+  gap: 16px;
+}
+
+/* ─── MISSION (carte) ─── */
+.mission {
+  display: flex;
+  flex-direction: column;
+  background: linear-gradient(180deg, #15110b, #1a140c);
+  border: 1px solid rgba(180, 140, 20, 0.22);
+  border-radius: 10px;
+  overflow: hidden;
+  transition: all 0.2s ease;
+  position: relative;
+}
+.mission::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  opacity: 0.85;
+}
+.mission:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+}
+
+/* Bande haute selon rang */
+.rb-D::before { background: linear-gradient(90deg, transparent, #22c55e 30%, #86efac 50%, #22c55e 70%, transparent); }
+.rb-C::before { background: linear-gradient(90deg, transparent, #3b82f6 30%, #93c5fd 50%, #3b82f6 70%, transparent); }
+.rb-B::before { background: linear-gradient(90deg, transparent, #a855f7 30%, #c4b5fd 50%, #a855f7 70%, transparent); }
+.rb-A::before { background: linear-gradient(90deg, transparent, #f59e0b 30%, #fcd34d 50%, #f59e0b 70%, transparent); }
+.rb-S::before {
+  background: linear-gradient(90deg, transparent, #ef4444 30%, #fca5a5 50%, #ef4444 70%, transparent);
+  height: 4px;
+  animation: sPulse 2.5s ease-in-out infinite;
+}
+@keyframes sPulse {
+  0%, 100% { opacity: 0.85; }
+  50% { opacity: 1; box-shadow: 0 0 12px rgba(239, 68, 68, 0.5); }
+}
+
+/* Bordure colorée selon rang */
+.rb-D { border-color: rgba(34, 197, 94, 0.25); }
+.rb-C { border-color: rgba(59, 130, 246, 0.25); }
+.rb-B { border-color: rgba(168, 85, 247, 0.25); }
+.rb-A { border-color: rgba(245, 158, 11, 0.3); }
+.rb-S { border-color: rgba(239, 68, 68, 0.4); }
+
+/* Missions archivées : grisées */
+.st-terminee, .st-echouee, .st-annulee {
+  opacity: 0.7;
+}
+.st-echouee, .st-annulee {
+  filter: grayscale(0.35);
+}
+
+/* ─── HEADER de mission ─── */
+.missionHeader {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 12px;
+  background: rgba(0, 0, 0, 0.25);
+  border-bottom: 1px solid rgba(180, 140, 20, 0.12);
+  flex-wrap: wrap;
+}
+
+.rangBadge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  font-family: 'Cinzel', serif;
+  font-size: 14px;
+  font-weight: 700;
+}
+.rangBadge.rang-D { background: rgba(34, 197, 94, 0.18); color: #86efac; border: 1px solid rgba(34, 197, 94, 0.4); }
+.rangBadge.rang-C { background: rgba(59, 130, 246, 0.18); color: #93c5fd; border: 1px solid rgba(59, 130, 246, 0.4); }
+.rangBadge.rang-B { background: rgba(168, 85, 247, 0.18); color: #c4b5fd; border: 1px solid rgba(168, 85, 247, 0.4); }
+.rangBadge.rang-A { background: rgba(245, 158, 11, 0.18); color: #fcd34d; border: 1px solid rgba(245, 158, 11, 0.4); }
+.rangBadge.rang-S {
+  background: rgba(239, 68, 68, 0.22);
+  color: #fca5a5;
+  border: 1px solid rgba(239, 68, 68, 0.5);
+  box-shadow: 0 0 10px rgba(239, 68, 68, 0.3);
+}
+
+.typeChip {
+  padding: 3px 9px;
+  background: rgba(212, 180, 74, 0.1);
+  border: 1px solid rgba(212, 180, 74, 0.28);
+  border-radius: 4px;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 1.2px;
+  color: var(--gold2);
+  text-transform: uppercase;
+  font-weight: 700;
+}
+
+.statutChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 9px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 4px;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 1px;
+  color: var(--text2);
+  text-transform: uppercase;
+  font-weight: 700;
+}
+.st-terminee .statutChip { background: rgba(34, 197, 94, 0.15); color: #86efac; border-color: rgba(34, 197, 94, 0.4); }
+.st-echouee .statutChip,
+.st-annulee .statutChip { background: rgba(239, 68, 68, 0.12); color: #fca5a5; border-color: rgba(239, 68, 68, 0.3); }
+.st-en_cours .statutChip { background: rgba(245, 158, 11, 0.15); color: #fcd34d; border-color: rgba(245, 158, 11, 0.4); }
+
+.deleteBtn {
+  margin-left: auto;
+  padding: 4px 6px;
+  border-radius: 4px;
+  color: var(--muted);
+  background: transparent;
+  transition: all 0.15s;
+}
+.deleteBtn:hover {
+  color: var(--red);
+  background: rgba(239, 68, 68, 0.1);
+}
+
+/* ─── BODY (cliquable pour éditer) ─── */
+.body {
+  flex: 1;
+  padding: 14px 16px;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.title {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: 0.4px;
+  color: var(--text);
+  line-height: 1.3;
+}
+
+.desc {
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--text2);
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 10px;
+  color: var(--muted);
+  letter-spacing: 0.5px;
+}
+.meta > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.reward {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: linear-gradient(90deg, rgba(212, 180, 74, 0.12), rgba(212, 180, 74, 0.04));
+  border: 1px solid rgba(212, 180, 74, 0.3);
+  border-radius: 5px;
+  align-self: flex-start;
+  color: var(--gold2);
+}
+.rewardValue {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+
+/* ─── ACTIONS (footer) ─── */
+.actions {
+  display: flex;
+  gap: 6px;
+  padding: 10px 12px;
+  background: rgba(0, 0, 0, 0.25);
+  border-top: 1px solid rgba(180, 140, 20, 0.12);
+  flex-wrap: wrap;
+}
+.actions:empty { display: none; }
+
+/* ─── FORMULAIRE ─── */
+.formFields {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.formFields label {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: rgba(212, 180, 74, 0.85);
+  font-weight: 700;
+}
+.formFields input,
+.formFields textarea,
+.formFields select {
+  padding: 10px 12px;
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(180, 140, 20, 0.35);
+  border-radius: 6px;
+  color: var(--text);
+  font-size: 13px;
+  font-family: 'Barlow', sans-serif;
+  text-transform: none;
+  letter-spacing: normal;
+  font-weight: normal;
+}
+.formFields input:focus,
+.formFields textarea:focus,
+.formFields select:focus {
+  outline: none;
+  border-color: rgba(212, 180, 74, 0.65);
+  background: rgba(0, 0, 0, 0.55);
+  box-shadow: 0 0 0 3px rgba(212, 180, 74, 0.1);
+}
+.formFields textarea {
+  resize: vertical;
+  min-height: 90px;
+}
+
+.row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+.row3 {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 12px;
+}

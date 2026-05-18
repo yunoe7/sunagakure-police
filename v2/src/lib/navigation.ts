@@ -67,9 +67,7 @@ export const NAV_SECTIONS: NavSection[] = [
   {
     title: 'MISSIONS',
     items: [
-      { label: 'Disponibles', href: '/missions/disponibles', icon: 'Target' },
-      { label: 'Actives', href: '/missions/actives', icon: 'Zap' },
-      { label: 'Récompenses', href: '/missions/recompenses', icon: 'Trophy' },
+      { label: 'Missions', href: '/missions', icon: 'Target' },
     ],
   },
   {
