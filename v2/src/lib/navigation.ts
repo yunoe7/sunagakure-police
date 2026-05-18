@@ -40,10 +40,8 @@ export const NAV_SECTIONS: NavSection[] = [
   {
     title: 'JUSTICE',
     items: [
-      { label: 'Plaintes', href: '/juge/plaintes', icon: 'AlertCircle' },
-      { label: 'Audiences', href: '/juge/audiences', icon: 'Gavel' },
-      { label: 'Jugements', href: '/juge/jugements', icon: 'Scale' },
-      { label: 'Archives', href: '/juge/archives', icon: 'Archive' },
+      { label: 'Plaintes', href: '/plaintes', icon: 'AlertCircle' },
+      { label: 'Tribunal', href: '/tribunal', icon: 'Scale' },
     ],
   },
   {
