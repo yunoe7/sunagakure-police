@@ -46073,6 +46073,49 @@ window._scxRenderTresor  = function(){ window.scxRenderTresor(); };
 .toast-error{border-color:rgba(239,68,68,0.50) !important}
 .toast-info{border-color:rgba(59,130,246,0.50) !important}
 
+
+/* ─── ONGLETS / FILTERS — donner un peu de "matière" aux boutons non-actifs
+   Les .tab-btn non-actifs n'avaient ni fond ni bordure → semblaient flotter.
+   On leur ajoute un léger fond/bordure subtil pour qu'ils soient bien
+   identifiés comme des boutons cliquables, sans rivaliser avec l'actif. ─── */
+.tab-row .tab-btn:not(.active){
+  background:rgba(255,255,255,0.30);
+  border:1px solid rgba(139,105,20,0.18);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,0.25);
+}
+.tab-row .tab-btn:not(.active):hover{
+  background:rgba(255,250,235,0.65);
+  border-color:rgba(139,105,20,0.45);
+  transform:translateY(-1px);
+  box-shadow:0 2px 6px rgba(0,0,0,0.10), inset 0 1px 0 rgba(255,255,255,0.40);
+}
+/* Variantes colorées : léger fond et bordure pour bien identifier comme cliquables */
+.tab-row .tab-btn.t-green:not(.active),
+.tab-row .tab-btn.t-blue:not(.active),
+.tab-row .tab-btn.t-orange:not(.active),
+.tab-row .tab-btn.t-red:not(.active),
+.tab-row .tab-btn.t-purple:not(.active),
+.tab-row .tab-btn.t-yellow:not(.active){
+  background:rgba(255,255,255,0.30);
+  border:1px solid rgba(139,105,20,0.18);
+}
+.tab-row .tab-btn.t-green:not(.active):hover  {background:rgba(34,197,94,0.18);border-color:rgba(34,197,94,0.40)}
+.tab-row .tab-btn.t-blue:not(.active):hover   {background:rgba(59,130,246,0.18);border-color:rgba(59,130,246,0.40)}
+.tab-row .tab-btn.t-orange:not(.active):hover {background:rgba(251,146,60,0.20);border-color:rgba(251,146,60,0.45)}
+.tab-row .tab-btn.t-red:not(.active):hover    {background:rgba(239,68,68,0.18);border-color:rgba(239,68,68,0.45)}
+.tab-row .tab-btn.t-purple:not(.active):hover {background:rgba(168,85,247,0.18);border-color:rgba(168,85,247,0.40)}
+.tab-row .tab-btn.t-yellow:not(.active):hover {background:rgba(234,179,8,0.22);border-color:rgba(234,179,8,0.45)}
+
+/* Variante sombre (dans .card) : adapter le fond pour rester subtil */
+.card .tab-row .tab-btn:not(.active){
+  background:rgba(255,255,255,0.04);
+  border:1px solid rgba(212,180,74,0.18);
+  box-shadow:none;
+}
+.card .tab-row .tab-btn:not(.active):hover{
+  background:rgba(212,180,74,0.10);
+  border-color:rgba(212,180,74,0.35);
+}
 </style>
 
 
