@@ -15727,6 +15727,7 @@ document.addEventListener('error', function(e){
     <div class="dc-actions-bar">
       <button class="btn-add-entry" id="dc-com-add-entry-btn" onclick="dcOpenForm('entree')">+ Entrée d'argent</button>
       <button class="btn-add-out" id="dc-com-add-out-btn" onclick="dcOpenForm('sortie')">− Retrait / Dépense</button>
+      <button class="btn-close-week" id="dc-com-close-btn" onclick="dcCloseWeek()" style="background:linear-gradient(135deg, #a855f7, #7c3aed);color:#fff;border:0;padding:8px 16px;border-radius:6px;font-family:'Cinzel',serif;font-weight:600;letter-spacing:1px;cursor:pointer;text-transform:uppercase;font-size:11.5px;transition:transform 0.15s, box-shadow 0.15s">📦 Clôturer la semaine</button>
       <span class="dc-tax-config" id="dc-com-tax-config">
         <span class="dc-tax-config-lbl">Taxe :</span>
         <input type="number" id="dc-com-tax-rate" min="0" max="100" step="0.5" value="10" onchange="dcSetTaxRate(this.value)">
@@ -15743,6 +15744,12 @@ document.addEventListener('error', function(e){
 
     <!-- Liste des transactions -->
     <div class="dc-list" id="dc-com-list"></div>
+
+    <!-- Semaines archivées -->
+    <div class="scx-archives-section" style="margin-top:24px;padding-top:18px;border-top:1px dashed rgba(180,140,20,0.30)">
+      <h3 style="font-family:'Cinzel',serif;font-size:15px;color:rgba(212,180,74,0.85);margin-bottom:12px;letter-spacing:1.5px">📦 Semaines archivées</h3>
+      <div id="dc-com-archives"></div>
+    </div>
   </div>
 
   <!-- DIPLOMATIE — Laissez-passer (visible par TOUS, modifiable par diplomates+admin) -->
@@ -39826,10 +39833,19 @@ function _lpEsc(s){ return (typeof esc === 'function') ? esc(s) : String(s||'').
 function dcEsc(s){ return (typeof esc === 'function') ? esc(s) : String(s==null?'':s).replace(/[&<>"']/g,function(c){return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]}); }
 function dcInitDB(){
   if(!DB.diploComptabilite || typeof DB.diploComptabilite !== 'object'){
-    DB.diploComptabilite = { taxRate: 10, transactions: [] };
+    DB.diploComptabilite = { taxRate: 10, transactions: [], archives: [] };
   }
   if(typeof DB.diploComptabilite.taxRate !== 'number') DB.diploComptabilite.taxRate = 10;
-  if(!Array.isArray(DB.diploComptabilite.transactions)) DB.diploComptabilite.transactions = [];
+  if(!Array.isArray(DB.diploComptabilite.transactions)){
+    if(DB.diploComptabilite.transactions && typeof DB.diploComptabilite.transactions === 'object'){
+      DB.diploComptabilite.transactions = Object.values(DB.diploComptabilite.transactions).filter(Boolean);
+    } else DB.diploComptabilite.transactions = [];
+  }
+  if(!Array.isArray(DB.diploComptabilite.archives)){
+    if(DB.diploComptabilite.archives && typeof DB.diploComptabilite.archives === 'object'){
+      DB.diploComptabilite.archives = Object.values(DB.diploComptabilite.archives).filter(Boolean);
+    } else DB.diploComptabilite.archives = [];
+  }
 }
 function dcCanAccess(){
   // Tous les diplomates non-visiteurs + tous les admins/police-modos
@@ -39847,6 +39863,88 @@ function dcCanAccess(){
   }
   return false;
 }
+// Clôture de semaine : réservée aux hauts gradés (admin, hautcommandement, gerant, cogerant de diplomatie)
+function dcCanCloseWeek(){
+  if(typeof currentUser === 'undefined' || !currentUser) return false;
+  if(currentUser.role === 'admin' || currentUser.role === 'hautcommandement') return true;
+  if(currentUser.role === 'gerant' || currentUser.role === 'cogerant'){
+    var sec = currentUser.section;
+    var sections = Array.isArray(currentUser.sections) ? currentUser.sections : [];
+    if(sec === 'diplomatie' || sections.indexOf('diplomatie') !== -1) return true;
+  }
+  return false;
+}
+function dcCloseWeek(){
+  if(!dcCanCloseWeek()){
+    if(typeof showToast==='function') showToast('⛔ Réservée aux hauts gradés','error');
+    return;
+  }
+  dcInitDB();
+  var transactions = DB.diploComptabilite.transactions || [];
+  if(!transactions.length){
+    if(typeof showToast==='function') showToast('Aucune transaction à archiver','info');
+    return;
+  }
+  var totalEntrees = 0, totalSorties = 0;
+  transactions.forEach(function(t){
+    var amt = parseInt(t.amount,10)||0;
+    if(t.type==='entree') totalEntrees += amt;
+    else if(t.type==='sortie') totalSorties += amt;
+  });
+  var solde = totalEntrees - totalSorties;
+  // Taux de prélèvement Trésor Central : 15% par défaut (configurable depuis le Trésor Central)
+  var rate = (DB.tresorCentral && typeof DB.tresorCentral.prelevementRate === 'number') ? DB.tresorCentral.prelevementRate : 15;
+  var prelevement = solde > 0 ? Math.round(solde * rate / 100) : 0;
+  var msg = 'Clôturer la semaine ?\n\n'+
+    '• '+transactions.length+' transactions\n'+
+    '• Entrées : '+dcFmtMoney(totalEntrees)+' Ryōs\n'+
+    '• Sorties : '+dcFmtMoney(totalSorties)+' Ryōs\n'+
+    '• Solde net : '+dcFmtMoney(solde)+' Ryōs\n'+
+    '• Prélèvement Trésor ('+rate+'%) : '+dcFmtMoney(prelevement)+' Ryōs\n\n'+
+    'Toutes les transactions seront archivées.';
+  var go = function(){
+    var arch = {
+      id: 'AR-'+Date.now(),
+      label: 'Semaine du '+new Date(Date.now()-7*86400000).toLocaleDateString('fr-FR')+' au '+new Date().toLocaleDateString('fr-FR'),
+      clotureLe: Date.now(),
+      cloturePar: (currentUser && currentUser.nom) || '?',
+      total: solde,
+      totalEntrees: totalEntrees,
+      totalSorties: totalSorties,
+      count: transactions.length,
+      tresorRate: rate,
+      tresorPrelevement: prelevement,
+      transactions: JSON.parse(JSON.stringify(transactions))
+    };
+    DB.diploComptabilite.archives = DB.diploComptabilite.archives || [];
+    DB.diploComptabilite.archives.unshift(arch);
+    DB.diploComptabilite.transactions = [];
+    // Initialiser le Trésor Central si nécessaire et y verser le prélèvement
+    if(!DB.tresorCentral || typeof DB.tresorCentral !== 'object'){
+      DB.tresorCentral = { prelevementRate: 15, mouvements: [] };
+    }
+    if(!Array.isArray(DB.tresorCentral.mouvements)) DB.tresorCentral.mouvements = [];
+    if(prelevement > 0){
+      DB.tresorCentral.mouvements.push({
+        id: 'TC-'+Date.now(),
+        section: 'diplomatie',
+        amount: prelevement,
+        date: Date.now(),
+        archiveId: arch.id,
+        archiveLabel: arch.label,
+        rate: rate,
+        soldeOrigine: solde
+      });
+    }
+    if(typeof saveData === 'function') saveData();
+    dcRender();
+    if(typeof showToast==='function') showToast('📦 Semaine clôturée — '+dcFmtMoney(prelevement)+' Ryōs versés au Trésor','success');
+  };
+  if(typeof askDelete === 'function') askDelete(msg, go, '📦 Clôturer');
+  else if(confirm(msg)) go();
+}
+window.dcCanCloseWeek = dcCanCloseWeek;
+window.dcCloseWeek = dcCloseWeek;
 function dcFmtMoney(n){
   n = parseInt(n,10) || 0;
   return n.toLocaleString('fr-FR');
@@ -40079,6 +40177,9 @@ function dcRender(){
     var b = document.getElementById(id);
     if(b) b.style.display = canAccess ? '' : 'none';
   });
+  // Bouton clôturer : seulement aux hauts gradés
+  var closeBtn = document.getElementById('dc-com-close-btn');
+  if(closeBtn) closeBtn.style.display = dcCanCloseWeek() ? '' : 'none';
   if(rateInput) rateInput.disabled = !canAccess;
 
   if(!filtered.length){
@@ -40147,6 +40248,29 @@ function dcRender(){
       + (actionsBtns ? '<div class="dc-card-actions"><div class="dc-card-actions-btns">'+actionsBtns+'</div></div>' : '<div class="dc-card-actions"></div>')
       + '</div>';
   }).join('');
+
+  // ─── Archives des semaines clôturées ───
+  var archBox = document.getElementById('dc-com-archives');
+  if(archBox){
+    var archives = DB.diploComptabilite.archives || [];
+    if(!archives.length){
+      archBox.innerHTML = '<div style="padding:20px;text-align:center;color:rgba(212,180,74,0.55);font-family:\'Share Tech Mono\',monospace;font-size:11px">Aucune semaine archivée.</div>';
+    } else {
+      archBox.innerHTML = archives.map(function(a){
+        return '<div style="background:linear-gradient(135deg, rgba(26,20,16,0.92) 0%, rgba(34,28,19,0.88) 100%);border:1px solid rgba(168,85,247,0.35);border-radius:10px;padding:12px 14px;margin-bottom:10px;position:relative;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,0.18)">'+
+          '<div style="position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg, transparent, rgba(168,85,247,0.6), transparent)"></div>'+
+          '<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:6px">'+
+            '<div style="font-family:\'Cinzel\',serif;font-size:14px;color:#c4b5fd;font-weight:600;letter-spacing:1px">📦 '+dcEsc(a.label||'Semaine')+'</div>'+
+            '<div style="font-family:\'Share Tech Mono\',monospace;font-size:13px;color:#f0d060;font-weight:700">'+(a.total>=0?'+':'')+dcFmtMoney(a.total||0)+' Ryōs ('+(a.count||0)+' tx)</div>'+
+          '</div>'+
+          '<div style="font-size:10px;color:rgba(255,255,255,0.50);font-family:\'Share Tech Mono\',monospace;letter-spacing:0.5px">'+
+            'Clôturée le '+dcFmtDate(a.clotureLe)+' par '+dcEsc(a.cloturePar||'?')+
+            ' · Prélèvement Trésor : '+dcFmtMoney(a.tresorPrelevement||0)+' Ryōs ('+(a.tresorRate||0)+'%)'+
+          '</div>'+
+        '</div>';
+      }).join('');
+    }
+  }
 }
 // Expose globalement pour les onclick inline et navigation
 window.dcOpenForm = dcOpenForm;
@@ -45020,7 +45144,10 @@ function scxComputeSectionSummary(section){
   var data = null;
   if(section === 'diplomatie'){
     if(DB.diploComptabilite && Array.isArray(DB.diploComptabilite.transactions)){
-      data = { transactions: DB.diploComptabilite.transactions, archives:[] };
+      data = {
+        transactions: DB.diploComptabilite.transactions,
+        archives: Array.isArray(DB.diploComptabilite.archives) ? DB.diploComptabilite.archives : []
+      };
     }
   } else if(section === 'medical'){
     if(DB.hospital && Array.isArray(DB.hospital.paiements)){
