@@ -16,16 +16,46 @@ import { getFirebase, ensureAuthReady } from './firebase';
 /**
  * Helpers Realtime Database — version "ergonomique" qui :
  *  - attend automatiquement que l'auth anonyme soit prête
+ *  - applique automatiquement le préfixe DB_PREFIX
  *  - garde des types TypeScript propres
  *  - exporte aussi les primitives Firebase pour les cas avancés
  *
  * Ces helpers remplacent les `window._fbSet`, `window._fbUpdate`, etc.
  * de l'ancien intranet.
+ *
+ * ─── PRÉFIXE GLOBAL ───
+ * L'ancien intranet stocke toutes ses données sous `sunagakure/` dans Firebase.
+ * Pour rester compatible, tous nos chemins sont automatiquement préfixés.
+ *
+ * Donc tu écris : useFirebaseValue('annonces')
+ * En réalité, c'est : sunagakure/annonces qui est lu
+ *
+ * Cas spécial : `.info/connected` (chemin système Firebase) n'est PAS préfixé.
+ * Et tout chemin commençant par `/` est traité comme absolu (sans préfixe),
+ * au cas où tu aurais besoin d'accéder à la racine.
  */
+const DB_PREFIX = 'sunagakure';
+
+/**
+ * Applique le préfixe à un chemin, sauf cas spéciaux.
+ * - '.info/connected' → '.info/connected' (chemin système Firebase)
+ * - '/foo' → 'foo' (chemin absolu explicite, sans préfixe)
+ * - 'annonces' → 'sunagakure/annonces' (préfixe ajouté)
+ */
+function resolvePath(path: string): string {
+  // Chemins système Firebase (.info/connected, .info/serverTimeOffset, etc.)
+  if (path.startsWith('.')) return path;
+
+  // Chemin absolu (commence par /) → on enlève le / et on ne préfixe pas
+  if (path.startsWith('/')) return path.slice(1);
+
+  // Sinon : préfixe automatique
+  return `${DB_PREFIX}/${path}`;
+}
 
 function getRef(path: string): DatabaseReference {
   const { db } = getFirebase();
-  return ref(db, path);
+  return ref(db, resolvePath(path));
 }
 
 export async function dbGet<T = unknown>(path: string): Promise<T | null> {
@@ -70,9 +100,6 @@ export function dbSubscribe<T = unknown>(
   path: string,
   callback: (value: T | null) => void
 ): () => void {
-  // Note : onValue accepte aussi un ref non-authentifié, il déclenche juste
-  // une erreur silencieuse si les règles bloquent. On lance ensureAuthReady
-  // en arrière-plan, le listener réagira dès que les données sont accessibles.
   ensureAuthReady().catch(() => {
     /* déjà loggé dans firebase.ts */
   });
