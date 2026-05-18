@@ -44699,12 +44699,20 @@ function scxSyncPoliceFromImpots(force){
   if(typeof DB === 'undefined' || !DB || !DB.impots) return;
   scxInitDB();
   var policeData = DB.sectionsCompta.police;
-  // Construire le set des sourceIds déjà présents
-  var existingSources = new Set(
-    (policeData.transactions||[])
-      .filter(function(t){ return t.auto && t.sourceId; })
-      .map(function(t){ return t.sourceId; })
-  );
+  // BUG-FIX : on doit aussi regarder dans les archives !
+  // Après une clôture de semaine, les transactions auto-impôts sont déplacées
+  // dans archives, mais DB.impots.recups n'est pas vidé. Si on regarde
+  // seulement transactions actives, on croit que ces impôts n'existent pas
+  // et on les recrée → DOUBLON DE TOUTES LES ANCIENNES AMENDES ARCHIVÉES.
+  var existingSources = new Set();
+  (policeData.transactions||[]).forEach(function(t){
+    if(t.auto && t.sourceId) existingSources.add(t.sourceId);
+  });
+  (policeData.archives||[]).forEach(function(arch){
+    (arch.transactions||[]).forEach(function(t){
+      if(t.auto && t.sourceId) existingSources.add(t.sourceId);
+    });
+  });
   var added = 0;
 
   function addIfNew(r, archiveLabel){
@@ -44749,6 +44757,48 @@ function scxSyncPoliceFromImpots(force){
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
+   ONE-SHOT : nettoyage des doublons auto créés par le bug pré-fix
+   Pour chaque sourceId : si la transaction active a le même sourceId qu'une
+   transaction déjà archivée → c'est un doublon créé par mon code buggé.
+   On retire alors la version active.
+   Cette fonction est lancée au boot et n'agit que si nécessaire (idempotente).
+   ═══════════════════════════════════════════════════════════════════════════ */
+function scxCleanupDuplicatePoliceTx(){
+  if(typeof DB === 'undefined' || !DB) return;
+  scxInitDB();
+  var policeData = DB.sectionsCompta.police;
+  if(!Array.isArray(policeData.transactions) || !Array.isArray(policeData.archives)) return;
+  // Set des sourceIds présents dans les archives
+  var archivedIds = new Set();
+  policeData.archives.forEach(function(arch){
+    (arch.transactions||[]).forEach(function(t){
+      if(t.auto && t.sourceId) archivedIds.add(t.sourceId);
+    });
+  });
+  if(!archivedIds.size) return; // pas d'archive → rien à nettoyer
+  // Filtrer : retirer les tx actives auto dont le sourceId est dans les archives
+  var before = policeData.transactions.length;
+  var seenInActive = new Set();
+  policeData.transactions = policeData.transactions.filter(function(t){
+    if(!t.auto || !t.sourceId) return true;
+    // Doublon intra-actives (deux tx avec le même sourceId)
+    if(seenInActive.has(t.sourceId)) return false;
+    seenInActive.add(t.sourceId);
+    // Doublon avec archive : on ne retire que les sourceIds 'imp-recup-' qui étaient
+    // recréés à l'identique. Pour les 'dossier-', la logique de delta s'en charge déjà.
+    if(t.sourceId.indexOf('imp-recup-') === 0 && archivedIds.has(t.sourceId)) return false;
+    return true;
+  });
+  var removed = before - policeData.transactions.length;
+  if(removed > 0){
+    scxSave();
+    console.log('[scx] Nettoyage : '+removed+' transaction(s) auto en doublon retirée(s) de la Caisse Police');
+    var ap = document.querySelector('.page-content.active');
+    if(ap && ap.id === 'page-caisse-police') window.scxRender('police');
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
    AUTO-TRACKING POLICE — Dossiers criminels (amendes encaissées)
    Pour chaque dossier, pour chaque incident, pour chaque "tranche" de paiement
    (amendePayee), on génère 1 entrée auto dans la Caisse Police.
@@ -44760,23 +44810,44 @@ function scxSyncPoliceFromDossiers(){
   if(typeof DB === 'undefined' || !DB || !Array.isArray(DB.dossiers)) return;
   scxInitDB();
   var policeData = DB.sectionsCompta.police;
-  var existing = {};
+  // BUG-FIX : on doit prendre en compte les transactions ARCHIVÉES.
+  // Sinon après une clôture de semaine, le sync recrée toutes les anciennes
+  // amendes archivées (la liste active est vide donc il croit qu'elles n'existent pas).
+  //
+  // Stratégie : pour chaque incident, on connaît le total payé (inc.amendePayee).
+  // On somme tous les montants déjà ARCHIVÉS pour ce sourceId (passés au Trésor).
+  // La transaction ACTIVE doit refléter le RESTE :   active = paye - somme(archives).
+  // → Si la diff est 0, pas de transaction active (tout est déjà archivé).
+  // → Si la diff est > 0 (nouveau paiement après archive), on crée/met à jour la tx active.
+  var activeIndex = {};        // sourceId → tx active (pour update si delta change)
+  var archivedSum = {};        // sourceId → montant cumulé déjà archivé pour cet incident
   (policeData.transactions||[]).forEach(function(t){
     if(t.auto && t.sourceId && t.sourceId.indexOf('dossier-') === 0){
-      existing[t.sourceId] = t;
+      activeIndex[t.sourceId] = t;
     }
+  });
+  (policeData.archives||[]).forEach(function(arch){
+    (arch.transactions||[]).forEach(function(t){
+      if(t.auto && t.sourceId && t.sourceId.indexOf('dossier-') === 0){
+        archivedSum[t.sourceId] = (archivedSum[t.sourceId] || 0) + (parseInt(t.amount,10) || 0);
+      }
+    });
   });
   var changed = false;
   // Construire l'index des incidents existants pour détecter les suppressions
-  var validSourceIds = {};
+  var validActiveSourceIds = {};
   DB.dossiers.forEach(function(d){
     if(!d || !Array.isArray(d.incidents)) return;
     d.incidents.forEach(function(inc){
       var paye = parseInt(inc.amendePayee, 10) || 0;
-      if(paye <= 0) return; // pas encaissé → pas tracé
+      if(paye <= 0) return; // pas encaissé → rien à tracer
       var srcId = 'dossier-' + inc.id;
-      validSourceIds[srcId] = true;
-      var existingTx = existing[srcId];
+      var alreadyArchived = archivedSum[srcId] || 0;
+      var remainingForActive = paye - alreadyArchived;
+      // Si tout est déjà archivé (ou plus, ce qui ne devrait pas arriver mais robuste), pas de tx active.
+      if(remainingForActive <= 0) return;
+      validActiveSourceIds[srcId] = true;
+      var existingTx = activeIndex[srcId];
       var label = '[Auto] Amende encaissée sur ' + (d.nom||'?') + (inc.notes ? ' · ' + inc.notes : '');
       var infrNames = [];
       if(Array.isArray(inc.infractions)){
@@ -44790,13 +44861,18 @@ function scxSyncPoliceFromDossiers(){
       try{ dateStr = new Date(inc.date || d.date || scxNow()).toISOString().slice(0,10); }
       catch(e){ dateStr = new Date().toISOString().slice(0,10); }
 
+      // Si une partie a déjà été archivée, on l'indique dans le label pour clarté
+      var alreadyArchivedSuffix = alreadyArchived > 0
+        ? ' · Nouveau paiement (déjà archivé : ' + alreadyArchived.toLocaleString('fr-FR') + ')'
+        : '';
+
       if(!existingTx){
         policeData.transactions.push({
           id: 'TX-' + scxNow() + '-' + Math.random().toString(36).slice(2,6),
           type: 'entree',
-          amount: paye,
+          amount: remainingForActive,
           passeur: inc.auteur || d.auteur || '?',
-          justif: label + details,
+          justif: label + details + alreadyArchivedSuffix,
           date: dateStr,
           taxRateAtCreation: 0,
           taxAmount: 0,
@@ -44810,9 +44886,9 @@ function scxSyncPoliceFromDossiers(){
           createdBy: inc.auteur || d.auteur || '?'
         });
         changed = true;
-      } else if(existingTx.amount !== paye){
-        existingTx.amount = paye;
-        existingTx.justif = label + details;
+      } else if(existingTx.amount !== remainingForActive){
+        existingTx.amount = remainingForActive;
+        existingTx.justif = label + details + alreadyArchivedSuffix;
         existingTx.editedAt = scxNow();
         existingTx.editedBy = ((scxCurrentUser()||{}).nom)||'?';
         changed = true;
@@ -44820,11 +44896,13 @@ function scxSyncPoliceFromDossiers(){
     });
   });
 
-  // Retirer les transactions auto-dossier dont l'incident a été supprimé (ou amende remise à 0)
+  // Retirer les transactions auto-dossier dont l'incident a été supprimé,
+  // OU dont l'amende a été remise à 0,
+  // OU dont tout est déjà archivé (validActiveSourceIds ne contient pas ces cas).
   var beforeLen = policeData.transactions.length;
   policeData.transactions = policeData.transactions.filter(function(t){
     if(!t.auto || !t.sourceId || t.sourceId.indexOf('dossier-') !== 0) return true;
-    return !!validSourceIds[t.sourceId];
+    return !!validActiveSourceIds[t.sourceId];
   });
   if(policeData.transactions.length !== beforeLen) changed = true;
 
@@ -45718,6 +45796,8 @@ function scxBoot(){
   try{ scxRenderSectionSwitcher(); }catch(e){ console.warn('[scx] switcher',e); }
   try{ scxInstallImpotsHook(); }catch(e){ console.warn('[scx] impotsHook',e); }
   try{ scxInstallDossiersHook(); }catch(e){ console.warn('[scx] dossiersHook',e); }
+  // Nettoyage des doublons éventuels créés par le bug pré-fix (one-shot, idempotent)
+  try{ scxCleanupDuplicatePoliceTx(); }catch(e){ console.warn('[scx] cleanup',e); }
   // Reconcile : toutes les 6 secondes, seulement si on est sur une page du module
   if(!window._scxReconcileInstalled){
     window._scxReconcileInstalled = true;
@@ -45797,6 +45877,8 @@ window._scxModule = {
   setUserSections: window.scxSetUserSections,
   listUserSections: window.scxListUserSections,
   syncPolice: scxSyncPoliceFromImpots,
+  syncDossiers: scxSyncPoliceFromDossiers,
+  cleanup: scxCleanupDuplicatePoliceTx,
   SECTIONS: SECTIONS_COMPTA
 };
 
