@@ -188,25 +188,6 @@ export default function DashboardPage() {
           ))}
         </div>
       </Card>
-
-      {/* ═══ MIGRATION EN COURS ═══ */}
-      <Card title="Migration en cours" subtitle="État du projet Next.js">
-        <p className={styles.note}>
-          Cette page est un placeholder. Les autres modules (juge, police, missions, etc.) sont
-          à migrer un par un en suivant le modèle de <code>/medical/patients</code>.
-        </p>
-        <ul className={styles.checklist}>
-          <li className={styles.done}>Coquille (sidebar, topbar, routing, Firebase, auth)</li>
-          <li className={styles.done}>Page Patients (exemple complet CRUD)</li>
-          <li className={styles.done}>Discord OAuth + whitelist admin (Phase B)</li>
-          <li className={styles.done}>UI : sidebar enrichie (rang, branche, clan)</li>
-          <li className={styles.todo}>Annonces, Histoire, Dashboard</li>
-          <li className={styles.todo}>Module Médical (consultations, pharmacie, dons, psy)</li>
-          <li className={styles.todo}>Missions</li>
-          <li className={styles.todo}>Juge + Avocat + Police (gros morceau)</li>
-          <li className={styles.todo}>Diplomatie, Impôts, Adoptions, Hiérarchie</li>
-        </ul>
-      </Card>
     </div>
   );
 }
