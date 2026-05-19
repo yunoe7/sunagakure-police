@@ -215,12 +215,26 @@ export default function OpsMap({ operations, onUpdatePosition }: Props) {
     dragState.current.active = false;
   }
 
-  // ─── Wheel zoom ───
-  function handleWheel(e: React.WheelEvent) {
-    e.preventDefault();
-    const factor = e.deltaY < 0 ? 1.15 : 1 / 1.15;
-    doZoom(factor, { x: e.clientX, y: e.clientY });
-  }
+  // ─── Wheel zoom (listener non-passif pour permettre preventDefault) ───
+  // Attaché manuellement via useEffect car React met onWheel en mode passif
+  // par défaut, ce qui empêche d'utiliser e.preventDefault() pour bloquer
+  // le scroll de la page quand on zoome sur la carte.
+  useEffect(() => {
+    const wrap = wrapRef.current;
+    if (!wrap) return;
+
+    function onWheel(e: WheelEvent) {
+      e.preventDefault();
+      const factor = e.deltaY < 0 ? 1.15 : 1 / 1.15;
+      doZoom(factor, { x: e.clientX, y: e.clientY });
+    }
+
+    wrap.addEventListener('wheel', onWheel, { passive: false });
+    return () => wrap.removeEventListener('wheel', onWheel);
+    // doZoom dépend de zoom/panX/panY qui changent à chaque interaction.
+    // On le re-bind à chaque changement pour avoir les bonnes valeurs.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [zoom, panX, panY]);
 
   // ─── Click sur la carte (mode placement) ───
   function handleMapClick(e: React.MouseEvent) {
@@ -353,7 +367,6 @@ export default function OpsMap({ operations, onUpdatePosition }: Props) {
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
         onMouseLeave={handleMouseUp}
-        onWheel={handleWheel}
         onClick={handleMapClick}
       >
         {/* Header */}
