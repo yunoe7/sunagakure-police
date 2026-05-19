@@ -15,6 +15,11 @@
  *    <button>Ajouter un dossier</button>
  *  </RequireBranche>
  *
+ *  // 1bis) Branches multiples — accès si l'user gère AU MOINS UNE :
+ *  <RequireBranche branche={['medecin', 'scientifique']}>
+ *    <button>Modifier le rapport d'autopsie</button>
+ *  </RequireBranche>
+ *
  *  // 2) Avec un fallback (visible si non autorisé) :
  *  <RequireBranche branche="medecin" fallback={<p>Lecture seule</p>}>
  *    <button>Modifier</button>
@@ -35,6 +40,16 @@
  *    <button>Action Jonin+</button>
  *  </RequireRang>
  *
+ *  // 6) Membre d'une branche (peu importe le rôle) :
+ *  <RequireMembreBranche branche="police">
+ *    <PageDossiers />
+ *  </RequireMembreBranche>
+ *
+ *  // 6bis) Membre d'une des branches données :
+ *  <RequireMembreBranche branche={['medecin', 'scientifique']}>
+ *    <PageMorgue />
+ *  </RequireMembreBranche>
+ *
  *  // Niveaux disponibles :
  *  //  1 = Genin           7 = Jonin
  *  //  2 = Genin confirmé  8 = Sairin
@@ -54,16 +69,17 @@ type RequireProps = {
 };
 
 /**
- * Affiche le contenu UNIQUEMENT pour les Gérants / Co-gérants de la branche
- * donnée, OU pour tout Admin (whitelist + Kazekage RP).
+ * Affiche le contenu UNIQUEMENT pour les Gérants / Co-gérants de la (ou des) branche(s)
+ * donnée(s), OU pour tout Admin (whitelist + Kazekage RP).
  *
- * @param branche slug de la branche (ex: "police", "medecin", "academie")
+ * @param branche slug de branche ou liste de slugs (au moins un suffit).
+ *                Ex: "police", ["medecin", "scientifique"]
  */
 export function RequireBranche({
   branche,
   children,
   fallback = null,
-}: RequireProps & { branche: string }) {
+}: RequireProps & { branche: string | string[] }) {
   const { can, isLoading } = useCurrentUser();
   if (isLoading) return null;
   if (!can.adminBranche(branche)) return <>{fallback}</>;
@@ -113,20 +129,22 @@ export function RequireRang({
 }
 
 /**
- * Affiche le contenu UNIQUEMENT pour les membres d'une branche (peu importe leur rôle).
+ * Affiche le contenu UNIQUEMENT pour les membres d'une (ou plusieurs) branche(s).
  * Différent de RequireBranche : ici PAS de check Gérant, juste l'appartenance.
  *
- * @param branche slug de la branche (ex: "police")
+ * @param branche slug de branche ou liste de slugs (au moins un suffit).
+ *                Ex: "police", ["medecin", "scientifique"]
  */
 export function RequireMembreBranche({
   branche,
   children,
   fallback = null,
-}: RequireProps & { branche: string }) {
+}: RequireProps & { branche: string | string[] }) {
   const { user, isLoading } = useCurrentUser();
   if (isLoading) return null;
   if (!user) return <>{fallback}</>;
-  const isMembre = user.branches.some((b) => b.slug === branche);
+  const slugs = Array.isArray(branche) ? branche : [branche];
+  const isMembre = user.branches.some((b) => slugs.includes(b.slug));
   if (!isMembre && !user.isAdmin) return <>{fallback}</>;
   return <>{children}</>;
 }
