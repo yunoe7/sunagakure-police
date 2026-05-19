@@ -12,6 +12,11 @@
  *  Ceci s'aligne sur ce qu'écrit auth.ts (qui écrit dans /members/{id}
  *  à la racine via fetch direct, pas via le SDK Firebase préfixé).
  *
+ *  ⚠️ Les données peuvent contenir des champs manquants (anciens enregistrements
+ *  écrits avant que certains champs existent, ex: avant le fix de buildIntranetUser).
+ *  On normalise chaque membre pour garantir que tous les champs ont une valeur
+ *  par défaut sûre, sinon les composants UI crashent sur `undefined.length` etc.
+ *
  *  Usage :
  *    const { members, loading, stats } = useMembers();
  * ═══════════════════════════════════════════════════════════════════
@@ -39,14 +44,43 @@ export type Member = {
   lastLogin: number;
 };
  
+/**
+ * Garantit qu'un membre brut venu de Firebase a tous les champs requis,
+ * avec des valeurs par défaut sûres pour éviter les crashs UI.
+ */
+function normalizeMember(raw: unknown): Member | null {
+  if (!raw || typeof raw !== 'object') return null;
+  const r = raw as Record<string, unknown>;
+ 
+  const discordId = typeof r.discordId === 'string' ? r.discordId : null;
+  if (!discordId) return null;
+ 
+  return {
+    discordId,
+    username: typeof r.username === 'string' ? r.username : 'Inconnu',
+    avatarUrl: typeof r.avatarUrl === 'string' ? r.avatarUrl : null,
+    rangNom: typeof r.rangNom === 'string' ? r.rangNom : null,
+    rangNiveau: typeof r.rangNiveau === 'number' ? r.rangNiveau : null,
+    branches: Array.isArray(r.branches) ? (r.branches as string[]) : [],
+    clan: typeof r.clan === 'string' ? r.clan : null,
+    gerantDe: Array.isArray(r.gerantDe) ? (r.gerantDe as string[]) : [],
+    coGerantDe: Array.isArray(r.coGerantDe) ? (r.coGerantDe as string[]) : [],
+    isAdmin: r.isAdmin === true,
+    isStaff: r.isStaff === true,
+    isKazekage: r.isKazekage === true,
+    firstLogin: typeof r.firstLogin === 'number' ? r.firstLogin : 0,
+    lastLogin: typeof r.lastLogin === 'number' ? r.lastLogin : 0,
+  };
+}
+ 
 export function useMembers() {
-  const { data, loading } = useFirebaseValue<Record<string, Member> | null>(FB_PATH);
+  const { data, loading } = useFirebaseValue<Record<string, unknown> | null>(FB_PATH);
  
   const members = useMemo<Member[]>(() => {
     if (!data) return [];
-    return Object.values(data).filter(
-      (m): m is Member => !!m && typeof m === 'object' && !!m.discordId
-    );
+    return Object.values(data)
+      .map(normalizeMember)
+      .filter((m): m is Member => m !== null);
   }, [data]);
  
   const stats = useMemo(() => {
@@ -62,4 +96,3 @@ export function useMembers() {
  
   return { members, loading, stats };
 }
- 
