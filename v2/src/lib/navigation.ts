@@ -32,6 +32,7 @@ export const NAV_SECTIONS: NavSection[] = [
     title: 'POLICE',
     items: [
       { label: 'Recensement', href: '/recensement', icon: 'ScrollText' },
+      { label: 'Adoptions', href: '/adoptions', icon: 'Baby' },
       { label: 'Casiers', href: '/casiers', icon: 'FileText' },
       { label: 'Dossiers', href: '/dossiers', icon: 'Folder' },
       { label: 'Bingo Book', href: '/bingobook', icon: 'BookMarked' },
@@ -43,6 +44,7 @@ export const NAV_SECTIONS: NavSection[] = [
     items: [
       { label: 'Plaintes', href: '/plaintes', icon: 'AlertCircle' },
       { label: 'Tribunal', href: '/tribunal', icon: 'Scale' },
+      { label: 'Code pénal', href: '/codepenal', icon: 'BookText' },
     ],
   },
   {
@@ -85,8 +87,6 @@ export const NAV_SECTIONS: NavSection[] = [
       { label: 'Hiérarchie', href: '/hierarchie', icon: 'GitBranch' },
       { label: 'Équipes', href: '/equipes', icon: 'Users2' },
       { label: 'Impôts', href: '/impots', icon: 'Receipt' },
-      { label: 'Adoptions', href: '/adoptions', icon: 'Baby' },
-      { label: 'Code pénal', href: '/codepenal', icon: 'BookText' },
       { label: 'Admin', href: '/admin', icon: 'Settings' },
     ],
   },

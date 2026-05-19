@@ -1,0 +1,321 @@
+/* IMPÔTS — Style fiscal sobre */
+
+.statRow {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 12px;
+  margin-bottom: 18px;
+}
+.statCard {
+  background: linear-gradient(180deg, #15110b, #1a140c);
+  border: 1px solid rgba(180,140,20,0.22);
+  border-radius: 10px;
+  padding: 14px 16px;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+.statCard::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+}
+.scGold::before   { background: linear-gradient(90deg, transparent, var(--gold2), transparent); }
+.scGreen::before  { background: linear-gradient(90deg, transparent, #22c55e, transparent); }
+.scDanger::before { background: linear-gradient(90deg, transparent, #ef4444, transparent); }
+.scBlue::before   { background: linear-gradient(90deg, transparent, #3b82f6, transparent); }
+
+.statCard > svg {
+  color: var(--muted);
+  margin-bottom: 4px;
+}
+.scGold > svg   { color: var(--gold2); }
+.scGreen > svg  { color: #86efac; }
+.scDanger > svg { color: #fca5a5; }
+.scBlue > svg   { color: #93c5fd; }
+
+.statVal {
+  font-family: 'Cinzel', serif;
+  font-size: 22px;
+  font-weight: 700;
+  line-height: 1;
+  margin: 4px 0;
+  color: var(--text);
+}
+.scGold .statVal   { color: var(--gold2); }
+.scGreen .statVal  { color: #86efac; }
+.scDanger .statVal { color: #fca5a5; }
+.scBlue .statVal   { color: #93c5fd; }
+.statLbl {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 1.5px;
+  color: var(--muted);
+  text-transform: uppercase;
+}
+
+.tabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 14px;
+  padding: 4px;
+  background: rgba(0,0,0,0.35);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  width: fit-content;
+}
+.tab {
+  padding: 8px 16px;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 7px;
+  color: var(--muted);
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.tab:hover { color: var(--text2); background: rgba(255,255,255,0.04); }
+.tabActive {
+  background: linear-gradient(180deg, rgba(212,180,74,0.22), rgba(212,180,74,0.08));
+  border-color: rgba(212,180,74,0.45);
+  color: var(--gold2);
+}
+
+.searchBox {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 12px;
+  background: rgba(0,0,0,0.4);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--muted);
+  margin-bottom: 16px;
+  max-width: 420px;
+}
+.searchBox input {
+  background: transparent; border: none; outline: none;
+  color: var(--text); font-size: 13px; flex: 1;
+}
+
+.empty {
+  text-align: center;
+  padding: 60px 20px;
+  color: var(--muted);
+  font-style: italic;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+}
+
+/* Table */
+.taxTable {
+  width: 100%;
+  border-collapse: collapse;
+  background: linear-gradient(180deg, #15110b, #1a140c);
+  border: 1px solid rgba(180,140,20,0.22);
+  border-radius: 8px;
+  overflow: hidden;
+}
+.taxTable th {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--gold2);
+  padding: 12px 14px;
+  text-align: left;
+  background: rgba(0,0,0,0.3);
+  border-bottom: 1px solid rgba(212,180,74,0.2);
+}
+.taxTable td {
+  padding: 11px 14px;
+  font-size: 13px;
+  color: var(--text);
+  border-bottom: 1px solid rgba(201,162,39,0.06);
+}
+.taxTable tbody tr:last-child td { border-bottom: none; }
+
+.rowPaye {
+  background: rgba(34,197,94,0.04);
+  opacity: 0.85;
+}
+.rowImpaye {
+  background: rgba(239,68,68,0.05);
+}
+.rowExempte {
+  opacity: 0.6;
+}
+
+.statutPaye {
+  display: inline-block;
+  padding: 3px 9px;
+  background: rgba(34,197,94,0.15);
+  color: #86efac;
+  border: 1px solid rgba(34,197,94,0.4);
+  border-radius: 4px;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 9.5px;
+  letter-spacing: 1px;
+  font-weight: 700;
+}
+.statutImpaye {
+  display: inline-block;
+  padding: 3px 9px;
+  background: rgba(239,68,68,0.15);
+  color: #fca5a5;
+  border: 1px solid rgba(239,68,68,0.4);
+  border-radius: 4px;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 9.5px;
+  letter-spacing: 1px;
+  font-weight: 700;
+}
+.statutExempte {
+  display: inline-block;
+  padding: 3px 9px;
+  background: rgba(107,114,128,0.15);
+  color: #d1d5db;
+  border: 1px solid rgba(107,114,128,0.3);
+  border-radius: 4px;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 9.5px;
+  letter-spacing: 1px;
+  font-weight: 700;
+}
+
+.muted { color: var(--muted); font-size: 12px; }
+.mono {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 11.5px;
+  color: var(--text2);
+}
+.amount {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--gold2);
+}
+
+.unmarkBtn {
+  padding: 4px 10px;
+  background: transparent;
+  border: 1px solid rgba(239,68,68,0.3);
+  border-radius: 4px;
+  color: var(--muted);
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 9.5px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.unmarkBtn:hover { color: #fca5a5; border-color: rgba(239,68,68,0.5); background: rgba(239,68,68,0.08); }
+
+.deleteBtn {
+  padding: 5px 7px;
+  border-radius: 4px;
+  color: var(--muted);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+}
+.deleteBtn:hover { color: var(--red); background: rgba(239,68,68,0.1); }
+
+/* Barème modal */
+.baremeHelp {
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--text2);
+  margin-bottom: 16px;
+  padding: 10px 14px;
+  background: rgba(212,180,74,0.05);
+  border: 1px solid rgba(212,180,74,0.2);
+  border-radius: 6px;
+}
+.baremeHelp strong { color: var(--gold2); }
+
+.baremeTable {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.baremeHead {
+  display: grid;
+  grid-template-columns: 2fr 1fr 36px;
+  gap: 10px;
+  padding: 8px 12px;
+  background: rgba(0,0,0,0.4);
+  border-radius: 6px;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 1.5px;
+  color: var(--gold2);
+  text-transform: uppercase;
+  font-weight: 700;
+}
+.baremeRow {
+  display: grid;
+  grid-template-columns: 2fr 1fr 36px;
+  gap: 10px;
+  align-items: center;
+}
+.baremeInput {
+  padding: 8px 12px;
+  background: rgba(0,0,0,0.4);
+  border: 1px solid rgba(180,140,20,0.3);
+  border-radius: 5px;
+  color: var(--text);
+  font-size: 13px;
+  font-family: 'Barlow', sans-serif;
+}
+.baremeInput:focus {
+  outline: none;
+  border-color: rgba(212,180,74,0.6);
+  background: rgba(0,0,0,0.55);
+}
+.removeBaremeBtn {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: 1px solid rgba(239,68,68,0.25);
+  border-radius: 5px;
+  color: var(--muted);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.removeBaremeBtn:hover {
+  background: rgba(239,68,68,0.1);
+  border-color: rgba(239,68,68,0.5);
+  color: var(--red);
+}
+.addBaremeBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  background: rgba(212,180,74,0.08);
+  border: 1px dashed rgba(212,180,74,0.4);
+  border-radius: 6px;
+  color: var(--gold2);
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  cursor: pointer;
+  margin-top: 8px;
+  align-self: flex-start;
+}
+.addBaremeBtn:hover {
+  background: rgba(212,180,74,0.15);
+  border-color: rgba(212,180,74,0.6);
+}

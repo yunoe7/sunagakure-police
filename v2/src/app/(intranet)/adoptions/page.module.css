@@ -1,0 +1,327 @@
+/* ADOPTIONS — Registre familial */
+
+.toolbar {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 18px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.searchBox {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 12px;
+  background: rgba(0,0,0,0.4);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--muted);
+  flex: 1;
+  min-width: 220px;
+  max-width: 380px;
+}
+.searchBox input {
+  background: transparent; border: none; outline: none;
+  color: var(--text); font-size: 13px; flex: 1;
+}
+.totalChip {
+  padding: 6px 12px;
+  background: rgba(212,180,74,0.08);
+  border: 1px solid rgba(212,180,74,0.25);
+  border-radius: 6px;
+  color: var(--gold2);
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 1px;
+}
+
+.empty {
+  text-align: center;
+  padding: 60px 20px;
+  color: var(--muted);
+  font-style: italic;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+  gap: 12px;
+}
+
+.card {
+  display: grid;
+  grid-template-columns: 96px 1fr auto;
+  gap: 14px;
+  align-items: stretch;
+  padding: 14px 16px;
+  background: linear-gradient(180deg, #15110b, #1a140c);
+  border: 1px solid rgba(180,140,20,0.22);
+  border-radius: 10px;
+  cursor: pointer;
+  position: relative;
+  transition: all 0.18s;
+  overflow: hidden;
+}
+.card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, rgba(168,85,247,0.6) 50%, transparent);
+  opacity: 0.5;
+}
+.card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(168,85,247,0.4);
+  box-shadow: 0 8px 22px rgba(0,0,0,0.45);
+}
+
+.cardLeft {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.photo {
+  width: 80px;
+  height: 80px;
+  border-radius: 8px;
+  object-fit: cover;
+  border: 1px solid rgba(168,85,247,0.3);
+}
+.photoPlaceholder {
+  width: 80px;
+  height: 80px;
+  border-radius: 8px;
+  background: linear-gradient(135deg, rgba(168,85,247,0.1), rgba(168,85,247,0.04));
+  border: 1px solid rgba(168,85,247,0.25);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(196,181,253,0.5);
+}
+
+.cardBody {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+.cardHeader {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 6px;
+}
+.numero {
+  padding: 3px 9px;
+  background: rgba(212,180,74,0.08);
+  color: var(--gold2);
+  border: 1px solid rgba(212,180,74,0.25);
+  border-radius: 4px;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 10.5px;
+  letter-spacing: 1.5px;
+  font-weight: 700;
+}
+.dateChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 9px;
+  background: rgba(168,85,247,0.1);
+  color: #c4b5fd;
+  border: 1px solid rgba(168,85,247,0.3);
+  border-radius: 4px;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.5px;
+}
+
+.cardBody h3 {
+  font-family: 'Cinzel', serif;
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: 0.5px;
+  line-height: 1.2;
+  margin-bottom: 2px;
+}
+
+.adoptant {
+  font-size: 12.5px;
+  color: var(--text2);
+  line-height: 1.4;
+}
+.adoptant strong {
+  color: var(--gold2);
+  font-weight: 700;
+}
+
+.clan {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 11px;
+  color: var(--muted);
+  letter-spacing: 0.5px;
+  margin-top: 2px;
+}
+.clan strong { color: #c4b5fd; }
+
+.raison {
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--text2);
+  font-style: italic;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  margin-top: 6px;
+}
+
+.deleteBtn {
+  align-self: flex-start;
+  padding: 5px 7px;
+  border-radius: 4px;
+  color: var(--muted);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  opacity: 0;
+  transition: all 0.15s;
+}
+.card:hover .deleteBtn { opacity: 0.7; }
+.deleteBtn:hover { color: var(--red); background: rgba(239,68,68,0.1); opacity: 1 !important; }
+
+/* Viewer */
+.viewer {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+.viewerPhoto {
+  display: flex;
+  justify-content: center;
+}
+.viewerPhoto img {
+  max-width: 280px;
+  max-height: 280px;
+  border-radius: 10px;
+  border: 2px solid rgba(168,85,247,0.35);
+  box-shadow: 0 8px 22px rgba(0,0,0,0.5);
+}
+
+.viewerRow {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 14px;
+  padding: 14px 16px;
+  background: rgba(168,85,247,0.05);
+  border: 1px solid rgba(168,85,247,0.2);
+  border-radius: 8px;
+}
+.viewerRow strong {
+  font-family: 'Cinzel', serif;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: 0.3px;
+  display: block;
+  margin-top: 4px;
+}
+
+.fieldLabel {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 9.5px;
+  letter-spacing: 1.5px;
+  color: var(--gold2);
+  text-transform: uppercase;
+  font-weight: 700;
+}
+
+.viewerField p {
+  font-size: 13.5px;
+  line-height: 1.6;
+  color: var(--text2);
+  margin-top: 6px;
+}
+
+/* Form */
+.formFields { display: flex; flex-direction: column; gap: 14px; }
+.formFields label {
+  display: flex; flex-direction: column; gap: 5px;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase;
+  color: rgba(212,180,74,0.85); font-weight: 700;
+}
+.formFields input, .formFields textarea, .formFields select {
+  padding: 10px 12px;
+  background: rgba(0,0,0,0.4);
+  border: 1px solid rgba(180,140,20,0.35);
+  border-radius: 6px;
+  color: var(--text);
+  font-size: 13px;
+  font-family: 'Barlow', sans-serif;
+  text-transform: none; letter-spacing: normal; font-weight: normal;
+}
+.formFields input:focus, .formFields textarea:focus {
+  outline: none;
+  border-color: rgba(212,180,74,0.65);
+  background: rgba(0,0,0,0.55);
+  box-shadow: 0 0 0 3px rgba(212,180,74,0.1);
+}
+.formFields textarea { resize: vertical; min-height: 70px; }
+.row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+/* Upload */
+.uploadZone {
+  position: relative;
+  background: rgba(0,0,0,0.4);
+  border: 1px dashed rgba(180,140,20,0.4);
+  border-radius: 6px;
+  min-height: 140px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  cursor: pointer;
+}
+.uploadZone:hover { border-color: rgba(212,180,74,0.7); }
+.uploadZone input[type="file"] {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+.uploadPreview {
+  max-width: 100%;
+  max-height: 200px;
+  object-fit: contain;
+}
+.uploadPlaceholder {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 1.5px;
+  color: var(--muted);
+  text-transform: uppercase;
+}
+.removePhoto {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  padding: 4px 10px;
+  background: rgba(0,0,0,0.7);
+  border: 1px solid rgba(239,68,68,0.4);
+  border-radius: 4px;
+  color: #fca5a5;
+  font-size: 10px;
+  font-family: 'Share Tech Mono', monospace;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  cursor: pointer;
+  z-index: 2;
+}
+.removePhoto:hover { background: rgba(239,68,68,0.2); }
