@@ -48,6 +48,8 @@ export const NAV_SECTIONS: NavSection[] = [
       { label: 'Plaintes', href: '/plaintes', icon: 'AlertCircle' },
       { label: 'Tribunal', href: '/tribunal', icon: 'Scale' },
       { label: 'Code pénal', href: '/codepenal', icon: 'BookText' },
+      { label: 'Code de procédure', href: '/justice/procedure', icon: 'ScrollText' },
+      { label: 'Archives', href: '/justice/archives', icon: 'Archive' },
       { label: 'Comptabilité', href: '/justice/comptabilite', icon: 'Wallet' },
     ],
   },
@@ -77,6 +79,7 @@ export const NAV_SECTIONS: NavSection[] = [
     title: 'MISSIONS',
     items: [
       { label: 'Missions', href: '/missions', icon: 'Target' },
+      { label: 'Récompenses', href: '/missions/recompenses', icon: 'Trophy' },
       { label: 'Comptabilité', href: '/missions/comptabilite', icon: 'Wallet' },
     ],
   },
