@@ -6,12 +6,18 @@
  * ════════════════════════════════════════════════════════════════
  *
  * Récupère les infos du user Discord actuellement connecté via
- * NextAuth. Sert à remplacer le `CURRENT_USER = 'Ninja'` qu'on
- * avait hardcodé dans toutes les pages au début.
+ * NextAuth.
  *
- * Usage :
+ * Usage (existant, ne change pas) :
  *   const { username, displayName, avatar, isLoading } = useCurrentUser();
  *
+ * Usage Phase B (nouveau) :
+ *   const { user, can } = useCurrentUser();
+ *   if (can.adminBranche('police')) { ... }
+ *   if (user?.isAdmin) { ... }
+ *   if (user?.rang?.nom === 'Tokubetsu Jonin') { ... }
+ *
+ * Champs existants :
  * - username     → pseudo Discord (yuno6901)
  * - displayName  → nom affiché Discord ou pseudo si pas défini
  * - avatar       → URL CDN Discord ou null
@@ -20,10 +26,25 @@
  * - initials     → 1-2 lettres pour l'avatar par défaut (ex: "Y")
  * - isLoading    → true pendant le chargement initial
  * - isAuthed     → true si connecté
+ *
+ * Champs Phase B :
+ * - user           → IntranetUser complet (rang, branches, gérant, isAdmin...)
+ * - can            → helpers de permissions (can.adminBranche, can.adminGeneral, can.rangAuMoins)
+ * - isAuthenticated → alias de isAuthed
  * ════════════════════════════════════════════════════════════════
  */
 
 import { useSession } from 'next-auth/react';
+import type { IntranetUser } from '@/lib/roles';
+
+export type Permissions = {
+  /** Peut gérer la branche donnée (Gérant OU Co-gérant OU Admin) */
+  adminBranche: (slug: string) => boolean;
+  /** Peut voir le panel admin général (Admin / Staff / Conseil) */
+  adminGeneral: () => boolean;
+  /** A au moins le rang ninja demandé (par niveau, 1 = Genin, 11 = Kazekage) */
+  rangAuMoins: (niveauMin: number) => boolean;
+};
 
 /**
  * Génère des initiales (1-2 lettres) à partir d'un nom.
@@ -38,6 +59,7 @@ function getInitials(name: string | undefined): string {
 export function useCurrentUser() {
   const { data: session, status } = useSession();
   const user = session?.user;
+  const intranetUser = (session?.intranetUser as IntranetUser | undefined) ?? null;
 
   // Le nom à utiliser pour signer les actions dans Firebase :
   // priorité au global_name (le pseudo affiché Discord),
@@ -48,7 +70,33 @@ export function useCurrentUser() {
     user?.name ||
     'Ninja';
 
+  // ─── Helpers de permissions (Phase B) ──────────────────────────
+  const can: Permissions = {
+    adminBranche: (slug: string) => {
+      if (!intranetUser) return false;
+      if (intranetUser.isAdmin) return true;
+      return (
+        intranetUser.gerantDe.includes(slug) ||
+        intranetUser.coGerantDe.includes(slug)
+      );
+    },
+    adminGeneral: () => {
+      if (!intranetUser) return false;
+      return (
+        intranetUser.isAdmin ||
+        intranetUser.isStaff ||
+        intranetUser.isConseilDuVent ||
+        intranetUser.isConseillerKazekage
+      );
+    },
+    rangAuMoins: (niveauMin: number) => {
+      if (!intranetUser || !intranetUser.rang) return false;
+      return intranetUser.rang.niveau >= niveauMin;
+    },
+  };
+
   return {
+    // ─── Champs existants (préservés) ────────────────────────────
     /** Pseudo Discord brut (ex: "yuno6901") */
     username: user?.discordUsername,
     /** Nom affiché Discord (peut être différent du username) */
@@ -65,5 +113,13 @@ export function useCurrentUser() {
     isLoading: status === 'loading',
     /** User authentifié */
     isAuthed: status === 'authenticated',
+
+    // ─── Nouveaux champs Phase B ─────────────────────────────────
+    /** IntranetUser complet (null si pas connecté ou pas encore chargé) */
+    user: intranetUser,
+    /** Helpers de permissions */
+    can,
+    /** Alias de isAuthed pour cohérence */
+    isAuthenticated: status === 'authenticated' && intranetUser !== null,
   };
 }

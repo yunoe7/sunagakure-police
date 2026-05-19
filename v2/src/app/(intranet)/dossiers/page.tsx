@@ -12,6 +12,10 @@
  *
  * Filtres : par danger, par statut. Recherche full-text.
  * Tri : par date d'ouverture (plus récent en premier).
+ *
+ * Permissions (Phase C) :
+ * - Voir / chercher / filtrer : tout le monde (connecté)
+ * - Créer / modifier / supprimer : Gérants Police + Admin
  * ════════════════════════════════════════════════════════════════
  */
 
@@ -30,6 +34,7 @@ import {
 
 import { useFirebaseValue } from '@/hooks/useFirebaseValue';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
+import { RequireBranche } from '@/components/Require';
 import { dbSet } from '@/lib/db';
 import { toast } from '@/lib/toast';
 import { Card } from '@/components/ui/Card';
@@ -54,7 +59,7 @@ type DangerFilter = 'all' | DossierDanger;
 type StatutFilter = 'all' | DossierStatut;
 
 export default function DossiersPage() {
-  const CURRENT_USER = useCurrentUser().displayName;
+  const { displayName: CURRENT_USER, can } = useCurrentUser();
   const { data, loading } = useFirebaseValue<Dossier[] | null>(FB_PATH);
 
   const [search, setSearch] = useState('');
@@ -64,6 +69,9 @@ export default function DossiersPage() {
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [form, setForm] = useState<Partial<Dossier>>({});
+
+  // Permission centralisée pour cette page
+  const canEdit = can.adminBranche('police');
 
   // ─── Données normalisées ───
   const all = useMemo<Dossier[]>(() => {
@@ -201,9 +209,11 @@ export default function DossiersPage() {
         title="Dossiers criminels"
         subtitle="Registre officiel de la Police de Suna"
         actions={
-          <Button onClick={openCreate}>
-            <Plus size={14} /> Ouvrir un dossier
-          </Button>
+          <RequireBranche branche="police">
+            <Button onClick={openCreate}>
+              <Plus size={14} /> Ouvrir un dossier
+            </Button>
+          </RequireBranche>
         }
       >
         {/* Stats hero */}
@@ -272,7 +282,8 @@ export default function DossiersPage() {
               <article
                 key={d.id}
                 className={`${styles.dossier} ${styles[`d-${d.danger}`]} ${d.defunt ? styles.defunt : ''}`}
-                onClick={() => openEdit(d)}
+                onClick={() => canEdit && openEdit(d)}
+                style={{ cursor: canEdit ? 'pointer' : 'default' }}
               >
                 <div className={styles.header}>
                   <span className={`${styles.dangerBadge} ${styles[`db-${d.danger}`]}`}>
@@ -289,16 +300,18 @@ export default function DossiersPage() {
                       <Skull size={11} /> Défunt
                     </span>
                   )}
-                  <button
-                    className={styles.deleteBtn}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleDelete(d);
-                    }}
-                    aria-label="Supprimer"
-                  >
-                    <Trash2 size={13} />
-                  </button>
+                  <RequireBranche branche="police">
+                    <button
+                      className={styles.deleteBtn}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDelete(d);
+                      }}
+                      aria-label="Supprimer"
+                    >
+                      <Trash2 size={13} />
+                    </button>
+                  </RequireBranche>
                 </div>
 
                 <div className={styles.body}>
