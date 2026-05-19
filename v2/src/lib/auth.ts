@@ -3,16 +3,10 @@
  *  NextAuth — Configuration Discord OAuth pour Sunagakure
  * ═══════════════════════════════════════════════════════════════════
  *  - Scopes étendus : identify + email + guilds + guilds.members.read
- *  - Callback signIn : vérifie membre serveur OU whitelist (hardcoded + Firebase)
+ *  - Callback signIn : vérifie membre serveur OU whitelist
  *  - Callback jwt    : enrichit le token avec rang + branches + flags
  *  - Callback session: expose ces données au client
- *
- *  Variables d'environnement requises :
- *    - DISCORD_CLIENT_ID
- *    - DISCORD_CLIENT_SECRET
- *    - NEXTAUTH_SECRET
- *    - NEXTAUTH_URL
- *    - NEXT_PUBLIC_FIREBASE_* (pour la whitelist dynamique)
+ *  - Log Firebase     : enregistre les users dans users/{discordId}
  * ═══════════════════════════════════════════════════════════════════
  */
 
@@ -53,7 +47,7 @@ export const authOptions: NextAuthOptions = {
 
       const discordId = (account.providerAccountId as string) || (user.id as string);
 
-      // Whitelist admin = accès direct (hardcoded + Firebase)
+      // Whitelist admin = accès direct
       if (await isInWhitelist(discordId)) return true;
 
       // Sinon, doit être membre du serveur Sunagakure
@@ -64,13 +58,7 @@ export const authOptions: NextAuthOptions = {
       return "/access-denied";
     },
 
-    /**
-     * Callback JWT : enrichit le token avec :
-     *  - Les champs Discord existants (discordId, discordUsername, etc.)
-     *  - Le nouvel objet intranetUser (rang, branches, gérant, etc.)
-     */
     async jwt({ token, account, profile, user }) {
-      // Premier login : on a un account + access_token
       if (account && profile) {
         const discordProfile = profile as {
           id?: string;
@@ -107,26 +95,25 @@ export const authOptions: NextAuthOptions = {
           });
 
           token.intranetUser = intranetUser;
+
+          // ─── Log dans Firebase users/{discordId} ─────────────────
+          // On enregistre / met à jour automatiquement chaque user
+          // pour pouvoir les voir dans /admin/membres
+          await logUserToFirebase(intranetUser);
         }
       }
 
       return token;
     },
 
-    /**
-     * Callback session : expose les données au client.
-     * On garde TOUS les champs existants + on ajoute intranetUser.
-     */
     async session({ session, token }) {
       if (session.user) {
-        // ─── Champs existants (préservés) ──────────────────────────
         session.user.discordId = token.discordId as string | undefined;
         session.user.discordUsername = token.discordUsername as string | undefined;
         session.user.discordGlobalName = token.discordGlobalName as string | undefined;
         session.user.discordAvatar = token.discordAvatar as string | null | undefined;
       }
 
-      // ─── Nouveau champ Phase B ────────────────────────────────────
       if (token.intranetUser) {
         session.intranetUser = token.intranetUser as IntranetUser;
       }
@@ -137,3 +124,73 @@ export const authOptions: NextAuthOptions = {
 
   debug: process.env.NODE_ENV === "development",
 };
+
+// ═══════════════════════════════════════════════════════════════════
+//  Log Firebase des utilisateurs
+// ═══════════════════════════════════════════════════════════════════
+
+/**
+ * Enregistre / met à jour l'utilisateur dans Firebase Realtime DB.
+ * Path : users/{discordId}
+ *
+ * Conserve la date de première connexion (firstLogin) si elle existe,
+ * met à jour lastLogin et les infos potentiellement changées
+ * (rang, branches, etc. si Discord a évolué entre temps).
+ */
+async function logUserToFirebase(user: IntranetUser): Promise<void> {
+  try {
+    const { getDatabase, ref, get, set, update, child } = await import("firebase/database");
+    const { initializeApp, getApps } = await import("firebase/app");
+
+    const firebaseConfig = {
+      apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY!,
+      authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN!,
+      projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID!,
+      storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET!,
+      messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID!,
+      appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID!,
+      databaseURL: process.env.NEXT_PUBLIC_FIREBASE_DATABASE_URL!,
+    };
+
+    const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0]!;
+    const db = getDatabase(app);
+
+    const userRef = ref(db, `users/${user.discordId}`);
+    const now = Date.now();
+
+    // Vérifie si l'utilisateur existe déjà
+    const snap = await Promise.race([
+      get(child(ref(db), `users/${user.discordId}`)),
+      new Promise<null>((resolve) => setTimeout(() => resolve(null), 5000)),
+    ]);
+
+    const isFirstLogin = !snap || !("exists" in snap) || !snap.exists();
+
+    // Données à toujours mettre à jour
+    const updates = {
+      discordId: user.discordId,
+      username: user.username,
+      avatarUrl: user.avatarUrl,
+      rangNom: user.rang?.nom ?? null,
+      rangNiveau: user.rang?.niveau ?? null,
+      branches: user.branches.map((b) => b.slug),
+      clan: user.clan,
+      gerantDe: user.gerantDe,
+      coGerantDe: user.coGerantDe,
+      isAdmin: user.isAdmin,
+      isStaff: user.isStaff,
+      isKazekage: user.isKazekage,
+      lastLogin: now,
+      ...(isFirstLogin ? { firstLogin: now } : {}),
+    };
+
+    if (isFirstLogin) {
+      await set(userRef, updates);
+    } else {
+      await update(userRef, updates);
+    }
+  } catch (err) {
+    // On ne fait pas planter le login si Firebase est down
+    console.error("[Auth] logUserToFirebase failed:", err);
+  }
+}
