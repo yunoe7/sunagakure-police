@@ -31,6 +31,7 @@ export const NAV_SECTIONS: NavSection[] = [
   {
     title: 'POLICE',
     items: [
+      { label: 'Recensement', href: '/recensement', icon: 'ScrollText' },
       { label: 'Casiers', href: '/casiers', icon: 'FileText' },
       { label: 'Dossiers', href: '/dossiers', icon: 'Folder' },
       { label: 'Bingo Book', href: '/bingobook', icon: 'BookMarked' },
