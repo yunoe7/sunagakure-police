@@ -101,7 +101,8 @@ export const NAV_SECTIONS: NavSection[] = [
       { label: 'Équipes', href: '/equipes', icon: 'Users2' },
       { label: 'Impôts', href: '/impots', icon: 'Receipt' },
       { label: 'Trésor Central', href: '/tresor', icon: 'Landmark' },
-      { label: 'Admin', href: '/admin', icon: 'Settings' },
+      { label: 'Membres', href: '/admin/membres', icon: 'Users' },
+      { label: 'Whitelist', href: '/admin', icon: 'ShieldCheck' },
     ],
   },
 ];
