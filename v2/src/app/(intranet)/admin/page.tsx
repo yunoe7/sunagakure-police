@@ -81,7 +81,7 @@ export default function AdminPage() {
         : usersData
           ? Object.values(usersData)
           : []
-      ).filter((u): u is User => u !== null && typeof u === 'object' && !!u.id),
+      ).filter((u): u is User => u !== null && typeof u === 'object' && !!(u as Partial<User>).id),
     [usersData]
   );
 
@@ -92,7 +92,7 @@ export default function AdminPage() {
         : loginsData
           ? Object.values(loginsData)
           : []
-      ).filter((l): l is LoginEntry => l !== null && typeof l === 'object' && !!l.date),
+      ).filter((l): l is LoginEntry => l !== null && typeof l === 'object' && !!(l as Partial<LoginEntry>).date),
     [loginsData]
   );
 
@@ -103,7 +103,7 @@ export default function AdminPage() {
         : timelineData
           ? Object.values(timelineData)
           : []
-      ).filter((t): t is TimelineEntry => t !== null && typeof t === 'object' && !!t.date),
+      ).filter((t): t is TimelineEntry => t !== null && typeof t === 'object' && !!(t as Partial<TimelineEntry>).date),
     [timelineData]
   );
 
