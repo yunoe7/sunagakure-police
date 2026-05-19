@@ -3,15 +3,16 @@
  *  NextAuth — Configuration Discord OAuth pour Sunagakure
  * ═══════════════════════════════════════════════════════════════════
  *  - Scopes étendus : identify + email + guilds + guilds.members.read
- *  - Callback signIn : vérifie membre serveur OU whitelist
+ *  - Callback signIn : vérifie membre serveur OU whitelist (hardcoded + Firebase)
  *  - Callback jwt    : enrichit le token avec rang + branches + flags
  *  - Callback session: expose ces données au client
  *
- *  Variables d'environnement requises (dans .env.local) :
+ *  Variables d'environnement requises :
  *    - DISCORD_CLIENT_ID
  *    - DISCORD_CLIENT_SECRET
  *    - NEXTAUTH_SECRET
  *    - NEXTAUTH_URL
+ *    - NEXT_PUBLIC_FIREBASE_* (pour la whitelist dynamique)
  * ═══════════════════════════════════════════════════════════════════
  */
 
@@ -28,7 +29,6 @@ export const authOptions: NextAuthOptions = {
       clientSecret: process.env.DISCORD_CLIENT_SECRET!,
       authorization: {
         params: {
-          // identify+email = existant, guilds+guilds.members.read = nouveau pour Phase B
           scope: "identify email guilds guilds.members.read",
         },
       },
@@ -53,8 +53,8 @@ export const authOptions: NextAuthOptions = {
 
       const discordId = (account.providerAccountId as string) || (user.id as string);
 
-      // Whitelist admin = accès direct
-      if (isInWhitelist(discordId)) return true;
+      // Whitelist admin = accès direct (hardcoded + Firebase)
+      if (await isInWhitelist(discordId)) return true;
 
       // Sinon, doit être membre du serveur Sunagakure
       const guildData = await fetchGuildMember(account.access_token);
@@ -91,7 +91,7 @@ export const authOptions: NextAuthOptions = {
         // ─── Nouveaux champs Phase B : IntranetUser ────────────────
         if (account.access_token) {
           const discordId = discordProfile.id ?? (account.providerAccountId as string);
-          const isWhitelisted = isInWhitelist(discordId);
+          const isWhitelisted = await isInWhitelist(discordId);
 
           const guildData = await fetchGuildMember(account.access_token);
           const isMembreServeur = guildData?.isMember ?? false;
