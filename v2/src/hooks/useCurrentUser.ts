@@ -5,23 +5,18 @@
  *  Hook useCurrentUser
  * ════════════════════════════════════════════════════════════════
  *
- * Récupère les infos du user Discord actuellement connecté via
- * NextAuth.
+ * Récupère les infos du user Discord actuellement connecté via NextAuth.
  *
- * Usage (existant, ne change pas) :
+ * Usage :
  *   const { username, displayName, avatar, isLoading } = useCurrentUser();
  *
- * Usage Phase B :
+ * Usage permissions :
  *   const { user, can } = useCurrentUser();
  *   if (can.adminBranche('police')) { ... }
+ *   if (can.adminBranche(['medecin', 'scientifique'])) { ... } // au moins une
  *   if (user?.isAdmin) { ... }
- *   if (user?.rang?.nom === 'Tokubetsu Jonin') { ... }
  *
- * ⚠️ BUG FIX (mai 2026) :
- *   Avant, ce hook lisait `session.intranetUser`, mais auth.ts écrit
- *   `session.intranet` (sans "User"). Du coup `intranetUser` était
- *   toujours null → personne n'avait jamais de rang, branche, ou admin.
- *   Corrigé pour lire `session.intranet`.
+ * ⚠️ Lit `session.intranet` (pas `session.intranetUser` — ancien bug).
  * ════════════════════════════════════════════════════════════════
  */
  
@@ -29,8 +24,11 @@ import { useSession } from 'next-auth/react';
 import type { IntranetUser } from '@/lib/roles';
  
 export type Permissions = {
-  /** Peut gérer la branche donnée (Gérant OU Co-gérant OU Admin) */
-  adminBranche: (slug: string) => boolean;
+  /**
+   * Peut gérer la (ou les) branche(s) donnée(s) — Gérant OU Co-gérant OU Admin.
+   * Si on passe une liste, c'est OK s'il a au moins UNE des branches.
+   */
+  adminBranche: (slug: string | string[]) => boolean;
   /** Peut voir le panel admin général (Admin / Staff / Conseil) */
   adminGeneral: () => boolean;
   /** A au moins le rang ninja demandé (par niveau, 1 = Genin, 11 = Kazekage) */
@@ -51,15 +49,10 @@ export function useCurrentUser() {
   const { data: session, status } = useSession();
   const user = session?.user;
  
-  // ─── FIX : auth.ts écrit `session.intranet` (pas `intranetUser`) ───
-  // On lit le bon champ. Cast nécessaire car NextAuth ne connaît pas
-  // ce champ étendu dans ses types par défaut.
+  // FIX : auth.ts écrit `session.intranet` (pas `intranetUser`).
   const intranetUser =
     ((session as unknown as { intranet?: IntranetUser } | null)?.intranet) ?? null;
  
-  // Le nom à utiliser pour signer les actions dans Firebase :
-  // priorité au global_name (le pseudo affiché Discord),
-  // sinon le username, sinon "Ninja" en dernier recours.
   const displayName =
     user?.discordGlobalName ||
     user?.discordUsername ||
@@ -67,14 +60,16 @@ export function useCurrentUser() {
     intranetUser?.username ||
     'Ninja';
  
-  // ─── Helpers de permissions (Phase B) ──────────────────────────
+  // ─── Helpers de permissions ────────────────────────────────────
   const can: Permissions = {
-    adminBranche: (slug: string) => {
+    adminBranche: (slug: string | string[]) => {
       if (!intranetUser) return false;
       if (intranetUser.isAdmin) return true;
-      return (
-        intranetUser.gerantDe.includes(slug) ||
-        intranetUser.coGerantDe.includes(slug)
+      // Normalise en tableau pour traiter uniformément
+      const slugs = Array.isArray(slug) ? slug : [slug];
+      return slugs.some(
+        (s) =>
+          intranetUser.gerantDe.includes(s) || intranetUser.coGerantDe.includes(s)
       );
     },
     adminGeneral: () => {
@@ -93,30 +88,19 @@ export function useCurrentUser() {
   };
  
   return {
-    // ─── Champs existants (préservés) ────────────────────────────
-    /** Pseudo Discord brut (ex: "yuno6901") */
+    // ─── Champs existants ──────────────────────────────────────────
     username: user?.discordUsername ?? intranetUser?.username,
-    /** Nom affiché Discord (peut être différent du username) */
     displayName,
-    /** URL de l'avatar Discord, null si pas d'avatar */
     avatar: user?.discordAvatar || user?.image || intranetUser?.avatarUrl || null,
-    /** Discord ID */
     id: user?.discordId ?? intranetUser?.discordId,
-    /** Email Discord */
     email: user?.email,
-    /** Initiales pour fallback avatar */
     initials: getInitials(displayName),
-    /** Session en cours de chargement */
     isLoading: status === 'loading',
-    /** User authentifié */
     isAuthed: status === 'authenticated',
  
-    // ─── Nouveaux champs Phase B ─────────────────────────────────
-    /** IntranetUser complet (null si pas connecté ou pas encore chargé) */
+    // ─── Nouveaux champs ───────────────────────────────────────────
     user: intranetUser,
-    /** Helpers de permissions */
     can,
-    /** Alias de isAuthed pour cohérence */
     isAuthenticated: status === 'authenticated' && intranetUser !== null,
   };
 }
