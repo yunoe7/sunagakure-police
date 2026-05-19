@@ -14,6 +14,10 @@
  * Mais ici l'ID est le `id` numérique du ninja (Date.now()), pas un push key.
  * On utilise donc dbSet(`bingobook/${id}`, ninja) pour respecter le format
  * de l'ancien intranet.
+ *
+ * Permissions (Phase C) :
+ * - Voir / chercher / filtrer : tout le monde (connecté)
+ * - Créer / modifier / supprimer : Gérants Police + Admin
  * ════════════════════════════════════════════════════════════════
  */
 
@@ -21,6 +25,8 @@ import { useMemo, useState } from 'react';
 import { Plus, Trash2, Save, Search, Skull, AlertTriangle } from 'lucide-react';
 
 import { useFirebaseValue } from '@/hooks/useFirebaseValue';
+import { useCurrentUser } from '@/hooks/useCurrentUser';
+import { RequireBranche } from '@/components/Require';
 import { dbSet, dbRemove } from '@/lib/db';
 import { toast } from '@/lib/toast';
 import { Card } from '@/components/ui/Card';
@@ -42,8 +48,9 @@ const FB_PATH = 'bingobook';
 type DangerFilter = 'all' | DangerLevel;
 
 export default function BingoBookPage() {
+  const { can } = useCurrentUser();
+
   // ─── Lecture temps réel ───
-  // Firebase stocke un objet { id1: fiche1, ... }
   const { data, loading } = useFirebaseValue<Record<string, NinjaFiche>>(FB_PATH);
 
   // ─── État local ───
@@ -52,6 +59,9 @@ export default function BingoBookPage() {
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [form, setForm] = useState<Partial<NinjaFiche>>({});
+
+  // Permission centralisée
+  const canEdit = can.adminBranche('police');
 
   // ─── Liste filtrée ───
   const fiches = useMemo(() => {
@@ -189,9 +199,11 @@ export default function BingoBookPage() {
         title="Bingo Book"
         subtitle="Registre officiel des fugitifs recherchés"
         actions={
-          <Button onClick={openCreate}>
-            <Plus size={14} /> Ajouter une fiche
-          </Button>
+          <RequireBranche branche="police">
+            <Button onClick={openCreate}>
+              <Plus size={14} /> Ajouter une fiche
+            </Button>
+          </RequireBranche>
         }
       >
         {/* Barre d'outils : recherche + filtres */}
@@ -240,7 +252,7 @@ export default function BingoBookPage() {
           <p className={styles.empty}>
             {search || filter !== 'all'
               ? 'Aucune fiche pour ces critères.'
-              : "Aucune fiche dans le registre. Ajoute la première !"}
+              : "Aucune fiche dans le registre."}
           </p>
         ) : (
           <div className={styles.grid}>
@@ -248,7 +260,8 @@ export default function BingoBookPage() {
               <article
                 key={f.id}
                 className={`${styles.fiche} ${styles[`d-${f.danger}`]} ${f.status === 'tue' ? styles.dead : ''}`}
-                onClick={() => openEdit(f)}
+                onClick={() => canEdit && openEdit(f)}
+                style={{ cursor: canEdit ? 'pointer' : 'default' }}
               >
                 <div className={styles.ficheHeader}>
                   <span className={`${styles.dangerBadge} ${styles[`db-${f.danger}`]}`}>
@@ -266,16 +279,18 @@ export default function BingoBookPage() {
                   {f.status === 'evade' && (
                     <span className={styles.evadedBadge}>ÉVADÉ</span>
                   )}
-                  <button
-                    className={styles.deleteBtn}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleDelete(f);
-                    }}
-                    aria-label="Supprimer"
-                  >
-                    <Trash2 size={13} />
-                  </button>
+                  <RequireBranche branche="police">
+                    <button
+                      className={styles.deleteBtn}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDelete(f);
+                      }}
+                      aria-label="Supprimer"
+                    >
+                      <Trash2 size={13} />
+                    </button>
+                  </RequireBranche>
                 </div>
 
                 <div className={styles.portrait}>
