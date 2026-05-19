@@ -24,6 +24,7 @@ import {
   CheckCircle2, AlertCircle, Settings,
 } from 'lucide-react';
 import { useFirebaseValue } from '@/hooks/useFirebaseValue';
+import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { dbSet } from '@/lib/db';
 import { toast } from '@/lib/toast';
 import { Card } from '@/components/ui/Card';
@@ -40,11 +41,10 @@ import styles from './page.module.css';
 
 const FB_GRADES = 'impots/grades';
 const FB_PAIEMENTS = 'impots/paiements';
-const CURRENT_USER = 'Ninja';
-
 type Tab = 'registre' | 'historique' | 'bareme';
 
 export default function ImpotsPage() {
+  const CURRENT_USER = useCurrentUser().displayName;
   const { data: gradesData } = useFirebaseValue<GradeBareme[] | null>(FB_GRADES);
   const { data: paiementsData } = useFirebaseValue<PaiementImpot[] | null>(FB_PAIEMENTS);
   const { data: recensesData } = useFirebaseValue<Recense[] | null>('recenses');

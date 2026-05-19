@@ -25,6 +25,7 @@ import {
   Wallet, Archive, PackageCheck,
 } from 'lucide-react';
 import { useFirebaseValue } from '@/hooks/useFirebaseValue';
+import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { dbSet, dbUpdate } from '@/lib/db';
 import { toast } from '@/lib/toast';
 import { Card } from '@/components/ui/Card';
@@ -43,8 +44,6 @@ import {
 
 import styles from './ComptaModule.module.css';
 
-const CURRENT_USER = 'Ninja';
-
 interface Props {
   section: ComptaSection;
 }
@@ -52,6 +51,7 @@ interface Props {
 type Tab = 'transactions' | 'archives';
 
 export default function ComptaModule({ section }: Props) {
+  const CURRENT_USER = useCurrentUser().displayName;
   const fbPath = SECTION_FB_PATH[section];
   const { data, loading } = useFirebaseValue<ComptaData | null>(fbPath);
   const { data: tresorData } = useFirebaseValue<TresorCentral | null>('tresorCentral');

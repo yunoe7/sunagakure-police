@@ -16,6 +16,7 @@
 import { useMemo, useState } from 'react';
 import { Plus, Trash2, Save, Search, Users, Shield, Crown, X } from 'lucide-react';
 import { useFirebaseValue } from '@/hooks/useFirebaseValue';
+import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { dbSet } from '@/lib/db';
 import { toast } from '@/lib/toast';
 import { Card } from '@/components/ui/Card';
@@ -28,9 +29,8 @@ import type { Recense } from '@/types/recense';
 import styles from './page.module.css';
 
 const FB_PATH = 'equipes';
-const CURRENT_USER = 'Ninja';
-
 export default function EquipesPage() {
+  const CURRENT_USER = useCurrentUser().displayName;
   const { data, loading } = useFirebaseValue<Equipe[] | null>(FB_PATH);
   const { data: recensesData } = useFirebaseValue<Recense[] | null>('recenses');
 

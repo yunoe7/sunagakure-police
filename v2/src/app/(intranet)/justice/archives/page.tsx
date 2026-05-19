@@ -19,6 +19,7 @@ import {
   Plus, Trash2, Save, Search, Archive, Scale, BookOpen, Calendar,
 } from 'lucide-react';
 import { useFirebaseValue } from '@/hooks/useFirebaseValue';
+import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { dbSet } from '@/lib/db';
 import { toast } from '@/lib/toast';
 import { Card } from '@/components/ui/Card';
@@ -34,11 +35,10 @@ import { type Precedent, nextPrecedentRef, fmtDateFR } from '@/types/justice-plu
 import styles from './page.module.css';
 
 const FB_JUR = 'jurisprudence';
-const CURRENT_USER = 'Ninja';
-
 type Tab = 'affaires' | 'jurisprudence';
 
 export default function ArchivesPage() {
+  const CURRENT_USER = useCurrentUser().displayName;
   const { data: affairesData, loading: lAff } = useFirebaseValue<Affaire[] | null>('affaires');
   const { data: jugementsData } = useFirebaseValue<Jugement[] | null>('jugements');
   const { data: jurData, loading: lJur } = useFirebaseValue<Precedent[] | null>(FB_JUR);

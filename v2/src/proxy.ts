@@ -1,5 +1,8 @@
 /**
- * Middleware NextAuth — Protection des routes
+ * Proxy NextAuth — Protection des routes
+ *
+ * Anciennement appelé "middleware.ts" dans Next.js 13-15.
+ * Renommé en "proxy.ts" dans Next.js 16+.
  *
  * S'exécute AVANT chaque requête vers une page de l'intranet.
  * Si l'utilisateur n'est pas connecté, le redirige vers /login.
@@ -13,7 +16,13 @@
  *   - les fichiers statiques (images, fonts, etc.)
  */
 
-export { default } from 'next-auth/middleware';
+import { withAuth } from 'next-auth/middleware';
+
+export default withAuth({
+  pages: {
+    signIn: '/login',
+  },
+});
 
 export const config = {
   // Tout ce qui matche est PROTÉGÉ (= besoin d'être connecté).

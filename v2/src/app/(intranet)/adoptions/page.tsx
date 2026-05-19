@@ -16,6 +16,7 @@
 import { useMemo, useState } from 'react';
 import { Plus, Trash2, Save, Search, Baby, Calendar, Camera } from 'lucide-react';
 import { useFirebaseValue } from '@/hooks/useFirebaseValue';
+import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { dbSet } from '@/lib/db';
 import { toast } from '@/lib/toast';
 import { Card } from '@/components/ui/Card';
@@ -30,9 +31,8 @@ import {
 import styles from './page.module.css';
 
 const FB_PATH = 'adoptions';
-const CURRENT_USER = 'Ninja';
-
 export default function AdoptionsPage() {
+  const CURRENT_USER = useCurrentUser().displayName;
   const { data, loading } = useFirebaseValue<Adoption[] | null>(FB_PATH);
 
   const [search, setSearch] = useState('');

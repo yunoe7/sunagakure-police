@@ -117,12 +117,26 @@
   padding: 12px 16px;
   border-top: 1px solid rgba(180, 140, 20, 0.15);
   background: rgba(0, 0, 0, 0.15);
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .userPill {
   display: flex;
   align-items: center;
   gap: 9px;
+  flex: 1;
+  min-width: 0;
+  padding: 4px 6px;
+  margin: -4px -6px;
+  border-radius: 8px;
+  text-decoration: none;
+  color: inherit;
+  transition: background 0.15s;
+}
+.userPill:hover {
+  background: rgba(212, 180, 74, 0.08);
 }
 
 .avatar {
@@ -138,6 +152,16 @@
   color: #fff;
   flex-shrink: 0;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.avatarImg {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  object-fit: cover;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(212, 180, 74, 0.3);
 }
 
 .userInfo {
@@ -158,6 +182,9 @@
   color: rgba(255, 255, 255, 0.35);
   font-size: 9px;
   font-family: 'Share Tech Mono', monospace;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .logoutBtn {
@@ -169,4 +196,22 @@
 
 .logoutBtn:hover {
   color: #f87171;
+}
+
+.logoutBtnAction {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: rgba(255, 255, 255, 0.3);
+  flex-shrink: 0;
+  padding: 6px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s;
+}
+.logoutBtnAction:hover {
+  color: #f87171;
+  background: rgba(248, 113, 113, 0.1);
 }

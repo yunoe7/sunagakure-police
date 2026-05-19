@@ -17,6 +17,7 @@ import {
   Plus, Trash2, Save, Search, FlaskConical, Calendar,
 } from 'lucide-react';
 import { useFirebaseValue } from '@/hooks/useFirebaseValue';
+import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { dbSet } from '@/lib/db';
 import { toast } from '@/lib/toast';
 import { Card } from '@/components/ui/Card';
@@ -31,11 +32,10 @@ import {
 import styles from './page.module.css';
 
 const FB_PATH = 'hospital_scientifique';
-const CURRENT_USER = 'Ninja';
-
 type Tab = 'all' | SciStatut;
 
 export default function ScientifiquePage() {
+  const CURRENT_USER = useCurrentUser().displayName;
   const { data, loading } = useFirebaseValue<RapportSci[] | null>(FB_PATH);
   const [tab, setTab] = useState<Tab>('encours');
   const [search, setSearch] = useState('');

@@ -2,16 +2,26 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { signOut } from 'next-auth/react';
 import * as Icons from 'lucide-react';
 import { NAV_SECTIONS } from '@/lib/navigation';
+import { useCurrentUser } from '@/hooks/useCurrentUser';
 import styles from './Sidebar.module.css';
 
 /**
  * Sidebar gauche, fixe, avec sections de navigation.
  * Remplace tout le bloc <#sidebar> de l'ancien HTML.
+ *
+ * Le pied de sidebar affiche l'utilisateur Discord connecté
+ * et propose un bouton de déconnexion.
  */
 export function Sidebar() {
   const pathname = usePathname();
+  const user = useCurrentUser();
+
+  function handleLogout() {
+    signOut({ callbackUrl: '/login' });
+  }
 
   return (
     <aside className={styles.sidebar}>
@@ -53,16 +63,37 @@ export function Sidebar() {
         ))}
       </nav>
 
-      {/* Footer utilisateur */}
+      {/* Footer utilisateur Discord */}
       <div className={styles.footer}>
-        <div className={styles.userPill}>
-          <div className={styles.avatar}>N</div>
+        <Link href="/profil" className={styles.userPill}>
+          {user.avatar ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={user.avatar}
+              alt={user.displayName}
+              className={styles.avatarImg}
+            />
+          ) : (
+            <div className={styles.avatar}>{user.initials}</div>
+          )}
           <div className={styles.userInfo}>
-            <div className={styles.uname}>Ninja</div>
-            <div className={styles.urank}>RANK_GENIN</div>
+            <div className={styles.uname}>
+              {user.isLoading ? '…' : user.displayName}
+            </div>
+            <div className={styles.urank}>
+              {user.username ? `@${user.username}` : 'NON CONNECTÉ'}
+            </div>
           </div>
-          <Icons.LogOut size={15} className={styles.logoutBtn} />
-        </div>
+        </Link>
+        <button
+          type="button"
+          onClick={handleLogout}
+          className={styles.logoutBtnAction}
+          title="Se déconnecter"
+          aria-label="Se déconnecter"
+        >
+          <Icons.LogOut size={15} />
+        </button>
       </div>
     </aside>
   );

@@ -26,6 +26,7 @@ import {
   Plus, Trash2, Save, Search, Landmark, Settings, TrendingDown, TrendingUp,
 } from 'lucide-react';
 import { useFirebaseValue } from '@/hooks/useFirebaseValue';
+import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { dbUpdate } from '@/lib/db';
 import { toast } from '@/lib/toast';
 import { Card } from '@/components/ui/Card';
@@ -40,11 +41,10 @@ import {
 
 import styles from './page.module.css';
 
-const CURRENT_USER = 'Ninja';
-
 type Tab = 'mouvements' | 'retraits';
 
 export default function TresorCentralPage() {
+  const CURRENT_USER = useCurrentUser().displayName;
   const { data, loading } = useFirebaseValue<TresorCentral | null>('tresorCentral');
 
   const [tab, setTab] = useState<Tab>('mouvements');

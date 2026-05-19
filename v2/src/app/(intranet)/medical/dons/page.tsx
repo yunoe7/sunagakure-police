@@ -18,6 +18,7 @@ import { useMemo, useState } from 'react';
 import { Plus, Trash2, Save, Search, Droplet, Calendar } from 'lucide-react';
 
 import { useFirebaseValue } from '@/hooks/useFirebaseValue';
+import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { dbSet } from '@/lib/db';
 import { toast } from '@/lib/toast';
 import { Card } from '@/components/ui/Card';
@@ -32,11 +33,10 @@ import {
 import styles from './page.module.css';
 
 const FB_PATH = 'hospital_dons';
-const CURRENT_USER = 'Ninja';
-
 type Filter = 'all' | GroupeSanguin;
 
 export default function DonsPage() {
+  const CURRENT_USER = useCurrentUser().displayName;
   const { data, loading } = useFirebaseValue<DonSang[] | null>(FB_PATH);
 
   const [filter, setFilter] = useState<Filter>('all');

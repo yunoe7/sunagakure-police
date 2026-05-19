@@ -32,6 +32,7 @@ import {
 } from 'lucide-react';
 
 import { useFirebaseValue } from '@/hooks/useFirebaseValue';
+import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { dbSet } from '@/lib/db';
 import { toast } from '@/lib/toast';
 import { Card } from '@/components/ui/Card';
@@ -53,11 +54,10 @@ import {
 import styles from './page.module.css';
 
 const FB_PATH = 'caisse_police/transactions';
-const CURRENT_USER = 'Ninja';
-
 type Filter = 'all' | 'entrees' | 'sorties';
 
 export default function CaissePage() {
+  const CURRENT_USER = useCurrentUser().displayName;
   const { data, loading } = useFirebaseValue<Transaction[] | null>(FB_PATH);
 
   const [filter, setFilter] = useState<Filter>('all');

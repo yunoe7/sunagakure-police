@@ -18,6 +18,7 @@ import {
   Plus, Trash2, Save, Search, Scale, TrendingUp, TrendingDown,
 } from 'lucide-react';
 import { useFirebaseValue } from '@/hooks/useFirebaseValue';
+import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { dbSet } from '@/lib/db';
 import { toast } from '@/lib/toast';
 import { Card } from '@/components/ui/Card';
@@ -32,11 +33,10 @@ import {
 import styles from './page.module.css';
 
 const FB_PATH = 'sanctions';
-const CURRENT_USER = 'Ninja';
-
 type Filter = 'all' | 'positive' | 'negative';
 
 export default function SanctionsPage() {
+  const CURRENT_USER = useCurrentUser().displayName;
   const { data, loading } = useFirebaseValue<Sanction[] | null>(FB_PATH);
 
   const [filter, setFilter] = useState<Filter>('all');

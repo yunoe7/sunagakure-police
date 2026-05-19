@@ -3,6 +3,7 @@
 import { useMemo, useState } from 'react';
 import { Plus, Trash2, Save, Search, Ticket, Calendar, Infinity as InfinityIcon } from 'lucide-react';
 import { useFirebaseValue } from '@/hooks/useFirebaseValue';
+import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { dbSet } from '@/lib/db';
 import { toast } from '@/lib/toast';
 import { Card } from '@/components/ui/Card';
@@ -16,11 +17,10 @@ import {
 import styles from './page.module.css';
 
 const FB_PATH = 'laissezPasse';
-const CURRENT_USER = 'Ninja';
-
 type Filter = 'all' | LpStatut;
 
 export default function LaissezPassePage() {
+  const CURRENT_USER = useCurrentUser().displayName;
   const { data, loading } = useFirebaseValue<LaissezPasse[] | null>(FB_PATH);
   const [filter, setFilter] = useState<Filter>('valide');
   const [search, setSearch] = useState('');

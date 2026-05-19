@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 
 import { useFirebaseValue } from '@/hooks/useFirebaseValue';
+import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { dbSet } from '@/lib/db';
 import { toast } from '@/lib/toast';
 import { Card } from '@/components/ui/Card';
@@ -34,11 +35,10 @@ import {
 import styles from './page.module.css';
 
 const FB_PATH = 'hospital_psy';
-const CURRENT_USER = 'Ninja';
-
 type Filter = 'all' | PsySeverite;
 
 export default function PsyPage() {
+  const CURRENT_USER = useCurrentUser().displayName;
   const { data, loading } = useFirebaseValue<ConsultPsy[] | null>(FB_PATH);
 
   const [filter, setFilter] = useState<Filter>('all');

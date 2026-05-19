@@ -15,6 +15,7 @@
 import { useMemo, useState } from 'react';
 import { Plus, Trash2, Save, Search, BookText } from 'lucide-react';
 import { useFirebaseValue } from '@/hooks/useFirebaseValue';
+import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { dbSet } from '@/lib/db';
 import { toast } from '@/lib/toast';
 import { Card } from '@/components/ui/Card';
@@ -26,9 +27,8 @@ import { type ArticleProcedure, fmtDateFR } from '@/types/justice-plus';
 import styles from './page.module.css';
 
 const FB_PATH = 'procedures';
-const CURRENT_USER = 'Ninja';
-
 export default function ProcedurePage() {
+  const CURRENT_USER = useCurrentUser().displayName;
   const { data, loading } = useFirebaseValue<ArticleProcedure[] | null>(FB_PATH);
 
   const [search, setSearch] = useState('');

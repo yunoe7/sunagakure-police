@@ -38,6 +38,7 @@ import {
 } from 'lucide-react';
 
 import { useFirebaseValue } from '@/hooks/useFirebaseValue';
+import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { dbSet } from '@/lib/db';
 import { toast } from '@/lib/toast';
 import { Card } from '@/components/ui/Card';
@@ -60,11 +61,10 @@ import {
 import styles from './page.module.css';
 
 const FB_PATH = 'missions';
-const CURRENT_USER = 'Ninja'; // TODO : utiliser le vrai user connecté plus tard
-
 type Tab = 'dispo' | 'actives' | 'archives';
 
 export default function MissionsPage() {
+  const CURRENT_USER = useCurrentUser().displayName;
   const { data, loading } = useFirebaseValue<Mission[] | null>(FB_PATH);
 
   const [tab, setTab] = useState<Tab>('dispo');

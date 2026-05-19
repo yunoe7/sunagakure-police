@@ -17,6 +17,7 @@ import {
   Plus, Trash2, Save, Search, Skull, Calendar, Camera,
 } from 'lucide-react';
 import { useFirebaseValue } from '@/hooks/useFirebaseValue';
+import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { dbSet } from '@/lib/db';
 import { toast } from '@/lib/toast';
 import { Card } from '@/components/ui/Card';
@@ -32,11 +33,10 @@ import {
 import styles from './page.module.css';
 
 const FB_PATH = 'hospital_morgue';
-const CURRENT_USER = 'Ninja';
-
 type Tab = 'all' | MorgueStatut;
 
 export default function MorguePage() {
+  const CURRENT_USER = useCurrentUser().displayName;
   const { data, loading } = useFirebaseValue<Defunt[] | null>(FB_PATH);
   const [tab, setTab] = useState<Tab>('autopsie');
   const [search, setSearch] = useState('');

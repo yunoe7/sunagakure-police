@@ -29,6 +29,7 @@ import {
 } from 'lucide-react';
 
 import { useFirebaseValue } from '@/hooks/useFirebaseValue';
+import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { dbSet } from '@/lib/db';
 import { toast } from '@/lib/toast';
 import { Card } from '@/components/ui/Card';
@@ -49,12 +50,11 @@ import {
 import styles from './page.module.css';
 
 const FB_PATH = 'dossiers';
-const CURRENT_USER = 'Ninja';
-
 type DangerFilter = 'all' | DossierDanger;
 type StatutFilter = 'all' | DossierStatut;
 
 export default function DossiersPage() {
+  const CURRENT_USER = useCurrentUser().displayName;
   const { data, loading } = useFirebaseValue<Dossier[] | null>(FB_PATH);
 
   const [search, setSearch] = useState('');
