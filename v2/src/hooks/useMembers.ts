@@ -15,7 +15,7 @@
 import { useMemo } from 'react';
 import { useFirebaseValue } from '@/hooks/useFirebaseValue';
 
-const FB_PATH = 'users';
+const FB_PATH = 'members';
 
 export type Member = {
   discordId: string;
