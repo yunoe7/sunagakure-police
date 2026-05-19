@@ -22,8 +22,7 @@ import { buildIntranetUser, type IntranetUser } from "@/lib/roles";
 async function logUserToFirebase(params: {
   discordId: string;
   username: string;
-  globalName?: string;
-  avatar?: string;
+  avatarUrl: string | null;
   email?: string;
   intranet: IntranetUser;
 }) {
@@ -44,12 +43,15 @@ async function logUserToFirebase(params: {
     const payload = {
       discordId: params.discordId,
       username: params.username,
-      globalName: params.globalName ?? null,
-      avatar: params.avatar ?? null,
+      avatarUrl: params.avatarUrl,
       email: params.email ?? null,
-      rang: params.intranet.rang ?? null,
-      branches: params.intranet.branches ?? [],
-      isAdmin: params.intranet.isAdmin ?? false,
+      rangNom: params.intranet.rang?.nom ?? null,
+      rangNiveau: params.intranet.rang?.niveau ?? null,
+      branches: params.intranet.branches.map((b) => b.slug),
+      clan: params.intranet.clan,
+      isAdmin: params.intranet.isAdmin,
+      isKazekage: params.intranet.isKazekage,
+      isStaff: params.intranet.isStaff,
       firstLogin: existing?.firstLogin ?? now,
       lastLogin: now,
     };
@@ -61,12 +63,12 @@ async function logUserToFirebase(params: {
     });
  
     if (!putRes.ok) {
-      console.error("[Auth] Échec écriture Firebase members/", params.discordId, await putRes.text());
+      console.error("[Auth] ❌ Échec écriture Firebase members/", params.discordId, await putRes.text());
     } else {
       console.log("[Auth] ✅ logUserToFirebase OK pour", params.username, "(", params.discordId, ")");
     }
   } catch (err) {
-    console.error("[Auth] Erreur logUserToFirebase :", err);
+    console.error("[Auth] ❌ Erreur logUserToFirebase :", err);
   }
 }
  
@@ -99,67 +101,68 @@ export const authOptions: NextAuthOptions = {
     //    qui se contente du cookie quand il est encore valide).
     //    C'est donc ici qu'on log dans Firebase.
     async signIn({ account, profile, user }) {
-      if (account?.provider !== "discord") return false;
-      if (!account.access_token) return false;
+      try {
+        if (account?.provider !== "discord") return false;
+        if (!account.access_token) return false;
  
-      const discordId = (account.providerAccountId as string) || (user.id as string);
-      if (!discordId) {
-        console.error("[Auth] signIn : discordId introuvable");
-        return false;
-      }
+        const discordId = (account.providerAccountId as string) || (user.id as string);
+        if (!discordId) {
+          console.error("[Auth] signIn : discordId introuvable");
+          return false;
+        }
  
-      // 1) Whitelist admin = accès direct (hardcoded + Firebase)
-      const whitelisted = await isInWhitelist(discordId);
+        // 1) Whitelist admin = accès direct
+        const whitelisted = await isInWhitelist(discordId);
  
-      // 2) Sinon, doit être membre du serveur Sunagakure
-      const guildData = whitelisted
-        ? null
-        : await fetchGuildMember(account.access_token);
+        // 2) Récupère les infos du serveur Discord (rôles, isMember)
+        const guildData = await fetchGuildMember(account.access_token);
  
-      const isAllowed = whitelisted || guildData?.isMember;
-      if (!isAllowed) {
-        console.log("[Auth] ⛔ Accès refusé pour", discordId);
+        const isAllowed = whitelisted || guildData?.isMember;
+        if (!isAllowed) {
+          console.log("[Auth] ⛔ Accès refusé pour", discordId);
+          return "/access-denied";
+        }
+ 
+        // ─── On est autorisé : on log dans Firebase ───────────────────
+        const discordProfile = (profile ?? {}) as {
+          id?: string;
+          username?: string;
+          global_name?: string;
+          avatar?: string;
+          email?: string;
+        };
+ 
+        const username = discordProfile.username ?? user.name ?? "Inconnu";
+        const avatarUrl = discordProfile.avatar
+          ? `https://cdn.discordapp.com/avatars/${discordId}/${discordProfile.avatar}.png`
+          : (user.image ?? null);
+        const email = discordProfile.email ?? user.email ?? undefined;
+ 
+        // Construire l'IntranetUser pour avoir rang/branches/isAdmin
+        const intranet = buildIntranetUser({
+          discordId,
+          username,
+          avatarUrl,
+          roleIds: guildData?.roles ?? [],
+          isMembreServeur: guildData?.isMember ?? false,
+          isWhitelisted: whitelisted,
+        });
+ 
+        // Log dans Firebase (non-bloquant : on log même si ça fail)
+        await logUserToFirebase({
+          discordId,
+          username,
+          avatarUrl,
+          email,
+          intranet,
+        });
+ 
+        return true;
+      } catch (err) {
+        console.error("[Auth] ❌ Erreur dans signIn :", err);
+        // En cas d'erreur, on bloque pour éviter une boucle de crash
         return "/access-denied";
       }
- 
-      // ─── On est autorisé : on log dans Firebase ───────────────────
-      // Refetch guildData si on l'avait sauté (cas whitelist)
-      const guildForRoles = guildData ?? (await fetchGuildMember(account.access_token));
- 
-      const discordProfile = (profile ?? {}) as {
-        id?: string;
-        username?: string;
-        global_name?: string;
-        avatar?: string;
-        email?: string;
-      };
- 
-      const username = discordProfile.username ?? user.name ?? "Inconnu";
-      const globalName = discordProfile.global_name;
-      const avatar = discordProfile.avatar
-        ? `https://cdn.discordapp.com/avatars/${discordId}/${discordProfile.avatar}.png`
-        : (user.image ?? undefined);
-      const email = discordProfile.email ?? user.email ?? undefined;
- 
-      // Construire l'IntranetUser pour avoir rang/branches/isAdmin
-      const intranet = buildIntranetUser({
-        discordId,
-        username,
-        globalName,
-        roles: guildForRoles?.roles ?? [],
-        isWhitelisted: whitelisted,
-      });
- 
-      await logUserToFirebase({
-        discordId,
-        username,
-        globalName,
-        avatar,
-        email,
-        intranet,
-      });
- 
-      return true;
     },
  
     /**
@@ -170,33 +173,40 @@ export const authOptions: NextAuthOptions = {
      */
     async jwt({ token, account, profile }) {
       if (account && profile) {
-        const discordProfile = profile as {
-          id?: string;
-          username?: string;
-          global_name?: string;
-          avatar?: string;
-          email?: string;
-        };
+        try {
+          const discordProfile = profile as {
+            id?: string;
+            username?: string;
+            global_name?: string;
+            avatar?: string;
+            email?: string;
+          };
  
-        const discordId = discordProfile.id ?? (account.providerAccountId as string);
-        const whitelisted = await isInWhitelist(discordId);
-        const guildData = await fetchGuildMember(account.access_token!);
+          const discordId = discordProfile.id ?? (account.providerAccountId as string);
+          const whitelisted = await isInWhitelist(discordId);
+          const guildData = await fetchGuildMember(account.access_token!);
  
-        const intranet = buildIntranetUser({
-          discordId,
-          username: discordProfile.username ?? "Inconnu",
-          globalName: discordProfile.global_name,
-          roles: guildData?.roles ?? [],
-          isWhitelisted: whitelisted,
-        });
+          const avatarUrl = discordProfile.avatar
+            ? `https://cdn.discordapp.com/avatars/${discordId}/${discordProfile.avatar}.png`
+            : null;
  
-        token.discordId = discordId;
-        token.discordUsername = discordProfile.username;
-        token.discordGlobalName = discordProfile.global_name;
-        token.discordAvatar = discordProfile.avatar
-          ? `https://cdn.discordapp.com/avatars/${discordId}/${discordProfile.avatar}.png`
-          : null;
-        token.intranet = intranet;
+          const intranet = buildIntranetUser({
+            discordId,
+            username: discordProfile.username ?? "Inconnu",
+            avatarUrl,
+            roleIds: guildData?.roles ?? [],
+            isMembreServeur: guildData?.isMember ?? false,
+            isWhitelisted: whitelisted,
+          });
+ 
+          token.discordId = discordId;
+          token.discordUsername = discordProfile.username;
+          token.discordGlobalName = discordProfile.global_name;
+          token.discordAvatar = avatarUrl;
+          token.intranet = intranet;
+        } catch (err) {
+          console.error("[Auth] ❌ Erreur dans jwt :", err);
+        }
       }
       return token;
     },
@@ -209,4 +219,3 @@ export const authOptions: NextAuthOptions = {
     },
   },
 };
- 
