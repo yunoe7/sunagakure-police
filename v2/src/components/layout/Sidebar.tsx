@@ -12,16 +12,35 @@ import styles from './Sidebar.module.css';
  * Sidebar gauche, fixe, avec sections de navigation.
  * Remplace tout le bloc <#sidebar> de l'ancien HTML.
  *
- * Le pied de sidebar affiche l'utilisateur Discord connecté
- * et propose un bouton de déconnexion.
+ * Le pied de sidebar affiche l'utilisateur Discord connecté avec :
+ *  - Avatar Discord
+ *  - Pseudo + badge ADMIN si admin technique
+ *  - Rang ninja (ex: "Tokubetsu Jonin")
+ *  - Branche(s) + clan séparés par "·" (ex: "Police · Sabaku")
+ * Et propose un bouton de déconnexion.
  */
 export function Sidebar() {
   const pathname = usePathname();
-  const user = useCurrentUser();
+  const u = useCurrentUser();
 
   function handleLogout() {
     signOut({ callbackUrl: '/login' });
   }
+
+  // ─── Construction de la ligne "Branche · Clan" ─────────────────
+  // On limite à 2 branches max pour ne pas surcharger la sidebar.
+  const branchesAffichees = u.user?.branches.slice(0, 2).map((b) => b.nom) ?? [];
+  if ((u.user?.branches.length ?? 0) > 2) {
+    branchesAffichees.push(`+${u.user!.branches.length - 2}`);
+  }
+  const segmentsBas = [...branchesAffichees];
+  if (u.user?.clan) segmentsBas.push(u.user.clan);
+  const ligneBas = segmentsBas.join(' · ');
+
+  // Sous-titre principal : rang ninja, sinon @username, sinon "Membre du village"
+  const sousTitre =
+    u.user?.rang?.nom ??
+    (u.username ? `@${u.username}` : 'Membre du village');
 
   return (
     <aside className={styles.sidebar}>
@@ -65,26 +84,58 @@ export function Sidebar() {
 
       {/* Footer utilisateur Discord */}
       <div className={styles.footer}>
-        <Link href="/profil" className={styles.userPill}>
-          {user.avatar ? (
+        <div className={styles.userPill}>
+          {u.avatar ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
-              src={user.avatar}
-              alt={user.displayName}
+              src={u.avatar}
+              alt={u.displayName}
               className={styles.avatarImg}
             />
           ) : (
-            <div className={styles.avatar}>{user.initials}</div>
+            <div className={styles.avatar}>{u.initials}</div>
           )}
           <div className={styles.userInfo}>
             <div className={styles.uname}>
-              {user.isLoading ? '…' : user.displayName}
+              {u.isLoading ? '…' : u.displayName}
+              {u.user?.isAdmin && (
+                <span
+                  style={{
+                    marginLeft: 6,
+                    fontSize: 9,
+                    padding: '1px 5px',
+                    background: 'rgba(212, 172, 13, 0.18)',
+                    color: '#d4ac0d',
+                    borderRadius: 3,
+                    fontWeight: 600,
+                    letterSpacing: '0.05em',
+                    textTransform: 'uppercase',
+                    verticalAlign: 'middle',
+                  }}
+                  title="Administrateur technique"
+                >
+                  Admin
+                </span>
+              )}
             </div>
             <div className={styles.urank}>
-              {user.username ? `@${user.username}` : 'NON CONNECTÉ'}
+              {u.isLoading ? '…' : sousTitre}
             </div>
+            {ligneBas && (
+              <div
+                className={styles.urank}
+                style={{
+                  fontSize: '0.7rem',
+                  opacity: 0.7,
+                  marginTop: 1,
+                }}
+                title={u.user?.branches.map((b) => b.nom).join(', ')}
+              >
+                {ligneBas}
+              </div>
+            )}
           </div>
-        </Link>
+        </div>
         <button
           type="button"
           onClick={handleLogout}
