@@ -42,6 +42,26 @@ export function Sidebar() {
     u.user?.rang?.nom ??
     (u.username ? `@${u.username}` : 'Membre du village');
 
+  // ─── Helper : détermine si un item de nav est actif ───────────
+  // Règle : match EXACT par défaut. C'est seulement pour les vrais items
+  // "parents" (ex: /admin couvrant /admin/membres et /admin/whitelist) qu'on
+  // active aussi sur les enfants. On détecte un item parent comme un item
+  // dont AUCUN autre item de nav ne commence par son href + '/'. Sinon, on
+  // n'allumerait jamais Membres sans allumer aussi Whitelist (et vice-versa).
+  const allHrefs = NAV_SECTIONS.flatMap((s) => s.items.map((i) => i.href));
+
+  function isItemActive(itemHref: string): boolean {
+    if (pathname === itemHref) return true;
+    // L'item a-t-il des "enfants" déclarés dans la nav ?
+    const hasChildren = allHrefs.some(
+      (h) => h !== itemHref && h.startsWith(itemHref + '/')
+    );
+    // Si oui, c'est un item parent → on accepte le startsWith.
+    // Si non, on exige le match exact (évite que /admin/membres allume /admin/whitelist).
+    if (!hasChildren) return false;
+    return pathname.startsWith(itemHref + '/');
+  }
+
   return (
     <aside className={styles.sidebar}>
       {/* Logo */}
@@ -61,8 +81,7 @@ export function Sidebar() {
               // (ça évite d'importer 50 icônes une par une)
               const Icon = (Icons[item.icon as keyof typeof Icons] ||
                 Icons.Circle) as Icons.LucideIcon;
-              const isActive =
-                pathname === item.href || pathname.startsWith(item.href + '/');
+              const isActive = isItemActive(item.href);
 
               return (
                 <Link
