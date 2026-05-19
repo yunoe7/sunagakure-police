@@ -33,6 +33,9 @@ export const NAV_SECTIONS: NavSection[] = [
     items: [
       { label: 'Recensement', href: '/recensement', icon: 'ScrollText' },
       { label: 'Adoptions', href: '/adoptions', icon: 'Baby' },
+      { label: 'Recrutement', href: '/recrutement', icon: 'Award' },
+      { label: 'Opérations', href: '/operations', icon: 'Siren' },
+      { label: 'Sanctions', href: '/sanctions', icon: 'Scale' },
       { label: 'Casiers', href: '/casiers', icon: 'FileText' },
       { label: 'Dossiers', href: '/dossiers', icon: 'Folder' },
       { label: 'Bingo Book', href: '/bingobook', icon: 'BookMarked' },
