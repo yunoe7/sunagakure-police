@@ -10,6 +10,10 @@
  * 6 types : Promotion, Rétrogradation, Avertissement,
  *           Exclusion, Récompense, Suspension
  * Coloration verte (positives) / rouge (négatives) automatique.
+ *
+ * Permissions (Phase C) :
+ * - Voir / chercher / filtrer : tout le monde (connecté)
+ * - Créer / modifier / supprimer : Gérants Police + Admin
  * ════════════════════════════════════════════════════════════════
  */
 
@@ -19,6 +23,7 @@ import {
 } from 'lucide-react';
 import { useFirebaseValue } from '@/hooks/useFirebaseValue';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
+import { RequireBranche } from '@/components/Require';
 import { dbSet } from '@/lib/db';
 import { toast } from '@/lib/toast';
 import { Card } from '@/components/ui/Card';
@@ -36,7 +41,7 @@ const FB_PATH = 'sanctions';
 type Filter = 'all' | 'positive' | 'negative';
 
 export default function SanctionsPage() {
-  const CURRENT_USER = useCurrentUser().displayName;
+  const { displayName: CURRENT_USER, can } = useCurrentUser();
   const { data, loading } = useFirebaseValue<Sanction[] | null>(FB_PATH);
 
   const [filter, setFilter] = useState<Filter>('all');
@@ -44,6 +49,9 @@ export default function SanctionsPage() {
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [form, setForm] = useState<Partial<Sanction>>({});
+
+  // Permission centralisée
+  const canEdit = can.adminBranche('police');
 
   const all = useMemo<Sanction[]>(
     () => (Array.isArray(data) ? data : data ? Object.values(data) : []).filter(
@@ -126,7 +134,11 @@ export default function SanctionsPage() {
       <Card
         title="Sanctions"
         subtitle="Promotions, récompenses, sanctions et avertissements"
-        actions={<Button onClick={openCreate}><Plus size={14} /> Nouvelle sanction</Button>}
+        actions={
+          <RequireBranche branche="police">
+            <Button onClick={openCreate}><Plus size={14} /> Nouvelle sanction</Button>
+          </RequireBranche>
+        }
       >
         <div className={styles.statRow}>
           <div className={`${styles.statCard} ${styles.scGreen}`}>
@@ -178,7 +190,7 @@ export default function SanctionsPage() {
                   <th>Cible</th>
                   <th>Motif</th>
                   <th>Par</th>
-                  <th aria-label="actions" />
+                  {canEdit && <th aria-label="actions" />}
                 </tr>
               </thead>
               <tbody>
@@ -196,14 +208,16 @@ export default function SanctionsPage() {
                       <td><strong>{s.cible}</strong></td>
                       <td className={styles.motif}>{s.motif || '—'}</td>
                       <td className={styles.muted}>{s.auteur || '—'}</td>
-                      <td>
-                        <div className={styles.rowActions}>
-                          <button className={styles.editBtn} onClick={() => openEdit(s)}>Modifier</button>
-                          <button className={styles.deleteBtn} onClick={() => handleDelete(s)} aria-label="Supprimer">
-                            <Trash2 size={13} />
-                          </button>
-                        </div>
-                      </td>
+                      {canEdit && (
+                        <td>
+                          <div className={styles.rowActions}>
+                            <button className={styles.editBtn} onClick={() => openEdit(s)}>Modifier</button>
+                            <button className={styles.deleteBtn} onClick={() => handleDelete(s)} aria-label="Supprimer">
+                              <Trash2 size={13} />
+                            </button>
+                          </div>
+                        </td>
+                      )}
                     </tr>
                   );
                 })}
