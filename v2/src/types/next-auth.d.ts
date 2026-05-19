@@ -3,10 +3,13 @@
  *
  * Permet à TypeScript de connaître les champs Discord ajoutés
  * dans le callback session() de [...nextauth]/route.ts.
+ *
+ * Phase B : ajoute aussi le champ `intranetUser` qui contient
+ * le rang, les branches, les permissions gérant/co-gérant, etc.
  */
-
 import 'next-auth';
 import 'next-auth/jwt';
+import type { IntranetUser } from '@/lib/roles';
 
 declare module 'next-auth' {
   interface Session {
@@ -20,6 +23,8 @@ declare module 'next-auth' {
       discordGlobalName?: string;
       discordAvatar?: string | null;
     };
+    // Phase B : utilisateur intranet enrichi (rang, branches, permissions)
+    intranetUser?: IntranetUser;
   }
 }
 
@@ -29,5 +34,7 @@ declare module 'next-auth/jwt' {
     discordUsername?: string;
     discordGlobalName?: string;
     discordAvatar?: string | null;
+    // Phase B : utilisateur intranet enrichi (stocké dans le token)
+    intranetUser?: IntranetUser;
   }
 }
