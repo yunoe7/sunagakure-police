@@ -155,12 +155,12 @@ async function logUserToFirebase(user: IntranetUser): Promise<void> {
     const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0]!;
     const db = getDatabase(app);
 
-    const userRef = ref(db, `users/${user.discordId}`);
+    const userRef = ref(db, `members/${user.discordId}`);
     const now = Date.now();
 
     // Vérifie si l'utilisateur existe déjà
     const snap = await Promise.race([
-      get(child(ref(db), `users/${user.discordId}`)),
+      get(child(ref(db), `members/${user.discordId}`)),
       new Promise<null>((resolve) => setTimeout(() => resolve(null), 5000)),
     ]);
 
