@@ -3,19 +3,73 @@
  *  NextAuth — Configuration Discord OAuth pour Sunagakure
  * ═══════════════════════════════════════════════════════════════════
  *  - Scopes étendus : identify + email + guilds + guilds.members.read
- *  - Callback signIn : vérifie membre serveur OU whitelist
+ *  - Callback signIn : vérifie membre serveur OU whitelist + LOG FIREBASE
  *  - Callback jwt    : enrichit le token avec rang + branches + flags
  *  - Callback session: expose ces données au client
- *  - Log Firebase     : enregistre les users dans users/{discordId}
+ *  - Log Firebase    : enregistre les users dans members/{discordId}
+ *                      → déplacé dans signIn() car déclenché à CHAQUE login
+ *                        (jwt() ne se redéclenche pas quand le cookie existe)
  * ═══════════════════════════════════════════════════════════════════
  */
-
+ 
 import type { NextAuthOptions } from "next-auth";
 import DiscordProvider from "next-auth/providers/discord";
 import { fetchGuildMember } from "@/lib/discord";
 import { isInWhitelist } from "@/lib/whitelist";
 import { buildIntranetUser, type IntranetUser } from "@/lib/roles";
-
+ 
+// ─── Helper : écrire un membre dans Firebase ──────────────────────
+async function logUserToFirebase(params: {
+  discordId: string;
+  username: string;
+  globalName?: string;
+  avatar?: string;
+  email?: string;
+  intranet: IntranetUser;
+}) {
+  const dbUrl = process.env.NEXT_PUBLIC_FIREBASE_DATABASE_URL;
+  if (!dbUrl) {
+    console.warn("[Auth] NEXT_PUBLIC_FIREBASE_DATABASE_URL manquant → skip log Firebase");
+    return;
+  }
+ 
+  const url = `${dbUrl}/members/${params.discordId}.json`;
+  const now = Date.now();
+ 
+  try {
+    // GET pour récupérer firstLogin s'il existe déjà
+    const getRes = await fetch(url, { cache: "no-store" });
+    const existing = getRes.ok ? await getRes.json() : null;
+ 
+    const payload = {
+      discordId: params.discordId,
+      username: params.username,
+      globalName: params.globalName ?? null,
+      avatar: params.avatar ?? null,
+      email: params.email ?? null,
+      rang: params.intranet.rang ?? null,
+      branches: params.intranet.branches ?? [],
+      isAdmin: params.intranet.isAdmin ?? false,
+      firstLogin: existing?.firstLogin ?? now,
+      lastLogin: now,
+    };
+ 
+    const putRes = await fetch(url, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+ 
+    if (!putRes.ok) {
+      console.error("[Auth] Échec écriture Firebase members/", params.discordId, await putRes.text());
+    } else {
+      console.log("[Auth] ✅ logUserToFirebase OK pour", params.username, "(", params.discordId, ")");
+    }
+  } catch (err) {
+    console.error("[Auth] Erreur logUserToFirebase :", err);
+  }
+}
+ 
 export const authOptions: NextAuthOptions = {
   providers: [
     DiscordProvider({
@@ -28,169 +82,131 @@ export const authOptions: NextAuthOptions = {
       },
     }),
   ],
-
+ 
   session: {
     strategy: "jwt",
     maxAge: 30 * 24 * 60 * 60, // 30 jours
   },
-
+ 
   pages: {
     signIn: "/login",
     error: "/access-denied",
   },
-
+ 
   callbacks: {
-    // ─── Callback signIn : bloque les non-autorisés ─────────────────
-    async signIn({ account, user }) {
+    // ─── signIn : bloque les non-autorisés + LOG FIREBASE ────────────
+    // ⚠️ Ce callback est appelé à CHAQUE login Discord (contrairement à jwt()
+    //    qui se contente du cookie quand il est encore valide).
+    //    C'est donc ici qu'on log dans Firebase.
+    async signIn({ account, profile, user }) {
       if (account?.provider !== "discord") return false;
       if (!account.access_token) return false;
-
+ 
       const discordId = (account.providerAccountId as string) || (user.id as string);
-
-      // Whitelist admin = accès direct
-      if (await isInWhitelist(discordId)) return true;
-
-      // Sinon, doit être membre du serveur Sunagakure
-      const guildData = await fetchGuildMember(account.access_token);
-      if (guildData?.isMember) return true;
-
-      // Redirection vers /access-denied
-      return "/access-denied";
+      if (!discordId) {
+        console.error("[Auth] signIn : discordId introuvable");
+        return false;
+      }
+ 
+      // 1) Whitelist admin = accès direct (hardcoded + Firebase)
+      const whitelisted = await isInWhitelist(discordId);
+ 
+      // 2) Sinon, doit être membre du serveur Sunagakure
+      const guildData = whitelisted
+        ? null
+        : await fetchGuildMember(account.access_token);
+ 
+      const isAllowed = whitelisted || guildData?.isMember;
+      if (!isAllowed) {
+        console.log("[Auth] ⛔ Accès refusé pour", discordId);
+        return "/access-denied";
+      }
+ 
+      // ─── On est autorisé : on log dans Firebase ───────────────────
+      // Refetch guildData si on l'avait sauté (cas whitelist)
+      const guildForRoles = guildData ?? (await fetchGuildMember(account.access_token));
+ 
+      const discordProfile = (profile ?? {}) as {
+        id?: string;
+        username?: string;
+        global_name?: string;
+        avatar?: string;
+        email?: string;
+      };
+ 
+      const username = discordProfile.username ?? user.name ?? "Inconnu";
+      const globalName = discordProfile.global_name;
+      const avatar = discordProfile.avatar
+        ? `https://cdn.discordapp.com/avatars/${discordId}/${discordProfile.avatar}.png`
+        : (user.image ?? undefined);
+      const email = discordProfile.email ?? user.email ?? undefined;
+ 
+      // Construire l'IntranetUser pour avoir rang/branches/isAdmin
+      const intranet = buildIntranetUser({
+        discordId,
+        username,
+        globalName,
+        roles: guildForRoles?.roles ?? [],
+        isWhitelisted: whitelisted,
+      });
+ 
+      await logUserToFirebase({
+        discordId,
+        username,
+        globalName,
+        avatar,
+        email,
+        intranet,
+      });
+ 
+      return true;
     },
-
-    async jwt({ token, account, profile, user }) {
+ 
+    /**
+     * Callback JWT : enrichit le token (rang, branches, etc.)
+     * Note : ce callback ne se redéclenche PAS à chaque visite — seulement
+     *        au login OAuth et aux refresh de token. C'est pour ça qu'on a
+     *        bougé le log Firebase dans signIn() ci-dessus.
+     */
+    async jwt({ token, account, profile }) {
       if (account && profile) {
         const discordProfile = profile as {
           id?: string;
           username?: string;
           global_name?: string;
-          discriminator?: string;
           avatar?: string;
+          email?: string;
         };
-
-        // ─── Champs existants (préservés) ──────────────────────────
-        token.discordId = discordProfile.id;
+ 
+        const discordId = discordProfile.id ?? (account.providerAccountId as string);
+        const whitelisted = await isInWhitelist(discordId);
+        const guildData = await fetchGuildMember(account.access_token!);
+ 
+        const intranet = buildIntranetUser({
+          discordId,
+          username: discordProfile.username ?? "Inconnu",
+          globalName: discordProfile.global_name,
+          roles: guildData?.roles ?? [],
+          isWhitelisted: whitelisted,
+        });
+ 
+        token.discordId = discordId;
         token.discordUsername = discordProfile.username;
-        token.discordGlobalName = discordProfile.global_name || discordProfile.username;
+        token.discordGlobalName = discordProfile.global_name;
         token.discordAvatar = discordProfile.avatar
-          ? `https://cdn.discordapp.com/avatars/${discordProfile.id}/${discordProfile.avatar}.png`
+          ? `https://cdn.discordapp.com/avatars/${discordId}/${discordProfile.avatar}.png`
           : null;
-
-        // ─── Nouveaux champs Phase B : IntranetUser ────────────────
-        if (account.access_token) {
-          const discordId = discordProfile.id ?? (account.providerAccountId as string);
-          const isWhitelisted = await isInWhitelist(discordId);
-
-          const guildData = await fetchGuildMember(account.access_token);
-          const isMembreServeur = guildData?.isMember ?? false;
-          const roleIds = guildData?.roles ?? [];
-
-          const intranetUser = buildIntranetUser({
-            discordId,
-            username: (token.discordGlobalName as string) ?? user?.name ?? "Ninja inconnu",
-            avatarUrl: (token.discordAvatar as string | null) ?? user?.image ?? null,
-            roleIds,
-            isMembreServeur,
-            isWhitelisted,
-          });
-
-          token.intranetUser = intranetUser;
-
-          // ─── Log dans Firebase users/{discordId} ─────────────────
-          // On enregistre / met à jour automatiquement chaque user
-          // pour pouvoir les voir dans /admin/membres
-          await logUserToFirebase(intranetUser);
-        }
+        token.intranet = intranet;
       }
-
       return token;
     },
-
+ 
     async session({ session, token }) {
-      if (session.user) {
-        session.user.discordId = token.discordId as string | undefined;
-        session.user.discordUsername = token.discordUsername as string | undefined;
-        session.user.discordGlobalName = token.discordGlobalName as string | undefined;
-        session.user.discordAvatar = token.discordAvatar as string | null | undefined;
+      if (token.intranet) {
+        (session as { intranet?: IntranetUser }).intranet = token.intranet as IntranetUser;
       }
-
-      if (token.intranetUser) {
-        session.intranetUser = token.intranetUser as IntranetUser;
-      }
-
       return session;
     },
   },
-
-  debug: process.env.NODE_ENV === "development",
 };
-
-// ═══════════════════════════════════════════════════════════════════
-//  Log Firebase des utilisateurs
-// ═══════════════════════════════════════════════════════════════════
-
-/**
- * Enregistre / met à jour l'utilisateur dans Firebase Realtime DB.
- * Path : users/{discordId}
- *
- * Conserve la date de première connexion (firstLogin) si elle existe,
- * met à jour lastLogin et les infos potentiellement changées
- * (rang, branches, etc. si Discord a évolué entre temps).
- */
-async function logUserToFirebase(user: IntranetUser): Promise<void> {
-  try {
-    const { getDatabase, ref, get, set, update, child } = await import("firebase/database");
-    const { initializeApp, getApps } = await import("firebase/app");
-
-    const firebaseConfig = {
-      apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY!,
-      authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN!,
-      projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID!,
-      storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET!,
-      messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID!,
-      appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID!,
-      databaseURL: process.env.NEXT_PUBLIC_FIREBASE_DATABASE_URL!,
-    };
-
-    const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0]!;
-    const db = getDatabase(app);
-
-    const userRef = ref(db, `members/${user.discordId}`);
-    const now = Date.now();
-
-    // Vérifie si l'utilisateur existe déjà
-    const snap = await Promise.race([
-      get(child(ref(db), `members/${user.discordId}`)),
-      new Promise<null>((resolve) => setTimeout(() => resolve(null), 5000)),
-    ]);
-
-    const isFirstLogin = !snap || !("exists" in snap) || !snap.exists();
-
-    // Données à toujours mettre à jour
-    const updates = {
-      discordId: user.discordId,
-      username: user.username,
-      avatarUrl: user.avatarUrl,
-      rangNom: user.rang?.nom ?? null,
-      rangNiveau: user.rang?.niveau ?? null,
-      branches: user.branches.map((b) => b.slug),
-      clan: user.clan,
-      gerantDe: user.gerantDe,
-      coGerantDe: user.coGerantDe,
-      isAdmin: user.isAdmin,
-      isStaff: user.isStaff,
-      isKazekage: user.isKazekage,
-      lastLogin: now,
-      ...(isFirstLogin ? { firstLogin: now } : {}),
-    };
-
-    if (isFirstLogin) {
-      await set(userRef, updates);
-    } else {
-      await update(userRef, updates);
-    }
-  } catch (err) {
-    // On ne fait pas planter le login si Firebase est down
-    console.error("[Auth] logUserToFirebase failed:", err);
-  }
-}
+ 
