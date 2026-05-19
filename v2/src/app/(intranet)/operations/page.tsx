@@ -9,6 +9,10 @@
  *
  * 6 types : patrouille, arrestation, enquête, protection, infiltration, autre
  * 4 statuts : Préparation → Active → Terminée / Annulée
+ *
+ * Permissions (Phase C) :
+ * - Voir / chercher / filtrer : tout le monde (connecté)
+ * - Créer / modifier / supprimer / changer statut : Gérants Police + Admin
  * ════════════════════════════════════════════════════════════════
  */
 
@@ -17,6 +21,8 @@ import {
   Plus, Trash2, Save, Search, Siren, Calendar, User as UserIcon,
 } from 'lucide-react';
 import { useFirebaseValue } from '@/hooks/useFirebaseValue';
+import { useCurrentUser } from '@/hooks/useCurrentUser';
+import { RequireBranche } from '@/components/Require';
 import { dbSet } from '@/lib/db';
 import { toast } from '@/lib/toast';
 import { Card } from '@/components/ui/Card';
@@ -36,6 +42,7 @@ const FB_PATH = 'operations';
 type Tab = 'all' | OperationStatut;
 
 export default function OperationsPage() {
+  const { can } = useCurrentUser();
   const { data, loading } = useFirebaseValue<Operation[] | null>(FB_PATH);
 
   const [tab, setTab] = useState<Tab>('Active');
@@ -43,6 +50,9 @@ export default function OperationsPage() {
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [form, setForm] = useState<Partial<Operation>>({});
+
+  // Permission centralisée pour cette page
+  const canEdit = can.adminBranche('police');
 
   const all = useMemo<Operation[]>(
     () => (Array.isArray(data) ? data : data ? Object.values(data) : []).filter(
@@ -151,12 +161,16 @@ export default function OperationsPage() {
   return (
     <>
       {/* Carte tactique interactive */}
-      <OpsMap operations={all} onUpdatePosition={handleMapPlace} />
+      <OpsMap operations={all} onUpdatePosition={canEdit ? handleMapPlace : undefined} />
 
       <Card
         title="Opérations"
         subtitle="Opérations de police en cours et planifiées"
-        actions={<Button onClick={openCreate}><Plus size={14} /> Nouvelle opération</Button>}
+        actions={
+          <RequireBranche branche="police">
+            <Button onClick={openCreate}><Plus size={14} /> Nouvelle opération</Button>
+          </RequireBranche>
+        }
       >
         <div className={styles.tabs}>
           {(['Active', 'Préparation', 'Terminée', 'Annulée', 'all'] as Tab[]).map((t) => (
@@ -198,14 +212,20 @@ export default function OperationsPage() {
                         <Calendar size={11} /> {fmtDateFR(o.dateOp)}
                       </span>
                     )}
-                    <button
-                      className={styles.deleteBtn}
-                      onClick={() => handleDelete(o)}
-                      aria-label="Supprimer"
-                    ><Trash2 size={13} /></button>
+                    <RequireBranche branche="police">
+                      <button
+                        className={styles.deleteBtn}
+                        onClick={() => handleDelete(o)}
+                        aria-label="Supprimer"
+                      ><Trash2 size={13} /></button>
+                    </RequireBranche>
                   </div>
 
-                  <div className={styles.opBody} onClick={() => openEdit(o)}>
+                  <div
+                    className={styles.opBody}
+                    onClick={() => canEdit && openEdit(o)}
+                    style={{ cursor: canEdit ? 'pointer' : 'default' }}
+                  >
                     <h3>{o.nom}</h3>
                     {o.resp && (
                       <div className={styles.resp}>
@@ -216,21 +236,23 @@ export default function OperationsPage() {
                   </div>
 
                   {(o.statut === 'Préparation' || o.statut === 'Active') && (
-                    <div className={styles.actions}>
-                      {o.statut === 'Préparation' && (
-                        <Button size="sm" onClick={() => setStatut(o, 'Active')}>
-                          🚨 Lancer
+                    <RequireBranche branche="police">
+                      <div className={styles.actions}>
+                        {o.statut === 'Préparation' && (
+                          <Button size="sm" onClick={() => setStatut(o, 'Active')}>
+                            🚨 Lancer
+                          </Button>
+                        )}
+                        {o.statut === 'Active' && (
+                          <Button size="sm" onClick={() => setStatut(o, 'Terminée')}>
+                            ✅ Terminer
+                          </Button>
+                        )}
+                        <Button size="sm" variant="ghost" onClick={() => setStatut(o, 'Annulée')}>
+                          ❌ Annuler
                         </Button>
-                      )}
-                      {o.statut === 'Active' && (
-                        <Button size="sm" onClick={() => setStatut(o, 'Terminée')}>
-                          ✅ Terminer
-                        </Button>
-                      )}
-                      <Button size="sm" variant="ghost" onClick={() => setStatut(o, 'Annulée')}>
-                        ❌ Annuler
-                      </Button>
-                    </div>
+                      </div>
+                    </RequireBranche>
                   )}
                 </article>
               ))}
