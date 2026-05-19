@@ -21,41 +21,30 @@ export async function fetchGuildMember(accessToken: string): Promise<{
   roles: string[];
 } | null> {
   try {
-    const url = `${DISCORD_API}/users/@me/guilds/${GUILD_ID}/member`;
-    console.log("[Discord DEBUG] Appel URL:", url);
-    console.log("[Discord DEBUG] Token (premiers chars):", accessToken.slice(0, 10) + "...");
+    const res = await fetch(
+      `${DISCORD_API}/users/@me/guilds/${GUILD_ID}/member`,
+      {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+        // Pas de cache : on veut les rôles à jour à chaque login
+        cache: "no-store",
+      }
+    );
  
-    const res = await fetch(url, {
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-      },
-      cache: "no-store",
-    });
- 
-    console.log("[Discord DEBUG] Status HTTP:", res.status, res.statusText);
- 
+    // 404 = pas membre du serveur
     if (res.status === 404) {
-      console.log("[Discord DEBUG] 404 → pas membre du serveur");
       return { isMember: false, roles: [] };
     }
  
     if (!res.ok) {
-      const errorText = await res.text();
       console.error(
-        `[Discord] fetchGuildMember failed: ${res.status} ${res.statusText}`,
-        "BODY:", errorText
+        `[Discord] fetchGuildMember failed: ${res.status} ${res.statusText}`
       );
       return null;
     }
  
-    const data = (await res.json()) as { roles?: string[]; nick?: string; user?: { username?: string } };
- 
-    // ─── LOG DE DEBUG TRES VERBEUX ─────────────────────────────────
-    console.log("[Discord DEBUG] Réponse complète:", JSON.stringify(data));
-    console.log("[Discord DEBUG] data.roles =", data.roles);
-    console.log("[Discord DEBUG] Type de data.roles =", typeof data.roles);
-    console.log("[Discord DEBUG] Array.isArray(data.roles) =", Array.isArray(data.roles));
-    console.log("[Discord DEBUG] Nombre de rôles =", Array.isArray(data.roles) ? data.roles.length : "N/A");
+    const data = (await res.json()) as { roles?: string[] };
  
     return {
       isMember: true,
