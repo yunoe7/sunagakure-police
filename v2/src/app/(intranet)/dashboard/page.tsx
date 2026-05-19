@@ -40,8 +40,7 @@ function pickCitation(): string {
   return CITATIONS[dayOfYear % CITATIONS.length];
 }
 
-function getSalutation(): string {
-  const h = new Date().getHours();
+function getSalutation(h: number): string {
   if (h < 6) return 'Bonne nuit';
   if (h < 12) return 'Bonjour';
   if (h < 18) return 'Bon après-midi';
@@ -52,10 +51,18 @@ export default function DashboardPage() {
   const { data: patients } = useFirebaseValue<Record<string, Patient>>('medical/patients');
   const u = useCurrentUser();
 
-  // Horloge live
+  // Tout ce qui dépend du temps est calculé UNIQUEMENT côté client
+  // pour éviter les erreurs d'hydratation (React error #418).
   const [now, setNow] = useState<Date | null>(null);
+  const [citation, setCitation] = useState<string>('');
+  const [salutation, setSalutation] = useState<string>('');
+
   useEffect(() => {
-    setNow(new Date());
+    const d = new Date();
+    setNow(d);
+    setCitation(pickCitation());
+    setSalutation(getSalutation(d.getHours()));
+
     const t = setInterval(() => setNow(new Date()), 60_000);
     return () => clearInterval(t);
   }, []);
@@ -114,7 +121,8 @@ export default function DashboardPage() {
         <div className={styles.heroContent}>
           <div className={styles.heroLeft}>
             <div className={styles.heroSalute}>
-              {getSalutation()}, <span className={styles.heroName}>{u.displayName}</span>
+              {salutation ? `${salutation}, ` : 'Bienvenue, '}
+              <span className={styles.heroName}>{u.displayName}</span>
               {u.user?.isAdmin && (
                 <span className={styles.heroAdminPin} title="Administrateur technique">
                   <Sparkles size={11} /> Admin
@@ -122,7 +130,7 @@ export default function DashboardPage() {
               )}
             </div>
             {heroSubtitle && <div className={styles.heroRang}>{heroSubtitle}</div>}
-            <div className={styles.heroQuote}>{pickCitation()}</div>
+            {citation && <div className={styles.heroQuote}>{citation}</div>}
           </div>
           <div className={styles.heroRight}>
             {now && (
