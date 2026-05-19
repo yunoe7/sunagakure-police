@@ -63,6 +63,8 @@ export const NAV_SECTIONS: NavSection[] = [
       { label: 'Pharmacie', href: '/medical/pharmacie', icon: 'Pill' },
       { label: 'Dons', href: '/medical/dons', icon: 'Droplet' },
       { label: 'Psychiatrie', href: '/medical/psy', icon: 'Brain' },
+      { label: 'Salon scientifique', href: '/medical/scientifique', icon: 'FlaskConical' },
+      { label: 'Morgue', href: '/medical/morgue', icon: 'Skull' },
     ],
   },
   {
