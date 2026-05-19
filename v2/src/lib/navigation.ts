@@ -48,6 +48,7 @@ export const NAV_SECTIONS: NavSection[] = [
       { label: 'Plaintes', href: '/plaintes', icon: 'AlertCircle' },
       { label: 'Tribunal', href: '/tribunal', icon: 'Scale' },
       { label: 'Code pénal', href: '/codepenal', icon: 'BookText' },
+      { label: 'Comptabilité', href: '/justice/comptabilite', icon: 'Wallet' },
     ],
   },
   {
@@ -56,6 +57,7 @@ export const NAV_SECTIONS: NavSection[] = [
       { label: 'Clients', href: '/avocat/clients', icon: 'Users' },
       { label: 'Affaires', href: '/avocat/affaires', icon: 'Briefcase' },
       { label: 'Plaidoiries', href: '/avocat/plaidoiries', icon: 'MessageSquare' },
+      { label: 'Comptabilité', href: '/avocat/comptabilite', icon: 'Wallet' },
     ],
   },
   {
@@ -68,12 +70,14 @@ export const NAV_SECTIONS: NavSection[] = [
       { label: 'Psychiatrie', href: '/medical/psy', icon: 'Brain' },
       { label: 'Salon scientifique', href: '/medical/scientifique', icon: 'FlaskConical' },
       { label: 'Morgue', href: '/medical/morgue', icon: 'Skull' },
+      { label: 'Comptabilité', href: '/medical/comptabilite', icon: 'Wallet' },
     ],
   },
   {
     title: 'MISSIONS',
     items: [
       { label: 'Missions', href: '/missions', icon: 'Target' },
+      { label: 'Comptabilité', href: '/missions/comptabilite', icon: 'Wallet' },
     ],
   },
   {
@@ -83,6 +87,7 @@ export const NAV_SECTIONS: NavSection[] = [
       { label: 'Traités', href: '/diplo/traites', icon: 'FileSignature' },
       { label: 'Laissez-passer', href: '/diplo/laissez-passer', icon: 'BadgeCheck' },
       { label: 'Communications', href: '/diplo/communications', icon: 'Radio' },
+      { label: 'Comptabilité', href: '/diplo/comptabilite', icon: 'Wallet' },
     ],
   },
   {
@@ -92,6 +97,7 @@ export const NAV_SECTIONS: NavSection[] = [
       { label: 'Hiérarchie', href: '/hierarchie', icon: 'GitBranch' },
       { label: 'Équipes', href: '/equipes', icon: 'Users2' },
       { label: 'Impôts', href: '/impots', icon: 'Receipt' },
+      { label: 'Trésor Central', href: '/tresor', icon: 'Landmark' },
       { label: 'Admin', href: '/admin', icon: 'Settings' },
     ],
   },
