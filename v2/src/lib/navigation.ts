@@ -6,19 +6,19 @@
  * Chaque item = un lien dans la sidebar.
  * Sections = groupes (avec un titre type "POLICE", "JUSTICE", etc.)
  */
-
+ 
 export interface NavItem {
   label: string;
   href: string;
   icon: string; // nom d'icône lucide-react
   badge?: number; // chiffre rouge optionnel
 }
-
+ 
 export interface NavSection {
   title: string;
   items: NavItem[];
 }
-
+ 
 export const NAV_SECTIONS: NavSection[] = [
   {
     title: 'GÉNÉRAL',
@@ -102,11 +102,12 @@ export const NAV_SECTIONS: NavSection[] = [
       { label: 'Impôts', href: '/impots', icon: 'Receipt' },
       { label: 'Trésor Central', href: '/tresor', icon: 'Landmark' },
       { label: 'Membres', href: '/admin/membres', icon: 'Users' },
-      { label: 'Whitelist', href: '/admin', icon: 'ShieldCheck' },
+      { label: 'Whitelist', href: '/admin/whitelist', icon: 'ShieldCheck' },
+      { label: 'Maintenance', href: '/admin/maintenance', icon: 'Wrench' },
     ],
   },
 ];
-
+ 
 // Helper pour retrouver le label d'une page à partir de son URL
 export function findNavItemByPath(pathname: string): NavItem | null {
   for (const section of NAV_SECTIONS) {
