@@ -1,48 +1,225 @@
-.wrap {
-  position: fixed;
+/* PAGE DE CONNEXION DISCORD */
+
+.page {
+  min-height: 100vh;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  position: relative;
+  overflow: hidden;
+  background: #0a0805;
+}
+
+.bg {
+  position: absolute;
   inset: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
   background:
-    radial-gradient(ellipse at 50% 30%, rgba(192, 65, 14, 0.15) 0%, transparent 60%),
-    var(--bg);
+    radial-gradient(circle at 20% 30%, rgba(212,180,74,0.08), transparent 60%),
+    radial-gradient(circle at 80% 70%, rgba(192,65,14,0.08), transparent 60%),
+    linear-gradient(180deg, #0a0805 0%, #15110b 50%, #0a0805 100%);
+  z-index: 0;
+}
+.bg::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image:
+    repeating-linear-gradient(45deg, transparent, transparent 60px, rgba(212,180,74,0.02) 60px, rgba(212,180,74,0.02) 61px),
+    repeating-linear-gradient(-45deg, transparent, transparent 60px, rgba(212,180,74,0.02) 60px, rgba(212,180,74,0.02) 61px);
 }
 
-.box {
+.card {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 440px;
+  background: linear-gradient(180deg, rgba(26,19,11,0.95), rgba(15,12,8,0.95));
+  border: 1px solid rgba(212,180,74,0.35);
+  border-radius: 14px;
+  padding: 40px 36px;
+  box-shadow:
+    0 30px 80px rgba(0,0,0,0.7),
+    0 0 60px rgba(212,180,74,0.08),
+    inset 0 1px 0 rgba(255,255,255,0.05);
+  backdrop-filter: blur(8px);
   text-align: center;
-  padding: 40px 50px;
+}
+.card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, transparent, #d4b44a, #fbbf24, #d4b44a, transparent);
+  border-radius: 14px 14px 0 0;
 }
 
-.badge {
-  width: 80px;
-  height: 80px;
-  margin: 0 auto 20px;
+.crest {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 72px;
+  height: 72px;
+  margin: 0 auto 16px;
+  background: linear-gradient(135deg, rgba(212,180,74,0.18), rgba(212,180,74,0.04));
+  border: 2px solid rgba(212,180,74,0.5);
   border-radius: 50%;
-  background: linear-gradient(135deg, var(--accent), #b86010);
+  font-family: 'Cinzel', serif;
+  font-size: 36px;
+  font-weight: 700;
+  color: var(--gold2, #d4b44a);
+  text-shadow: 0 0 20px rgba(212,180,74,0.6);
+  box-shadow:
+    0 0 30px rgba(212,180,74,0.3),
+    inset 0 0 20px rgba(212,180,74,0.1);
+}
+
+.title {
+  font-family: 'Cinzel', serif;
+  font-size: 32px;
+  font-weight: 700;
+  color: var(--gold2, #d4b44a);
+  letter-spacing: 4px;
+  text-transform: uppercase;
+  margin-bottom: 4px;
+  text-shadow: 0 2px 12px rgba(212,180,74,0.3);
+}
+
+.subtitle {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 2px;
+  color: rgba(255,255,255,0.5);
+  text-transform: uppercase;
+  margin-bottom: 26px;
+}
+
+.divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 24px 0 18px;
+  color: rgba(212,180,74,0.6);
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+}
+.divider::before, .divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(212,180,74,0.4), transparent);
+}
+
+.intro {
+  font-size: 13.5px;
+  line-height: 1.6;
+  color: rgba(255,255,255,0.7);
+  margin-bottom: 22px;
+}
+
+.error {
+  background: rgba(239,68,68,0.1);
+  border: 1px solid rgba(239,68,68,0.35);
+  border-radius: 8px;
+  padding: 12px 14px;
+  margin-bottom: 18px;
+  text-align: left;
+  animation: errShake 0.4s ease-out;
+}
+.error strong {
+  display: block;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 1px;
+  color: #fca5a5;
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+.error p {
+  font-size: 12.5px;
+  color: rgba(255,200,200,0.85);
+  line-height: 1.4;
+}
+@keyframes errShake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-4px); }
+  75% { transform: translateX(4px); }
+}
+
+.discordBtn {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-family: 'Cinzel', serif;
-  font-size: 40px;
-  font-weight: 900;
-  color: var(--gold2);
-  box-shadow: 0 8px 40px rgba(192, 65, 14, 0.4);
+  gap: 10px;
+  width: 100%;
+  padding: 14px 20px;
+  background: linear-gradient(135deg, #5865f2, #4752c4);
+  border: 1px solid rgba(255,255,255,0.15);
+  border-radius: 10px;
+  color: #fff;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow:
+    0 4px 14px rgba(88,101,242,0.4),
+    inset 0 1px 0 rgba(255,255,255,0.15);
+}
+.discordBtn:hover {
+  background: linear-gradient(135deg, #6571f5, #5662d4);
+  transform: translateY(-1px);
+  box-shadow:
+    0 6px 18px rgba(88,101,242,0.55),
+    inset 0 1px 0 rgba(255,255,255,0.2);
+}
+.discordBtn:active {
+  transform: translateY(0);
+}
+.discordBtn svg {
+  flex-shrink: 0;
 }
 
-.box h1 {
-  font-family: 'Cinzel', serif;
-  font-size: 24px;
-  font-weight: 700;
-  letter-spacing: 6px;
-  color: var(--gold2);
-  margin-bottom: 12px;
-  text-shadow: 0 2px 12px rgba(201, 162, 39, 0.4);
+.legalNote {
+  margin-top: 22px;
+  font-size: 11px;
+  line-height: 1.5;
+  color: rgba(255,255,255,0.35);
+  font-style: italic;
 }
 
-.box p {
+.loadingScreen {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  background: #0a0805;
+  color: rgba(212,180,74,0.7);
   font-family: 'Share Tech Mono', monospace;
   font-size: 12px;
-  color: var(--muted);
   letter-spacing: 2px;
+  text-transform: uppercase;
+}
+.loader {
+  width: 40px;
+  height: 40px;
+  border: 3px solid rgba(212,180,74,0.2);
+  border-top-color: var(--gold2, #d4b44a);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+@media (max-width: 480px) {
+  .card { padding: 32px 22px; }
+  .title { font-size: 26px; letter-spacing: 3px; }
 }
