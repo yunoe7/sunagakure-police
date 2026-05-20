@@ -5,12 +5,11 @@
  *  Page ARCHIVES — Affaires clôturées et précédents juridiques
  * ════════════════════════════════════════════════════════════════
  *
- * 2 onglets :
- *   - Affaires archivées : lit sunagakure/affaires (statuts jugee/archivee)
- *   - Jurisprudence : CRUD sur sunagakure/jurisprudence
- *
- * Pour les affaires, vue read-only avec lien vers le jugement associé.
- * Pour la jurisprudence, on peut créer/modifier/supprimer des précédents.
+ * Permissions :
+ * - Voir : tout le monde (connecté)
+ * - Affaires archivées : lecture seule (alimentées via Tribunal)
+ * - Précédents jurisprudentiels : MEMBRES POLICE + Admin peuvent ajouter/modifier
+ *   (les greffiers classent les précédents au quotidien)
  * ════════════════════════════════════════════════════════════════
  */
 
@@ -38,7 +37,10 @@ const FB_JUR = 'jurisprudence';
 type Tab = 'affaires' | 'jurisprudence';
 
 export default function ArchivesPage() {
-  const CURRENT_USER = useCurrentUser().displayName;
+  const u = useCurrentUser();
+  const CURRENT_USER = u.displayName;
+  const canEdit = u.can.membreBranche('police');
+
   const { data: affairesData, loading: lAff } = useFirebaseValue<Affaire[] | null>('affaires');
   const { data: jugementsData } = useFirebaseValue<Jugement[] | null>('jugements');
   const { data: jurData, loading: lJur } = useFirebaseValue<Precedent[] | null>(FB_JUR);
@@ -51,7 +53,6 @@ export default function ArchivesPage() {
   const [viewingAffaireId, setViewingAffaireId] = useState<number | null>(null);
   const [viewingPrecedentId, setViewingPrecedentId] = useState<number | null>(null);
 
-  // ─── Données ───
   const affaires = useMemo<Affaire[]>(
     () => (Array.isArray(affairesData) ? affairesData : affairesData ? Object.values(affairesData) : []).filter(
       (a): a is Affaire => a !== null && typeof a === 'object' && !!a.id
@@ -73,7 +74,6 @@ export default function ArchivesPage() {
     [jurData]
   );
 
-  // Map jugement par affaireId
   const jugementByAffaireId = useMemo(() => {
     const m = new Map<number, Jugement>();
     for (const j of jugements) {
@@ -82,12 +82,10 @@ export default function ArchivesPage() {
     return m;
   }, [jugements]);
 
-  // Affaires archivées = jugées ou archivées
   const affairesArchivees = useMemo(() => {
     return affaires.filter((a) => a.statut === 'jugee' || a.statut === 'archivee');
   }, [affaires]);
 
-  // Filtres
   const visibleAffaires = useMemo(() => {
     let list = affairesArchivees;
     const q = search.trim().toLowerCase();
@@ -108,23 +106,17 @@ export default function ArchivesPage() {
     return [...list].sort((a, b) => b.createdAt - a.createdAt);
   }, [jurisprudence, search]);
 
-  const viewingAffaire = viewingAffaireId
-    ? affaires.find((a) => a.id === viewingAffaireId)
-    : null;
-  const viewingAffaireJugement = viewingAffaire
-    ? jugementByAffaireId.get(viewingAffaire.id) : null;
+  const viewingAffaire = viewingAffaireId ? affaires.find((a) => a.id === viewingAffaireId) : null;
+  const viewingAffaireJugement = viewingAffaire ? jugementByAffaireId.get(viewingAffaire.id) : null;
+  const viewingPrecedent = viewingPrecedentId ? jurisprudence.find((p) => p.id === viewingPrecedentId) : null;
 
-  const viewingPrecedent = viewingPrecedentId
-    ? jurisprudence.find((p) => p.id === viewingPrecedentId)
-    : null;
-
-  // ─── Handlers Jurisprudence ───
   function openCreate() {
     setEditingId(null);
     setForm({ juge: CURRENT_USER });
     setShowForm(true);
   }
   function openEdit(p: Precedent) {
+    if (!canEdit) return;
     setEditingId(p.id); setForm(p); setShowForm(true); setViewingPrecedentId(null);
   }
   function closeForm() { setShowForm(false); setEditingId(null); setForm({}); }
@@ -132,11 +124,7 @@ export default function ArchivesPage() {
   function selectAffaire(id: number) {
     const a = affaires.find((x) => x.id === id);
     if (a) {
-      setForm({
-        ...form,
-        affaireId: id,
-        affaireRef: a.ref || a.titre,
-      });
+      setForm({ ...form, affaireId: id, affaireRef: a.ref || a.titre });
     }
   }
 
@@ -191,7 +179,7 @@ export default function ArchivesPage() {
         title="Archives & Jurisprudence"
         subtitle="Affaires clôturées et précédents juridiques de Sunagakure"
         actions={
-          tab === 'jurisprudence' && (
+          tab === 'jurisprudence' && canEdit && (
             <Button onClick={openCreate}>
               <Plus size={14} /> Nouveau précédent
             </Button>
@@ -212,17 +200,13 @@ export default function ArchivesPage() {
         </div>
 
         <div className={styles.tabs}>
-          <button
-            className={`${styles.tab} ${tab === 'affaires' ? styles.tabActive : ''}`}
-            onClick={() => setTab('affaires')}
-          >
+          <button className={`${styles.tab} ${tab === 'affaires' ? styles.tabActive : ''}`}
+            onClick={() => setTab('affaires')}>
             <Archive size={11} /><span>Affaires archivées</span>
             <span className={styles.tabCount}>{affairesArchivees.length}</span>
           </button>
-          <button
-            className={`${styles.tab} ${tab === 'jurisprudence' ? styles.tabActive : ''}`}
-            onClick={() => setTab('jurisprudence')}
-          >
+          <button className={`${styles.tab} ${tab === 'jurisprudence' ? styles.tabActive : ''}`}
+            onClick={() => setTab('jurisprudence')}>
             <Scale size={11} /><span>Jurisprudence</span>
             <span className={styles.tabCount}>{jurisprudence.length}</span>
           </button>
@@ -232,8 +216,7 @@ export default function ArchivesPage() {
           <Search size={14} />
           <input type="text"
             placeholder={tab === 'affaires' ? 'Référence, titre, défendeur, juge…' : 'Titre, contexte, décision…'}
-            value={search} onChange={(e) => setSearch(e.target.value)}
-          />
+            value={search} onChange={(e) => setSearch(e.target.value)} />
         </div>
 
         {tab === 'affaires' && (
@@ -283,7 +266,7 @@ export default function ArchivesPage() {
           : visiblePrecedents.length === 0 ? (
             <div className={styles.empty}>
               <BookOpen size={32} style={{ opacity: 0.3 }} />
-              <p>Aucun précédent. Crée le premier !</p>
+              <p>Aucun précédent. {canEdit ? 'Crée le premier !' : ''}</p>
             </div>
           ) : (
             <div className={styles.list}>
@@ -296,11 +279,13 @@ export default function ArchivesPage() {
                         <Calendar size={11} /> {fmtDateFR(p.date)}
                       </span>
                     )}
-                    <button
-                      className={styles.deleteBtn}
-                      onClick={(e) => { e.stopPropagation(); handleDelete(p); }}
-                      aria-label="Supprimer"
-                    ><Trash2 size={13} /></button>
+                    {canEdit && (
+                      <button className={styles.deleteBtn}
+                        onClick={(e) => { e.stopPropagation(); handleDelete(p); }}
+                        aria-label="Supprimer">
+                        <Trash2 size={13} />
+                      </button>
+                    )}
                   </div>
                   <h3>{p.titre}</h3>
                   {p.affaireRef && <div className={styles.affaireRef}>📁 {p.affaireRef}</div>}
@@ -395,7 +380,7 @@ export default function ArchivesPage() {
         title={viewingPrecedent ? `${viewingPrecedent.reference || ''} — ${viewingPrecedent.titre}` : ''}
         size="lg"
         footer={
-          viewingPrecedent && (
+          viewingPrecedent && canEdit && (
             <>
               <Button variant="ghost" onClick={() => handleDelete(viewingPrecedent)}><Trash2 size={14} /> Supprimer</Button>
               <Button onClick={() => openEdit(viewingPrecedent)}>Modifier</Button>
