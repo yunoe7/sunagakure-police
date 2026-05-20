@@ -2,6 +2,7 @@ import { Sidebar } from '@/components/layout/Sidebar';
 import { Topbar } from '@/components/layout/Topbar';
 import { ToastContainer } from '@/components/ui/ToastContainer';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
+import { SidebarProvider } from '@/components/layout/SidebarContext';
 import styles from './layout.module.css';
 
 /**
@@ -19,14 +20,16 @@ export default function IntranetLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className={styles.shell}>
-      <Sidebar />
-      <main className={styles.main}>
-        <Topbar />
-        <div className={styles.page}>{children}</div>
-      </main>
-      <ToastContainer />
-      <ConfirmDialog />
-    </div>
+    <SidebarProvider>
+      <div className={styles.shell}>
+        <Sidebar />
+        <main className={styles.main}>
+          <Topbar />
+          <div className={styles.page}>{children}</div>
+        </main>
+        <ToastContainer />
+        <ConfirmDialog />
+      </div>
+    </SidebarProvider>
   );
 }
