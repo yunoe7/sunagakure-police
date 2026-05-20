@@ -67,7 +67,9 @@ export function isAdmin(role: User['role']): boolean {
 export interface Equipe {
   id: number;
   nom: string;
-  emblem?: string;          // emoji ou court texte
+  emblem?: string;          // 🆕 clé d'icône Lucide ('shield', 'sword', etc.) OU emoji (legacy)
+  emblemImg?: string;       // 🆕 NOUVEAU : data URL d'une image uploadée (prioritaire sur emblem)
+  color?: string;           // 🆕 NOUVEAU : clé de couleur ('gold', 'red', 'blue', 'purple', 'green', 'orange', 'cyan', 'pink')
   chefId?: number;          // id d'un recensé
   membres?: number[];       // ids des recensés
   desc?: string;
