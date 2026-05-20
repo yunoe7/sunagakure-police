@@ -7,55 +7,36 @@
  *
  * Récupère les infos du user Discord actuellement connecté via NextAuth.
  *
+ * ✨ NOUVEAU : refresh automatique des rôles Discord toutes les 60s
+ *    (le serveur fait le travail, le client trigger le check via update()).
+ *
  * Usage :
- *   const { username, displayName, avatar, isLoading } = useCurrentUser();
+ *   const { username, displayName, avatar, isLoading, refreshRoles } = useCurrentUser();
+ *
+ *   // Bouton manuel
+ *   <button onClick={refreshRoles}>🔄 Refresh mes rôles</button>
  *
  * Usage permissions :
  *   const { user, can } = useCurrentUser();
- *
- *   // Gérant / Co-gérant / Admin uniquement
  *   if (can.adminBranche('police')) { ... }
- *   if (can.adminBranche(['medecin', 'scientifique'])) { ... } // au moins une
- *
- *   // Tous les membres de la branche (même sans grade) + Admin
  *   if (can.membreBranche('police')) { ... }
- *   if (can.membreBranche(['medecin', 'scientifique'])) { ... }
- *
- *   if (user?.isAdmin) { ... }
- *
- * ⚠️ Lit `session.intranet` (pas `session.intranetUser` — ancien bug).
  * ════════════════════════════════════════════════════════════════
  */
 
 import { useSession } from 'next-auth/react';
+import { useCallback, useEffect, useRef } from 'react';
 import type { IntranetUser } from '@/lib/roles';
 
+// Intervalle de refresh côté client (en ms)
+const CLIENT_REFRESH_INTERVAL = 60 * 1000;
+
 export type Permissions = {
-  /**
-   * Peut GÉRER la (ou les) branche(s) donnée(s) — Gérant OU Co-gérant OU Admin.
-   * À utiliser pour les actions sensibles (sanctions, décisions de chef…).
-   * Si on passe une liste, c'est OK s'il a au moins UNE des branches.
-   */
   adminBranche: (slug: string | string[]) => boolean;
-
-  /**
-   * Est MEMBRE de la (ou des) branche(s) donnée(s) — tous niveaux + Admin.
-   * À utiliser pour les actions opérationnelles (créer un dossier, ajouter
-   * une fiche, faire une consultation…).
-   * Si on passe une liste, c'est OK s'il a au moins UNE des branches.
-   */
   membreBranche: (slug: string | string[]) => boolean;
-
-  /** Peut voir le panel admin général (Admin / Staff / Conseil) */
   adminGeneral: () => boolean;
-
-  /** A au moins le rang ninja demandé (par niveau, 1 = Genin, 11 = Kazekage) */
   rangAuMoins: (niveauMin: number) => boolean;
 };
 
-/**
- * Génère des initiales (1-2 lettres) à partir d'un nom.
- */
 function getInitials(name: string | undefined): string {
   if (!name) return '?';
   const parts = name.trim().split(/\s+/);
@@ -64,10 +45,9 @@ function getInitials(name: string | undefined): string {
 }
 
 export function useCurrentUser() {
-  const { data: session, status } = useSession();
+  const { data: session, status, update } = useSession();
   const user = session?.user;
 
-  // FIX : auth.ts écrit `session.intranet` (pas `intranetUser`).
   const intranetUser =
     ((session as unknown as { intranet?: IntranetUser } | null)?.intranet) ?? null;
 
@@ -77,6 +57,47 @@ export function useCurrentUser() {
     user?.name ||
     intranetUser?.username ||
     'Ninja';
+
+  // ─── Refresh manuel (utilisable par un bouton) ─────────────────
+  const refreshRoles = useCallback(async () => {
+    try {
+      await update(); // déclenche le callback jwt({ trigger: 'update' })
+      console.log('[useCurrentUser] 🔄 Refresh manuel terminé');
+    } catch (err) {
+      console.error('[useCurrentUser] ❌ Erreur refresh :', err);
+    }
+  }, [update]);
+
+  // ─── Refresh auto en arrière-plan toutes les 60s ───────────────
+  const lastTriggerRef = useRef<number>(Date.now());
+
+  useEffect(() => {
+    if (status !== 'authenticated') return;
+
+    // Trigger immédiat si on n'a pas refresh depuis longtemps (changement d'onglet, retour sur le site)
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        const elapsed = Date.now() - lastTriggerRef.current;
+        if (elapsed > CLIENT_REFRESH_INTERVAL) {
+          lastTriggerRef.current = Date.now();
+          update().catch((err) => console.error('[useCurrentUser] refresh visibility :', err));
+        }
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    // Refresh périodique toutes les 60s
+    const interval = setInterval(() => {
+      lastTriggerRef.current = Date.now();
+      update().catch((err) => console.error('[useCurrentUser] refresh interval :', err));
+    }, CLIENT_REFRESH_INTERVAL);
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      clearInterval(interval);
+    };
+  }, [status, update]);
 
   // ─── Helpers de permissions ────────────────────────────────────
   const can: Permissions = {
@@ -114,7 +135,6 @@ export function useCurrentUser() {
   };
 
   return {
-    // ─── Champs existants ──────────────────────────────────────────
     username: user?.discordUsername ?? intranetUser?.username,
     displayName,
     avatar: user?.discordAvatar || user?.image || intranetUser?.avatarUrl || null,
@@ -124,9 +144,11 @@ export function useCurrentUser() {
     isLoading: status === 'loading',
     isAuthed: status === 'authenticated',
 
-    // ─── Nouveaux champs ───────────────────────────────────────────
     user: intranetUser,
     can,
     isAuthenticated: status === 'authenticated' && intranetUser !== null,
+
+    // ✨ Nouveau : bouton manuel de refresh
+    refreshRoles,
   };
 }
