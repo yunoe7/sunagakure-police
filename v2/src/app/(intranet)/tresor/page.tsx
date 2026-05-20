@@ -5,19 +5,9 @@
  *  Page TRÉSOR CENTRAL — Consolidation des prélèvements
  * ════════════════════════════════════════════════════════════════
  *
- * Stockage Firebase : sunagakure/tresorCentral
- *
- * Structure :
- *   {
- *     prelevementRate: 15,     // % global appliqué aux clôtures de chaque section
- *     mouvements: [ ... ],     // historique des versements (chaque clôture y verse %)
- *     retraits: [ ... ]        // retraits manuels du trésor (pour grosses dépenses)
- *   }
- *
- * Les "mouvements" sont créés AUTOMATIQUEMENT par chaque clôture
- * de semaine dans les pages compta de chaque section.
- *
- * Les "retraits" sont manuels (cette page).
+ * Permissions :
+ * - Voir : tout le monde (connecté)
+ * - Retraits / config taux / suppressions : TOUS LES MEMBRES POLICE + Admin
  * ════════════════════════════════════════════════════════════════
  */
 
@@ -32,6 +22,7 @@ import { toast } from '@/lib/toast';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Modal } from '@/components/ui/Modal';
+import { RequireMembreBranche } from '@/components/Require';
 import { confirmAction } from '@/components/ui/ConfirmDialog';
 import {
   type TresorCentral, type TresorMouvement, type TresorRetrait, type ComptaSection,
@@ -44,7 +35,10 @@ import styles from './page.module.css';
 type Tab = 'mouvements' | 'retraits';
 
 export default function TresorCentralPage() {
-  const CURRENT_USER = useCurrentUser().displayName;
+  const u = useCurrentUser();
+  const CURRENT_USER = u.displayName;
+  const canEdit = u.can.membreBranche('police');
+
   const { data, loading } = useFirebaseValue<TresorCentral | null>('tresorCentral');
 
   const [tab, setTab] = useState<Tab>('mouvements');
@@ -55,7 +49,6 @@ export default function TresorCentralPage() {
   const [retraitForm, setRetraitForm] = useState<Partial<TresorRetrait>>({});
   const [rateForm, setRateForm] = useState<number>(TRESOR_DEFAULT_RATE);
 
-  // ─── Données ───
   const tresor: TresorCentral = useMemo(() => ({
     prelevementRate: data?.prelevementRate ?? TRESOR_DEFAULT_RATE,
     mouvements: (Array.isArray(data?.mouvements) ? data!.mouvements :
@@ -66,7 +59,6 @@ export default function TresorCentralPage() {
                .filter((r): r is TresorRetrait => r !== null && typeof r === 'object' && !!r.id),
   }), [data]);
 
-  // ─── Totaux ───
   const totals = useMemo(() => {
     const totalRecu = tresor.mouvements.reduce((s, m) => s + (m.amount || 0), 0);
     const totalRetire = (tresor.retraits || []).reduce((s, r) => s + (r.montant || 0), 0);
@@ -74,7 +66,6 @@ export default function TresorCentralPage() {
     return { totalRecu, totalRetire, solde };
   }, [tresor]);
 
-  // Stats par section
   const parSection = useMemo(() => {
     const m = new Map<ComptaSection, number>();
     for (const mv of tresor.mouvements) {
@@ -83,7 +74,6 @@ export default function TresorCentralPage() {
     return Array.from(m.entries()).sort((a, b) => b[1] - a[1]);
   }, [tresor]);
 
-  // ─── Filtres ───
   const visibleMouvements = useMemo(() => {
     let list = tresor.mouvements;
     if (filterSection !== 'all') list = list.filter((m) => m.section === filterSection);
@@ -104,7 +94,6 @@ export default function TresorCentralPage() {
     return [...filtered].sort((a, b) => b.date - a.date);
   }, [tresor.retraits, search]);
 
-  // ─── Handlers ───
   function openRetrait() {
     setRetraitForm({ date: Date.now(), agent: CURRENT_USER });
     setShowRetraitForm(true);
@@ -190,24 +179,24 @@ export default function TresorCentralPage() {
     } catch { toast.error('Erreur'); }
   }
 
-  // ─── Rendu ───
   return (
     <>
       <Card
         title="🏛️ Trésor Central"
         subtitle="Consolidation des prélèvements de toutes les sections"
         actions={
-          <>
-            <Button variant="outline" onClick={openConfig}>
-              <Settings size={14} /> Taux : {tresor.prelevementRate}%
-            </Button>
-            <Button onClick={openRetrait}>
-              <Plus size={14} /> Retrait manuel
-            </Button>
-          </>
+          <RequireMembreBranche branche="police">
+            <>
+              <Button variant="outline" onClick={openConfig}>
+                <Settings size={14} /> Taux : {tresor.prelevementRate}%
+              </Button>
+              <Button onClick={openRetrait}>
+                <Plus size={14} /> Retrait manuel
+              </Button>
+            </>
+          </RequireMembreBranche>
         }
       >
-        {/* Stats principales */}
         <div className={styles.heroStats}>
           <div className={`${styles.heroStat} ${styles.heroSolde}`}>
             <div className={styles.heroLbl}>Solde du Trésor</div>
@@ -233,7 +222,6 @@ export default function TresorCentralPage() {
           </div>
         </div>
 
-        {/* Stats par section */}
         {parSection.length > 0 && (
           <div className={styles.parSectionGrid}>
             <div className={styles.parSectionTitle}>Contributions par section</div>
@@ -249,7 +237,6 @@ export default function TresorCentralPage() {
           </div>
         )}
 
-        {/* Tabs */}
         <div className={styles.tabs}>
           <button
             className={`${styles.tab} ${tab === 'mouvements' ? styles.tabActive : ''}`}
@@ -267,7 +254,6 @@ export default function TresorCentralPage() {
           </button>
         </div>
 
-        {/* Toolbar */}
         <div className={styles.toolbar}>
           <div className={styles.searchBox}>
             <Search size={14} />
@@ -291,7 +277,6 @@ export default function TresorCentralPage() {
           )}
         </div>
 
-        {/* Contenu */}
         {tab === 'mouvements' && (
           loading ? <p className={styles.empty}>Chargement…</p>
           : visibleMouvements.length === 0 ? (
@@ -312,7 +297,7 @@ export default function TresorCentralPage() {
                   <th>Archive</th>
                   <th>Taux</th>
                   <th style={{ textAlign: 'right' }}>Montant</th>
-                  <th aria-label="actions" />
+                  {canEdit && <th aria-label="actions" />}
                 </tr>
               </thead>
               <tbody>
@@ -332,11 +317,13 @@ export default function TresorCentralPage() {
                     <td className={`${styles.amount} ${styles.amtPos}`} style={{ textAlign: 'right' }}>
                       +{fmtMoney(m.amount)} ₽
                     </td>
-                    <td>
-                      <button className={styles.deleteBtn} onClick={() => handleDeleteMouvement(m)} aria-label="Supprimer">
-                        <Trash2 size={13} />
-                      </button>
-                    </td>
+                    {canEdit && (
+                      <td>
+                        <button className={styles.deleteBtn} onClick={() => handleDeleteMouvement(m)} aria-label="Supprimer">
+                          <Trash2 size={13} />
+                        </button>
+                      </td>
+                    )}
                   </tr>
                 ))}
               </tbody>
@@ -349,7 +336,7 @@ export default function TresorCentralPage() {
           : visibleRetraits.length === 0 ? (
             <div className={styles.empty}>
               <TrendingDown size={32} style={{ opacity: 0.3 }} />
-              <p>Aucun retrait. Utilise le bouton ci-dessus pour effectuer un retrait manuel.</p>
+              <p>Aucun retrait. {canEdit ? 'Utilise le bouton ci-dessus pour effectuer un retrait manuel.' : ''}</p>
             </div>
           ) : (
             <table className={styles.tresorTable}>
@@ -359,7 +346,7 @@ export default function TresorCentralPage() {
                   <th>Motif</th>
                   <th>Agent</th>
                   <th style={{ textAlign: 'right' }}>Montant</th>
-                  <th aria-label="actions" />
+                  {canEdit && <th aria-label="actions" />}
                 </tr>
               </thead>
               <tbody>
@@ -371,11 +358,13 @@ export default function TresorCentralPage() {
                     <td className={`${styles.amount} ${styles.amtNeg}`} style={{ textAlign: 'right' }}>
                       −{fmtMoney(r.montant)} ₽
                     </td>
-                    <td>
-                      <button className={styles.deleteBtn} onClick={() => handleDeleteRetrait(r)} aria-label="Supprimer">
-                        <Trash2 size={13} />
-                      </button>
-                    </td>
+                    {canEdit && (
+                      <td>
+                        <button className={styles.deleteBtn} onClick={() => handleDeleteRetrait(r)} aria-label="Supprimer">
+                          <Trash2 size={13} />
+                        </button>
+                      </td>
+                    )}
                   </tr>
                 ))}
               </tbody>
@@ -384,7 +373,6 @@ export default function TresorCentralPage() {
         )}
       </Card>
 
-      {/* Modale config taux */}
       <Modal open={showConfigForm} onClose={() => setShowConfigForm(false)}
         title="Configurer le taux de prélèvement"
         size="md"
@@ -408,7 +396,6 @@ export default function TresorCentralPage() {
         </div>
       </Modal>
 
-      {/* Modale retrait manuel */}
       <Modal open={showRetraitForm} onClose={() => setShowRetraitForm(false)}
         title="Retrait manuel du Trésor"
         size="md"
