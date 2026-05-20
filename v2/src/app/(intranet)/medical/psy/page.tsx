@@ -5,12 +5,11 @@
  *  Page PSY — Salon psychologique
  * ════════════════════════════════════════════════════════════════
  *
- * Stockage : sunagakure/hospital_psy (TABLEAU)
- *
- * Suivi des consultations psychologiques avec niveau de sévérité
- * et planification du prochain rendez-vous.
- *
  * ⚠️ Données sensibles : le contenu des notes est confidentiel.
+ *
+ * Permissions :
+ * - Voir : tout le monde (connecté)
+ * - Créer / modifier / supprimer : TOUS LES MEMBRES MÉDECIN + Admin
  * ════════════════════════════════════════════════════════════════
  */
 
@@ -26,7 +25,7 @@ import { toast } from '@/lib/toast';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Modal } from '@/components/ui/Modal';
-import { RequireBranche } from '@/components/Require';
+import { RequireMembreBranche } from '@/components/Require';
 import { confirmAction } from '@/components/ui/ConfirmDialog';
 import {
   type ConsultPsy, type PsySeverite,
@@ -40,7 +39,7 @@ type Filter = 'all' | PsySeverite;
 
 export default function PsyPage() {
   const { can, displayName } = useCurrentUser();
-  const canEdit = can.adminBranche('medecin');
+  const canEdit = can.membreBranche('medecin');
   const CURRENT_USER = displayName;
 
   const { data, loading } = useFirebaseValue<ConsultPsy[] | null>(FB_PATH);
@@ -68,7 +67,6 @@ export default function PsyPage() {
           .toLowerCase().includes(q)
       );
     }
-    // Tri : sévérité décroissante d'abord, puis date récente
     return [...list].sort((a, b) => {
       const order = { critique: 0, severe: 1, modere: 2, leger: 3 };
       const sa = order[a.severite] ?? 4;
@@ -155,9 +153,9 @@ export default function PsyPage() {
         title="Salon psy"
         subtitle="Suivi psychologique — données confidentielles"
         actions={
-          <RequireBranche branche="medecin">
+          <RequireMembreBranche branche="medecin">
             <Button onClick={openCreate}><Plus size={14} /> Nouvelle consultation</Button>
-          </RequireBranche>
+          </RequireMembreBranche>
         }
       >
         <div className={styles.statGrid}>
