@@ -8,6 +8,9 @@
  * Permissions :
  * - Voir : tout le monde (connecté)
  * - Marquer payé / annuler / config barème : TOUS LES MEMBRES POLICE + Admin
+ *
+ * 📜 Audit log : paiements, annulations, suppressions et modifications
+ *    du barème sont tracés dans /audit_log Firebase.
  * ════════════════════════════════════════════════════════════════
  */
 
@@ -19,6 +22,7 @@ import {
 import { useFirebaseValue } from '@/hooks/useFirebaseValue';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { dbSet } from '@/lib/db';
+import { logAction } from '@/lib/audit';
 import { toast } from '@/lib/toast';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
@@ -155,6 +159,17 @@ export default function ImpotsPage() {
         semaine: currentSemaine,
         agent: CURRENT_USER,
       };
+
+      // 📜 AUDIT LOG
+      logAction({
+        who: CURRENT_USER,
+        whoId: u.id ?? null,
+        action: 'create',
+        target: 'impot_paiement',
+        targetId: String(newPaiement.id),
+        detail: `Paiement d'impôt enregistré pour ${n.prenom} ${n.nom} : ${fmtMoney(montant)} ₽ (semaine ${currentSemaine})`,
+      });
+
       await dbSet(FB_PAIEMENTS, [...paiements, newPaiement]);
       toast.success(`Paiement enregistré : ${fmtMoney(montant)} ₽`);
     } catch (err) {
@@ -173,6 +188,16 @@ export default function ImpotsPage() {
     });
     if (!ok) return;
     try {
+      // 📜 AUDIT LOG
+      logAction({
+        who: CURRENT_USER,
+        whoId: u.id ?? null,
+        action: 'delete',
+        target: 'impot_paiement',
+        targetId: String(p.id),
+        detail: `Annulation du paiement de ${p.prenom} ${p.nom} : ${fmtMoney(p.montant)} ₽ (semaine ${p.semaine})`,
+      });
+
       await dbSet(FB_PAIEMENTS, paiements.filter((x) => x.id !== p.id));
       toast.success('Paiement annulé');
     } catch (err) {
@@ -189,6 +214,16 @@ export default function ImpotsPage() {
     });
     if (!ok) return;
     try {
+      // 📜 AUDIT LOG
+      logAction({
+        who: CURRENT_USER,
+        whoId: u.id ?? null,
+        action: 'delete',
+        target: 'impot_paiement',
+        targetId: String(p.id),
+        detail: `Suppression historique du paiement de ${p.prenom} ${p.nom} : ${fmtMoney(p.montant)} ₽ (semaine ${p.semaine})`,
+      });
+
       await dbSet(FB_PAIEMENTS, paiements.filter((x) => x.id !== p.id));
       toast.success('Supprimé');
     } catch (err) {
@@ -214,6 +249,20 @@ export default function ImpotsPage() {
       // 🔒 Filtre défensif : ignore les entrées avec rang manquant/vide
       const filtered = baremeForm.filter((g) => (g?.rang ?? '').trim() !== '');
       console.log('[BAREME] Tentative de save :', filtered);
+
+      // 📜 AUDIT LOG
+      const summary = filtered
+        .map((g) => `${g.rang}: ${fmtMoney(g.montant)} ₽`)
+        .join(', ');
+      logAction({
+        who: CURRENT_USER,
+        whoId: u.id ?? null,
+        action: 'update',
+        target: 'impot_bareme',
+        targetId: null,
+        detail: `Modification du barème fiscal — ${filtered.length} rang(s) : ${summary || 'aucun'}`,
+      });
+
       await dbSet(FB_GRADES, filtered);
       console.log('[BAREME] Save réussi !');
       toast.success('Barème enregistré');
