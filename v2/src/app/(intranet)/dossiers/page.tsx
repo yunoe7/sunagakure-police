@@ -13,9 +13,10 @@
  * Filtres : par danger, par statut. Recherche full-text.
  * Tri : par date d'ouverture (plus récent en premier).
  *
- * Permissions (Phase C) :
+ * Permissions :
  * - Voir / chercher / filtrer : tout le monde (connecté)
- * - Créer / modifier / supprimer : Gérants Police + Admin
+ * - Créer / modifier / supprimer : TOUS LES MEMBRES POLICE + Admin
+ *   (action opérationnelle, pas réservée aux Gérants)
  * ════════════════════════════════════════════════════════════════
  */
 
@@ -34,7 +35,7 @@ import {
 
 import { useFirebaseValue } from '@/hooks/useFirebaseValue';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
-import { RequireBranche } from '@/components/Require';
+import { RequireMembreBranche } from '@/components/Require';
 import { dbSet } from '@/lib/db';
 import { toast } from '@/lib/toast';
 import { Card } from '@/components/ui/Card';
@@ -70,8 +71,8 @@ export default function DossiersPage() {
   const [editingId, setEditingId] = useState<number | null>(null);
   const [form, setForm] = useState<Partial<Dossier>>({});
 
-  // Permission centralisée pour cette page
-  const canEdit = can.adminBranche('police');
+  // Permission : TOUS les membres Police (opérationnel)
+  const canEdit = can.membreBranche('police');
 
   // ─── Données normalisées ───
   const all = useMemo<Dossier[]>(() => {
@@ -209,11 +210,11 @@ export default function DossiersPage() {
         title="Dossiers criminels"
         subtitle="Registre officiel de la Police de Suna"
         actions={
-          <RequireBranche branche="police">
+          <RequireMembreBranche branche="police">
             <Button onClick={openCreate}>
               <Plus size={14} /> Ouvrir un dossier
             </Button>
-          </RequireBranche>
+          </RequireMembreBranche>
         }
       >
         {/* Stats hero */}
@@ -300,7 +301,7 @@ export default function DossiersPage() {
                       <Skull size={11} /> Défunt
                     </span>
                   )}
-                  <RequireBranche branche="police">
+                  <RequireMembreBranche branche="police">
                     <button
                       className={styles.deleteBtn}
                       onClick={(e) => {
@@ -311,7 +312,7 @@ export default function DossiersPage() {
                     >
                       <Trash2 size={13} />
                     </button>
-                  </RequireBranche>
+                  </RequireMembreBranche>
                 </div>
 
                 <div className={styles.body}>
