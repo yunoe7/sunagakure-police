@@ -155,8 +155,9 @@ export default function ImpotsPage() {
       };
       await dbSet(FB_PAIEMENTS, [...paiements, newPaiement]);
       toast.success(`Paiement enregistré : ${fmtMoney(montant)} ₽`);
-    } catch {
-      toast.error('Erreur');
+    } catch (err) {
+      console.error('[MARKPAID ERREUR]', err);
+      toast.error('Erreur MARKPAID : ' + String(err));
     }
   }
 
@@ -172,8 +173,9 @@ export default function ImpotsPage() {
     try {
       await dbSet(FB_PAIEMENTS, paiements.filter((x) => x.id !== p.id));
       toast.success('Paiement annulé');
-    } catch {
-      toast.error('Erreur');
+    } catch (err) {
+      console.error('[UNMARKPAID ERREUR]', err);
+      toast.error('Erreur UNMARKPAID : ' + String(err));
     }
   }
 
@@ -187,7 +189,10 @@ export default function ImpotsPage() {
     try {
       await dbSet(FB_PAIEMENTS, paiements.filter((x) => x.id !== p.id));
       toast.success('Supprimé');
-    } catch { toast.error('Erreur'); }
+    } catch (err) {
+      console.error('[DELETE PAIEMENT ERREUR]', err);
+      toast.error('Erreur DELETE : ' + String(err));
+    }
   }
 
   function openBareme() {
@@ -198,10 +203,15 @@ export default function ImpotsPage() {
   async function saveBareme() {
     try {
       const filtered = baremeForm.filter((g) => g.rang.trim() !== '');
+      console.log('[BAREME] Tentative de save :', filtered);
       await dbSet(FB_GRADES, filtered);
+      console.log('[BAREME] Save réussi !');
       toast.success('Barème enregistré');
       setShowBareme(false);
-    } catch { toast.error('Erreur'); }
+    } catch (err) {
+      console.error('[BAREME ERREUR DÉTAILLÉE]', err);
+      toast.error('Erreur BAREME : ' + String(err));
+    }
   }
 
   function addBaremeLine() {
