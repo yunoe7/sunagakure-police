@@ -22,11 +22,13 @@ import {
 } from 'lucide-react';
 
 import { useFirebaseValue } from '@/hooks/useFirebaseValue';
+import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { dbSet } from '@/lib/db';
 import { toast } from '@/lib/toast';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Modal } from '@/components/ui/Modal';
+import { RequireBranche } from '@/components/Require';
 import { confirmAction } from '@/components/ui/ConfirmDialog';
 import {
   type Medicament, type MedCategorie,
@@ -39,6 +41,9 @@ const FB_PATH = 'hospital_pharmacie';
 type CatFilter = 'all' | MedCategorie;
 
 export default function PharmaciePage() {
+  const { can } = useCurrentUser();
+  const canEdit = can.adminBranche('medecin');
+
   const { data, loading } = useFirebaseValue<Medicament[] | null>(FB_PATH);
 
   const [catFilter, setCatFilter] = useState<CatFilter>('all');
@@ -81,6 +86,7 @@ export default function PharmaciePage() {
     setShowForm(true);
   }
   function openEdit(m: Medicament) {
+    if (!canEdit) return;
     setEditingId(m.id); setForm(m); setShowForm(true);
   }
   function closeForm() {
@@ -149,7 +155,11 @@ export default function PharmaciePage() {
       <Card
         title="Pharmacie"
         subtitle="Stock de médicaments de l'Hôpital"
-        actions={<Button onClick={openCreate}><Plus size={14} /> Ajouter un produit</Button>}
+        actions={
+          <RequireBranche branche="medecin">
+            <Button onClick={openCreate}><Plus size={14} /> Ajouter un produit</Button>
+          </RequireBranche>
+        }
       >
         {/* Stats */}
         <div className={styles.statGrid}>
@@ -214,7 +224,7 @@ export default function PharmaciePage() {
                 <th>Stock</th>
                 <th>Prix</th>
                 <th>Fournisseur</th>
-                <th aria-label="actions" />
+                {canEdit && <th aria-label="actions" />}
               </tr>
             </thead>
             <tbody>
@@ -223,7 +233,10 @@ export default function PharmaciePage() {
                 const inAlerte = !inRupture && m.alerteSeuil && m.stock <= m.alerteSeuil;
                 return (
                   <tr key={m.id} className={inRupture ? styles.rowRupture : inAlerte ? styles.rowAlerte : ''}>
-                    <td onClick={() => openEdit(m)} style={{ cursor: 'pointer' }}>
+                    <td
+                      onClick={() => openEdit(m)}
+                      style={canEdit ? { cursor: 'pointer' } : { cursor: 'default' }}
+                    >
                       <strong>{m.nom}</strong>
                       {m.notes && <div className={styles.notes}>{m.notes}</div>}
                     </td>
@@ -232,35 +245,41 @@ export default function PharmaciePage() {
                     </td>
                     <td>
                       <div className={styles.stockControl}>
-                        <button
-                          className={styles.stockBtn}
-                          onClick={() => adjustStock(m, -1)}
-                          disabled={m.stock === 0}
-                        >
-                          <Minus size={11} />
-                        </button>
+                        {canEdit && (
+                          <button
+                            className={styles.stockBtn}
+                            onClick={() => adjustStock(m, -1)}
+                            disabled={m.stock === 0}
+                          >
+                            <Minus size={11} />
+                          </button>
+                        )}
                         <span className={`${styles.stockVal} ${inRupture ? styles.stockRupture : inAlerte ? styles.stockAlerte : ''}`}>
                           {m.stock}
                           {m.unite && <small> {m.unite}</small>}
                         </span>
-                        <button className={styles.stockBtn} onClick={() => adjustStock(m, +1)}>
-                          <Plus size={11} />
-                        </button>
+                        {canEdit && (
+                          <button className={styles.stockBtn} onClick={() => adjustStock(m, +1)}>
+                            <Plus size={11} />
+                          </button>
+                        )}
                       </div>
                     </td>
                     <td className={styles.mono}>
                       {m.prix ? `${fmtMoney(m.prix)} ₽` : '—'}
                     </td>
                     <td className={styles.muted}>{m.fournisseur || '—'}</td>
-                    <td>
-                      <button
-                        className={styles.deleteBtn}
-                        onClick={() => handleDelete(m)}
-                        aria-label="Supprimer"
-                      >
-                        <Trash2 size={13} />
-                      </button>
-                    </td>
+                    {canEdit && (
+                      <td>
+                        <button
+                          className={styles.deleteBtn}
+                          onClick={() => handleDelete(m)}
+                          aria-label="Supprimer"
+                        >
+                          <Trash2 size={13} />
+                        </button>
+                      </td>
+                    )}
                   </tr>
                 );
               })}
