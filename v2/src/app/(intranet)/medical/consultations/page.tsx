@@ -13,6 +13,7 @@ import { toast } from '@/lib/toast';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Modal } from '@/components/ui/Modal';
+import { RequireBranche } from '@/components/Require';
 import { confirmAction } from '@/components/ui/ConfirmDialog';
 import {
   type Consultation, type ConsultStatut,
@@ -25,7 +26,10 @@ const FB_PATH = 'hospital_consultations';
 type Tab = 'all' | ConsultStatut;
 
 export default function ConsultationsPage() {
-  const CURRENT_USER = useCurrentUser().displayName;
+  const { can, displayName } = useCurrentUser();
+  const canEdit = can.adminBranche('medecin');
+  const CURRENT_USER = displayName;
+
   const { data, loading } = useFirebaseValue<Consultation[] | null>(FB_PATH);
   const [tab, setTab] = useState<Tab>('prevue');
   const [search, setSearch] = useState('');
@@ -65,6 +69,7 @@ export default function ConsultationsPage() {
     setShowForm(true);
   }
   function openEdit(c: Consultation) {
+    if (!canEdit) return;
     setEditingId(c.id); setForm(c); setShowForm(true);
   }
   function closeForm() {
@@ -134,7 +139,11 @@ export default function ConsultationsPage() {
       <Card
         title="Consultations"
         subtitle="Hôpital de Sunagakure"
-        actions={<Button onClick={openCreate}><Plus size={14} /> Nouvelle consultation</Button>}
+        actions={
+          <RequireBranche branche="medecin">
+            <Button onClick={openCreate}><Plus size={14} /> Nouvelle consultation</Button>
+          </RequireBranche>
+        }
       >
         <div className={styles.tabs}>
           {(['prevue', 'encours', 'terminee', 'annulee', 'all'] as Tab[]).map((t) => (
@@ -185,16 +194,22 @@ export default function ConsultationsPage() {
                       )}
                     </span>
                   )}
-                  <button
-                    className={styles.deleteBtn}
-                    onClick={() => handleDelete(c)}
-                    aria-label="Supprimer"
-                  >
-                    <Trash2 size={13} />
-                  </button>
+                  {canEdit && (
+                    <button
+                      className={styles.deleteBtn}
+                      onClick={() => handleDelete(c)}
+                      aria-label="Supprimer"
+                    >
+                      <Trash2 size={13} />
+                    </button>
+                  )}
                 </div>
 
-                <div className={styles.consultBody} onClick={() => openEdit(c)}>
+                <div
+                  className={styles.consultBody}
+                  onClick={() => openEdit(c)}
+                  style={canEdit ? { cursor: 'pointer' } : { cursor: 'default' }}
+                >
                   <h3>{c.patient}</h3>
                   <p className={styles.motif}>{c.motif}</p>
                   <div className={styles.meta}>
@@ -203,7 +218,7 @@ export default function ConsultationsPage() {
                   </div>
                 </div>
 
-                {(c.statut === 'prevue' || c.statut === 'encours') && (
+                {canEdit && (c.statut === 'prevue' || c.statut === 'encours') && (
                   <div className={styles.actions}>
                     {c.statut === 'prevue' && (
                       <Button size="sm" onClick={() => setStatut(c, 'encours')}>
