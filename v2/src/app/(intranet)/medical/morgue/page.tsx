@@ -5,12 +5,9 @@
  *  Page MORGUE — Registre des défunts et autopsies
  * ════════════════════════════════════════════════════════════════
  *
- * Stockage Firebase : sunagakure/hospital_morgue (TABLEAU)
- *
- * Workflow : Autopsie en cours → Clos → Restitué à la famille
- * Données sensibles, à manipuler avec respect.
- *
- * ⚠️ Accessible aux Gérants Médecin OU Scientifique
+ * Permissions :
+ * - Voir : tout le monde (connecté)
+ * - Créer / modifier / supprimer : TOUS LES MEMBRES MÉDECIN OU SCIENTIFIQUE + Admin
  * ════════════════════════════════════════════════════════════════
  */
 
@@ -25,7 +22,7 @@ import { toast } from '@/lib/toast';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Modal } from '@/components/ui/Modal';
-import { RequireBranche } from '@/components/Require';
+import { RequireMembreBranche } from '@/components/Require';
 import { confirmAction } from '@/components/ui/ConfirmDialog';
 import { compressImage } from '@/lib/image';
 import {
@@ -43,7 +40,7 @@ const MORGUE_BRANCHES = ['medecin', 'scientifique'];
 
 export default function MorguePage() {
   const { can, displayName } = useCurrentUser();
-  const canEdit = can.adminBranche(MORGUE_BRANCHES);
+  const canEdit = can.membreBranche(MORGUE_BRANCHES);
   const CURRENT_USER = displayName;
 
   const { data, loading } = useFirebaseValue<Defunt[] | null>(FB_PATH);
@@ -171,9 +168,9 @@ export default function MorguePage() {
         title="Morgue"
         subtitle="Registre des défunts et autopsies — données confidentielles"
         actions={
-          <RequireBranche branche={MORGUE_BRANCHES}>
+          <RequireMembreBranche branche={MORGUE_BRANCHES}>
             <Button onClick={openCreate}><Plus size={14} /> Nouveau défunt</Button>
-          </RequireBranche>
+          </RequireMembreBranche>
         }
       >
         <div className={styles.tabs}>
