@@ -2,19 +2,27 @@
 
 /**
  * ════════════════════════════════════════════════════════════════
- *  Page ÉQUIPES — Groupes opérationnels
+ *  Page ÉQUIPES — Groupes opérationnels (Refonte UX)
  * ════════════════════════════════════════════════════════════════
  *
- * Stockage Firebase : sunagakure/equipes (TABLEAU)
+ * ✨ Carte d'équipe orientée "VISUEL MEMBRES" :
+ *   - Emblème + nom + nb membres en header
+ *   - Liseré coloré (couleur perso)
+ *   - Avatars des membres en GROS (focus visuel)
+ *   - Chef en bas, discret, juste un badge couronne
  *
- * Une équipe est composée d'un chef et de membres, tous référencés
- * par leur id depuis le recensement. On affiche emblèmes, descriptions,
- * et listes de membres avec leurs photos.
+ * 📝 Modale d'édition en 2 colonnes :
+ *   - Gauche : nom + emblème (picker + image) + couleur + description
+ *   - Droite : composition (checkbox + chef avec couronne)
  * ════════════════════════════════════════════════════════════════
  */
 
 import { useMemo, useState } from 'react';
-import { Plus, Trash2, Save, Search, Users, Shield, Crown, X } from 'lucide-react';
+import {
+  Plus, Trash2, Save, Search, Users, Crown,
+  Shield, Sword, Flame, Zap, Droplet, Wind,
+  Star, Skull, Target, Eye, Mountain, Sparkles, Camera,
+} from 'lucide-react';
 import { useFirebaseValue } from '@/hooks/useFirebaseValue';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { dbSet } from '@/lib/db';
@@ -23,12 +31,51 @@ import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Modal } from '@/components/ui/Modal';
 import { confirmAction } from '@/components/ui/ConfirmDialog';
+import { compressImage } from '@/lib/image';
 import type { Equipe } from '@/types/rh';
 import type { Recense } from '@/types/recense';
 
 import styles from './page.module.css';
 
 const FB_PATH = 'equipes';
+
+// ─── EMBLÈMES disponibles (Lucide icons) ───
+const EMBLEMS = [
+  { key: 'shield', Icon: Shield, label: 'Bouclier' },
+  { key: 'sword', Icon: Sword, label: 'Épée' },
+  { key: 'flame', Icon: Flame, label: 'Feu' },
+  { key: 'zap', Icon: Zap, label: 'Foudre' },
+  { key: 'droplet', Icon: Droplet, label: 'Eau' },
+  { key: 'wind', Icon: Wind, label: 'Vent' },
+  { key: 'mountain', Icon: Mountain, label: 'Terre' },
+  { key: 'star', Icon: Star, label: 'Étoile' },
+  { key: 'skull', Icon: Skull, label: 'Crâne' },
+  { key: 'target', Icon: Target, label: 'Cible' },
+  { key: 'eye', Icon: Eye, label: 'Œil' },
+  { key: 'sparkles', Icon: Sparkles, label: 'Magie' },
+] as const;
+
+// ─── COULEURS d'équipe ───
+const COLORS = [
+  { key: 'gold', label: 'Or', hex: '#d4ac0d' },
+  { key: 'red', label: 'Rouge', hex: '#ef4444' },
+  { key: 'blue', label: 'Bleu', hex: '#3b82f6' },
+  { key: 'purple', label: 'Violet', hex: '#a855f7' },
+  { key: 'green', label: 'Vert', hex: '#22c55e' },
+  { key: 'orange', label: 'Orange', hex: '#f59e0b' },
+  { key: 'cyan', label: 'Cyan', hex: '#06b6d4' },
+  { key: 'pink', label: 'Rose', hex: '#ec4899' },
+] as const;
+
+function getEmblemIcon(key?: string) {
+  const found = EMBLEMS.find((e) => e.key === key);
+  return found?.Icon ?? Shield;
+}
+
+function getColorHex(key?: string): string {
+  return COLORS.find((c) => c.key === key)?.hex ?? COLORS[0].hex;
+}
+
 export default function EquipesPage() {
   const CURRENT_USER = useCurrentUser().displayName;
   const { data, loading } = useFirebaseValue<Equipe[] | null>(FB_PATH);
@@ -54,7 +101,6 @@ export default function EquipesPage() {
     [recensesData]
   );
 
-  // Map id → recensé pour résoudre rapidement
   const recensesById = useMemo(() => {
     const m = new Map<number, Recense>();
     for (const r of recenses) m.set(r.id, r);
@@ -72,24 +118,34 @@ export default function EquipesPage() {
 
   function openCreate() {
     setEditingId(null);
-    setForm({ membres: [], emblem: '🛡️' });
+    setForm({ membres: [], emblem: 'shield', color: 'gold' });
     setMemberSearch('');
     setShowForm(true);
   }
+
   function openEdit(e: Equipe) {
     setEditingId(e.id);
     setForm({ ...e, membres: e.membres || [] });
     setMemberSearch('');
     setShowForm(true);
   }
+
   function closeForm() {
-    setShowForm(false); setEditingId(null); setForm({}); setMemberSearch('');
+    setShowForm(false);
+    setEditingId(null);
+    setForm({});
+    setMemberSearch('');
   }
 
   function toggleMember(id: number) {
     const current = form.membres || [];
     if (current.includes(id)) {
-      setForm({ ...form, membres: current.filter((x) => x !== id) });
+      // Si on retire le chef, on le démet aussi
+      setForm({
+        ...form,
+        membres: current.filter((x) => x !== id),
+        chefId: form.chefId === id ? undefined : form.chefId,
+      });
     } else {
       setForm({ ...form, membres: [...current, id] });
     }
@@ -101,15 +157,27 @@ export default function EquipesPage() {
     setForm({ ...form, chefId: id, membres });
   }
 
+  async function handleEmblemImageUpload(file: File) {
+    if (!file.type.startsWith('image/')) {
+      toast.error("Ce n'est pas une image");
+      return;
+    }
+    try {
+      const dataUrl = await compressImage(file, 200, 0.8);
+      setForm({ ...form, emblemImg: dataUrl });
+    } catch {
+      toast.error("Impossible de charger l'image");
+    }
+  }
+
   async function handleSave() {
     if (!form.nom?.trim()) { toast.error('Le nom est obligatoire'); return; }
-    if (!form.chefId) { toast.error('Sélectionne un chef d\'équipe'); return; }
+    if (!form.chefId) { toast.error("Sélectionne un chef d'équipe"); return; }
     try {
       const list = [...all];
       const now = Date.now();
-      const membres = form.membres && form.membres.length > 0 ? form.membres : [form.chefId];
-      // Assurer que le chef est dans les membres
-      if (!membres.includes(form.chefId)) membres.unshift(form.chefId);
+      let membres = form.membres && form.membres.length > 0 ? form.membres : [form.chefId];
+      if (!membres.includes(form.chefId)) membres = [form.chefId, ...membres];
 
       if (editingId) {
         const idx = list.findIndex((e) => e.id === editingId);
@@ -117,7 +185,9 @@ export default function EquipesPage() {
         list[idx] = {
           ...list[idx],
           nom: form.nom!.trim(),
-          emblem: form.emblem || '🛡️',
+          emblem: form.emblem || 'shield',
+          emblemImg: form.emblemImg || undefined,
+          color: form.color || 'gold',
           chefId: form.chefId,
           membres,
           desc: form.desc?.trim() || undefined,
@@ -128,7 +198,9 @@ export default function EquipesPage() {
         list.push({
           id: now,
           nom: form.nom!.trim(),
-          emblem: form.emblem || '🛡️',
+          emblem: form.emblem || 'shield',
+          emblemImg: form.emblemImg || undefined,
+          color: form.color || 'gold',
           chefId: form.chefId,
           membres,
           desc: form.desc?.trim() || undefined,
@@ -139,21 +211,28 @@ export default function EquipesPage() {
       await dbSet(FB_PATH, list);
       toast.success(editingId ? 'Équipe mise à jour' : 'Équipe créée');
       closeForm();
-    } catch (err) { console.error(err); toast.error('Erreur'); }
+    } catch (err) {
+      console.error(err);
+      toast.error('Erreur');
+    }
   }
 
   async function handleDelete(e: Equipe) {
     const ok = await confirmAction({
-      title: 'Supprimer l\'équipe',
+      title: "Supprimer l'équipe",
       message: `Supprimer définitivement l'équipe "${e.nom}" ?`,
-      confirmLabel: 'Supprimer', variant: 'danger',
+      confirmLabel: 'Supprimer',
+      variant: 'danger',
     });
     if (!ok) return;
-    try { await dbSet(FB_PATH, all.filter((x) => x.id !== e.id)); toast.success('Supprimée'); }
-    catch { toast.error('Erreur'); }
+    try {
+      await dbSet(FB_PATH, all.filter((x) => x.id !== e.id));
+      toast.success('Supprimée');
+    } catch {
+      toast.error('Erreur');
+    }
   }
 
-  // Recensés visibles pour la sélection des membres (avec recherche)
   const filteredRecenses = useMemo(() => {
     const q = memberSearch.trim().toLowerCase();
     if (!q) return recenses;
@@ -176,8 +255,8 @@ export default function EquipesPage() {
             <input type="text" placeholder="Nom d'équipe…"
               value={search} onChange={(e) => setSearch(e.target.value)} />
           </div>
-          <div className={styles.totalChip}>
-            {all.length} équipe{all.length > 1 ? 's' : ''}
+          <div className={styles.countBadge}>
+            <Users size={11} /> {all.length} équipe{all.length > 1 ? 's' : ''}
           </div>
         </div>
 
@@ -191,63 +270,82 @@ export default function EquipesPage() {
             <div className={styles.grid}>
               {visible.map((eq) => {
                 const chef = eq.chefId ? recensesById.get(eq.chefId) : null;
-                const membres = (eq.membres || [])
-                  .filter((id) => id !== eq.chefId)
+                const allMembres = (eq.membres || [])
                   .map((id) => recensesById.get(id))
                   .filter((r): r is Recense => !!r);
+                const EmblemIcon = getEmblemIcon(eq.emblem);
+                const colorHex = getColorHex(eq.color);
+
                 return (
-                  <article key={eq.id} className={styles.team} onClick={() => openEdit(eq)}>
+                  <article
+                    key={eq.id}
+                    className={styles.team}
+                    onClick={() => openEdit(eq)}
+                    style={{ '--team-color': colorHex } as React.CSSProperties}
+                  >
+                    {/* Header : emblème + nom + compteur */}
                     <div className={styles.teamHeader}>
-                      <span className={styles.emblem}>{eq.emblem || '🛡️'}</span>
+                      <div className={styles.emblem}>
+                        {eq.emblemImg ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img src={eq.emblemImg} alt={eq.nom} className={styles.emblemImg} />
+                        ) : (
+                          <EmblemIcon size={22} />
+                        )}
+                      </div>
                       <div className={styles.teamInfo}>
                         <h3>{eq.nom}</h3>
                         {eq.desc && <p>{eq.desc}</p>}
                       </div>
-                      <button
-                        className={styles.deleteBtn}
-                        onClick={(ev) => { ev.stopPropagation(); handleDelete(eq); }}
-                        aria-label="Supprimer"
-                      ><Trash2 size={13} /></button>
+                      <div className={styles.teamMeta}>
+                        <span className={styles.memberCount}>{allMembres.length}</span>
+                        <button
+                          className={styles.deleteBtn}
+                          onClick={(ev) => { ev.stopPropagation(); handleDelete(eq); }}
+                          aria-label="Supprimer"
+                        ><Trash2 size={12} /></button>
+                      </div>
                     </div>
 
-                    {chef && (
-                      <div className={styles.chef}>
-                        <Crown size={12} />
-                        {chef.photo ? (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img src={chef.photo} alt={chef.nom} className={styles.chefPhoto} />
-                        ) : (
-                          <div className={styles.chefPlaceholder}>{(chef.prenom?.[0] || '?').toUpperCase()}</div>
-                        )}
-                        <div>
-                          <div className={styles.chefName}>{chef.prenom} {chef.nom}</div>
-                          <div className={styles.chefLabel}>Chef d&apos;équipe</div>
-                        </div>
-                      </div>
-                    )}
-
-                    {membres.length > 0 && (
-                      <div className={styles.membres}>
-                        <div className={styles.membresLabel}>
-                          {membres.length} membre{membres.length > 1 ? 's' : ''}
-                        </div>
-                        <div className={styles.membresPhotos}>
-                          {membres.slice(0, 8).map((m) => (
-                            <div key={m.id} className={styles.memberSlot} title={`${m.prenom} ${m.nom}`}>
+                    {/* AVATARS DES MEMBRES — focus visuel */}
+                    {allMembres.length > 0 && (
+                      <div className={styles.avatarStack}>
+                        {allMembres.slice(0, 10).map((m) => {
+                          const isChef = m.id === eq.chefId;
+                          return (
+                            <div
+                              key={m.id}
+                              className={`${styles.avatar} ${isChef ? styles.avatarChef : ''}`}
+                              title={`${m.prenom} ${m.nom}${isChef ? ' (Chef)' : ''}`}
+                            >
                               {m.photo ? (
                                 // eslint-disable-next-line @next/next/no-img-element
                                 <img src={m.photo} alt={m.nom} />
                               ) : (
-                                <div className={styles.memberPlaceholder}>
+                                <div className={styles.avatarPh}>
                                   {(m.prenom?.[0] || '?').toUpperCase()}
                                 </div>
                               )}
+                              {isChef && (
+                                <div className={styles.crownBadge}>
+                                  <Crown size={10} />
+                                </div>
+                              )}
                             </div>
-                          ))}
-                          {membres.length > 8 && (
-                            <div className={styles.membreMore}>+{membres.length - 8}</div>
-                          )}
-                        </div>
+                          );
+                        })}
+                        {allMembres.length > 10 && (
+                          <div className={styles.avatarMore}>+{allMembres.length - 10}</div>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Chef discret en bas */}
+                    {chef && (
+                      <div className={styles.chefRow}>
+                        <Crown size={11} />
+                        <span className={styles.chefLabel}>Dirigé par</span>
+                        <span className={styles.chefName}>{chef.prenom} {chef.nom}</span>
                       </div>
                     )}
                   </article>
@@ -257,9 +355,9 @@ export default function EquipesPage() {
           )}
       </Card>
 
-      {/* Form */}
+      {/* ═══ MODALE D'ÉDITION ═══ */}
       <Modal open={showForm} onClose={closeForm}
-        title={editingId ? 'Modifier l\'équipe' : 'Créer une équipe'} size="lg"
+        title={editingId ? "Modifier l'équipe" : 'Créer une équipe'} size="lg"
         footer={
           <>
             <Button variant="outline" onClick={closeForm}>Annuler</Button>
@@ -267,89 +365,186 @@ export default function EquipesPage() {
           </>
         }
       >
-        <div className={styles.formFields}>
-          <div className={styles.row}>
-            <label>Nom de l&apos;équipe *
-              <input type="text" value={form.nom ?? ''}
-                onChange={(e) => setForm({ ...form, nom: e.target.value })} autoFocus
-                placeholder="Ex: Escouade des Sables" />
-            </label>
-            <label>Emblème
-              <input type="text" maxLength={4} value={form.emblem ?? ''}
-                onChange={(e) => setForm({ ...form, emblem: e.target.value })}
-                placeholder="🛡️ ⚔️ 🐍 ..." style={{ fontSize: 20, textAlign: 'center' }} />
-            </label>
-          </div>
+        <div className={styles.formGrid}>
+          {/* ─── COLONNE GAUCHE : INFOS ─── */}
+          <div className={styles.formCol}>
+            <div className={styles.formSection}>
+              <h4 className={styles.sectionTitle}>Informations</h4>
+              <label className={styles.field}>
+                <span className={styles.fieldLabel}>Nom de l&apos;équipe *</span>
+                <input
+                  type="text"
+                  value={form.nom ?? ''}
+                  onChange={(e) => setForm({ ...form, nom: e.target.value })}
+                  autoFocus
+                  placeholder="Ex: Escouade des Sables"
+                />
+              </label>
 
-          <label>Description
-            <textarea rows={2} value={form.desc ?? ''}
-              onChange={(e) => setForm({ ...form, desc: e.target.value })}
-              placeholder="Rôle et missions de l'équipe..." />
-          </label>
-
-          <div className={styles.memberPicker}>
-            <div className={styles.pickerHeader}>
-              <span className={styles.pickerLabel}>
-                <Shield size={11} /> Composition de l&apos;équipe ({(form.membres || []).length} membre{(form.membres || []).length > 1 ? 's' : ''})
-              </span>
-              <input type="text" placeholder="Rechercher un membre..."
-                value={memberSearch}
-                onChange={(e) => setMemberSearch(e.target.value)}
-                className={styles.pickerSearch} />
+              <label className={styles.field}>
+                <span className={styles.fieldLabel}>Description</span>
+                <textarea
+                  rows={3}
+                  value={form.desc ?? ''}
+                  onChange={(e) => setForm({ ...form, desc: e.target.value })}
+                  placeholder="Rôle et missions de l'équipe..."
+                />
+              </label>
             </div>
 
-            {recenses.length === 0 ? (
-              <div className={styles.pickerEmpty}>
-                Aucun recensé. Ajoute des personnes dans /recensement d&apos;abord.
+            <div className={styles.formSection}>
+              <h4 className={styles.sectionTitle}>Couleur</h4>
+              <div className={styles.colorGrid}>
+                {COLORS.map((c) => (
+                  <button
+                    key={c.key}
+                    type="button"
+                    className={`${styles.colorBtn} ${form.color === c.key ? styles.colorBtnOn : ''}`}
+                    style={{ background: c.hex }}
+                    onClick={() => setForm({ ...form, color: c.key })}
+                    title={c.label}
+                    aria-label={c.label}
+                  />
+                ))}
               </div>
-            ) : (
-              <div className={styles.pickerList}>
-                {filteredRecenses.slice(0, 50).map((r) => {
-                  const isMember = (form.membres || []).includes(r.id);
-                  const isChef = form.chefId === r.id;
-                  return (
-                    <div
-                      key={r.id}
-                      className={`${styles.pickerItem} ${isMember ? styles.pickerItemOn : ''} ${isChef ? styles.pickerItemChef : ''}`}
-                    >
-                      <label className={styles.pickerCheck}>
+            </div>
+
+            <div className={styles.formSection}>
+              <h4 className={styles.sectionTitle}>Emblème</h4>
+
+              {/* Si une image custom est uploadée, on l'affiche en gros */}
+              {form.emblemImg ? (
+                <div className={styles.emblemImgPreview}>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={form.emblemImg} alt="Emblème" />
+                  <button
+                    type="button"
+                    className={styles.removeEmblem}
+                    onClick={() => setForm({ ...form, emblemImg: undefined })}
+                  >
+                    <Trash2 size={11} /> Retirer
+                  </button>
+                </div>
+              ) : (
+                <div className={styles.emblemGrid}>
+                  {EMBLEMS.map((e) => {
+                    const Icon = e.Icon;
+                    const isOn = form.emblem === e.key;
+                    return (
+                      <button
+                        key={e.key}
+                        type="button"
+                        className={`${styles.emblemBtn} ${isOn ? styles.emblemBtnOn : ''}`}
+                        onClick={() => setForm({ ...form, emblem: e.key })}
+                        title={e.label}
+                      >
+                        <Icon size={20} />
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+
+              {/* Bouton upload image custom */}
+              <label className={styles.uploadEmblem}>
+                <Camera size={12} /> {form.emblemImg ? 'Changer l\'image' : 'Ou utiliser une image'}
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => {
+                    const f = e.target.files?.[0];
+                    if (f) handleEmblemImageUpload(f);
+                  }}
+                />
+              </label>
+            </div>
+          </div>
+
+          {/* ─── COLONNE DROITE : COMPOSITION ─── */}
+          <div className={styles.formCol}>
+            <div className={styles.formSection}>
+              <h4 className={styles.sectionTitle}>
+                Composition ({(form.membres || []).length} membre{(form.membres || []).length > 1 ? 's' : ''})
+              </h4>
+
+              <div className={styles.pickerSearchBox}>
+                <Search size={12} />
+                <input
+                  type="text"
+                  placeholder="Rechercher un membre..."
+                  value={memberSearch}
+                  onChange={(e) => setMemberSearch(e.target.value)}
+                />
+              </div>
+
+              <p className={styles.pickerHint}>
+                Coche pour ajouter à l&apos;équipe · Clique 👑 pour définir le chef
+              </p>
+
+              {recenses.length === 0 ? (
+                <div className={styles.pickerEmpty}>
+                  Aucun recensé. Ajoute des personnes dans /recensement d&apos;abord.
+                </div>
+              ) : (
+                <div className={styles.pickerList}>
+                  {filteredRecenses.slice(0, 50).map((r) => {
+                    const isMember = (form.membres || []).includes(r.id);
+                    const isChef = form.chefId === r.id;
+                    return (
+                      <div
+                        key={r.id}
+                        className={`${styles.pickerItem} ${isMember ? styles.pickerItemOn : ''} ${isChef ? styles.pickerItemChef : ''}`}
+                      >
                         <input
                           type="checkbox"
                           checked={isMember}
                           onChange={() => toggleMember(r.id)}
-                          disabled={isChef}
+                          className={styles.pickerCheckbox}
+                          id={`m-${r.id}`}
                         />
-                        {r.photo ? (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img src={r.photo} alt={r.nom} className={styles.pickerPhoto} />
-                        ) : (
-                          <div className={styles.pickerPhotoPh}>{(r.prenom?.[0] || '?').toUpperCase()}</div>
-                        )}
-                        <div className={styles.pickerInfo}>
-                          <div className={styles.pickerName}>{r.prenom} {r.nom}</div>
-                          <div className={styles.pickerMeta}>
-                            {r.rang || 'Sans rang'}{r.faction ? ' · ' + r.faction : ''}
+                        <label htmlFor={`m-${r.id}`} className={styles.pickerLabel}>
+                          {r.photo ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img src={r.photo} alt={r.nom} className={styles.pickerPhoto} />
+                          ) : (
+                            <div className={styles.pickerPhotoPh}>{(r.prenom?.[0] || '?').toUpperCase()}</div>
+                          )}
+                          <div className={styles.pickerInfo}>
+                            <div className={styles.pickerName}>{r.prenom} {r.nom}</div>
+                            <div className={styles.pickerMeta}>
+                              {r.rang || 'Sans rang'}{r.faction ? ' · ' + r.faction : ''}
+                            </div>
                           </div>
-                        </div>
-                      </label>
-                      <button
-                        type="button"
-                        className={`${styles.chefBtn} ${isChef ? styles.chefBtnOn : ''}`}
-                        onClick={() => setChef(r.id)}
-                      >
-                        <Crown size={11} />
-                        {isChef ? 'Chef' : 'Définir chef'}
-                      </button>
+                        </label>
+
+                        {/* CHEF : badge non-cliquable OU bouton promouvoir */}
+                        {isMember && (
+                          isChef ? (
+                            <div className={styles.chefBadge}>
+                              <Crown size={11} /> CHEF
+                            </div>
+                          ) : (
+                            <button
+                              type="button"
+                              className={styles.promoteBtn}
+                              onClick={() => setChef(r.id)}
+                              title="Définir comme chef"
+                            >
+                              <Crown size={11} />
+                            </button>
+                          )
+                        )}
+                      </div>
+                    );
+                  })}
+                  {filteredRecenses.length > 50 && (
+                    <div className={styles.pickerMore}>
+                      + {filteredRecenses.length - 50} autres. Précise ta recherche.
                     </div>
-                  );
-                })}
-                {filteredRecenses.length > 50 && (
-                  <div className={styles.pickerMore}>
-                    + {filteredRecenses.length - 50} autres. Précise ta recherche.
-                  </div>
-                )}
-              </div>
-            )}
+                  )}
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </Modal>
