@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import {
   Users,
@@ -33,7 +33,6 @@ const CITATIONS = [
 ];
 
 function pickCitation(): string {
-  // Change selon le jour pour pas avoir la même tout le temps
   const dayOfYear = Math.floor(
     (Date.now() - new Date(new Date().getFullYear(), 0, 0).getTime()) / 86400000
   );
@@ -47,12 +46,105 @@ function getSalutation(h: number): string {
   return 'Bonsoir';
 }
 
+// ─── Types légers pour les compteurs ───────────────────────────────
+type MemberEntry = {
+  firstLogin?: number;
+  lastLogin?: number;
+};
+
+type MissionEntry = {
+  id?: number;
+  statut?: string;
+};
+
+type PlainteEntry = {
+  id?: number;
+  statut?: string;
+  date?: number;
+};
+
+// ─── Helpers de calcul de bornes temporelles ──────────────────────
+function startOfDayMs(): number {
+  const d = new Date();
+  d.setHours(0, 0, 0, 0);
+  return d.getTime();
+}
+function startOfWeekMs(): number {
+  // Lundi 00:00 (norme française)
+  const d = new Date();
+  d.setHours(0, 0, 0, 0);
+  const day = d.getDay(); // 0 = dimanche
+  const diff = day === 0 ? 6 : day - 1;
+  d.setDate(d.getDate() - diff);
+  return d.getTime();
+}
+
 export default function DashboardPage() {
-  const { data: patients } = useFirebaseValue<Record<string, Patient>>('medical/patients');
   const u = useCurrentUser();
 
-  // Tout ce qui dépend du temps est calculé UNIQUEMENT côté client
-  // pour éviter les erreurs d'hydratation (React error #418).
+  // ─── Données Firebase ───
+  const { data: patients } = useFirebaseValue<Record<string, Patient> | null>('medical/patients');
+  const { data: members } = useFirebaseValue<Record<string, MemberEntry> | null>('/members'); // racine, pas sunagakure/
+  const { data: missionsData } = useFirebaseValue<MissionEntry[] | Record<string, MissionEntry> | null>('missions');
+  const { data: plaintesData } = useFirebaseValue<PlainteEntry[] | Record<string, PlainteEntry> | null>('plaintes');
+
+  // ─── Stats Effectifs ───
+  const effStats = useMemo(() => {
+    if (!members) return { total: 0, today: 0, week: 0 };
+    const list = Object.values(members).filter((m): m is MemberEntry => m !== null && typeof m === 'object');
+    const today0 = startOfDayMs();
+    const week0 = startOfWeekMs();
+    const total = list.length;
+    const today = list.filter((m) => (m.lastLogin ?? 0) >= today0).length;
+    const week = list.filter((m) => (m.lastLogin ?? 0) >= week0 || (m.firstLogin ?? 0) >= week0).length;
+    return { total, today, week };
+  }, [members]);
+
+  // ─── Stats Patients ───
+  const patStats = useMemo(() => {
+    if (!patients) return { total: 0 };
+    const list = Object.values(patients).filter((p) => p !== null && typeof p === 'object');
+    return { total: list.length };
+  }, [patients]);
+
+  // ─── Stats Missions ───
+  const missionStats = useMemo(() => {
+    const list = (Array.isArray(missionsData)
+      ? missionsData
+      : missionsData
+      ? Object.values(missionsData)
+      : []
+    ).filter((m): m is MissionEntry => m !== null && typeof m === 'object');
+    const statusOf = (s?: string) => (s ?? '').toLowerCase();
+    const enCours = list.filter((m) =>
+      ['acceptee', 'acceptée', 'en_cours', 'en-cours', 'encours'].includes(statusOf(m.statut))
+    ).length;
+    const dispo = list.filter((m) =>
+      ['disponible', 'ouverte', 'a_prendre', 'à_prendre'].includes(statusOf(m.statut))
+    ).length;
+    const terminees = list.filter((m) =>
+      ['terminee', 'terminée', 'reussie', 'réussie', 'completed'].includes(statusOf(m.statut))
+    ).length;
+    return { enCours, dispo, terminees, total: list.length };
+  }, [missionsData]);
+
+  // ─── Stats Plaintes ───
+  const plaintesStats = useMemo(() => {
+    const list = (Array.isArray(plaintesData)
+      ? plaintesData
+      : plaintesData
+      ? Object.values(plaintesData)
+      : []
+    ).filter((p): p is PlainteEntry => p !== null && typeof p === 'object');
+    const statusOf = (s?: string) => (s ?? '').toLowerCase();
+    const week0 = startOfWeekMs();
+    const ouvertes = list.filter((p) => ['ouverte', 'en_cours', 'a_traiter'].includes(statusOf(p.statut))).length;
+    const nouvelles = list.filter((p) => (p.date ?? 0) >= week0).length;
+    const closes = list.filter((p) => ['fermee', 'fermée', 'classee', 'classée', 'close'].includes(statusOf(p.statut))).length;
+    return { ouvertes, nouvelles, closes };
+  }, [plaintesData]);
+
+  // ─── Time-aware (client only) ───
   const [now, setNow] = useState<Date | null>(null);
   const [citation, setCitation] = useState<string>('');
   const [salutation, setSalutation] = useState<string>('');
@@ -67,46 +159,62 @@ export default function DashboardPage() {
     return () => clearInterval(t);
   }, []);
 
-  // Stats principales
+  // ─── Stats principales (4 cards) ───
+  // ⚠️ href = '#' pour ne PAS naviguer (juste lecture)
+  // ⚠️ on garde le Link mais on bloque la nav via onClick preventDefault
   const stats = [
     {
       label: 'Patients',
-      value: patients ? Object.keys(patients).length : 0,
+      value: patStats.total,
       hint: 'Total enregistrés',
-      href: '/medical/patients',
+      subhint: '',
       Icon: Users,
-      tone: 'gold',
+      tone: 'gold' as const,
+      href: '/medical/patients',
     },
     {
       label: 'Missions actives',
-      value: '—',
-      hint: 'À connecter',
-      href: '/missions',
+      value: missionStats.enCours,
+      hint: 'En cours',
+      subhint:
+        missionStats.dispo > 0 || missionStats.terminees > 0
+          ? `${missionStats.dispo} dispo · ${missionStats.terminees} finies`
+          : '',
       Icon: Swords,
-      tone: 'red',
+      tone: 'red' as const,
+      href: '/missions',
     },
     {
       label: 'Plaintes ouvertes',
-      value: '—',
-      hint: 'À connecter',
-      href: '/plaintes',
+      value: plaintesStats.ouvertes,
+      hint: 'À traiter',
+      subhint:
+        plaintesStats.nouvelles > 0 || plaintesStats.closes > 0
+          ? `${plaintesStats.nouvelles} cette semaine · ${plaintesStats.closes} closes`
+          : '',
       Icon: FileWarning,
-      tone: 'amber',
+      tone: 'amber' as const,
+      href: '/plaintes',
     },
     {
       label: 'Effectifs',
-      value: '—',
-      hint: 'À connecter',
-      href: '/effectifs',
+      value: effStats.total,
+      hint: 'Inscrits',
+      subhint:
+        effStats.total > 0
+          ? `${effStats.today} aujourd'hui · ${effStats.week} cette semaine`
+          : '',
       Icon: ShieldCheck,
-      tone: 'blue',
+      tone: 'blue' as const,
+      // pas de href → card non-cliquable
+      href: null,
     },
-  ] as const;
+  ];
 
-  // Actions rapides — sélection intelligente selon la branche
+  // Actions rapides
   const quickActions = pickQuickActions(u.user?.branches.map((b) => b.slug) ?? []);
 
-  // Sous-titre du hero : "Tokubetsu Jonin · Police · Sabaku"
+  // Sous-titre hero
   const heroSubtitleParts: string[] = [];
   if (u.user?.rang?.nom) heroSubtitleParts.push(u.user.rang.nom);
   if (u.user?.branches[0]) heroSubtitleParts.push(u.user.branches[0].nom);
@@ -153,22 +261,44 @@ export default function DashboardPage() {
 
       {/* ═══ STATS ═══ */}
       <section className={styles.statsGrid}>
-        {stats.map((s) => (
-          <Link
-            key={s.label}
-            href={s.href}
-            className={`${styles.stat} ${styles[`tone-${s.tone}`]}`}
-          >
-            <div className={styles.statHeader}>
-              <div className={styles.statIcon}>
-                <s.Icon size={18} />
+        {stats.map((s) => {
+          const content = (
+            <>
+              <div className={styles.statHeader}>
+                <div className={styles.statIcon}>
+                  <s.Icon size={18} />
+                </div>
+                <div className={styles.statLabel}>{s.label}</div>
               </div>
-              <div className={styles.statLabel}>{s.label}</div>
+              <div className={styles.statValue}>{s.value}</div>
+              <div className={styles.statHint}>{s.hint}</div>
+              {s.subhint && (
+                <div className={styles.statSubhint}>{s.subhint}</div>
+              )}
+            </>
+          );
+
+          // Card cliquable (avec href) ou statique (sans href)
+          if (s.href) {
+            return (
+              <Link
+                key={s.label}
+                href={s.href}
+                className={`${styles.stat} ${styles[`tone-${s.tone}`]}`}
+              >
+                {content}
+              </Link>
+            );
+          }
+          return (
+            <div
+              key={s.label}
+              className={`${styles.stat} ${styles[`tone-${s.tone}`]} ${styles.statStatic}`}
+            >
+              {content}
             </div>
-            <div className={styles.statValue}>{s.value}</div>
-            <div className={styles.statHint}>{s.hint}</div>
-          </Link>
-        ))}
+          );
+        })}
       </section>
 
       {/* ═══ ACTIONS RAPIDES ═══ */}
@@ -199,7 +329,7 @@ type QuickAction = {
   hint: string;
   href: string;
   Icon: typeof Folder;
-  priority: number; // plus haut = plus prioritaire
+  priority: number;
 };
 
 const ALL_ACTIONS: QuickAction[] = [
@@ -211,14 +341,9 @@ const ALL_ACTIONS: QuickAction[] = [
   { label: 'Recensement', hint: 'Registre', href: '/recensement', Icon: ScrollText, priority: 3 },
 ];
 
-/**
- * Sélectionne 4 actions rapides selon les branches de l'utilisateur.
- * Pondère pour mettre les actions de SA branche en premier.
- */
 function pickQuickActions(userBranches: string[]): QuickAction[] {
   const scored = ALL_ACTIONS.map((a) => {
     let score = a.priority;
-    // Bonus si l'action est dans la branche de l'utilisateur
     const isPolice = a.href.includes('dossier') || a.href.includes('operation') || a.href.includes('sanction');
     const isJustice = a.href.includes('plainte') || a.href.includes('tribunal');
     const isMedical = a.href.includes('medical');
