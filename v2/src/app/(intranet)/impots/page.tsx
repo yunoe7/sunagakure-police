@@ -5,16 +5,9 @@
  *  Page IMPÔTS — Registre fiscal de Sunagakure
  * ════════════════════════════════════════════════════════════════
  *
- * Stockage Firebase :
- *   sunagakure/impots/grades    (barème par rang)
- *   sunagakure/impots/ninjas    (registre des contribuables)
- *   sunagakure/impots/paiements (historique paiements)
- *
- * Features :
- *   - Tableau du barème par rang (éditable)
- *   - Liste des contribuables avec statut payé/impayé
- *   - Bouton "Marquer payé" qui crée un paiement
- *   - Historique des paiements de la semaine
+ * Permissions :
+ * - Voir : tout le monde (connecté)
+ * - Marquer payé / annuler / config barème : TOUS LES MEMBRES POLICE + Admin
  * ════════════════════════════════════════════════════════════════
  */
 
@@ -30,6 +23,7 @@ import { toast } from '@/lib/toast';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Modal } from '@/components/ui/Modal';
+import { RequireMembreBranche } from '@/components/Require';
 import { confirmAction } from '@/components/ui/ConfirmDialog';
 import {
   type GradeBareme, type NinjaImpot, type PaiementImpot,
@@ -44,7 +38,10 @@ const FB_PAIEMENTS = 'impots/paiements';
 type Tab = 'registre' | 'historique' | 'bareme';
 
 export default function ImpotsPage() {
-  const CURRENT_USER = useCurrentUser().displayName;
+  const u = useCurrentUser();
+  const CURRENT_USER = u.displayName;
+  const canEdit = u.can.membreBranche('police');
+
   const { data: gradesData } = useFirebaseValue<GradeBareme[] | null>(FB_GRADES);
   const { data: paiementsData } = useFirebaseValue<PaiementImpot[] | null>(FB_PAIEMENTS);
   const { data: recensesData } = useFirebaseValue<Recense[] | null>('recenses');
@@ -54,7 +51,6 @@ export default function ImpotsPage() {
   const [showBareme, setShowBareme] = useState(false);
   const [baremeForm, setBaremeForm] = useState<GradeBareme[]>([]);
 
-  // ─── Données ───
   const grades = useMemo<GradeBareme[]>(() => {
     if (!gradesData) return DEFAULT_BAREME;
     return Array.isArray(gradesData) ? gradesData : Object.values(gradesData);
@@ -67,12 +63,11 @@ export default function ImpotsPage() {
     [paiementsData]
   );
 
-  // Contribuables = recensés actifs (vivants, non-exemptés)
   const contribuables = useMemo<NinjaImpot[]>(() => {
     const recenses = (Array.isArray(recensesData) ? recensesData : recensesData ? Object.values(recensesData) : [])
       .filter((r): r is Recense => r !== null && typeof r === 'object' && !!r.id);
     return recenses
-      .filter((r) => !r.defuntStatut || r.defuntStatut === '')  // vivants seulement
+      .filter((r) => !r.defuntStatut || r.defuntStatut === '')
       .map((r) => ({
         id: r.id,
         prenom: r.prenom || '',
@@ -83,7 +78,6 @@ export default function ImpotsPage() {
       }));
   }, [recensesData]);
 
-  // Map des paiements par ninjaId pour la semaine en cours
   const currentSemaine = currentWeek();
   const paiementsCurrentSemaine = useMemo(() => {
     const m = new Map<number, PaiementImpot>();
@@ -93,14 +87,12 @@ export default function ImpotsPage() {
     return m;
   }, [paiements, currentSemaine]);
 
-  // Barème par rang (map)
   const baremeByRang = useMemo(() => {
     const m = new Map<string, number>();
     for (const g of grades) m.set(g.rang, g.montant);
     return m;
   }, [grades]);
 
-  // Filtres + tri du registre
   const visibleRegistre = useMemo(() => {
     let list = contribuables;
     const q = search.trim().toLowerCase();
@@ -110,7 +102,6 @@ export default function ImpotsPage() {
           .toLowerCase().includes(q)
       );
     }
-    // Tri : impayés en premier, puis alphabétique
     return [...list].sort((a, b) => {
       const pa = paiementsCurrentSemaine.has(a.id) ? 1 : 0;
       const pb = paiementsCurrentSemaine.has(b.id) ? 1 : 0;
@@ -119,7 +110,6 @@ export default function ImpotsPage() {
     });
   }, [contribuables, search, paiementsCurrentSemaine]);
 
-  // Historique trié
   const visibleHistorique = useMemo(() => {
     let list = paiements;
     const q = search.trim().toLowerCase();
@@ -132,7 +122,6 @@ export default function ImpotsPage() {
     return [...list].sort((a, b) => b.date - a.date);
   }, [paiements, search]);
 
-  // Stats
   const stats = useMemo(() => {
     const total = contribuables.length;
     const payes = contribuables.filter((c) => paiementsCurrentSemaine.has(c.id)).length;
@@ -141,7 +130,6 @@ export default function ImpotsPage() {
     return { total, payes, impayes, collecteSemaine };
   }, [contribuables, paiementsCurrentSemaine]);
 
-  // ─── Handlers ───
   async function markPaid(n: NinjaImpot) {
     const montant = baremeByRang.get(n.rang || '') || 0;
     if (montant === 0) {
@@ -229,16 +217,17 @@ export default function ImpotsPage() {
     setBaremeForm(newForm);
   }
 
-  // ─── Rendu ───
   return (
     <>
       <Card
         title="Impôts"
         subtitle={`Registre fiscal — Semaine ${currentSemaine}`}
         actions={
-          <Button variant="outline" onClick={openBareme}>
-            <Settings size={14} /> Configurer le barème
-          </Button>
+          <RequireMembreBranche branche="police">
+            <Button variant="outline" onClick={openBareme}>
+              <Settings size={14} /> Configurer le barème
+            </Button>
+          </RequireMembreBranche>
         }
       >
         <div className={styles.statRow}>
@@ -295,7 +284,7 @@ export default function ImpotsPage() {
                   <th>Nom</th>
                   <th>Rang</th>
                   <th style={{ textAlign: 'right' }}>Montant dû</th>
-                  <th aria-label="actions" />
+                  {canEdit && <th aria-label="actions" />}
                 </tr>
               </thead>
               <tbody>
@@ -318,17 +307,19 @@ export default function ImpotsPage() {
                       <td className={styles.amount} style={{ textAlign: 'right' }}>
                         {fmtMoney(montant)} ₽
                       </td>
-                      <td>
-                        {!paye && montant > 0 ? (
-                          <Button size="sm" onClick={() => markPaid(n)}>
-                            <CheckCircle2 size={12} /> Marquer payé
-                          </Button>
-                        ) : paye ? (
-                          <button className={styles.unmarkBtn} onClick={() => unmarkPaid(n)}>
-                            Annuler
-                          </button>
-                        ) : null}
-                      </td>
+                      {canEdit && (
+                        <td>
+                          {!paye && montant > 0 ? (
+                            <Button size="sm" onClick={() => markPaid(n)}>
+                              <CheckCircle2 size={12} /> Marquer payé
+                            </Button>
+                          ) : paye ? (
+                            <button className={styles.unmarkBtn} onClick={() => unmarkPaid(n)}>
+                              Annuler
+                            </button>
+                          ) : null}
+                        </td>
+                      )}
                     </tr>
                   );
                 })}
@@ -352,7 +343,7 @@ export default function ImpotsPage() {
                   <th>Contribuable</th>
                   <th>Agent</th>
                   <th style={{ textAlign: 'right' }}>Montant</th>
-                  <th aria-label="actions" />
+                  {canEdit && <th aria-label="actions" />}
                 </tr>
               </thead>
               <tbody>
@@ -365,11 +356,13 @@ export default function ImpotsPage() {
                     <td className={styles.amount} style={{ textAlign: 'right' }}>
                       +{fmtMoney(p.montant)} ₽
                     </td>
-                    <td>
-                      <button className={styles.deleteBtn} onClick={() => handleDeletePaiement(p)}>
-                        <Trash2 size={13} />
-                      </button>
-                    </td>
+                    {canEdit && (
+                      <td>
+                        <button className={styles.deleteBtn} onClick={() => handleDeletePaiement(p)}>
+                          <Trash2 size={13} />
+                        </button>
+                      </td>
+                    )}
                   </tr>
                 ))}
               </tbody>
@@ -378,7 +371,6 @@ export default function ImpotsPage() {
         )}
       </Card>
 
-      {/* Modale Barème */}
       <Modal
         open={showBareme}
         onClose={() => setShowBareme(false)}
