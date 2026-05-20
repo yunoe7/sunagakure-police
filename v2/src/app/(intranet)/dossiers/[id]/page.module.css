@@ -111,7 +111,6 @@
   height: 4px;
 }
 
-/* Liseré par danger */
 .d-faible    { border-color: rgba(180, 160, 60, 0.4); }
 .d-faible::before    { background: linear-gradient(90deg, transparent, #b0a040 50%, transparent); }
 .d-moyen     { border-color: rgba(200, 140, 60, 0.45); }
@@ -133,7 +132,7 @@
   filter: grayscale(0.6);
 }
 
-/* ─── CACHET "RECHERCHÉ" en surimpression ─── */
+/* ─── CACHET "RECHERCHÉ" ─── */
 .stamp {
   position: absolute;
   top: 40px;
@@ -251,13 +250,11 @@
   font-weight: 700;
 }
 
-/* Tags danger */
 .db-faible   { background: rgba(180, 160, 60, 0.18); color: #d4c490; border: 1px solid rgba(180, 160, 60, 0.4); }
 .db-moyen    { background: rgba(200, 140, 60, 0.18); color: #e0b380; border: 1px solid rgba(200, 140, 60, 0.4); }
 .db-eleve    { background: rgba(180, 80, 50, 0.2); color: #e8a090; border: 1px solid rgba(180, 80, 50, 0.45); }
 .db-critique { background: rgba(180, 50, 40, 0.28); color: #f0b0a0; border: 1px solid rgba(180, 50, 40, 0.55); }
 
-/* Tags statut */
 .chip-ouvert            { background: rgba(120, 120, 120, 0.18); color: #d8d0c0; border: 1px solid rgba(120, 120, 120, 0.35); }
 .chip-recherche         { background: rgba(180, 80, 50, 0.18); color: #e8a090; border: 1px solid rgba(180, 80, 50, 0.4); }
 .chip-garde_vue         { background: rgba(200, 140, 60, 0.18); color: #e0b380; border: 1px solid rgba(200, 140, 60, 0.4); }
@@ -358,7 +355,6 @@
   gap: 12px;
 }
 
-/* ─── CARTE INFRACTION ─── */
 .infractionCard {
   background:
     repeating-linear-gradient(
@@ -598,6 +594,28 @@
   color: #c8a850;
 }
 
+/* ─── LIEN RECENSÉ ─── */
+.linkRecenseBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 9px;
+  background: rgba(200, 168, 80, 0.1);
+  border: 1px solid rgba(200, 168, 80, 0.35);
+  border-radius: 3px;
+  color: #c8a850;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.5px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.linkRecenseBtn:hover {
+  background: rgba(200, 168, 80, 0.2);
+  border-color: #c8a850;
+  color: #e8dcc0;
+}
+
 /* ─── LOADING / NOT FOUND ─── */
 .loading,
 .notFound {
@@ -614,7 +632,7 @@
 .notFound p { margin: 0 0 24px; }
 
 /* ═══════════════════════════════════════════════════════════════
-   MODALE INFRACTION
+   MODALE INFRACTION (édition individuelle)
    ═══════════════════════════════════════════════════════════════ */
 
 .infrForm {
@@ -675,7 +693,7 @@ textarea.infrInput {
   font-family: 'Barlow', sans-serif;
 }
 
-/* ─── SUGGESTIONS (autocomplétion Code Pénal) ─── */
+/* ─── SUGGESTIONS (autocomplétion) ─── */
 .suggestions {
   margin-top: 6px;
   background: linear-gradient(180deg, rgba(160, 128, 32, 0.08), rgba(0, 0, 0, 0.3));
@@ -770,100 +788,6 @@ textarea.infrInput {
   flex-shrink: 0;
 }
 
-.hintInline {
-  font-size: 11px;
-  font-style: italic;
-  color: var(--muted);
-  margin: 4px 0 0;
-  padding: 0 4px;
-  line-height: 1.4;
-}
-
-/* ═══ MOBILE ═══ */
-@media (max-width: 768px) {
-  .actionsBar { padding: 10px 0; gap: 8px; }
-  .backBtn { padding: 8px 10px; }
-  .backLabel { display: none; }
-  .backLabelMobile { display: inline; }
-  .editBtn, .delBtn { padding: 8px 10px; }
-  .delLabel { display: none; }
-
-  .header {
-    flex-direction: column;
-    gap: 18px;
-    padding: 24px 18px;
-    text-align: center;
-  }
-  .photo, .photoPlaceholder { width: 110px; height: 110px; }
-  .photoPlaceholder { font-size: 44px; }
-  .name { font-size: 26px; }
-  .tags { justify-content: center; }
-
-  .sections { padding: 18px; gap: 16px; }
-  .section { padding: 14px 16px; }
-
-  .totalsBar {
-    grid-template-columns: 1fr;
-    gap: 10px;
-  }
-
-  .kvGrid {
-    grid-template-columns: 1fr;
-    gap: 12px;
-  }
-
-  .infrFormRow,
-  .infrFormRow3 {
-    grid-template-columns: 1fr;
-  }
-
-  .stamp {
-    top: 24px;
-    right: -50px;
-    font-size: 11px;
-    padding: 4px 40px;
-    letter-spacing: 2px;
-  }
-
-  .infrHeader {
-    flex-wrap: wrap;
-  }
-  .infrTitle {
-    width: 100%;
-    order: 3;
-    margin-top: 4px;
-  }
-  .infrActions {
-    order: 2;
-  }
-}
-
-@media (max-width: 480px) {
-  .header { padding: 18px 14px; }
-  .sections { padding: 14px; }
-  .name { font-size: 22px; }
-}
-/* ════════════════════════════════════════════════════════════════
-   MODE BATCH — Ajout multiple d'infractions
-   ════════════════════════════════════════════════════════════════ */
-
-.batchForm {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
-/* ─── Section de recherche en haut ─── */
-.batchSearchSection {
-  background: rgba(0, 0, 0, 0.25);
-  border: 1px solid rgba(160, 128, 32, 0.2);
-  border-radius: 6px;
-  padding: 14px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
 .suggAdd {
   display: inline-flex;
   align-items: center;
@@ -881,6 +805,110 @@ textarea.infrInput {
 .suggestion:hover .suggAdd {
   background: rgba(200, 168, 80, 0.4);
   border-color: #c8a850;
+}
+
+.hintInline {
+  font-size: 11px;
+  font-style: italic;
+  color: var(--muted);
+  margin: 4px 0 0;
+  padding: 0 4px;
+  line-height: 1.4;
+}
+
+/* ─── Photo dans les suggestions du Recensement ─── */
+.editSuggestionPhoto {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 1px solid rgba(160, 128, 32, 0.4);
+  filter: sepia(0.15);
+  flex-shrink: 0;
+}
+.editSuggestionPhotoPh {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #0e0a06, #1a130c);
+  border: 1px solid rgba(160, 128, 32, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Cinzel', serif;
+  font-size: 13px;
+  font-weight: 700;
+  color: rgba(200, 168, 80, 0.5);
+  flex-shrink: 0;
+}
+
+/* ─── Lien recensé dans la modale édition ─── */
+.editLinkedRecense {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: rgba(34, 197, 94, 0.08);
+  border: 1px solid rgba(34, 197, 94, 0.3);
+  border-radius: 4px;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.5px;
+  color: #b8c890;
+}
+.editLinkedRecense > svg {
+  color: #86efac;
+  flex-shrink: 0;
+}
+.editLinkedRecense > span {
+  flex: 1;
+  text-transform: none;
+  letter-spacing: 0.3px;
+}
+.editLinkedRecense strong {
+  color: #e8dcc0;
+  font-family: 'EB Garamond', Georgia, serif;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: normal;
+}
+
+.editUnlinkBtn {
+  background: transparent;
+  border: 1px solid rgba(180, 80, 50, 0.3);
+  border-radius: 3px;
+  color: rgba(200, 130, 110, 0.6);
+  cursor: pointer;
+  padding: 2px 7px;
+  font-size: 13px;
+  font-weight: 700;
+  transition: all 0.15s;
+  flex-shrink: 0;
+}
+.editUnlinkBtn:hover {
+  background: rgba(180, 80, 50, 0.15);
+  border-color: rgba(180, 80, 50, 0.6);
+  color: #e8a090;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   MODE BATCH — Ajout multiple d'infractions
+   ═══════════════════════════════════════════════════════════════ */
+
+.batchForm {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.batchSearchSection {
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid rgba(160, 128, 32, 0.2);
+  border-radius: 6px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
 .batchAddEmpty {
@@ -908,7 +936,6 @@ textarea.infrInput {
   border-style: solid;
 }
 
-/* ─── Liste vide ─── */
 .batchEmpty {
   text-align: center;
   padding: 40px 20px;
@@ -921,7 +948,6 @@ textarea.infrInput {
   gap: 10px;
 }
 
-/* ─── Liste des items à ajouter ─── */
 .batchListHeader {
   display: flex;
   justify-content: space-between;
@@ -968,7 +994,6 @@ textarea.infrInput {
   overflow-y: auto;
 }
 
-/* ─── Carte d'un item dans le batch ─── */
 .batchItem {
   background: rgba(0, 0, 0, 0.3);
   border: 1px solid rgba(160, 128, 32, 0.25);
@@ -1098,7 +1123,6 @@ textarea.batchInput {
   font-family: 'Barlow', sans-serif;
 }
 
-/* ─── Section "Plus de détails" repliable ─── */
 .batchItemMore {
   margin-top: 8px;
   padding-left: 6px;
@@ -1124,6 +1148,62 @@ textarea.batchInput {
 
 /* ═══ MOBILE ═══ */
 @media (max-width: 768px) {
+  .actionsBar { padding: 10px 0; gap: 8px; }
+  .backBtn { padding: 8px 10px; }
+  .backLabel { display: none; }
+  .backLabelMobile { display: inline; }
+  .editBtn, .delBtn { padding: 8px 10px; }
+  .delLabel { display: none; }
+
+  .header {
+    flex-direction: column;
+    gap: 18px;
+    padding: 24px 18px;
+    text-align: center;
+  }
+  .photo, .photoPlaceholder { width: 110px; height: 110px; }
+  .photoPlaceholder { font-size: 44px; }
+  .name { font-size: 26px; }
+  .tags { justify-content: center; }
+
+  .sections { padding: 18px; gap: 16px; }
+  .section { padding: 14px 16px; }
+
+  .totalsBar {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .kvGrid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .infrFormRow,
+  .infrFormRow3 {
+    grid-template-columns: 1fr;
+  }
+
+  .stamp {
+    top: 24px;
+    right: -50px;
+    font-size: 11px;
+    padding: 4px 40px;
+    letter-spacing: 2px;
+  }
+
+  .infrHeader {
+    flex-wrap: wrap;
+  }
+  .infrTitle {
+    width: 100%;
+    order: 3;
+    margin-top: 4px;
+  }
+  .infrActions {
+    order: 2;
+  }
+
   .batchItemFields {
     grid-template-columns: 1fr 1fr;
   }
@@ -1138,6 +1218,10 @@ textarea.batchInput {
 }
 
 @media (max-width: 480px) {
+  .header { padding: 18px 14px; }
+  .sections { padding: 14px; }
+  .name { font-size: 22px; }
+
   .batchItemFields {
     grid-template-columns: 1fr;
   }
