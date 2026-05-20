@@ -4,6 +4,7 @@ import { useMemo, useState } from 'react';
 import { Plus, Trash2, Save, Search, Ticket, Calendar, Infinity as InfinityIcon } from 'lucide-react';
 import { useFirebaseValue } from '@/hooks/useFirebaseValue';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
+import { RequireMembreBranche } from '@/components/Require';
 import { dbSet } from '@/lib/db';
 import { toast } from '@/lib/toast';
 import { Card } from '@/components/ui/Card';
@@ -20,7 +21,8 @@ const FB_PATH = 'laissezPasse';
 type Filter = 'all' | LpStatut;
 
 export default function LaissezPassePage() {
-  const CURRENT_USER = useCurrentUser().displayName;
+  const { displayName: CURRENT_USER, can } = useCurrentUser();
+  const canEdit = can.membreBranche('diplomate');
   const { data, loading } = useFirebaseValue<LaissezPasse[] | null>(FB_PATH);
   const [filter, setFilter] = useState<Filter>('valide');
   const [search, setSearch] = useState('');
@@ -129,7 +131,11 @@ export default function LaissezPassePage() {
       <Card
         title="Laissez-passer"
         subtitle="Autorisations de circulation inter-villages"
-        actions={<Button onClick={openCreate}><Plus size={14} /> Délivrer un laissez-passer</Button>}
+        actions={
+          <RequireMembreBranche branche="diplomate">
+            <Button onClick={openCreate}><Plus size={14} /> Délivrer un laissez-passer</Button>
+          </RequireMembreBranche>
+        }
       >
         <div className={styles.tabs}>
           {(['valide', 'expire', 'utilise', 'revoque', 'all'] as Filter[]).map((t) => (
@@ -169,14 +175,20 @@ export default function LaissezPassePage() {
                         <InfinityIcon size={11} /> Permanent
                       </span>
                     )}
-                    <button
-                      className={styles.deleteBtn}
-                      onClick={() => handleDelete(l)}
-                      aria-label="Supprimer"
-                    ><Trash2 size={13} /></button>
+                    <RequireMembreBranche branche="diplomate">
+                      <button
+                        className={styles.deleteBtn}
+                        onClick={() => handleDelete(l)}
+                        aria-label="Supprimer"
+                      ><Trash2 size={13} /></button>
+                    </RequireMembreBranche>
                   </div>
 
-                  <div className={styles.lpBody} onClick={() => openEdit(l)}>
+                  <div
+                    className={styles.lpBody}
+                    onClick={() => canEdit && openEdit(l)}
+                    style={{ cursor: canEdit ? 'pointer' : 'default' }}
+                  >
                     <h3>{l.porteur}</h3>
                     {l.villages && <div className={styles.villages}>🌍 {l.villages}</div>}
                     {l.motif && <p className={styles.motif}>{l.motif}</p>}
@@ -196,11 +208,13 @@ export default function LaissezPassePage() {
                   </div>
 
                   {l.statut === 'valide' && (
-                    <div className={styles.actions}>
-                      <Button size="sm" variant="outline" onClick={() => revoke(l)}>
-                        Révoquer
-                      </Button>
-                    </div>
+                    <RequireMembreBranche branche="diplomate">
+                      <div className={styles.actions}>
+                        <Button size="sm" variant="outline" onClick={() => revoke(l)}>
+                          Révoquer
+                        </Button>
+                      </div>
+                    </RequireMembreBranche>
                   )}
                 </article>
               ))}
