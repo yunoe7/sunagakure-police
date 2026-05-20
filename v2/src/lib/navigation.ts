@@ -96,8 +96,6 @@ export const NAV_SECTIONS: NavSection[] = [
   {
     title: 'ADMINISTRATION',
     items: [
-      { label: 'Effectifs', href: '/effectifs', icon: 'UsersRound' },
-      { label: 'Hiérarchie', href: '/hierarchie', icon: 'GitBranch' },
       { label: 'Équipes', href: '/equipes', icon: 'Users2' },
       { label: 'Impôts', href: '/impots', icon: 'Receipt' },
       { label: 'Trésor Central', href: '/tresor', icon: 'Landmark' },
