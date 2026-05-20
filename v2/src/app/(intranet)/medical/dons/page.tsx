@@ -15,7 +15,7 @@
  */
 
 import { useMemo, useState } from 'react';
-import { Plus, Trash2, Save, Search, Droplet, Calendar } from 'lucide-react';
+import { Plus, Trash2, Save, Search, Droplet } from 'lucide-react';
 
 import { useFirebaseValue } from '@/hooks/useFirebaseValue';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
@@ -24,6 +24,7 @@ import { toast } from '@/lib/toast';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Modal } from '@/components/ui/Modal';
+import { RequireBranche } from '@/components/Require';
 import { confirmAction } from '@/components/ui/ConfirmDialog';
 import {
   type DonSang, type GroupeSanguin,
@@ -36,7 +37,10 @@ const FB_PATH = 'hospital_dons';
 type Filter = 'all' | GroupeSanguin;
 
 export default function DonsPage() {
-  const CURRENT_USER = useCurrentUser().displayName;
+  const { can, displayName } = useCurrentUser();
+  const canEdit = can.adminBranche('medecin');
+  const CURRENT_USER = displayName;
+
   const { data, loading } = useFirebaseValue<DonSang[] | null>(FB_PATH);
 
   const [filter, setFilter] = useState<Filter>('all');
@@ -88,6 +92,7 @@ export default function DonsPage() {
     setShowForm(true);
   }
   function openEdit(d: DonSang) {
+    if (!canEdit) return;
     setEditingId(d.id); setForm(d); setShowForm(true);
   }
   function closeForm() {
@@ -147,7 +152,11 @@ export default function DonsPage() {
       <Card
         title="Dons du sang"
         subtitle="Banque de sang de l'Hôpital de Sunagakure"
-        actions={<Button onClick={openCreate}><Plus size={14} /> Enregistrer un don</Button>}
+        actions={
+          <RequireBranche branche="medecin">
+            <Button onClick={openCreate}><Plus size={14} /> Enregistrer un don</Button>
+          </RequireBranche>
+        }
       >
         {/* Grille des groupes sanguins */}
         <div className={styles.bloodGrid}>
@@ -209,14 +218,17 @@ export default function DonsPage() {
                 <th>Volume</th>
                 <th>Préleveur</th>
                 <th>Destination</th>
-                <th aria-label="actions" />
+                {canEdit && <th aria-label="actions" />}
               </tr>
             </thead>
             <tbody>
               {visible.map((d) => (
                 <tr key={d.id}>
                   <td className={styles.mono}>{fmtDateFR(d.date)}</td>
-                  <td onClick={() => openEdit(d)} style={{ cursor: 'pointer' }}>
+                  <td
+                    onClick={() => openEdit(d)}
+                    style={canEdit ? { cursor: 'pointer' } : { cursor: 'default' }}
+                  >
                     <strong>{d.donneur}</strong>
                   </td>
                   <td>
@@ -225,15 +237,17 @@ export default function DonsPage() {
                   <td className={styles.mono}><strong>{d.quantite} mL</strong></td>
                   <td className={styles.muted}>{d.preleveur || '—'}</td>
                   <td className={styles.muted}>{d.destination || 'Stock'}</td>
-                  <td>
-                    <button
-                      className={styles.deleteBtn}
-                      onClick={() => handleDelete(d)}
-                      aria-label="Supprimer"
-                    >
-                      <Trash2 size={13} />
-                    </button>
-                  </td>
+                  {canEdit && (
+                    <td>
+                      <button
+                        className={styles.deleteBtn}
+                        onClick={() => handleDelete(d)}
+                        aria-label="Supprimer"
+                      >
+                        <Trash2 size={13} />
+                      </button>
+                    </td>
+                  )}
                 </tr>
               ))}
             </tbody>
