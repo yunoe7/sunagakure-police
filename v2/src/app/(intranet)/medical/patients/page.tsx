@@ -15,6 +15,7 @@
  *   5. Suppression avec confirmation (dbRemove + confirmAction)
  *   6. Toast pour les retours utilisateur
  *   7. Modale réutilisable (composant Modal)
+ *   8. Permissions par branche (RequireBranche + can.adminBranche)
  *
  * Quand tu migres une autre page (Consultations, Plaintes, Casiers, …),
  * pars de ce fichier, copie-le, et adapte les types + les champs.
@@ -25,11 +26,13 @@ import { useMemo, useState } from 'react';
 import { Search, Plus, Trash2, Save } from 'lucide-react';
 
 import { useFirebaseValue } from '@/hooks/useFirebaseValue';
+import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { dbPush, dbUpdate, dbRemove, serverTimestamp } from '@/lib/db';
 import { toast } from '@/lib/toast';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Modal } from '@/components/ui/Modal';
+import { RequireBranche } from '@/components/Require';
 import { confirmAction } from '@/components/ui/ConfirmDialog';
 import type { Patient } from '@/types/medical';
 
@@ -39,6 +42,10 @@ import styles from './page.module.css';
 const FB_PATH = 'medical/patients';
 
 export default function PatientsPage() {
+  // ─── Permissions ───
+  const { can } = useCurrentUser();
+  const canEdit = can.adminBranche('medecin');
+
   // ─── Lecture temps réel des patients depuis Firebase ───
   const { data, loading } = useFirebaseValue<Record<string, Patient>>(FB_PATH);
 
@@ -73,6 +80,7 @@ export default function PatientsPage() {
   }
 
   function openEdit(p: Patient) {
+    if (!canEdit) return;
     setEditingId(p.id);
     setForm(p);
     setShowForm(true);
@@ -144,9 +152,11 @@ export default function PatientsPage() {
                 onChange={(e) => setSearch(e.target.value)}
               />
             </div>
-            <Button onClick={openCreate}>
-              <Plus size={14} /> Nouveau
-            </Button>
+            <RequireBranche branche="medecin">
+              <Button onClick={openCreate}>
+                <Plus size={14} /> Nouveau
+              </Button>
+            </RequireBranche>
           </>
         }
       >
@@ -165,29 +175,35 @@ export default function PatientsPage() {
                 <th>Âge</th>
                 <th>Village</th>
                 <th>Groupe</th>
-                <th aria-label="Actions" />
+                {canEdit && <th aria-label="Actions" />}
               </tr>
             </thead>
             <tbody>
               {patients.map((p) => (
-                <tr key={p.id} onClick={() => openEdit(p)}>
+                <tr
+                  key={p.id}
+                  onClick={() => openEdit(p)}
+                  style={canEdit ? { cursor: 'pointer' } : { cursor: 'default' }}
+                >
                   <td>{p.nom}</td>
                   <td>{p.prenom ?? '—'}</td>
                   <td>{p.age ?? '—'}</td>
                   <td>{p.village ?? '—'}</td>
                   <td>{p.groupeSanguin ?? '—'}</td>
-                  <td>
-                    <button
-                      className={styles.iconBtn}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleDelete(p);
-                      }}
-                      aria-label="Supprimer"
-                    >
-                      <Trash2 size={14} />
-                    </button>
-                  </td>
+                  {canEdit && (
+                    <td>
+                      <button
+                        className={styles.iconBtn}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDelete(p);
+                        }}
+                        aria-label="Supprimer"
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    </td>
+                  )}
                 </tr>
               ))}
             </tbody>
