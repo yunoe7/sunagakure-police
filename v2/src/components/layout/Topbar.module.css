@@ -49,3 +49,51 @@
   font-family: 'Share Tech Mono', monospace;
   margin-left: auto;
 }
+
+/* ═══════════════════════════════════════════════════════════
+   📱 BOUTON BURGER — visible uniquement en mobile
+   ═══════════════════════════════════════════════════════════ */
+
+.burgerBtn {
+  display: none;
+  background: transparent;
+  border: 1px solid rgba(201, 162, 39, 0.18);
+  color: rgba(255, 255, 255, 0.75);
+  padding: 6px 8px;
+  border-radius: 6px;
+  cursor: pointer;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+  margin-right: 4px;
+}
+
+.burgerBtn:hover {
+  color: #fff;
+  background: rgba(212, 172, 13, 0.08);
+  border-color: rgba(212, 172, 13, 0.4);
+}
+
+.burgerBtn:active {
+  transform: scale(0.95);
+}
+
+@media (max-width: 768px) {
+  .burgerBtn {
+    display: flex;
+  }
+
+  .topbar {
+    padding: 0 14px;
+    gap: 10px;
+  }
+
+  .title {
+    font-size: 15px;
+    letter-spacing: 1.5px;
+  }
+
+  .path {
+    display: none; /* trop long sur mobile */
+  }
+}
