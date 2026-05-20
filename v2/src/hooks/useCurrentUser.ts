@@ -7,8 +7,10 @@
  *
  * Récupère les infos du user Discord actuellement connecté via NextAuth.
  *
- * ✨ NOUVEAU : refresh automatique des rôles Discord toutes les 60s
- *    (le serveur fait le travail, le client trigger le check via update()).
+ * ✨ Refresh automatique des rôles Discord toutes les 5 minutes
+ *    (compromise entre fraîcheur et rate limit Discord).
+ *    Pour un effet INSTANTANÉ, utiliser le bouton "Refresh mes rôles"
+ *    dans le menu avatar de la sidebar.
  *
  * Usage :
  *   const { username, displayName, avatar, isLoading, refreshRoles } = useCurrentUser();
@@ -27,8 +29,8 @@ import { useSession } from 'next-auth/react';
 import { useCallback, useEffect, useRef } from 'react';
 import type { IntranetUser } from '@/lib/roles';
 
-// Intervalle de refresh côté client (en ms)
-const CLIENT_REFRESH_INTERVAL = 60 * 1000;
+// Intervalle de refresh côté client (5 minutes pour éviter le rate limit Discord)
+const CLIENT_REFRESH_INTERVAL = 5 * 60 * 1000;
 
 export type Permissions = {
   adminBranche: (slug: string | string[]) => boolean;
@@ -68,33 +70,19 @@ export function useCurrentUser() {
     }
   }, [update]);
 
-  // ─── Refresh auto en arrière-plan toutes les 60s ───────────────
+  // ─── Refresh auto en arrière-plan toutes les 5 minutes ─────────
   const lastTriggerRef = useRef<number>(Date.now());
 
   useEffect(() => {
     if (status !== 'authenticated') return;
 
-    // Trigger immédiat si on n'a pas refresh depuis longtemps (changement d'onglet, retour sur le site)
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === 'visible') {
-        const elapsed = Date.now() - lastTriggerRef.current;
-        if (elapsed > CLIENT_REFRESH_INTERVAL) {
-          lastTriggerRef.current = Date.now();
-          update().catch((err) => console.error('[useCurrentUser] refresh visibility :', err));
-        }
-      }
-    };
-
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-
-    // Refresh périodique toutes les 60s
+    // Refresh périodique toutes les 5 minutes
     const interval = setInterval(() => {
       lastTriggerRef.current = Date.now();
       update().catch((err) => console.error('[useCurrentUser] refresh interval :', err));
     }, CLIENT_REFRESH_INTERVAL);
 
     return () => {
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
       clearInterval(interval);
     };
   }, [status, update]);
@@ -148,7 +136,7 @@ export function useCurrentUser() {
     can,
     isAuthenticated: status === 'authenticated' && intranetUser !== null,
 
-    // ✨ Nouveau : bouton manuel de refresh
+    // ✨ Bouton manuel de refresh (pour effet instantané)
     refreshRoles,
   };
 }
