@@ -1,5 +1,6 @@
 /* ════════════════════════════════════════════════════════════════
-   DOSSIERS CRIMINELS — Style "fiche police"
+   DOSSIERS CRIMINELS — Style "rapport police vintage"
+   Palette : sépia, ocre, rouille
    ════════════════════════════════════════════════════════════════ */
 
 /* ─── STATS HERO ─── */
@@ -10,10 +11,10 @@
   margin-bottom: 24px;
 }
 .statCard {
-  background: linear-gradient(180deg, #15110b, #1a140c);
-  border: 1px solid rgba(180,140,20,0.22);
+  background: linear-gradient(180deg, #1a1410, #1f1812);
+  border: 1px solid rgba(160, 128, 32, 0.22);
   border-radius: 10px;
-  padding: 18px 18px;
+  padding: 18px;
   text-align: center;
   position: relative;
   overflow: hidden;
@@ -24,10 +25,10 @@
   top: 0; left: 0; right: 0;
   height: 2px;
 }
-.sv-default::before { background: linear-gradient(90deg, transparent, var(--gold2), transparent); }
-.sv-danger::before  { background: linear-gradient(90deg, transparent, #ef4444, transparent); }
-.sv-warning::before { background: linear-gradient(90deg, transparent, #f59e0b, transparent); }
-.sv-gold::before    { background: linear-gradient(90deg, transparent, var(--gold2), transparent); }
+.sv-default::before { background: linear-gradient(90deg, transparent, #a08020, transparent); }
+.sv-danger::before  { background: linear-gradient(90deg, transparent, #a04020, transparent); }
+.sv-warning::before { background: linear-gradient(90deg, transparent, #c08040, transparent); }
+.sv-gold::before    { background: linear-gradient(90deg, transparent, #a08020, transparent); }
 
 .statVal {
   font-family: 'Cinzel', serif;
@@ -36,10 +37,10 @@
   line-height: 1;
   margin-bottom: 6px;
 }
-.sv-default .statVal { color: var(--gold2); }
-.sv-danger .statVal  { color: #fca5a5; }
-.sv-warning .statVal { color: #fcd34d; }
-.sv-gold .statVal    { color: var(--gold2); text-shadow: 0 0 20px rgba(212,180,74,0.25); }
+.sv-default .statVal { color: #c8a850; }
+.sv-danger .statVal  { color: #d68a7a; }
+.sv-warning .statVal { color: #d6a570; }
+.sv-gold .statVal    { color: #c8a850; text-shadow: 0 0 14px rgba(200, 168, 80, 0.2); }
 
 .statLbl {
   font-family: 'Share Tech Mono', monospace;
@@ -55,7 +56,6 @@
   gap: 10px;
   margin-bottom: 18px;
   flex-wrap: wrap;
-  align-items: center;
 }
 .searchBox {
   display: flex;
@@ -63,7 +63,7 @@
   gap: 7px;
   padding: 8px 12px;
   background: rgba(0,0,0,0.4);
-  border: 1px solid var(--border);
+  border: 1px solid rgba(160, 128, 32, 0.25);
   border-radius: 6px;
   color: var(--muted);
   flex: 1;
@@ -71,17 +71,13 @@
   max-width: 320px;
 }
 .searchBox input {
-  background: transparent;
-  border: none;
-  outline: none;
-  color: var(--text);
-  font-size: 13px;
-  flex: 1;
+  background: transparent; border: none; outline: none;
+  color: var(--text); font-size: 13px; flex: 1;
 }
 .filterSelect {
   padding: 8px 12px;
   background: rgba(0,0,0,0.4);
-  border: 1px solid var(--border);
+  border: 1px solid rgba(160, 128, 32, 0.25);
   border-radius: 6px;
   color: var(--text);
   font-size: 12.5px;
@@ -105,62 +101,127 @@
 .grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
-  gap: 14px;
+  gap: 16px;
 }
 
-/* ─── DOSSIER (carte) ─── */
+/* ═══ CARTE DOSSIER — style rapport police vintage ═══ */
 .dossier {
-  background: linear-gradient(180deg, #15110b, #1a140c);
-  border: 1px solid rgba(180,140,20,0.22);
-  border-radius: 10px;
-  padding: 14px 16px;
+  background:
+    repeating-linear-gradient(
+      0deg,
+      rgba(0, 0, 0, 0) 0px,
+      rgba(0, 0, 0, 0) 24px,
+      rgba(160, 128, 32, 0.03) 24px,
+      rgba(160, 128, 32, 0.03) 25px
+    ),
+    linear-gradient(180deg, #1c1610, #1f1912);
+  border: 1px solid rgba(160, 128, 32, 0.3);
+  border-radius: 4px;
+  padding: 16px 18px 14px;
   cursor: pointer;
   position: relative;
   transition: all 0.2s ease;
+  overflow: hidden;
 }
+
+/* Liseré danger sur le côté gauche */
 .dossier::before {
   content: '';
   position: absolute;
-  left: 0; top: 12px; bottom: 12px;
-  width: 3px;
-  border-radius: 0 3px 3px 0;
-}
-.dossier:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 22px rgba(0,0,0,0.45);
+  left: 0; top: 0; bottom: 0;
+  width: 4px;
 }
 
-/* Bordure & accent par niveau de danger */
-.d-faible    { border-color: rgba(34,197,94,0.25); }
-.d-faible::before { background: #22c55e; box-shadow: 0 0 8px rgba(34,197,94,0.4); }
-.d-moyen     { border-color: rgba(245,158,11,0.3); }
-.d-moyen::before { background: #f59e0b; box-shadow: 0 0 8px rgba(245,158,11,0.5); }
-.d-eleve     { border-color: rgba(239,68,68,0.35); }
-.d-eleve::before { background: #ef4444; box-shadow: 0 0 8px rgba(239,68,68,0.5); }
-.d-critique  { border-color: rgba(220,38,38,0.5); }
-.d-critique::before {
-  background: linear-gradient(180deg, #dc2626, #fecaca);
-  box-shadow: 0 0 12px rgba(220,38,38,0.7);
+.d-faible    { border-color: rgba(180, 160, 60, 0.35); }
+.d-faible::before    { background: linear-gradient(180deg, #b0a040, #807030); }
+.d-moyen     { border-color: rgba(200, 140, 60, 0.4); }
+.d-moyen::before     { background: linear-gradient(180deg, #c08040, #905028); }
+.d-eleve     { border-color: rgba(180, 80, 50, 0.5); }
+.d-eleve::before     { background: linear-gradient(180deg, #b85030, #6a2a18); box-shadow: 2px 0 10px rgba(184, 80, 48, 0.3); }
+.d-critique  { border-color: rgba(180, 50, 40, 0.65); }
+.d-critique::before  {
+  background: linear-gradient(180deg, #b03020, #501010);
+  box-shadow: 2px 0 12px rgba(176, 48, 32, 0.5);
   animation: critPulse 2s ease-in-out infinite;
 }
 @keyframes critPulse {
-  0%, 100% { box-shadow: 0 0 12px rgba(220,38,38,0.4); }
-  50%      { box-shadow: 0 0 18px rgba(220,38,38,0.9); }
+  0%, 100% { opacity: 0.85; }
+  50%      { opacity: 1; box-shadow: 2px 0 16px rgba(220, 60, 40, 0.7); }
+}
+
+.dossier:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(160, 128, 32, 0.15);
 }
 
 .defunt {
-  opacity: 0.6;
-  filter: grayscale(0.5);
+  opacity: 0.55;
+  filter: grayscale(0.7);
 }
 
-/* ─── HEADER ─── */
-.header {
+/* ─── CACHET "RECHERCHÉ" en diagonal ─── */
+.stamp {
+  position: absolute;
+  top: 36px;
+  right: -32px;
+  padding: 4px 40px;
+  background: rgba(180, 50, 40, 0.92);
+  color: #fef2f2;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  transform: rotate(35deg);
+  z-index: 5;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.6);
+  border: 2px solid rgba(254, 226, 226, 0.4);
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.5);
+  pointer-events: none;
+}
+.stampWarning {
+  background: rgba(200, 140, 50, 0.92);
+  color: #1a1410;
+  text-shadow: none;
+  border-color: rgba(254, 235, 200, 0.4);
+}
+.stampDefunt {
+  background: rgba(80, 80, 80, 0.92);
+  color: #f3f4f6;
+  border-color: rgba(180, 180, 180, 0.4);
+}
+
+/* ─── HEADER (tab dossier + danger) ─── */
+.dossierHeader {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
   margin-bottom: 12px;
-  padding-left: 10px;
-  flex-wrap: wrap;
+  padding-left: 6px;
+}
+
+.dossierTab {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 9px;
+  background: rgba(160, 128, 32, 0.15);
+  border: 1px solid rgba(160, 128, 32, 0.4);
+  border-radius: 3px;
+  color: #c8a850;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 9.5px;
+  letter-spacing: 1.2px;
+  font-weight: 700;
+}
+
+.dossierTab svg {
+  color: #c8a850;
+}
+
+.dossierNum {
+  font-family: 'Share Tech Mono', monospace;
+  color: #c8a850;
 }
 
 .dangerBadge {
@@ -168,121 +229,71 @@
   align-items: center;
   gap: 4px;
   padding: 3px 8px;
-  border-radius: 4px;
+  border-radius: 3px;
   font-family: 'Share Tech Mono', monospace;
   font-size: 9px;
   font-weight: 700;
   letter-spacing: 1.2px;
   text-transform: uppercase;
 }
-.db-faible   { background: rgba(34,197,94,0.18); color: #86efac; border: 1px solid rgba(34,197,94,0.4); }
-.db-moyen    { background: rgba(245,158,11,0.18); color: #fcd34d; border: 1px solid rgba(245,158,11,0.4); }
-.db-eleve    { background: rgba(239,68,68,0.18); color: #fca5a5; border: 1px solid rgba(239,68,68,0.4); }
-.db-critique {
-  background: rgba(220,38,38,0.25);
-  color: #fecaca;
-  border: 1px solid rgba(220,38,38,0.55);
-  animation: critBadgePulse 2.5s ease-in-out infinite;
-}
-@keyframes critBadgePulse {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(220,38,38,0); }
-  50%      { box-shadow: 0 0 0 4px rgba(220,38,38,0); }
-}
-
-.statutChip {
-  display: inline-flex;
-  padding: 3px 8px;
-  border-radius: 4px;
-  font-family: 'Share Tech Mono', monospace;
-  font-size: 9px;
-  font-weight: 700;
-  letter-spacing: 1px;
-  text-transform: uppercase;
-}
-.chip-ouvert            { background: rgba(107,114,128,0.18); color: #d1d5db; border: 1px solid rgba(107,114,128,0.35); }
-.chip-recherche         { background: rgba(239,68,68,0.18); color: #fca5a5; border: 1px solid rgba(239,68,68,0.4); animation: critBadgePulse 2s ease-in-out infinite; }
-.chip-garde_vue         { background: rgba(245,158,11,0.18); color: #fcd34d; border: 1px solid rgba(245,158,11,0.4); }
-.chip-transmis_justice  { background: rgba(212,180,74,0.15); color: var(--gold2); border: 1px solid rgba(212,180,74,0.4); }
-.chip-classe            { background: rgba(34,197,94,0.15); color: #86efac; border: 1px solid rgba(34,197,94,0.4); }
-.chip-defunt            { background: rgba(0,0,0,0.4); color: #d1d5db; border: 1px solid rgba(150,150,150,0.3); }
-
-.defuntBadge {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  padding: 3px 8px;
-  background: rgba(0,0,0,0.5);
-  border: 1px solid rgba(150,150,150,0.3);
-  border-radius: 4px;
-  font-family: 'Share Tech Mono', monospace;
-  font-size: 9px;
-  color: #d1d5db;
-  font-weight: 700;
-  letter-spacing: 1px;
-  text-transform: uppercase;
-}
+.db-faible   { background: rgba(180, 160, 60, 0.18); color: #d4c490; border: 1px solid rgba(180, 160, 60, 0.4); }
+.db-moyen    { background: rgba(200, 140, 60, 0.18); color: #e0b380; border: 1px solid rgba(200, 140, 60, 0.4); }
+.db-eleve    { background: rgba(180, 80, 50, 0.2); color: #e8a090; border: 1px solid rgba(180, 80, 50, 0.45); }
+.db-critique { background: rgba(180, 50, 40, 0.28); color: #f0b0a0; border: 1px solid rgba(180, 50, 40, 0.55); }
 
 .deleteBtn {
   margin-left: auto;
-  padding: 4px 6px;
-  border-radius: 4px;
+  padding: 4px 5px;
+  border-radius: 3px;
   color: var(--muted);
   background: transparent;
-  transition: all 0.15s;
   border: none;
   cursor: pointer;
+  opacity: 0;
+  transition: all 0.15s;
 }
-.deleteBtn:hover {
-  color: var(--red);
-  background: rgba(239,68,68,0.1);
-}
+.dossier:hover .deleteBtn { opacity: 0.6; }
+.deleteBtn:hover { color: #d68a7a; background: rgba(180, 80, 60, 0.12); opacity: 1 !important; }
 
-/* ─── BODY ─── */
-.body {
-  padding-left: 10px;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
+/* ─── IDENTITY ─── */
 .identity {
   display: flex;
   align-items: center;
   gap: 12px;
+  padding-left: 6px;
+  margin-bottom: 12px;
 }
 .photo {
   width: 56px;
   height: 56px;
-  border-radius: 8px;
+  border-radius: 4px;
   object-fit: cover;
-  border: 1px solid rgba(180,140,20,0.3);
+  border: 1px solid rgba(160, 128, 32, 0.4);
   flex-shrink: 0;
+  filter: sepia(0.15);
 }
 .photoPlaceholder {
   width: 56px;
   height: 56px;
-  border-radius: 8px;
-  background: linear-gradient(135deg, #0e0a06, #1a130c);
-  border: 1px solid rgba(180,140,20,0.18);
+  border-radius: 4px;
+  background: linear-gradient(135deg, #14100a, #1c1610);
+  border: 1px solid rgba(160, 128, 32, 0.25);
   display: flex;
   align-items: center;
   justify-content: center;
   font-family: 'Cinzel', serif;
-  font-size: 26px;
+  font-size: 24px;
   font-weight: 700;
-  color: rgba(212,180,74,0.4);
+  color: rgba(200, 168, 80, 0.4);
   flex-shrink: 0;
 }
-.identityInfo {
-  flex: 1;
-  min-width: 0;
-}
+.identityInfo { flex: 1; min-width: 0; }
 .identityInfo h3 {
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: 'Cinzel', serif;
   font-size: 17px;
   font-weight: 700;
-  color: var(--text);
-  letter-spacing: 0.3px;
+  color: #e8dcc0;
+  letter-spacing: 0.5px;
   line-height: 1.2;
   margin-bottom: 3px;
 }
@@ -290,76 +301,98 @@
   font-family: 'Share Tech Mono', monospace;
   font-size: 10px;
   letter-spacing: 0.5px;
-  color: var(--muted);
+  color: #8a7c5e;
 }
 .sep { margin: 0 6px; opacity: 0.5; }
 
+/* ─── INFRACTIONS (LISTE STRUCTURÉE) ─── */
 .infractions {
-  padding: 8px 10px;
-  background: rgba(168,85,247,0.06);
-  border: 1px solid rgba(168,85,247,0.2);
-  border-radius: 6px;
+  padding: 10px 12px;
+  background: rgba(120, 60, 40, 0.08);
+  border: 1px solid rgba(180, 80, 50, 0.22);
+  border-radius: 4px;
+  margin-bottom: 10px;
+  margin-left: 6px;
 }
 .infractionsLabel {
-  display: block;
+  display: flex;
+  align-items: center;
+  gap: 5px;
   font-family: 'Share Tech Mono', monospace;
   font-size: 8.5px;
   letter-spacing: 1.5px;
-  color: rgba(192,132,252,0.8);
+  color: #c8957a;
   text-transform: uppercase;
-  margin-bottom: 3px;
+  margin-bottom: 6px;
   font-weight: 700;
 }
-.infractions p {
-  font-size: 12px;
-  color: #c4b5fd;
-  line-height: 1.4;
+.infractionsList {
+  list-style: none;
+  padding: 0;
+  margin: 0;
 }
-
-.notes {
-  font-size: 12.5px;
-  line-height: 1.5;
-  color: var(--text2);
+.infractionsList li {
+  font-family: 'EB Garamond', Georgia, serif;
+  font-size: 13px;
   font-style: italic;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
+  color: #e0c8b0;
+  padding: 2px 0 2px 14px;
+  position: relative;
+  line-height: 1.5;
 }
+.infractionsList li::before {
+  content: '§';
+  position: absolute;
+  left: 2px;
+  color: #c8957a;
+  font-weight: 700;
+}
+.infractionMore {
+  font-style: normal !important;
+  font-family: 'Share Tech Mono', monospace !important;
+  font-size: 10.5px !important;
+  color: #8a7c5e !important;
+  letter-spacing: 0.5px;
+  padding-top: 4px !important;
+}
+.infractionMore::before { display: none !important; }
 
+/* ─── AMENDES ─── */
 .amendes {
   display: flex;
   gap: 8px;
   flex-wrap: wrap;
+  margin-left: 6px;
 }
 .amendeTag {
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 4px 10px;
-  background: rgba(34,197,94,0.08);
-  border: 1px solid rgba(34,197,94,0.25);
-  border-radius: 5px;
+  padding: 5px 11px;
+  background: rgba(120, 140, 60, 0.1);
+  border: 1px solid rgba(140, 160, 60, 0.3);
+  border-radius: 4px;
 }
 .amendeTag span {
   font-family: 'Share Tech Mono', monospace;
   font-size: 8px;
   letter-spacing: 1.5px;
-  color: rgba(134,239,172,0.7);
+  color: rgba(180, 200, 130, 0.7);
   text-transform: uppercase;
 }
 .amendeTag strong {
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: 'Cinzel', serif;
   font-size: 13px;
   font-weight: 700;
-  color: #86efac;
+  color: #b8d090;
+  margin-top: 1px;
 }
 .amendeTagImpaye {
-  background: rgba(239,68,68,0.08);
-  border-color: rgba(239,68,68,0.3);
+  background: rgba(180, 80, 50, 0.1);
+  border-color: rgba(180, 80, 50, 0.35);
 }
-.amendeTagImpaye span { color: rgba(252,165,165,0.7); }
-.amendeTagImpaye strong { color: #fca5a5; }
+.amendeTagImpaye span { color: rgba(232, 160, 144, 0.7); }
+.amendeTagImpaye strong { color: #e8a090; }
 
 /* ─── FORMULAIRE ─── */
 .formFields {
@@ -367,6 +400,22 @@
   flex-direction: column;
   gap: 14px;
 }
+.formHint {
+  font-size: 12px;
+  font-style: italic;
+  color: var(--muted);
+  line-height: 1.5;
+  margin: 0 0 4px;
+  padding: 10px 12px;
+  background: rgba(160, 128, 32, 0.06);
+  border-left: 3px solid rgba(160, 128, 32, 0.35);
+  border-radius: 0 4px 4px 0;
+}
+.formHint strong {
+  color: #c8a850;
+  font-style: normal;
+}
+
 .formFields label {
   display: flex;
   flex-direction: column;
@@ -375,7 +424,7 @@
   font-size: 10px;
   letter-spacing: 1.5px;
   text-transform: uppercase;
-  color: rgba(212,180,74,0.85);
+  color: rgba(200, 168, 80, 0.85);
   font-weight: 700;
 }
 .formFields input[type="text"],
@@ -384,8 +433,8 @@
 .formFields select {
   padding: 10px 12px;
   background: rgba(0,0,0,0.4);
-  border: 1px solid rgba(180,140,20,0.35);
-  border-radius: 6px;
+  border: 1px solid rgba(160, 128, 32, 0.35);
+  border-radius: 4px;
   color: var(--text);
   font-size: 13px;
   font-family: 'Barlow', sans-serif;
@@ -397,13 +446,13 @@
 .formFields textarea:focus,
 .formFields select:focus {
   outline: none;
-  border-color: rgba(212,180,74,0.65);
+  border-color: rgba(200, 168, 80, 0.65);
   background: rgba(0,0,0,0.55);
-  box-shadow: 0 0 0 3px rgba(212,180,74,0.1);
+  box-shadow: 0 0 0 3px rgba(200, 168, 80, 0.1);
 }
 .formFields textarea {
   resize: vertical;
-  min-height: 90px;
+  min-height: 80px;
 }
 
 .row {
@@ -417,33 +466,12 @@
   gap: 12px;
 }
 
-.checkboxBox {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 10px 12px;
-  background: rgba(0,0,0,0.4);
-  border: 1px solid rgba(180,140,20,0.35);
-  border-radius: 6px;
-  font-family: 'Barlow', sans-serif;
-  text-transform: none;
-  letter-spacing: normal;
-  color: var(--text);
-  font-size: 13px;
-  font-weight: normal;
-}
-.checkboxBox input[type="checkbox"] {
-  width: 16px;
-  height: 16px;
-  cursor: pointer;
-}
-
 /* Upload */
 .uploadZone {
   position: relative;
   background: rgba(0,0,0,0.4);
-  border: 1px dashed rgba(180,140,20,0.4);
-  border-radius: 6px;
+  border: 1px dashed rgba(160, 128, 32, 0.4);
+  border-radius: 4px;
   min-height: 140px;
   display: flex;
   align-items: center;
@@ -451,7 +479,7 @@
   overflow: hidden;
   cursor: pointer;
 }
-.uploadZone:hover { border-color: rgba(212,180,74,0.7); }
+.uploadZone:hover { border-color: rgba(200, 168, 80, 0.7); }
 .uploadZone input[type="file"] {
   position: absolute;
   inset: 0;
@@ -476,9 +504,9 @@
   right: 8px;
   padding: 4px 10px;
   background: rgba(0,0,0,0.7);
-  border: 1px solid rgba(239,68,68,0.4);
+  border: 1px solid rgba(180, 80, 50, 0.4);
   border-radius: 4px;
-  color: #fca5a5;
+  color: #e8a090;
   font-size: 10px;
   font-family: 'Share Tech Mono', monospace;
   letter-spacing: 1px;
@@ -486,4 +514,24 @@
   cursor: pointer;
   z-index: 2;
 }
-.removePhoto:hover { background: rgba(239,68,68,0.2); }
+
+.checkboxBox {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  background: rgba(0,0,0,0.4);
+  border: 1px solid rgba(160, 128, 32, 0.35);
+  border-radius: 4px;
+  font-family: 'Barlow', sans-serif;
+  text-transform: none;
+  letter-spacing: normal;
+  color: var(--text);
+  font-size: 13px;
+  font-weight: normal;
+}
+.checkboxBox input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+}
