@@ -7,16 +7,15 @@
  *
  * Stockage Firebase : sunagakure/recenses (TABLEAU, format legacy)
  *
- * Cette page partage la même collection Firebase que l'ancien
- * intranet — tous les recensés existants apparaîtront ici, et
- * les ajouts/modifications sont bidirectionnels.
- *
- * Affichage : grille de cartes type "fiche d'identité".
- * Filtres : faction, rang, défunt/vivant, recherche full-text.
+ * ✨ Pattern "vue détaillée" :
+ *   - Clic sur une fiche → navigation vers /recensement/[id]
+ *   - Bouton "Recenser" → modale de création rapide
+ *   - Suppression → directement depuis la card (avec confirm)
  * ════════════════════════════════════════════════════════════════
  */
 
 import { useMemo, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import {
   Plus, Trash2, Save, Search, Camera, Skull, Scroll,
   AlertTriangle, Users,
@@ -34,7 +33,7 @@ import { compressImage } from '@/lib/image';
 import {
   type Recense, type DefuntStatut,
   NATURES_CHAKRA, RANGS, SEXES, DEFUNT_STATUT_LABEL,
-  fmtDateFR, isDefunt, isCriminel,
+  isDefunt, isCriminel,
 } from '@/types/recense';
 
 import styles from './page.module.css';
@@ -43,6 +42,7 @@ const FB_PATH = 'recenses';
 type ViewFilter = 'all' | 'vivants' | 'defunts' | 'criminels';
 
 export default function RecensementPage() {
+  const router = useRouter();
   const CURRENT_USER = useCurrentUser().displayName;
   const { data, loading } = useFirebaseValue<Recense[] | null>(FB_PATH);
 
@@ -50,11 +50,10 @@ export default function RecensementPage() {
   const [filter, setFilter] = useState<ViewFilter>('all');
   const [rangFilter, setRangFilter] = useState<string>('all');
 
+  // Modale uniquement pour la CRÉATION (l'édition se fait sur la page dédiée)
   const [showForm, setShowForm] = useState(false);
-  const [editingId, setEditingId] = useState<number | null>(null);
   const [form, setForm] = useState<Partial<Recense>>({});
 
-  // ─── Normalisation ───
   const all = useMemo<Recense[]>(
     () =>
       (Array.isArray(data) ? data : data ? Object.values(data) : []).filter(
@@ -63,7 +62,6 @@ export default function RecensementPage() {
     [data]
   );
 
-  // ─── Stats ───
   const stats = useMemo(() => {
     const total = all.length;
     const factions = new Set(all.map((r) => (r.faction || '').trim()).filter(Boolean)).size;
@@ -72,7 +70,6 @@ export default function RecensementPage() {
     return { total, factions, criminels, defunts };
   }, [all]);
 
-  // ─── Filtres ───
   const visible = useMemo(() => {
     let list = all;
 
@@ -101,7 +98,6 @@ export default function RecensementPage() {
     }
 
     return [...list].sort((a, b) => {
-      // Vivants en premier, puis tri alphabétique
       const da = isDefunt(a) ? 1 : 0;
       const db = isDefunt(b) ? 1 : 0;
       if (da !== db) return da - db;
@@ -109,22 +105,13 @@ export default function RecensementPage() {
     });
   }, [all, search, filter, rangFilter]);
 
-  // ─── Handlers ───
   function openCreate() {
-    setEditingId(null);
     setForm({ sexe: 'Masculin', rang: 'Genin', natures: [], defuntStatut: '' });
-    setShowForm(true);
-  }
-
-  function openEdit(r: Recense) {
-    setEditingId(r.id);
-    setForm({ ...r, natures: r.natures || [] });
     setShowForm(true);
   }
 
   function closeForm() {
     setShowForm(false);
-    setEditingId(null);
     setForm({});
   }
 
@@ -156,62 +143,54 @@ export default function RecensementPage() {
       return;
     }
 
-    // Vérification doublon (sauf en édition)
-    if (!editingId) {
-      const key = (form.prenom + '|' + form.nom).toLowerCase().trim();
-      const dup = all.some(
-        (r) => ((r.prenom || '') + '|' + (r.nom || '')).toLowerCase().trim() === key
-      );
-      if (dup) {
-        const ok = await confirmAction({
-          title: 'Doublon détecté',
-          message: `Une fiche existe déjà au nom de "${form.prenom} ${form.nom}". Voulez-vous quand même créer une nouvelle fiche ?`,
-          confirmLabel: 'Créer quand même',
-        });
-        if (!ok) return;
-      }
+    const key = (form.prenom + '|' + form.nom).toLowerCase().trim();
+    const dup = all.some(
+      (r) => ((r.prenom || '') + '|' + (r.nom || '')).toLowerCase().trim() === key
+    );
+    if (dup) {
+      const ok = await confirmAction({
+        title: 'Doublon détecté',
+        message: `Une fiche existe déjà au nom de "${form.prenom} ${form.nom}". Voulez-vous quand même créer une nouvelle fiche ?`,
+        confirmLabel: 'Créer quand même',
+      });
+      if (!ok) return;
     }
 
     try {
-      const list = [...all];
       const now = Date.now();
+      const newRecense: Recense = {
+        id: now,
+        prenom: form.prenom!.trim(),
+        nom: form.nom!.trim(),
+        age: form.age || undefined,
+        sexe: form.sexe || 'Masculin',
+        faction: form.faction?.trim() || undefined,
+        rang: form.rang || 'Inconnu',
+        competences: form.competences?.trim() || undefined,
+        natures: form.natures && form.natures.length > 0 ? form.natures : undefined,
+        notes: form.notes?.trim() || undefined,
+        photo: form.photo || undefined,
+        titre: form.titre?.trim() || undefined,
+        metier: form.metier?.trim() || undefined,
+        clan: form.clan?.trim() || undefined,
+        defuntStatut: form.defuntStatut || '',
+        auteur: CURRENT_USER,
+        date: now,
+      };
 
-      if (editingId) {
-        const idx = list.findIndex((r) => r.id === editingId);
-        if (idx === -1) throw new Error('Introuvable');
-        list[idx] = { ...list[idx], ...form, id: editingId } as Recense;
-      } else {
-        list.push({
-          id: now,
-          prenom: form.prenom!.trim(),
-          nom: form.nom!.trim(),
-          age: form.age || undefined,
-          sexe: form.sexe || 'Masculin',
-          faction: form.faction?.trim() || undefined,
-          rang: form.rang || 'Inconnu',
-          competences: form.competences?.trim() || undefined,
-          natures: form.natures && form.natures.length > 0 ? form.natures : undefined,
-          notes: form.notes?.trim() || undefined,
-          photo: form.photo || undefined,
-          titre: form.titre?.trim() || undefined,
-          metier: form.metier?.trim() || undefined,
-          clan: form.clan?.trim() || undefined,
-          defuntStatut: form.defuntStatut || '',
-          auteur: CURRENT_USER,
-          date: now,
-        });
-      }
-
-      await dbSet(FB_PATH, list);
-      toast.success(editingId ? 'Fiche mise à jour' : 'Personne recensée');
+      await dbSet(FB_PATH, [...all, newRecense]);
+      toast.success('Personne recensée');
       closeForm();
+      // Navigation immédiate vers la fiche créée
+      router.push(`/recensement/${now}`);
     } catch (err) {
       console.error(err);
       toast.error('Erreur lors de la sauvegarde');
     }
   }
 
-  async function handleDelete(r: Recense) {
+  async function handleDelete(r: Recense, e: React.MouseEvent) {
+    e.stopPropagation();
     const ok = await confirmAction({
       title: 'Supprimer la fiche',
       message: `Supprimer définitivement la fiche de ${r.prenom} ${r.nom} ?`,
@@ -227,7 +206,10 @@ export default function RecensementPage() {
     }
   }
 
-  // ─── Rendu ───
+  function openFiche(r: Recense) {
+    router.push(`/recensement/${r.id}`);
+  }
+
   return (
     <>
       <Card
@@ -316,7 +298,6 @@ export default function RecensementPage() {
           {visible.length} résultat{visible.length > 1 ? 's' : ''}
         </div>
 
-        {/* Grille */}
         {loading ? (
           <p className={styles.empty}>Chargement…</p>
         ) : visible.length === 0 ? (
@@ -337,7 +318,7 @@ export default function RecensementPage() {
                 <article
                   key={r.id}
                   className={`${styles.fiche} ${defunt ? styles.ficheDefunt : ''} ${criminel ? styles.ficheCriminel : ''}`}
-                  onClick={() => openEdit(r)}
+                  onClick={() => openFiche(r)}
                 >
                   <div className={styles.ficheTop}>
                     {r.photo ? (
@@ -350,10 +331,7 @@ export default function RecensementPage() {
                     )}
                     <button
                       className={styles.deleteBtn}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleDelete(r);
-                      }}
+                      onClick={(e) => handleDelete(r, e)}
                       aria-label="Supprimer"
                     >
                       <Trash2 size={13} />
@@ -408,11 +386,11 @@ export default function RecensementPage() {
         )}
       </Card>
 
-      {/* Modale */}
+      {/* Modale de CRÉATION uniquement (édition sur page dédiée) */}
       <Modal
         open={showForm}
         onClose={closeForm}
-        title={editingId ? `Modifier la fiche de ${form.prenom} ${form.nom}` : 'Recenser une personne'}
+        title="Recenser une personne"
         size="lg"
         footer={
           <>
