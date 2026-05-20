@@ -5,20 +5,17 @@
  *  Page DOSSIERS — Dossiers criminels de la police
  * ════════════════════════════════════════════════════════════════
  *
- * ✨ REFONTE "RAPPORT POLICE" :
- * - Numéro de dossier DOS-2026-XXX
- * - Icône dossier suspendu
- * - Cachet "RECHERCHÉ" / "GARDE À VUE" en surimpression
- * - Tons sépia / rouille (vintage)
- * - Aperçu infractions sous forme de liste à puces
+ * ✨ MISE À JOUR :
+ * - Autocomplétion du nom depuis le Recensement à la création
+ * - Click sur suggestion = pré-remplit nom + photo + recenseId
  * ════════════════════════════════════════════════════════════════
  */
 
 import { useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import {
-  Plus, Trash2, Save, Search, Camera, Skull, FileText,
-  AlertTriangle, FolderOpen, Coins,
+  Plus, Trash2, Save, Search, Camera, FileText,
+  AlertTriangle, FolderOpen, Coins, Users, BookOpen,
 } from 'lucide-react';
 
 import { useFirebaseValue } from '@/hooks/useFirebaseValue';
@@ -37,18 +34,37 @@ import {
   DANGER_LABEL, DOSSIER_STATUT_LABEL, fmtMoney, fmtDateFR,
   getNextDossierNumber, computeAmendeTotals,
 } from '@/types/dossier';
+import type { Recense } from '@/types/recense';
 
 import styles from './page.module.css';
+import detailStyles from './[id]/page.module.css';
 
 const FB_PATH = 'dossiers';
+const FB_RECENSES_PATH = 'recenses';
 type DangerFilter = 'all' | DossierDanger;
 type StatutFilter = 'all' | DossierStatut;
+
+// ─── Fuzzy match helper (ignore accents + casse) ───
+function normalize(s: string): string {
+  return (s || '')
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '');
+}
+function fuzzyMatch(needle: string, haystack: string): boolean {
+  const n = normalize(needle.trim());
+  if (!n) return false;
+  const h = normalize(haystack);
+  const words = n.split(/\s+/).filter(Boolean);
+  return words.every((w) => h.includes(w));
+}
 
 export default function DossiersPage() {
   const router = useRouter();
   const u = useCurrentUser();
   const CURRENT_USER = u.displayName;
   const { data, loading } = useFirebaseValue<Dossier[] | null>(FB_PATH);
+  const { data: recensesData } = useFirebaseValue<Recense[] | null>(FB_RECENSES_PATH);
 
   const [search, setSearch] = useState('');
   const [dangerFilter, setDangerFilter] = useState<DangerFilter>('all');
@@ -63,6 +79,13 @@ export default function DossiersPage() {
       (d): d is Dossier => d !== null && typeof d === 'object' && !!d.id
     );
   }, [data]);
+
+  const recenses = useMemo<Recense[]>(() => {
+    if (!recensesData) return [];
+    return (Array.isArray(recensesData) ? recensesData : Object.values(recensesData)).filter(
+      (r): r is Recense => r !== null && typeof r === 'object' && !!r.id
+    );
+  }, [recensesData]);
 
   const visible = useMemo(() => {
     let list = all;
@@ -87,8 +110,6 @@ export default function DossiersPage() {
     const total = all.length;
     const recherches = all.filter((d) => d.statut === 'recherche').length;
     const gardeVue = all.filter((d) => d.statut === 'garde_vue').length;
-
-    // Total amendes : on prend infractionsList si présent, sinon amendeImpayee legacy
     let totalImpayee = 0;
     for (const d of all) {
       if (d.infractionsList && d.infractionsList.length > 0) {
@@ -101,6 +122,22 @@ export default function DossiersPage() {
     return { total, recherches, gardeVue, totalImpayee };
   }, [all]);
 
+  // ─── Suggestions Recensement ───
+  const recenseSuggestions = useMemo<Recense[]>(() => {
+    const q = (form.nom || '').trim();
+    if (q.length < 2) return [];
+    // Si on a déjà sélectionné un recensé qui matche, on n'affiche pas
+    if (form.recenseId) {
+      const picked = recenses.find((r) => r.id === form.recenseId);
+      if (picked && normalize(`${picked.prenom} ${picked.nom}`) === normalize(q)) {
+        return [];
+      }
+    }
+    return recenses
+      .filter((r) => fuzzyMatch(q, `${r.prenom || ''} ${r.nom || ''}`))
+      .slice(0, 6);
+  }, [form.nom, form.recenseId, recenses]);
+
   function openCreate() {
     setForm({ danger: 'moyen', statut: 'ouvert', defunt: false });
     setShowForm(true);
@@ -109,6 +146,21 @@ export default function DossiersPage() {
   function closeForm() {
     setShowForm(false);
     setForm({});
+  }
+
+  function pickRecense(r: Recense) {
+    const nomComplet = `${r.prenom || ''} ${r.nom || ''}`.trim();
+    setForm({
+      ...form,
+      nom: nomComplet,
+      recenseId: r.id,
+      photo: r.photo || form.photo,
+    });
+    toast.success(`"${nomComplet}" sélectionné·e depuis le recensement`);
+  }
+
+  function clearRecenseLink() {
+    setForm({ ...form, recenseId: undefined });
   }
 
   function openFiche(d: Dossier) {
@@ -128,6 +180,7 @@ export default function DossiersPage() {
         id: now,
         numeroDossier,
         nom: form.nom!.trim(),
+        recenseId: form.recenseId || undefined,
         danger: form.danger || 'moyen',
         statut: form.statut || 'ouvert',
         notes: form.notes?.trim() || undefined,
@@ -147,7 +200,7 @@ export default function DossiersPage() {
         action: 'create',
         target: 'dossier',
         targetId: String(now),
-        detail: `Ouverture du dossier ${numeroDossier} sur ${form.nom!.trim()} (danger: ${form.danger || 'moyen'})`,
+        detail: `Ouverture du dossier ${numeroDossier} sur ${form.nom!.trim()}${form.recenseId ? ` (lié au recensé #${form.recenseId})` : ''}`,
       });
 
       await dbSet(FB_PATH, [...all, newDossier]);
@@ -199,6 +252,12 @@ export default function DossiersPage() {
     }
   }
 
+  // Détecte si le recensé sélectionné existe encore
+  const linkedRecense = useMemo(
+    () => form.recenseId ? recenses.find((r) => r.id === form.recenseId) : null,
+    [form.recenseId, recenses],
+  );
+
   return (
     <>
       <Card
@@ -212,7 +271,7 @@ export default function DossiersPage() {
           </RequireMembreBranche>
         }
       >
-        {/* Stats hero — style vintage */}
+        {/* Stats */}
         <div className={styles.statGrid}>
           <StatCard label="Total dossiers" value={stats.total} variant="default" />
           <StatCard label="Recherchés" value={stats.recherches} variant="danger" />
@@ -272,7 +331,6 @@ export default function DossiersPage() {
         ) : (
           <div className={styles.grid}>
             {visible.map((d) => {
-              // Récupère les infractions structurées OU fallback legacy
               const hasNewInfractions = d.infractionsList && d.infractionsList.length > 0;
               const previewInfractions = hasNewInfractions
                 ? d.infractionsList!.slice(0, 3).map((i) => i.nom)
@@ -290,7 +348,6 @@ export default function DossiersPage() {
                   className={`${styles.dossier} ${styles[`d-${d.danger}`]} ${d.defunt ? styles.defunt : ''}`}
                   onClick={() => openFiche(d)}
                 >
-                  {/* Cachet "RECHERCHÉ" / "GARDE À VUE" en surimpression */}
                   {d.statut === 'recherche' && !d.defunt && (
                     <div className={styles.stamp}>RECHERCHÉ</div>
                   )}
@@ -301,7 +358,6 @@ export default function DossiersPage() {
                     <div className={`${styles.stamp} ${styles.stampDefunt}`}>DÉFUNT</div>
                   )}
 
-                  {/* Header : icône dossier + numéro + danger */}
                   <div className={styles.dossierHeader}>
                     <div className={styles.dossierTab}>
                       <FileText size={11} />
@@ -324,7 +380,6 @@ export default function DossiersPage() {
                     </RequireMembreBranche>
                   </div>
 
-                  {/* Identité */}
                   <div className={styles.identity}>
                     {d.photo ? (
                       // eslint-disable-next-line @next/next/no-img-element
@@ -348,7 +403,6 @@ export default function DossiersPage() {
                     </div>
                   </div>
 
-                  {/* Liste d'infractions (preview) */}
                   {previewInfractions.length > 0 && (
                     <div className={styles.infractions}>
                       <div className={styles.infractionsLabel}>
@@ -367,7 +421,6 @@ export default function DossiersPage() {
                     </div>
                   )}
 
-                  {/* Amendes */}
                   {(totals.total > 0 || totals.impayee > 0) && (
                     <div className={styles.amendes}>
                       {totals.payee > 0 && (
@@ -391,7 +444,7 @@ export default function DossiersPage() {
         )}
       </Card>
 
-      {/* Modale de CRÉATION (la fiche détaillée gère l'édition) */}
+      {/* ═══ MODALE DE CRÉATION ═══ */}
       <Modal
         open={showForm}
         onClose={closeForm}
@@ -410,16 +463,89 @@ export default function DossiersPage() {
             <strong> amendes</strong> depuis la fiche détaillée.
           </p>
 
+          {/* ─── Nom + autocomplétion ─── */}
           <label>
             Nom complet du suspect *
             <input
               type="text"
               value={form.nom ?? ''}
-              onChange={(e) => setForm({ ...form, nom: e.target.value })}
+              onChange={(e) => setForm({
+                ...form,
+                nom: e.target.value,
+                // Reset le lien recensé si le user retape manuellement
+                recenseId: undefined,
+              })}
               autoFocus
-              placeholder="Prénom et nom de la personne"
+              placeholder="Prénom et nom (cherche dans le recensement)"
             />
           </label>
+
+          {/* Suggestions Recensement */}
+          {recenseSuggestions.length > 0 && (
+            <div className={detailStyles.suggestions}>
+              <div className={detailStyles.suggestionsLabel}>
+                <BookOpen size={11} /> Suggestions du Recensement ({recenseSuggestions.length})
+              </div>
+              {recenseSuggestions.map((r) => (
+                <button
+                  key={r.id}
+                  type="button"
+                  className={detailStyles.suggestion}
+                  onClick={() => pickRecense(r)}
+                >
+                  {r.photo ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={r.photo} alt={`${r.prenom} ${r.nom}`} className={styles.suggestionPhoto} />
+                  ) : (
+                    <div className={styles.suggestionPhotoPh}>
+                      {(r.prenom?.[0] || '?').toUpperCase()}
+                    </div>
+                  )}
+                  <div className={detailStyles.suggInfo}>
+                    <div className={detailStyles.suggName}>
+                      {r.prenom} {r.nom}
+                    </div>
+                    <div className={detailStyles.suggMeta}>
+                      {r.rang || 'Sans rang'}
+                      {r.faction && ` · ${r.faction}`}
+                      {r.clan && ` · Clan ${r.clan}`}
+                    </div>
+                  </div>
+                </button>
+              ))}
+            </div>
+          )}
+
+          {(form.nom || '').trim().length > 0 && (form.nom || '').trim().length < 2 && !form.recenseId && (
+            <p className={detailStyles.hintInline}>
+              Tape au moins 2 lettres pour chercher dans le recensement
+            </p>
+          )}
+
+          {(form.nom || '').trim().length >= 2 && recenseSuggestions.length === 0 && !form.recenseId && (
+            <p className={detailStyles.hintInline}>
+              <em>Personne non recensée — saisie libre acceptée</em>
+            </p>
+          )}
+
+          {/* Lien recensé sélectionné */}
+          {linkedRecense && (
+            <div className={styles.linkedRecense}>
+              <Users size={12} />
+              <span>
+                Lié au recensé : <strong>{linkedRecense.prenom} {linkedRecense.nom}</strong>
+                {linkedRecense.rang && ` (${linkedRecense.rang})`}
+              </span>
+              <button
+                type="button"
+                className={styles.unlinkBtn}
+                onClick={clearRecenseLink}
+                title="Retirer le lien"
+              >
+                ✕
+              </button>
+            </div>
+          )}
 
           <div className={styles.row}>
             <label>
@@ -497,7 +623,6 @@ export default function DossiersPage() {
   );
 }
 
-// ─── Stat card sous-composant ───
 function StatCard({ label, value, variant }: {
   label: string;
   value: number | string;
