@@ -181,20 +181,30 @@ export default function ComptaModule({ section }: Props) {
         const idx = list.findIndex((t) => t.id === editingId);
         if (idx === -1) throw new Error('Introuvable');
         oldTx = list[idx];
-        list[idx] = { ...list[idx], ...form, type, id: editingId } as ComptaTransaction;
-        savedTx = list[idx];
+        // Merge propre : on évite d'injecter des undefined dans Firebase
+        const merged: ComptaTransaction = { ...list[idx], ...form, type, id: editingId } as ComptaTransaction;
+        const cleanedDesc = form.description?.trim();
+        const cleanedRef = form.ref?.trim();
+        if (cleanedDesc) merged.description = cleanedDesc; else delete (merged as Partial<ComptaTransaction>).description;
+        if (cleanedRef) merged.ref = cleanedRef; else delete (merged as Partial<ComptaTransaction>).ref;
+        list[idx] = merged;
+        savedTx = merged;
         isUpdate = true;
       } else {
-        savedTx = {
+        // Construction du nouvel objet SANS clés undefined (Firebase les refuse)
+        const newTx: ComptaTransaction = {
           id: now,
           type,
           category: form.category,
           montant: Number(form.montant),
-          description: form.description?.trim() || undefined,
           date: form.date || now,
           agent: form.agent?.trim() || CURRENT_USER,
-          ref: form.ref?.trim() || undefined,
         };
+        const cleanedDesc = form.description?.trim();
+        const cleanedRef = form.ref?.trim();
+        if (cleanedDesc) newTx.description = cleanedDesc;
+        if (cleanedRef) newTx.ref = cleanedRef;
+        savedTx = newTx;
         list.push(savedTx);
       }
 
