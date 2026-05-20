@@ -26,6 +26,7 @@ import { toast } from '@/lib/toast';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Modal } from '@/components/ui/Modal';
+import { RequireBranche } from '@/components/Require';
 import { confirmAction } from '@/components/ui/ConfirmDialog';
 import {
   type ConsultPsy, type PsySeverite,
@@ -38,7 +39,10 @@ const FB_PATH = 'hospital_psy';
 type Filter = 'all' | PsySeverite;
 
 export default function PsyPage() {
-  const CURRENT_USER = useCurrentUser().displayName;
+  const { can, displayName } = useCurrentUser();
+  const canEdit = can.adminBranche('medecin');
+  const CURRENT_USER = displayName;
+
   const { data, loading } = useFirebaseValue<ConsultPsy[] | null>(FB_PATH);
 
   const [filter, setFilter] = useState<Filter>('all');
@@ -91,6 +95,7 @@ export default function PsyPage() {
     setShowForm(true);
   }
   function openEdit(c: ConsultPsy) {
+    if (!canEdit) return;
     setEditingId(c.id); setForm(c); setShowForm(true);
   }
   function closeForm() {
@@ -149,7 +154,11 @@ export default function PsyPage() {
       <Card
         title="Salon psy"
         subtitle="Suivi psychologique — données confidentielles"
-        actions={<Button onClick={openCreate}><Plus size={14} /> Nouvelle consultation</Button>}
+        actions={
+          <RequireBranche branche="medecin">
+            <Button onClick={openCreate}><Plus size={14} /> Nouvelle consultation</Button>
+          </RequireBranche>
+        }
       >
         <div className={styles.statGrid}>
           <div className={`${styles.statCard} ${styles.scPurple}`}>
@@ -217,6 +226,7 @@ export default function PsyPage() {
                 key={c.id}
                 className={`${styles.consult} ${styles[`sv-${c.severite}`]}`}
                 onClick={() => openEdit(c)}
+                style={canEdit ? { cursor: 'pointer' } : { cursor: 'default' }}
               >
                 <div className={styles.consultHeader}>
                   <span className={`${styles.severiteChip} ${styles[`chip-${c.severite}`]}`}>
@@ -233,16 +243,18 @@ export default function PsyPage() {
                       Prochain : {fmtDateFR(c.prochainRdv)}
                     </span>
                   )}
-                  <button
-                    className={styles.deleteBtn}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleDelete(c);
-                    }}
-                    aria-label="Supprimer"
-                  >
-                    <Trash2 size={13} />
-                  </button>
+                  {canEdit && (
+                    <button
+                      className={styles.deleteBtn}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDelete(c);
+                      }}
+                      aria-label="Supprimer"
+                    >
+                      <Trash2 size={13} />
+                    </button>
+                  )}
                 </div>
 
                 <div className={styles.consultBody}>
