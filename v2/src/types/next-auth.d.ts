@@ -1,40 +1,31 @@
-/**
- * Types étendus pour NextAuth.
- *
- * Permet à TypeScript de connaître les champs Discord ajoutés
- * dans le callback session() de [...nextauth]/route.ts.
- *
- * Phase B : ajoute aussi le champ `intranetUser` qui contient
- * le rang, les branches, les permissions gérant/co-gérant, etc.
- */
-import 'next-auth';
-import 'next-auth/jwt';
-import type { IntranetUser } from '@/lib/roles';
+import type { IntranetUser } from "@/lib/roles";
+import type { DefaultSession } from "next-auth";
+import type { DefaultJWT } from "next-auth/jwt";
 
-declare module 'next-auth' {
-  interface Session {
-    user: {
-      name?: string | null;
-      email?: string | null;
-      image?: string | null;
-      // Champs Discord ajoutés via callback
+declare module "next-auth" {
+  interface Session extends DefaultSession {
+    intranet?: IntranetUser;
+    lastRefresh?: number;
+    user?: {
       discordId?: string;
       discordUsername?: string;
       discordGlobalName?: string;
       discordAvatar?: string | null;
-    };
-    // Phase B : utilisateur intranet enrichi (rang, branches, permissions)
-    intranetUser?: IntranetUser;
+    } & DefaultSession["user"];
   }
 }
 
-declare module 'next-auth/jwt' {
-  interface JWT {
+declare module "next-auth/jwt" {
+  interface JWT extends DefaultJWT {
     discordId?: string;
     discordUsername?: string;
     discordGlobalName?: string;
     discordAvatar?: string | null;
-    // Phase B : utilisateur intranet enrichi (stocké dans le token)
-    intranetUser?: IntranetUser;
+    intranet?: IntranetUser;
+    // Refresh automatique
+    accessToken?: string;
+    refreshToken?: string;
+    expiresAt?: number;
+    lastRefresh?: number;
   }
 }
