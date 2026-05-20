@@ -5,20 +5,10 @@
  *  PAGE DE RÉFÉRENCE — Patients (module Médical)
  * ════════════════════════════════════════════════════════════════
  *
- * Cette page est l'EXEMPLE COMPLET qui sert de modèle pour migrer
- * toutes les autres pages. Elle illustre :
- *
- *   1. Lecture temps réel d'une collection Firebase (useFirebaseValue)
- *   2. Recherche/filtre côté client (useMemo)
- *   3. Création d'un enregistrement (dbPush)
- *   4. Édition d'un enregistrement (dbUpdate)
- *   5. Suppression avec confirmation (dbRemove + confirmAction)
- *   6. Toast pour les retours utilisateur
- *   7. Modale réutilisable (composant Modal)
- *   8. Permissions par branche (RequireBranche + can.adminBranche)
- *
- * Quand tu migres une autre page (Consultations, Plaintes, Casiers, …),
- * pars de ce fichier, copie-le, et adapte les types + les champs.
+ * Permissions :
+ * - Voir : tout le monde (connecté)
+ * - Créer / modifier / supprimer : TOUS LES MEMBRES MÉDECIN + Admin
+ *   (action opérationnelle quotidienne)
  * ════════════════════════════════════════════════════════════════
  */
 
@@ -32,30 +22,25 @@ import { toast } from '@/lib/toast';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Modal } from '@/components/ui/Modal';
-import { RequireBranche } from '@/components/Require';
+import { RequireMembreBranche } from '@/components/Require';
 import { confirmAction } from '@/components/ui/ConfirmDialog';
 import type { Patient } from '@/types/medical';
 
 import styles from './page.module.css';
 
-// Chemin Firebase où sont stockés les patients
 const FB_PATH = 'medical/patients';
 
 export default function PatientsPage() {
-  // ─── Permissions ───
   const { can } = useCurrentUser();
-  const canEdit = can.adminBranche('medecin');
+  const canEdit = can.membreBranche('medecin');
 
-  // ─── Lecture temps réel des patients depuis Firebase ───
   const { data, loading } = useFirebaseValue<Record<string, Patient>>(FB_PATH);
 
-  // ─── État local : recherche + formulaire ───
   const [search, setSearch] = useState('');
   const [editingId, setEditingId] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState<Partial<Patient>>({});
 
-  // ─── Liste filtrée + triée (mémoïsée) ───
   const patients = useMemo(() => {
     if (!data) return [];
     const arr = Object.entries(data).map(([id, p]) => ({ ...p, id }));
@@ -72,7 +57,6 @@ export default function PatientsPage() {
       .sort((a, b) => (a.nom || '').localeCompare(b.nom || ''));
   }, [data, search]);
 
-  // ─── Handlers ───
   function openCreate() {
     setEditingId(null);
     setForm({});
@@ -135,7 +119,6 @@ export default function PatientsPage() {
     }
   }
 
-  // ─── Rendu ───
   return (
     <>
       <Card
@@ -152,11 +135,11 @@ export default function PatientsPage() {
                 onChange={(e) => setSearch(e.target.value)}
               />
             </div>
-            <RequireBranche branche="medecin">
+            <RequireMembreBranche branche="medecin">
               <Button onClick={openCreate}>
                 <Plus size={14} /> Nouveau
               </Button>
-            </RequireBranche>
+            </RequireMembreBranche>
           </>
         }
       >
@@ -211,7 +194,6 @@ export default function PatientsPage() {
         )}
       </Card>
 
-      {/* Formulaire dans une Modal réutilisable */}
       <Modal
         open={showForm}
         onClose={closeForm}
