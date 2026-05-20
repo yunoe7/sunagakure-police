@@ -24,6 +24,16 @@ import styles from './Sidebar.module.css';
  *  - Clic sur l'avatar → ouvre un menu déroulant
  *  - "🔄 Refresh mes rôles" : force le refetch des rôles Discord
  *  - "🚪 Déconnexion" : logout
+ *
+ * Badges :
+ *  - Rang ninja (or)
+ *  - Branches (bleu)
+ *  - Clan (violet)
+ *  - Gérant / Co-gérant de branche (vert)
+ *  - Conseil du Vent, Conseiller Kazekage (rouge institutionnel)
+ *  - Staff (gris)
+ *  - Kazekage RP (or brillant)
+ *  - Admin technique (or)
  */
 export function Sidebar() {
   const pathname = usePathname();
@@ -81,18 +91,6 @@ export function Sidebar() {
     close();
   }
 
-  const branchesAffichees = u.user?.branches.slice(0, 2).map((b) => b.nom) ?? [];
-  if ((u.user?.branches.length ?? 0) > 2) {
-    branchesAffichees.push(`+${u.user!.branches.length - 2}`);
-  }
-  const segmentsBas = [...branchesAffichees];
-  if (u.user?.clan) segmentsBas.push(u.user.clan);
-  const ligneBas = segmentsBas.join(' · ');
-
-  const sousTitre =
-    u.user?.rang?.nom ??
-    (u.username ? `@${u.username}` : 'Membre du village');
-
   const allHrefs = NAV_SECTIONS.flatMap((s) => s.items.map((i) => i.href));
 
   function isItemActive(itemHref: string): boolean {
@@ -103,6 +101,158 @@ export function Sidebar() {
     if (!hasChildren) return false;
     return pathname.startsWith(itemHref + '/');
   }
+
+  // ─── Préparation des badges ─────────────────────────────────
+  // Construit la liste de tous les badges à afficher pour l'user
+  type Badge = {
+    label: string;
+    color: 'gold' | 'blue' | 'purple' | 'green' | 'greenLight' | 'red' | 'gray' | 'goldBright';
+    icon?: string;
+    title?: string;
+  };
+
+  const badges: Badge[] = [];
+
+  if (u.user) {
+    // Rang ninja
+    if (u.user.rang) {
+      badges.push({
+        label: u.user.rang.nom,
+        color: 'gold',
+        title: 'Rang ninja',
+      });
+    }
+
+    // Branches
+    for (const b of u.user.branches) {
+      const isGerant = u.user.gerantDe.includes(b.slug);
+      const isCoGerant = u.user.coGerantDe.includes(b.slug);
+      if (isGerant) {
+        badges.push({
+          label: `Gérant ${b.nom}`,
+          color: 'green',
+          icon: '⭐',
+          title: `Chef de la branche ${b.nom}`,
+        });
+      } else if (isCoGerant) {
+        badges.push({
+          label: `Co-gérant ${b.nom}`,
+          color: 'greenLight',
+          title: `Co-gérant de la branche ${b.nom}`,
+        });
+      } else {
+        badges.push({
+          label: b.nom,
+          color: 'blue',
+          title: `Membre de la branche ${b.nom}`,
+        });
+      }
+    }
+
+    // Clan
+    if (u.user.clan) {
+      badges.push({
+        label: u.user.clan,
+        color: 'purple',
+        title: 'Clan',
+      });
+    }
+
+    // Rôles institutionnels (rouge)
+    if (u.user.isKazekage) {
+      badges.push({
+        label: 'Kazekage',
+        color: 'goldBright',
+        icon: '👑',
+        title: 'Kazekage du village',
+      });
+    }
+    if (u.user.isConseilDuVent) {
+      badges.push({
+        label: 'Conseil du Vent',
+        color: 'red',
+        icon: '🏛️',
+        title: 'Membre du Conseil du Vent',
+      });
+    }
+    if (u.user.isConseillerKazekage) {
+      badges.push({
+        label: 'Conseiller',
+        color: 'red',
+        icon: '🏛️',
+        title: 'Conseiller du Kazekage',
+      });
+    }
+
+    // Staff
+    if (u.user.isStaff) {
+      badges.push({
+        label: 'Staff',
+        color: 'gray',
+        icon: '🛡️',
+        title: 'Équipe staff',
+      });
+    }
+  }
+
+  // Mapping couleur → styles inline (pour ne pas avoir à toucher au CSS)
+  const colorStyles: Record<Badge['color'], React.CSSProperties> = {
+    gold: {
+      background: 'rgba(212, 172, 13, 0.18)',
+      color: '#d4ac0d',
+      border: '1px solid rgba(212, 172, 13, 0.35)',
+    },
+    goldBright: {
+      background: 'rgba(255, 215, 0, 0.22)',
+      color: '#ffd700',
+      border: '1px solid rgba(255, 215, 0, 0.5)',
+      textShadow: '0 0 6px rgba(255, 215, 0, 0.4)',
+    },
+    blue: {
+      background: 'rgba(59, 130, 246, 0.18)',
+      color: '#93c5fd',
+      border: '1px solid rgba(59, 130, 246, 0.35)',
+    },
+    purple: {
+      background: 'rgba(168, 85, 247, 0.18)',
+      color: '#c4b5fd',
+      border: '1px solid rgba(168, 85, 247, 0.35)',
+    },
+    green: {
+      background: 'rgba(34, 197, 94, 0.22)',
+      color: '#86efac',
+      border: '1px solid rgba(34, 197, 94, 0.45)',
+    },
+    greenLight: {
+      background: 'rgba(34, 197, 94, 0.12)',
+      color: '#bbf7d0',
+      border: '1px solid rgba(34, 197, 94, 0.25)',
+    },
+    red: {
+      background: 'rgba(239, 68, 68, 0.18)',
+      color: '#fca5a5',
+      border: '1px solid rgba(239, 68, 68, 0.4)',
+    },
+    gray: {
+      background: 'rgba(156, 163, 175, 0.15)',
+      color: '#d1d5db',
+      border: '1px solid rgba(156, 163, 175, 0.3)',
+    },
+  };
+
+  const badgeBaseStyle: React.CSSProperties = {
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: 3,
+    padding: '2px 7px',
+    fontSize: 9,
+    fontWeight: 600,
+    letterSpacing: '0.04em',
+    borderRadius: 4,
+    textTransform: 'uppercase',
+    whiteSpace: 'nowrap',
+    lineHeight: 1.3,
+  };
 
   return (
     <>
@@ -178,7 +328,7 @@ export function Sidebar() {
             ) : (
               <div className={styles.avatar}>{u.initials}</div>
             )}
-            <div className={styles.userInfo}>
+            <div className={styles.userInfo} style={{ minWidth: 0, flex: 1 }}>
               <div className={styles.uname}>
                 {u.isLoading ? '…' : u.displayName}
                 {u.user?.isAdmin && (
@@ -201,21 +351,32 @@ export function Sidebar() {
                   </span>
                 )}
               </div>
-              <div className={styles.urank}>
-                {u.isLoading ? '…' : sousTitre}
-              </div>
-              {ligneBas && (
+
+              {/* 🎨 Tous les badges (rang, branches, clan, rôles spéciaux) */}
+              {u.isLoading ? (
+                <div className={styles.urank}>…</div>
+              ) : badges.length > 0 ? (
                 <div
-                  className={styles.urank}
                   style={{
-                    fontSize: '0.7rem',
-                    opacity: 0.7,
-                    marginTop: 1,
+                    display: 'flex',
+                    flexWrap: 'wrap',
+                    gap: 3,
+                    marginTop: 3,
                   }}
-                  title={u.user?.branches.map((b) => b.nom).join(', ')}
                 >
-                  {ligneBas}
+                  {badges.map((b, i) => (
+                    <span
+                      key={i}
+                      style={{ ...badgeBaseStyle, ...colorStyles[b.color] }}
+                      title={b.title}
+                    >
+                      {b.icon && <span>{b.icon}</span>}
+                      {b.label}
+                    </span>
+                  ))}
                 </div>
+              ) : (
+                <div className={styles.urank}>Membre du village</div>
               )}
             </div>
 
