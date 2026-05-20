@@ -5,22 +5,21 @@
  *  - Scopes étendus : identify + email + guilds + guilds.members.read
  *  - Callback signIn : vérifie membre serveur OU whitelist + LOG FIREBASE
  *  - Callback jwt    : enrichit le token + REFRESH AUTO toutes les 60s
+ *                      + SYNC FIREBASE si les rôles ont changé
  *  - Callback session: expose ces données au client
- *  - Log Firebase    : enregistre les users dans members/{discordId}
  *
- *  ✨ NOUVEAU : refresh automatique des rôles Discord toutes les 60s
- *     via le refresh_token (pas besoin de bot Discord).
+ *  ✨ Refresh automatique des rôles Discord toutes les 60s
+ *  ✨ Sync Firebase si rôles changés (page /admin/membres à jour)
+ *  ✨ Si refresh échoue, on garde les anciens rôles (pas d'écrasement)
  * ═══════════════════════════════════════════════════════════════════
  */
 
 import type { NextAuthOptions } from "next-auth";
-import type { JWT } from "next-auth/jwt";
 import DiscordProvider from "next-auth/providers/discord";
 import { fetchGuildMember } from "@/lib/discord";
 import { isInWhitelist } from "@/lib/whitelist";
 import { buildIntranetUser, type IntranetUser } from "@/lib/roles";
 
-// Refresh des rôles Discord toutes les 60 secondes
 const REFRESH_INTERVAL_MS = 60 * 1000;
 
 // ─── Helper : écrire un membre dans Firebase ──────────────────────
@@ -69,11 +68,35 @@ async function logUserToFirebase(params: {
     if (!putRes.ok) {
       console.error("[Auth] ❌ Échec écriture Firebase members/", params.discordId, await putRes.text());
     } else {
-      console.log("[Auth] ✅ logUserToFirebase OK pour", params.username);
+      console.log("[Auth] ✅ Firebase sync OK pour", params.username);
     }
   } catch (err) {
     console.error("[Auth] ❌ Erreur logUserToFirebase :", err);
   }
+}
+
+// ─── Helper : compare deux IntranetUser pour savoir si Firebase doit être mis à jour
+function hasIntranetChanged(oldUser: IntranetUser | null, newUser: IntranetUser): boolean {
+  if (!oldUser) return true;
+  if (oldUser.rang?.id !== newUser.rang?.id) return true;
+  if (oldUser.clan !== newUser.clan) return true;
+  if (oldUser.isAdmin !== newUser.isAdmin) return true;
+  if (oldUser.isKazekage !== newUser.isKazekage) return true;
+  if (oldUser.isStaff !== newUser.isStaff) return true;
+
+  const oldBranches = oldUser.branches.map((b) => b.slug).sort().join(',');
+  const newBranches = newUser.branches.map((b) => b.slug).sort().join(',');
+  if (oldBranches !== newBranches) return true;
+
+  const oldGerant = [...oldUser.gerantDe].sort().join(',');
+  const newGerant = [...newUser.gerantDe].sort().join(',');
+  if (oldGerant !== newGerant) return true;
+
+  const oldCoGerant = [...oldUser.coGerantDe].sort().join(',');
+  const newCoGerant = [...newUser.coGerantDe].sort().join(',');
+  if (oldCoGerant !== newCoGerant) return true;
+
+  return false;
 }
 
 // ─── Helper : renouvelle l'access_token Discord via refresh_token ──
@@ -105,8 +128,8 @@ async function refreshDiscordAccessToken(refreshToken: string): Promise<{
     const data = await res.json();
     return {
       access_token: data.access_token,
-      refresh_token: data.refresh_token ?? refreshToken, // Discord ne renvoie pas toujours un nouveau
-      expires_at: Math.floor(Date.now() / 1000) + (data.expires_in ?? 604800), // 7 jours par défaut
+      refresh_token: data.refresh_token ?? refreshToken,
+      expires_at: Math.floor(Date.now() / 1000) + (data.expires_in ?? 604800),
     };
   } catch (err) {
     console.error("[Auth] ❌ Erreur refresh Discord token :", err);
@@ -125,12 +148,19 @@ async function rebuildIntranetUser(
     const whitelisted = await isInWhitelist(discordId);
     const guildData = await fetchGuildMember(accessToken);
 
+    // 🔒 Si l'appel Discord a échoué (pas de rôles retournés), on retourne null
+    //    pour signaler qu'on ne doit PAS écraser l'intranet existant
+    if (!guildData) {
+      console.warn("[Auth] ⚠️ fetchGuildMember a renvoyé null, refresh annulé");
+      return null;
+    }
+
     return buildIntranetUser({
       discordId,
       username,
       avatarUrl,
-      roleIds: guildData?.roles ?? [],
-      isMembreServeur: guildData?.isMember ?? false,
+      roleIds: guildData.roles ?? [],
+      isMembreServeur: guildData.isMember ?? false,
       isWhitelisted: whitelisted,
     });
   } catch (err) {
@@ -154,7 +184,7 @@ export const authOptions: NextAuthOptions = {
 
   session: {
     strategy: "jwt",
-    maxAge: 30 * 24 * 60 * 60, // 30 jours
+    maxAge: 30 * 24 * 60 * 60,
   },
 
   pages: {
@@ -163,7 +193,6 @@ export const authOptions: NextAuthOptions = {
   },
 
   callbacks: {
-    // ─── signIn : bloque les non-autorisés + LOG FIREBASE ────────────
     async signIn({ account, profile, user }) {
       try {
         if (account?.provider !== "discord") return false;
@@ -224,11 +253,6 @@ export const authOptions: NextAuthOptions = {
 
     /**
      * Callback JWT : enrichit le token + REFRESH AUTO toutes les 60s.
-     *
-     * Trois cas :
-     * 1. Login initial : on stocke tout (intranet + tokens Discord)
-     * 2. Trigger 'update' (refresh manuel via useSession().update()) : refresh forcé
-     * 3. À chaque visite : si > 60s depuis le dernier refresh → re-fetch Discord
      */
     async jwt({ token, account, profile, trigger }) {
       // ─── 1. Login initial : on stocke tout ───────────────────────
@@ -259,9 +283,8 @@ export const authOptions: NextAuthOptions = {
           token.discordUsername = discordProfile.username;
           token.discordGlobalName = discordProfile.global_name;
           token.discordAvatar = avatarUrl;
-          token.intranet = intranet;
+          if (intranet) token.intranet = intranet;
 
-          // Tokens Discord pour refresh ultérieur
           token.accessToken = account.access_token;
           token.refreshToken = account.refresh_token;
           token.expiresAt = account.expires_at ?? (Math.floor(Date.now() / 1000) + 604800);
@@ -279,15 +302,16 @@ export const authOptions: NextAuthOptions = {
 
       if (!shouldRefresh) return token;
 
-      // Refresh nécessaire
       try {
         const discordId = token.discordId as string;
         let accessToken = token.accessToken as string;
         const refreshToken = token.refreshToken as string;
         const expiresAt = (token.expiresAt as number) ?? 0;
 
-        if (!discordId || !refreshToken) {
-          // Pas assez d'infos pour refresh → on garde le token tel quel
+        if (!discordId || !refreshToken || !accessToken) {
+          // JWT trop ancien (sans tokens) → user devra se relog manuellement
+          console.warn("[Auth] ⚠️ JWT sans tokens Discord, refresh impossible");
+          token.lastRefresh = Date.now();
           return token;
         }
 
@@ -302,32 +326,48 @@ export const authOptions: NextAuthOptions = {
             token.refreshToken = refreshed.refresh_token;
             token.expiresAt = refreshed.expires_at;
           } else {
-            // Refresh failed : on garde l'ancien intranet, on ré-essaiera plus tard
             console.warn("[Auth] ⚠️ Refresh token Discord échoué, on garde l'ancien intranet");
-            token.lastRefresh = Date.now(); // évite de re-tenter en boucle
+            token.lastRefresh = Date.now();
             return token;
           }
         }
 
-        // Re-fetch les rôles Discord avec l'access_token valide
-        const intranet = await rebuildIntranetUser(
+        // Re-fetch les rôles Discord
+        const newIntranet = await rebuildIntranetUser(
           discordId,
           accessToken,
           (token.discordUsername as string) ?? "Inconnu",
           (token.discordAvatar as string) ?? null
         );
 
-        if (intranet) {
-          token.intranet = intranet;
-          if (trigger === "update") {
-            console.log("[Auth] 🔄 Refresh manuel des rôles pour", discordId);
-          }
+        // 🔒 Si le refresh a échoué (Discord API down, etc.), on garde l'ancien intranet
+        if (!newIntranet) {
+          token.lastRefresh = Date.now();
+          return token;
         }
 
+        const oldIntranet = (token.intranet as IntranetUser) ?? null;
+
+        // 🆕 Si les rôles ont changé, on sync Firebase
+        if (hasIntranetChanged(oldIntranet, newIntranet)) {
+          console.log("[Auth] 🔄 Rôles modifiés pour", discordId, "→ sync Firebase");
+          await logUserToFirebase({
+            discordId,
+            username: (token.discordUsername as string) ?? "Inconnu",
+            avatarUrl: (token.discordAvatar as string) ?? null,
+            intranet: newIntranet,
+          });
+        }
+
+        token.intranet = newIntranet;
         token.lastRefresh = Date.now();
+
+        if (trigger === "update") {
+          console.log("[Auth] 🔄 Refresh manuel terminé pour", discordId);
+        }
       } catch (err) {
         console.error("[Auth] ❌ Erreur refresh jwt :", err);
-        token.lastRefresh = Date.now(); // évite la boucle d'erreurs
+        token.lastRefresh = Date.now();
       }
 
       return token;
@@ -337,7 +377,6 @@ export const authOptions: NextAuthOptions = {
       if (token.intranet) {
         (session as { intranet?: IntranetUser }).intranet = token.intranet as IntranetUser;
       }
-      // Expose un flag pour que le client sache quand a eu lieu le dernier refresh
       (session as { lastRefresh?: number }).lastRefresh = token.lastRefresh as number;
       return session;
     },
