@@ -22,7 +22,7 @@ import { useCurrentUser } from '@/hooks/useCurrentUser';
 import type { Patient } from '@/types/medical';
 import styles from './page.module.css';
 
-// ─── Citations RP qui rotationnent ─────────────────────────────────
+// ─── Citations RP ─────────────────────────────────
 const CITATIONS = [
   '« Le sable se souvient toujours. »',
   '« Là où le vent souffle, Suna règne. »',
@@ -46,34 +46,31 @@ function getSalutation(h: number): string {
   return 'Bonsoir';
 }
 
-// ─── Types légers pour les compteurs ───────────────────────────────
+// ─── Types ───
 type MemberEntry = {
   firstLogin?: number;
   lastLogin?: number;
 };
-
 type MissionEntry = {
   id?: number;
   statut?: string;
 };
-
 type PlainteEntry = {
   id?: number;
   statut?: string;
   date?: number;
 };
 
-// ─── Helpers de calcul de bornes temporelles ──────────────────────
+// ─── Helpers temps ───
 function startOfDayMs(): number {
   const d = new Date();
   d.setHours(0, 0, 0, 0);
   return d.getTime();
 }
 function startOfWeekMs(): number {
-  // Lundi 00:00 (norme française)
   const d = new Date();
   d.setHours(0, 0, 0, 0);
-  const day = d.getDay(); // 0 = dimanche
+  const day = d.getDay();
   const diff = day === 0 ? 6 : day - 1;
   d.setDate(d.getDate() - diff);
   return d.getTime();
@@ -82,11 +79,34 @@ function startOfWeekMs(): number {
 export default function DashboardPage() {
   const u = useCurrentUser();
 
-  // ─── Données Firebase ───
+  // ─── Données Firebase (sous sunagakure/) ───
   const { data: patients } = useFirebaseValue<Record<string, Patient> | null>('medical/patients');
-  const { data: members } = useFirebaseValue<Record<string, MemberEntry> | null>('/members'); // racine, pas sunagakure/
   const { data: missionsData } = useFirebaseValue<MissionEntry[] | Record<string, MissionEntry> | null>('missions');
   const { data: plaintesData } = useFirebaseValue<PlainteEntry[] | Record<string, PlainteEntry> | null>('plaintes');
+
+  // ─── Members : lecture directe à la RACINE Firebase ───
+  const [members, setMembers] = useState<Record<string, MemberEntry> | null>(null);
+
+  useEffect(() => {
+    const dbUrl = process.env.NEXT_PUBLIC_FIREBASE_DATABASE_URL;
+    if (!dbUrl) return;
+
+    async function fetchMembers() {
+      try {
+        const res = await fetch(`${dbUrl}/members.json`, { cache: 'no-store' });
+        if (res.ok) {
+          const data = await res.json();
+          setMembers(data);
+        }
+      } catch (err) {
+        console.error('[Dashboard] Erreur fetch members:', err);
+      }
+    }
+
+    fetchMembers();
+    const interval = setInterval(fetchMembers, 30_000);
+    return () => clearInterval(interval);
+  }, []);
 
   // ─── Stats Effectifs ───
   const effStats = useMemo(() => {
@@ -160,8 +180,6 @@ export default function DashboardPage() {
   }, []);
 
   // ─── Stats principales (4 cards) ───
-  // ⚠️ href = '#' pour ne PAS naviguer (juste lecture)
-  // ⚠️ on garde le Link mais on bloque la nav via onClick preventDefault
   const stats = [
     {
       label: 'Patients',
@@ -206,15 +224,12 @@ export default function DashboardPage() {
           : '',
       Icon: ShieldCheck,
       tone: 'blue' as const,
-      // pas de href → card non-cliquable
       href: null,
     },
   ];
 
-  // Actions rapides
   const quickActions = pickQuickActions(u.user?.branches.map((b) => b.slug) ?? []);
 
-  // Sous-titre hero
   const heroSubtitleParts: string[] = [];
   if (u.user?.rang?.nom) heroSubtitleParts.push(u.user.rang.nom);
   if (u.user?.branches[0]) heroSubtitleParts.push(u.user.branches[0].nom);
@@ -272,13 +287,10 @@ export default function DashboardPage() {
               </div>
               <div className={styles.statValue}>{s.value}</div>
               <div className={styles.statHint}>{s.hint}</div>
-              {s.subhint && (
-                <div className={styles.statSubhint}>{s.subhint}</div>
-              )}
+              {s.subhint && <div className={styles.statSubhint}>{s.subhint}</div>}
             </>
           );
 
-          // Card cliquable (avec href) ou statique (sans href)
           if (s.href) {
             return (
               <Link
