@@ -17,6 +17,9 @@
  * - Voir / chercher / filtrer : tout le monde (connecté)
  * - Créer / modifier / supprimer : TOUS LES MEMBRES POLICE + Admin
  *   (action opérationnelle, pas réservée aux Gérants)
+ *
+ * 📜 Audit log : toutes les créations/modifications/suppressions
+ *    sont tracées dans /audit_log Firebase.
  * ════════════════════════════════════════════════════════════════
  */
 
@@ -37,6 +40,7 @@ import { useFirebaseValue } from '@/hooks/useFirebaseValue';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { RequireMembreBranche } from '@/components/Require';
 import { dbSet } from '@/lib/db';
+import { logAction } from '@/lib/audit';
 import { toast } from '@/lib/toast';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
@@ -60,7 +64,8 @@ type DangerFilter = 'all' | DossierDanger;
 type StatutFilter = 'all' | DossierStatut;
 
 export default function DossiersPage() {
-  const { displayName: CURRENT_USER, can } = useCurrentUser();
+  const u = useCurrentUser();
+  const CURRENT_USER = u.displayName;
   const { data, loading } = useFirebaseValue<Dossier[] | null>(FB_PATH);
 
   const [search, setSearch] = useState('');
@@ -72,7 +77,7 @@ export default function DossiersPage() {
   const [form, setForm] = useState<Partial<Dossier>>({});
 
   // Permission : TOUS les membres Police (opérationnel)
-  const canEdit = can.membreBranche('police');
+  const canEdit = u.can.membreBranche('police');
 
   // ─── Données normalisées ───
   const all = useMemo<Dossier[]>(() => {
@@ -137,6 +142,8 @@ export default function DossiersPage() {
       const amendeTotal = Number(form.amendeTotal) || 0;
       const amendeImpayee = form.defunt ? 0 : Math.max(0, amendeTotal - amendePayee);
 
+      const isUpdate = !!editingId;
+
       if (editingId) {
         const idx = list.findIndex((d) => d.id === editingId);
         if (idx === -1) throw new Error('Introuvable');
@@ -165,6 +172,19 @@ export default function DossiersPage() {
           amendeTotal,
         } as Dossier);
       }
+
+      // 📜 AUDIT LOG (non-bloquant, avant le dbSet)
+      logAction({
+        who: CURRENT_USER,
+        whoId: u.id ?? null,
+        action: isUpdate ? 'update' : 'create',
+        target: 'dossier',
+        targetId: String(editingId ?? now),
+        detail: isUpdate
+          ? `Modification du dossier de ${form.nom!.trim()}`
+          : `Ouverture d'un dossier criminel sur ${form.nom!.trim()} (danger: ${form.danger || 'moyen'})`,
+      });
+
       await dbSet(FB_PATH, list);
       toast.success(editingId ? 'Dossier mis à jour' : 'Dossier ouvert');
       closeForm();
@@ -183,6 +203,16 @@ export default function DossiersPage() {
     });
     if (!ok) return;
     try {
+      // 📜 AUDIT LOG (non-bloquant, avant le dbSet)
+      logAction({
+        who: CURRENT_USER,
+        whoId: u.id ?? null,
+        action: 'delete',
+        target: 'dossier',
+        targetId: String(d.id),
+        detail: `Suppression du dossier de ${d.nom}${d.infractions ? ` (${d.infractions})` : ''}`,
+      });
+
       await dbSet(FB_PATH, all.filter((x) => x.id !== d.id));
       toast.success('Dossier supprimé');
     } catch {
