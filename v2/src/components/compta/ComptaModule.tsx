@@ -6,7 +6,13 @@
  * ════════════════════════════════════════════════════════════════
  *
  * Utilisé par toutes les pages comptabilité (avocat, médical, justice,
- * missions, diplomatie) avec une seule prop `section`.
+ * missions, diplomatie, police) avec une seule prop `section`.
+ *
+ * Permissions (gérées en interne via SECTION_TO_BRANCHE) :
+ *   - Voir : tout le monde (connecté)
+ *   - Créer / Modifier / Supprimer une transaction : Membre branche
+ *   - Clôturer la semaine : Gérant branche uniquement
+ *   - Supprimer une archive : Gérant branche uniquement
  *
  * Features :
  *   - 3 stats : Entrées (vert), Sorties (rouge), Solde (or)
@@ -31,6 +37,7 @@ import { toast } from '@/lib/toast';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Modal } from '@/components/ui/Modal';
+import { RequireMembreBranche, RequireBranche } from '@/components/Require';
 import { confirmAction } from '@/components/ui/ConfirmDialog';
 import {
   type ComptaSection, type ComptaTransaction, type ComptaArchive,
@@ -50,9 +57,28 @@ interface Props {
 
 type Tab = 'transactions' | 'archives';
 
+/**
+ * Mapping des sections compta vers les slugs de branches.
+ * Si une section n'a pas de branche dédiée (ex: avocat), on fallback sur police.
+ */
+const SECTION_TO_BRANCHE: Record<ComptaSection, string> = {
+  police: 'police',
+  medical: 'medecin',
+  justice: 'police',         // la justice est gérée par la police
+  missions: 'bureau-missions',
+  diplo: 'diplomate',
+  avocat: 'police',          // fallback temporaire en attendant la branche Avocat
+};
+
 export default function ComptaModule({ section }: Props) {
-  const CURRENT_USER = useCurrentUser().displayName;
+  const { displayName: CURRENT_USER, can } = useCurrentUser();
   const fbPath = SECTION_FB_PATH[section];
+  const branche = SECTION_TO_BRANCHE[section];
+
+  // ─── Permissions ───
+  const canEdit = can.membreBranche(branche);   // Membre = peut créer/modifier/supprimer transactions
+  const canCloture = can.adminBranche(branche); // Gérant = peut clôturer + supprimer archive
+
   const { data, loading } = useFirebaseValue<ComptaData | null>(fbPath);
   const { data: tresorData } = useFirebaseValue<TresorCentral | null>('tresorCentral');
 
@@ -119,14 +145,12 @@ export default function ComptaModule({ section }: Props) {
   function closeForm() { setShowForm(false); setEditingId(null); setForm({}); }
 
   async function persistData(newData: Partial<ComptaData>) {
-    // dbUpdate fusionne sans écraser les autres clés
     await dbUpdate(fbPath, newData);
   }
 
   async function handleSave() {
     if (!form.montant || form.montant <= 0) { toast.error('Le montant doit être positif'); return; }
     if (!form.category) { toast.error('La catégorie est obligatoire'); return; }
-    // Auto-ajustement : si la catégorie change, ajuster le type
     const isEntreeCat = ENTREE_CATEGORIES.includes(form.category);
     const type: TransactionType = isEntreeCat ? 'entree' : 'sortie';
 
@@ -152,7 +176,10 @@ export default function ComptaModule({ section }: Props) {
       await persistData({ transactions: list, archives });
       toast.success(editingId ? 'Transaction mise à jour' : 'Transaction enregistrée');
       closeForm();
-    } catch (err) { console.error(err); toast.error('Erreur'); }
+    } catch (err) {
+      console.error('[COMPTA SAVE]', err);
+      toast.error('Erreur');
+    }
   }
 
   async function handleDelete(t: ComptaTransaction) {
@@ -168,14 +195,24 @@ export default function ComptaModule({ section }: Props) {
         archives,
       });
       toast.success('Supprimée');
-    } catch { toast.error('Erreur'); }
+    } catch (err) {
+      console.error('[COMPTA DELETE]', err);
+      toast.error('Erreur');
+    }
   }
 
   /**
    * Clôture de semaine : archive toutes les transactions et verse
    * le pourcentage convenu au Trésor Central.
+   *
+   * 🔒 Réservé aux Gérants de la branche (vérifié à 2 niveaux :
+   *    bouton caché ET garde-fou ici au cas où).
    */
   async function handleClotureSemaine() {
+    if (!canCloture) {
+      toast.error('Seul le Gérant peut clôturer la semaine');
+      return;
+    }
     if (transactions.length === 0) {
       toast.error('Aucune transaction à clôturer'); return;
     }
@@ -238,12 +275,16 @@ export default function ComptaModule({ section }: Props) {
 
       toast.success(`📦 Semaine clôturée — ${fmtMoney(prelevement)} ₽ versés au Trésor`);
     } catch (err) {
-      console.error(err);
+      console.error('[COMPTA CLOTURE]', err);
       toast.error('Erreur lors de la clôture');
     }
   }
 
   async function handleDeleteArchive(a: ComptaArchive) {
+    if (!canCloture) {
+      toast.error('Seul le Gérant peut supprimer une archive');
+      return;
+    }
     const ok = await confirmAction({
       title: "Supprimer l'archive",
       message: `Supprimer définitivement "${a.label}" ? Cette action est irréversible.`,
@@ -257,7 +298,10 @@ export default function ComptaModule({ section }: Props) {
       });
       toast.success('Archive supprimée');
       if (viewingArchiveId === a.id) setViewingArchiveId(null);
-    } catch { toast.error('Erreur'); }
+    } catch (err) {
+      console.error('[COMPTA DELETE ARCHIVE]', err);
+      toast.error('Erreur');
+    }
   }
 
   // ─── Rendu ───
@@ -269,14 +313,14 @@ export default function ComptaModule({ section }: Props) {
         title={`${SECTION_ICON[section]} Comptabilité — ${SECTION_LABEL[section]}`}
         subtitle={`Suivi financier et clôture hebdomadaire (Trésor : ${rate}%)`}
         actions={
-          <>
+          <RequireMembreBranche branche={branche}>
             <Button variant="outline" onClick={() => openCreate('sortie')}>
               <TrendingDown size={14} /> Sortie
             </Button>
             <Button onClick={() => openCreate('entree')}>
               <TrendingUp size={14} /> Entrée
             </Button>
-          </>
+          </RequireMembreBranche>
         }
       >
         {/* Stats */}
@@ -342,9 +386,11 @@ export default function ComptaModule({ section }: Props) {
                 <option value="sortie">Sorties seulement</option>
               </select>
               {transactions.length > 0 && (
-                <Button variant="outline" onClick={handleClotureSemaine}>
-                  📦 Clôturer la semaine
-                </Button>
+                <RequireBranche branche={branche}>
+                  <Button variant="outline" onClick={handleClotureSemaine}>
+                    📦 Clôturer la semaine
+                  </Button>
+                </RequireBranche>
               )}
             </div>
 
@@ -363,7 +409,7 @@ export default function ComptaModule({ section }: Props) {
                       <th>Description</th>
                       <th>Agent</th>
                       <th style={{ textAlign: 'right' }}>Montant</th>
-                      <th aria-label="actions" />
+                      {canEdit && <th aria-label="actions" />}
                     </tr>
                   </thead>
                   <tbody>
@@ -385,14 +431,16 @@ export default function ComptaModule({ section }: Props) {
                           <td className={`${styles.amount} ${entree ? styles.amtPos : styles.amtNeg}`} style={{ textAlign: 'right' }}>
                             {entree ? '+' : '−'}{fmtMoney(t.montant)} ₽
                           </td>
-                          <td>
-                            <div className={styles.rowActions}>
-                              <button className={styles.editBtn} onClick={() => openEdit(t)}>Modifier</button>
-                              <button className={styles.deleteBtn} onClick={() => handleDelete(t)} aria-label="Supprimer">
-                                <Trash2 size={13} />
-                              </button>
-                            </div>
-                          </td>
+                          {canEdit && (
+                            <td>
+                              <div className={styles.rowActions}>
+                                <button className={styles.editBtn} onClick={() => openEdit(t)}>Modifier</button>
+                                <button className={styles.deleteBtn} onClick={() => handleDelete(t)} aria-label="Supprimer">
+                                  <Trash2 size={13} />
+                                </button>
+                              </div>
+                            </td>
+                          )}
                         </tr>
                       );
                     })}
@@ -444,9 +492,11 @@ export default function ComptaModule({ section }: Props) {
         footer={
           viewingArchive && (
             <>
-              <Button variant="ghost" onClick={() => handleDeleteArchive(viewingArchive)}>
-                <Trash2 size={14} /> Supprimer
-              </Button>
+              {canCloture && (
+                <Button variant="ghost" onClick={() => handleDeleteArchive(viewingArchive)}>
+                  <Trash2 size={14} /> Supprimer
+                </Button>
+              )}
               <Button onClick={() => setViewingArchiveId(null)}>Fermer</Button>
             </>
           )
