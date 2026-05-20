@@ -1,0 +1,415 @@
+/* ════════════════════════════════════════════════════════════════
+   FICHE DOSSIER — Vue détaillée
+   ════════════════════════════════════════════════════════════════ */
+
+/* ─── ACTIONS BAR ─── */
+.actionsBar {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 0;
+  margin-bottom: 20px;
+  background: linear-gradient(180deg, #0c0905 90%, transparent);
+}
+
+.backBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(180, 140, 20, 0.3);
+  border-radius: 6px;
+  color: var(--text2);
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.backBtn:hover {
+  background: rgba(212, 180, 74, 0.08);
+  border-color: rgba(212, 180, 74, 0.5);
+  color: var(--gold2);
+}
+.backLabelMobile { display: none; }
+
+.actionsRight {
+  display: flex;
+  gap: 8px;
+}
+
+.editBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  background: linear-gradient(180deg, rgba(212, 180, 74, 0.22), rgba(212, 180, 74, 0.08));
+  border: 1px solid rgba(212, 180, 74, 0.45);
+  border-radius: 6px;
+  color: var(--gold2);
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.editBtn:hover {
+  background: linear-gradient(180deg, rgba(212, 180, 74, 0.35), rgba(212, 180, 74, 0.15));
+  border-color: rgba(212, 180, 74, 0.65);
+}
+
+.delBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.35);
+  border-radius: 6px;
+  color: #fca5a5;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.delBtn:hover {
+  background: rgba(239, 68, 68, 0.2);
+  border-color: rgba(239, 68, 68, 0.55);
+}
+
+/* ─── FICHE ─── */
+.fiche {
+  background: linear-gradient(180deg, #15110b, #1a140c);
+  border: 1px solid rgba(180, 140, 20, 0.3);
+  border-radius: 12px;
+  overflow: hidden;
+  position: relative;
+}
+.fiche::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 4px;
+}
+
+/* Bordure & accent par niveau de danger */
+.d-faible    { border-color: rgba(34, 197, 94, 0.4); }
+.d-faible::before { background: linear-gradient(90deg, transparent, #22c55e, transparent); }
+.d-moyen     { border-color: rgba(245, 158, 11, 0.4); }
+.d-moyen::before { background: linear-gradient(90deg, transparent, #f59e0b, transparent); }
+.d-eleve     { border-color: rgba(239, 68, 68, 0.45); }
+.d-eleve::before { background: linear-gradient(90deg, transparent, #ef4444, transparent); }
+.d-critique  { border-color: rgba(220, 38, 38, 0.6); }
+.d-critique::before {
+  background: linear-gradient(90deg, transparent, #dc2626, transparent);
+  animation: critPulse 2s ease-in-out infinite;
+}
+@keyframes critPulse {
+  0%, 100% { opacity: 0.7; }
+  50%      { opacity: 1; }
+}
+
+.ficheDefunt {
+  opacity: 0.85;
+  filter: grayscale(0.3);
+}
+
+/* ─── HEADER ─── */
+.header {
+  display: flex;
+  gap: 24px;
+  padding: 32px;
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.3), transparent);
+  align-items: center;
+  border-bottom: 1px solid rgba(180, 140, 20, 0.2);
+}
+
+.photo,
+.photoPlaceholder {
+  width: 140px;
+  height: 140px;
+  border-radius: 10px;
+  object-fit: cover;
+  border: 3px solid rgba(212, 180, 74, 0.5);
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.5);
+  flex-shrink: 0;
+}
+.photoPlaceholder {
+  background: linear-gradient(135deg, #0e0a06, #1a130c);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Cinzel', serif;
+  font-size: 56px;
+  font-weight: 700;
+  color: rgba(212, 180, 74, 0.6);
+}
+
+.headerInfo {
+  flex: 1;
+  min-width: 0;
+}
+
+.name {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 32px;
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: 0.5px;
+  margin: 0 0 12px;
+  color: var(--text);
+}
+
+.tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border-radius: 4px;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  font-weight: 700;
+}
+
+/* Tags danger */
+.db-faible   { background: rgba(34, 197, 94, 0.18); color: #86efac; border: 1px solid rgba(34, 197, 94, 0.4); }
+.db-moyen    { background: rgba(245, 158, 11, 0.18); color: #fcd34d; border: 1px solid rgba(245, 158, 11, 0.4); }
+.db-eleve    { background: rgba(239, 68, 68, 0.18); color: #fca5a5; border: 1px solid rgba(239, 68, 68, 0.4); }
+.db-critique { background: rgba(220, 38, 38, 0.25); color: #fecaca; border: 1px solid rgba(220, 38, 38, 0.55); }
+
+/* Tags statut */
+.chip-ouvert            { background: rgba(107, 114, 128, 0.18); color: #d1d5db; border: 1px solid rgba(107, 114, 128, 0.35); }
+.chip-recherche         { background: rgba(239, 68, 68, 0.18); color: #fca5a5; border: 1px solid rgba(239, 68, 68, 0.4); }
+.chip-garde_vue         { background: rgba(245, 158, 11, 0.18); color: #fcd34d; border: 1px solid rgba(245, 158, 11, 0.4); }
+.chip-transmis_justice  { background: rgba(212, 180, 74, 0.15); color: var(--gold2); border: 1px solid rgba(212, 180, 74, 0.4); }
+.chip-classe            { background: rgba(34, 197, 94, 0.15); color: #86efac; border: 1px solid rgba(34, 197, 94, 0.4); }
+.chip-defunt            { background: rgba(0, 0, 0, 0.4); color: #d1d5db; border: 1px solid rgba(150, 150, 150, 0.3); }
+
+.tagDefunt { background: rgba(107, 114, 128, 0.2); color: #d1d5db; border: 1px solid rgba(107, 114, 128, 0.4); }
+
+/* ─── SECTIONS ─── */
+.sections {
+  padding: 24px 32px 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.section {
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid rgba(180, 140, 20, 0.15);
+  border-radius: 8px;
+  padding: 18px 20px;
+}
+
+.sectionAlert {
+  background: rgba(168, 85, 247, 0.06);
+  border-color: rgba(168, 85, 247, 0.25);
+}
+
+.sectionTitle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--gold2);
+  margin: 0 0 14px;
+  font-weight: 700;
+  border-bottom: 1px solid rgba(212, 180, 74, 0.15);
+  padding-bottom: 10px;
+}
+.sectionTitle svg { color: var(--gold2); }
+
+.sectionAlert .sectionTitle {
+  color: rgba(192, 132, 252, 0.9);
+  border-color: rgba(168, 85, 247, 0.2);
+}
+.sectionAlert .sectionTitle svg { color: rgba(192, 132, 252, 0.9); }
+
+.meta { opacity: 0.7; }
+.meta .sectionTitle { color: var(--muted); border-color: rgba(255, 255, 255, 0.08); }
+.meta .sectionTitle svg { color: var(--muted); }
+
+/* ─── INFRACTIONS ─── */
+.infractionsText {
+  font-family: 'EB Garamond', Georgia, serif;
+  font-size: 16px;
+  line-height: 1.6;
+  color: #c4b5fd;
+  margin: 0;
+  font-style: italic;
+}
+
+/* ─── AMENDES ─── */
+.amendesGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+
+.amendeCard {
+  text-align: center;
+  padding: 14px 12px;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(180, 140, 20, 0.25);
+  border-radius: 8px;
+}
+
+.amendePaye {
+  background: rgba(34, 197, 94, 0.08);
+  border-color: rgba(34, 197, 94, 0.3);
+}
+.amendeImpaye {
+  background: rgba(239, 68, 68, 0.08);
+  border-color: rgba(239, 68, 68, 0.3);
+}
+
+.amendeLabel {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 9.5px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 6px;
+  font-weight: 700;
+}
+
+.amendeValue {
+  font-family: 'Cinzel', serif;
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--text);
+  line-height: 1;
+}
+.amendePaye .amendeValue   { color: #86efac; }
+.amendeImpaye .amendeValue { color: #fca5a5; }
+
+/* ─── KV GRID ─── */
+.kvGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 14px 24px;
+}
+
+.kv {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.kvLabel {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 9.5px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--muted);
+  font-weight: 700;
+}
+
+.kvValue {
+  font-family: 'Barlow', sans-serif;
+  font-size: 14px;
+  color: var(--text);
+}
+.kvMono {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 12px;
+  letter-spacing: 0.5px;
+  color: var(--text2);
+}
+
+/* ─── NOTES ─── */
+.notes {
+  font-family: 'EB Garamond', Georgia, serif;
+  font-size: 15px;
+  line-height: 1.7;
+  color: var(--text);
+  margin: 0;
+  font-style: italic;
+  white-space: pre-wrap;
+}
+
+/* ─── LOADING / NOT FOUND ─── */
+.loading,
+.notFound {
+  text-align: center;
+  padding: 80px 24px;
+  color: var(--muted);
+}
+.notFound h2 {
+  font-family: 'Cinzel', serif;
+  font-size: 24px;
+  color: var(--gold2);
+  margin: 0 0 12px;
+}
+.notFound p { margin: 0 0 24px; }
+
+/* ════════════════════════════════════════════════════════════════
+   📱 RESPONSIVE MOBILE
+   ════════════════════════════════════════════════════════════════ */
+@media (max-width: 768px) {
+  .actionsBar { padding: 10px 0; gap: 8px; }
+  .backBtn { padding: 8px 10px; }
+  .backLabel { display: none; }
+  .backLabelMobile { display: inline; }
+  .editBtn, .delBtn { padding: 8px 10px; }
+  .delLabel { display: none; }
+
+  .header {
+    flex-direction: column;
+    gap: 18px;
+    padding: 24px 18px;
+    text-align: center;
+  }
+
+  .photo, .photoPlaceholder {
+    width: 110px;
+    height: 110px;
+  }
+  .photoPlaceholder { font-size: 44px; }
+
+  .name { font-size: 26px; }
+
+  .tags { justify-content: center; }
+
+  .sections { padding: 18px; gap: 16px; }
+  .section { padding: 14px 16px; }
+
+  .amendesGrid {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .kvGrid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+}
+
+@media (max-width: 480px) {
+  .header { padding: 18px 14px; }
+  .sections { padding: 14px; }
+  .name { font-size: 22px; }
+}
