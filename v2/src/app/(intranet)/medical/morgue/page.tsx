@@ -9,6 +9,8 @@
  *
  * Workflow : Autopsie en cours → Clos → Restitué à la famille
  * Données sensibles, à manipuler avec respect.
+ *
+ * ⚠️ Accessible aux Gérants Médecin OU Scientifique
  * ════════════════════════════════════════════════════════════════
  */
 
@@ -23,6 +25,7 @@ import { toast } from '@/lib/toast';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Modal } from '@/components/ui/Modal';
+import { RequireBranche } from '@/components/Require';
 import { confirmAction } from '@/components/ui/ConfirmDialog';
 import { compressImage } from '@/lib/image';
 import {
@@ -35,8 +38,14 @@ import styles from './page.module.css';
 const FB_PATH = 'hospital_morgue';
 type Tab = 'all' | MorgueStatut;
 
+// Branches autorisées pour gérer la morgue
+const MORGUE_BRANCHES = ['medecin', 'scientifique'];
+
 export default function MorguePage() {
-  const CURRENT_USER = useCurrentUser().displayName;
+  const { can, displayName } = useCurrentUser();
+  const canEdit = can.adminBranche(MORGUE_BRANCHES);
+  const CURRENT_USER = displayName;
+
   const { data, loading } = useFirebaseValue<Defunt[] | null>(FB_PATH);
   const [tab, setTab] = useState<Tab>('autopsie');
   const [search, setSearch] = useState('');
@@ -77,6 +86,7 @@ export default function MorguePage() {
     setShowForm(true);
   }
   function openEdit(d: Defunt) {
+    if (!canEdit) return;
     setEditingId(d.id); setForm(d); setShowForm(true); setViewingId(null);
   }
   function closeForm() { setShowForm(false); setEditingId(null); setForm({}); }
@@ -160,7 +170,11 @@ export default function MorguePage() {
       <Card
         title="Morgue"
         subtitle="Registre des défunts et autopsies — données confidentielles"
-        actions={<Button onClick={openCreate}><Plus size={14} /> Nouveau défunt</Button>}
+        actions={
+          <RequireBranche branche={MORGUE_BRANCHES}>
+            <Button onClick={openCreate}><Plus size={14} /> Nouveau défunt</Button>
+          </RequireBranche>
+        }
       >
         <div className={styles.tabs}>
           {(['autopsie', 'clos', 'restitue', 'all'] as Tab[]).map((t) => (
@@ -196,11 +210,13 @@ export default function MorguePage() {
                     <span className={`${styles.statutChip} ${styles[`chip-${d.statut}`]}`}>
                       {MORGUE_STATUT_LABEL[d.statut]}
                     </span>
-                    <button
-                      className={styles.deleteBtn}
-                      onClick={(e) => { e.stopPropagation(); handleDelete(d); }}
-                      aria-label="Supprimer"
-                    ><Trash2 size={13} /></button>
+                    {canEdit && (
+                      <button
+                        className={styles.deleteBtn}
+                        onClick={(e) => { e.stopPropagation(); handleDelete(d); }}
+                        aria-label="Supprimer"
+                      ><Trash2 size={13} /></button>
+                    )}
                   </div>
 
                   <div className={styles.dBody}>
@@ -244,7 +260,7 @@ export default function MorguePage() {
         title={viewing ? `${viewing.prenom || ''} ${viewing.nom}` : ''}
         size="lg"
         footer={
-          viewing && (
+          viewing && canEdit && (
             <>
               <Button variant="ghost" onClick={() => handleDelete(viewing)}><Trash2 size={14} /> Supprimer</Button>
               {viewing.statut === 'autopsie' && (
