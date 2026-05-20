@@ -535,3 +535,87 @@
   height: 16px;
   cursor: pointer;
 }
+
+/* ─── AJOUTS : Autocomplétion Recensement ─── */
+
+.suggestionPhoto {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 1px solid rgba(160, 128, 32, 0.4);
+  filter: sepia(0.15);
+  flex-shrink: 0;
+}
+
+.suggestionPhotoPh {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #0e0a06, #1a130c);
+  border: 1px solid rgba(160, 128, 32, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Cinzel', serif;
+  font-size: 13px;
+  font-weight: 700;
+  color: rgba(200, 168, 80, 0.5);
+  flex-shrink: 0;
+}
+
+/* Lien recensé sélectionné */
+.linkedRecense {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: rgba(34, 197, 94, 0.08);
+  border: 1px solid rgba(34, 197, 94, 0.3);
+  border-radius: 4px;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.5px;
+  color: #b8c890;
+  margin-top: 4px;
+  animation: linkSlideIn 0.2s ease-out;
+}
+.linkedRecense > svg {
+  color: #86efac;
+  flex-shrink: 0;
+}
+.linkedRecense > span {
+  flex: 1;
+  text-transform: none;
+  letter-spacing: 0.3px;
+}
+.linkedRecense strong {
+  color: #e8dcc0;
+  font-family: 'EB Garamond', Georgia, serif;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: normal;
+}
+
+.unlinkBtn {
+  background: transparent;
+  border: 1px solid rgba(180, 80, 50, 0.3);
+  border-radius: 3px;
+  color: rgba(200, 130, 110, 0.6);
+  cursor: pointer;
+  padding: 2px 7px;
+  font-size: 13px;
+  font-weight: 700;
+  transition: all 0.15s;
+  flex-shrink: 0;
+}
+.unlinkBtn:hover {
+  background: rgba(180, 80, 50, 0.15);
+  border-color: rgba(180, 80, 50, 0.6);
+  color: #e8a090;
+}
+
+@keyframes linkSlideIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
