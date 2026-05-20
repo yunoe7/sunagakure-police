@@ -9,7 +9,7 @@
  *     même si Firebase est en panne, ce qui garantit que tu gardes
  *     toujours accès à l'intranet pour réparer en cas de souci.
  *
- *  2. FIREBASE (admin_whitelist) :
+ *  2. FIREBASE (sunagakure/admin_whitelist) :
  *     Liste dynamique gérée via /admin/whitelist (UI).
  *     Tu peux ajouter/retirer des admins sans toucher au code.
  *
@@ -40,13 +40,15 @@ export function isInHardcodedWhitelist(discordId: string): boolean {
 
 /**
  * Vérifie si un Discord User ID est dans la whitelist Firebase.
- * Asynchrone, lit `admin_whitelist` dans Firebase.
+ * Asynchrone, lit `sunagakure/admin_whitelist` dans Firebase.
  * Timeout de 5 secondes pour ne pas bloquer le login si Firebase est lent.
+ *
+ * 🔧 Fix : on lit dans `sunagakure/admin_whitelist/{discordId}` pour
+ * matcher l'écriture faite par useAdminWhitelist (qui passe par dbSet
+ * et qui préfixe automatiquement par "sunagakure/").
  */
 export async function isInFirebaseWhitelist(discordId: string): Promise<boolean> {
   try {
-    // Import dynamique pour éviter de charger Firebase côté serveur
-    // dans tous les contextes (le module 'use client' pose souci sinon)
     const { getDatabase, ref, get, child } = await import("firebase/database");
     const { initializeApp, getApps } = await import("firebase/app");
 
@@ -63,8 +65,8 @@ export async function isInFirebaseWhitelist(discordId: string): Promise<boolean>
     const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0]!;
     const db = getDatabase(app);
 
-    // Timeout de 5s
-    const fetchPromise = get(child(ref(db), `admin_whitelist/${discordId}`));
+    // 🔧 FIX : chemin préfixé par "sunagakure/" pour correspondre à où la UI écrit
+    const fetchPromise = get(child(ref(db), `sunagakure/admin_whitelist/${discordId}`));
     const timeoutPromise = new Promise<null>((resolve) =>
       setTimeout(() => resolve(null), 5000)
     );
@@ -75,7 +77,7 @@ export async function isInFirebaseWhitelist(discordId: string): Promise<boolean>
     return snapshot.exists();
   } catch (err) {
     console.error("[Whitelist] Firebase check failed:", err);
-    return false; // En cas d'erreur, on n'accorde PAS l'accès
+    return false;
   }
 }
 
