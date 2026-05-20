@@ -5,13 +5,9 @@
  *  Page PHARMACIE — Stock de médicaments
  * ════════════════════════════════════════════════════════════════
  *
- * Stockage : sunagakure/hospital_pharmacie (TABLEAU)
- *
- * Features :
- *   - Stats : total produits, en rupture, alerte stock bas
- *   - Filtres par catégorie
- *   - Indicateur visuel quand stock < alerteSeuil
- *   - +/- pour ajuster rapidement le stock
+ * Permissions :
+ * - Voir : tout le monde (connecté)
+ * - Créer / modifier / supprimer : TOUS LES MEMBRES MÉDECIN + Admin
  * ════════════════════════════════════════════════════════════════
  */
 
@@ -28,7 +24,7 @@ import { toast } from '@/lib/toast';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Modal } from '@/components/ui/Modal';
-import { RequireBranche } from '@/components/Require';
+import { RequireMembreBranche } from '@/components/Require';
 import { confirmAction } from '@/components/ui/ConfirmDialog';
 import {
   type Medicament, type MedCategorie,
@@ -42,7 +38,7 @@ type CatFilter = 'all' | MedCategorie;
 
 export default function PharmaciePage() {
   const { can } = useCurrentUser();
-  const canEdit = can.adminBranche('medecin');
+  const canEdit = can.membreBranche('medecin');
 
   const { data, loading } = useFirebaseValue<Medicament[] | null>(FB_PATH);
 
@@ -156,12 +152,11 @@ export default function PharmaciePage() {
         title="Pharmacie"
         subtitle="Stock de médicaments de l'Hôpital"
         actions={
-          <RequireBranche branche="medecin">
+          <RequireMembreBranche branche="medecin">
             <Button onClick={openCreate}><Plus size={14} /> Ajouter un produit</Button>
-          </RequireBranche>
+          </RequireMembreBranche>
         }
       >
-        {/* Stats */}
         <div className={styles.statGrid}>
           <div className={`${styles.statCard} ${styles.scGold}`}>
             <Package size={16} />
@@ -185,7 +180,6 @@ export default function PharmaciePage() {
           </div>
         </div>
 
-        {/* Toolbar */}
         <div className={styles.toolbar}>
           <div className={styles.searchBox}>
             <Search size={14} />
