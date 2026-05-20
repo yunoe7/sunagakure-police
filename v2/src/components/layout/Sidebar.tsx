@@ -6,29 +6,32 @@ import { signOut } from 'next-auth/react';
 import * as Icons from 'lucide-react';
 import { NAV_SECTIONS } from '@/lib/navigation';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
+import { useSidebar } from './SidebarContext';
 import styles from './Sidebar.module.css';
 
 /**
  * Sidebar gauche, fixe, avec sections de navigation.
- * Remplace tout le bloc <#sidebar> de l'ancien HTML.
  *
- * Le pied de sidebar affiche l'utilisateur Discord connecté avec :
- *  - Avatar Discord
- *  - Pseudo + badge ADMIN si admin technique
- *  - Rang ninja (ex: "Tokubetsu Jonin")
- *  - Branche(s) + clan séparés par "·" (ex: "Police · Sabaku")
- * Et propose un bouton de déconnexion.
+ * Mobile (< 768px) :
+ *  - La sidebar est cachée par défaut (translateX(-100%))
+ *  - Quand isOpen = true, elle slide depuis la gauche
+ *  - Un overlay noir apparaît derrière pour la fermer au clic
+ *  - Au clic sur un lien, elle se referme automatiquement
  */
 export function Sidebar() {
   const pathname = usePathname();
   const u = useCurrentUser();
+  const { isOpen, close } = useSidebar();
 
   function handleLogout() {
     signOut({ callbackUrl: '/login' });
   }
 
-  // ─── Construction de la ligne "Branche · Clan" ─────────────────
-  // On limite à 2 branches max pour ne pas surcharger la sidebar.
+  function handleLinkClick() {
+    // En mobile, ferme la sidebar après navigation
+    close();
+  }
+
   const branchesAffichees = u.user?.branches.slice(0, 2).map((b) => b.nom) ?? [];
   if ((u.user?.branches.length ?? 0) > 2) {
     branchesAffichees.push(`+${u.user!.branches.length - 2}`);
@@ -37,134 +40,132 @@ export function Sidebar() {
   if (u.user?.clan) segmentsBas.push(u.user.clan);
   const ligneBas = segmentsBas.join(' · ');
 
-  // Sous-titre principal : rang ninja, sinon @username, sinon "Membre du village"
   const sousTitre =
     u.user?.rang?.nom ??
     (u.username ? `@${u.username}` : 'Membre du village');
 
-  // ─── Helper : détermine si un item de nav est actif ───────────
-  // Règle : match EXACT par défaut. C'est seulement pour les vrais items
-  // "parents" (ex: /admin couvrant /admin/membres et /admin/whitelist) qu'on
-  // active aussi sur les enfants. On détecte un item parent comme un item
-  // dont AUCUN autre item de nav ne commence par son href + '/'. Sinon, on
-  // n'allumerait jamais Membres sans allumer aussi Whitelist (et vice-versa).
   const allHrefs = NAV_SECTIONS.flatMap((s) => s.items.map((i) => i.href));
 
   function isItemActive(itemHref: string): boolean {
     if (pathname === itemHref) return true;
-    // L'item a-t-il des "enfants" déclarés dans la nav ?
     const hasChildren = allHrefs.some(
       (h) => h !== itemHref && h.startsWith(itemHref + '/')
     );
-    // Si oui, c'est un item parent → on accepte le startsWith.
-    // Si non, on exige le match exact (évite que /admin/membres allume /admin/whitelist).
     if (!hasChildren) return false;
     return pathname.startsWith(itemHref + '/');
   }
 
   return (
-    <aside className={styles.sidebar}>
-      {/* Logo */}
-      <div className={styles.logo}>
-        <div className={styles.logoBadge}>砂</div>
-        <h1>SUNAGAKURE</h1>
-        <span>VILLAGE CACHÉ DU SABLE</span>
-      </div>
+    <>
+      {/* Overlay mobile */}
+      <div
+        className={`${styles.overlay} ${isOpen ? styles.overlayOpen : ''}`}
+        onClick={close}
+        aria-hidden="true"
+      />
 
-      {/* Navigation */}
-      <nav className={styles.nav}>
-        {NAV_SECTIONS.map((section) => (
-          <div key={section.title}>
-            <div className={styles.navSection}>{section.title}</div>
-            {section.items.map((item) => {
-              // Récupère dynamiquement l'icône depuis lucide-react
-              // (ça évite d'importer 50 icônes une par une)
-              const Icon = (Icons[item.icon as keyof typeof Icons] ||
-                Icons.Circle) as Icons.LucideIcon;
-              const isActive = isItemActive(item.href);
+      <aside className={`${styles.sidebar} ${isOpen ? styles.sidebarOpen : ''}`}>
+        {/* Logo */}
+        <div className={styles.logo}>
+          <div className={styles.logoBadge}>砂</div>
+          <h1>SUNAGAKURE</h1>
+          <span>VILLAGE CACHÉ DU SABLE</span>
+        </div>
 
-              return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className={`${styles.navItem} ${isActive ? styles.active : ''}`}
-                >
-                  <Icon size={16} className={styles.icon} />
-                  <span>{item.label}</span>
-                  {item.badge !== undefined && item.badge > 0 && (
-                    <span className={styles.badge}>{item.badge}</span>
-                  )}
-                </Link>
-              );
-            })}
-          </div>
-        ))}
-      </nav>
+        {/* Navigation */}
+        <nav className={styles.nav}>
+          {NAV_SECTIONS.map((section) => (
+            <div key={section.title}>
+              <div className={styles.navSection}>{section.title}</div>
+              {section.items.map((item) => {
+                const Icon = (Icons[item.icon as keyof typeof Icons] ||
+                  Icons.Circle) as Icons.LucideIcon;
+                const isActive = isItemActive(item.href);
 
-      {/* Footer utilisateur Discord */}
-      <div className={styles.footer}>
-        <div className={styles.userPill}>
-          {u.avatar ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={u.avatar}
-              alt={u.displayName}
-              className={styles.avatarImg}
-            />
-          ) : (
-            <div className={styles.avatar}>{u.initials}</div>
-          )}
-          <div className={styles.userInfo}>
-            <div className={styles.uname}>
-              {u.isLoading ? '…' : u.displayName}
-              {u.user?.isAdmin && (
-                <span
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    onClick={handleLinkClick}
+                    className={`${styles.navItem} ${isActive ? styles.active : ''}`}
+                  >
+                    <Icon size={16} className={styles.icon} />
+                    <span>{item.label}</span>
+                    {item.badge !== undefined && item.badge > 0 && (
+                      <span className={styles.badge}>{item.badge}</span>
+                    )}
+                  </Link>
+                );
+              })}
+            </div>
+          ))}
+        </nav>
+
+        {/* Footer utilisateur Discord */}
+        <div className={styles.footer}>
+          <div className={styles.userPill}>
+            {u.avatar ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={u.avatar}
+                alt={u.displayName}
+                className={styles.avatarImg}
+              />
+            ) : (
+              <div className={styles.avatar}>{u.initials}</div>
+            )}
+            <div className={styles.userInfo}>
+              <div className={styles.uname}>
+                {u.isLoading ? '…' : u.displayName}
+                {u.user?.isAdmin && (
+                  <span
+                    style={{
+                      marginLeft: 6,
+                      fontSize: 9,
+                      padding: '1px 5px',
+                      background: 'rgba(212, 172, 13, 0.18)',
+                      color: '#d4ac0d',
+                      borderRadius: 3,
+                      fontWeight: 600,
+                      letterSpacing: '0.05em',
+                      textTransform: 'uppercase',
+                      verticalAlign: 'middle',
+                    }}
+                    title="Administrateur technique"
+                  >
+                    Admin
+                  </span>
+                )}
+              </div>
+              <div className={styles.urank}>
+                {u.isLoading ? '…' : sousTitre}
+              </div>
+              {ligneBas && (
+                <div
+                  className={styles.urank}
                   style={{
-                    marginLeft: 6,
-                    fontSize: 9,
-                    padding: '1px 5px',
-                    background: 'rgba(212, 172, 13, 0.18)',
-                    color: '#d4ac0d',
-                    borderRadius: 3,
-                    fontWeight: 600,
-                    letterSpacing: '0.05em',
-                    textTransform: 'uppercase',
-                    verticalAlign: 'middle',
+                    fontSize: '0.7rem',
+                    opacity: 0.7,
+                    marginTop: 1,
                   }}
-                  title="Administrateur technique"
+                  title={u.user?.branches.map((b) => b.nom).join(', ')}
                 >
-                  Admin
-                </span>
+                  {ligneBas}
+                </div>
               )}
             </div>
-            <div className={styles.urank}>
-              {u.isLoading ? '…' : sousTitre}
-            </div>
-            {ligneBas && (
-              <div
-                className={styles.urank}
-                style={{
-                  fontSize: '0.7rem',
-                  opacity: 0.7,
-                  marginTop: 1,
-                }}
-                title={u.user?.branches.map((b) => b.nom).join(', ')}
-              >
-                {ligneBas}
-              </div>
-            )}
           </div>
+          <button
+            type="button"
+            onClick={handleLogout}
+            className={styles.logoutBtnAction}
+            title="Se déconnecter"
+            aria-label="Se déconnecter"
+          >
+            <Icons.LogOut size={15} />
+          </button>
         </div>
-        <button
-          type="button"
-          onClick={handleLogout}
-          className={styles.logoutBtnAction}
-          title="Se déconnecter"
-          aria-label="Se déconnecter"
-        >
-          <Icons.LogOut size={15} />
-        </button>
-      </div>
-    </aside>
+      </aside>
+    </>
   );
 }
