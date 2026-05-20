@@ -24,9 +24,27 @@
   }
 }
 
-/* Responsive — sidebar masquée sur petits écrans (à compléter plus tard) */
+/* ═══════════════════════════════════════════════════════════
+   RESPONSIVE — Mobile (< 768px)
+   ═══════════════════════════════════════════════════════════
+   - La sidebar n'occupe plus l'espace (margin-left: 0)
+   - Le padding de la page est réduit
+   - Voir Sidebar.module.css pour le slide-in
+   ═══════════════════════════════════════════════════════════ */
+
 @media (max-width: 768px) {
   .main {
     margin-left: 0;
+  }
+
+  .page {
+    padding: 14px;
+  }
+}
+
+/* Tablette (768px-1024px) : on garde la sidebar mais on réduit un peu */
+@media (min-width: 768px) and (max-width: 1024px) {
+  .page {
+    padding: 18px;
   }
 }
