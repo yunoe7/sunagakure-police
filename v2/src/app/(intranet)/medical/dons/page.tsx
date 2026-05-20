@@ -5,12 +5,9 @@
  *  Page DONS DU SANG — Gestion des dons
  * ════════════════════════════════════════════════════════════════
  *
- * Stockage : sunagakure/hospital_dons (TABLEAU)
- *
- * Features :
- *   - Stats : total volume par groupe sanguin
- *   - Liste des dons avec date, donneur, groupe
- *   - Indicateur visuel des groupes rares (O- universel)
+ * Permissions :
+ * - Voir : tout le monde (connecté)
+ * - Créer / modifier / supprimer : TOUS LES MEMBRES MÉDECIN + Admin
  * ════════════════════════════════════════════════════════════════
  */
 
@@ -24,7 +21,7 @@ import { toast } from '@/lib/toast';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Modal } from '@/components/ui/Modal';
-import { RequireBranche } from '@/components/Require';
+import { RequireMembreBranche } from '@/components/Require';
 import { confirmAction } from '@/components/ui/ConfirmDialog';
 import {
   type DonSang, type GroupeSanguin,
@@ -38,7 +35,7 @@ type Filter = 'all' | GroupeSanguin;
 
 export default function DonsPage() {
   const { can, displayName } = useCurrentUser();
-  const canEdit = can.adminBranche('medecin');
+  const canEdit = can.membreBranche('medecin');
   const CURRENT_USER = displayName;
 
   const { data, loading } = useFirebaseValue<DonSang[] | null>(FB_PATH);
@@ -69,12 +66,9 @@ export default function DonsPage() {
     return [...list].sort((a, b) => (b.createdAt ?? b.id) - (a.createdAt ?? a.id));
   }, [all, filter, search]);
 
-  // Stats par groupe sanguin
   const statsByGroupe = useMemo(() => {
     const s: Record<string, { count: number; volume: number }> = {};
-    GROUPES_SANGUINS.forEach((g) => {
-      s[g] = { count: 0, volume: 0 };
-    });
+    GROUPES_SANGUINS.forEach((g) => { s[g] = { count: 0, volume: 0 }; });
     for (const d of all) {
       if (s[d.groupe]) {
         s[d.groupe].count++;
@@ -153,16 +147,15 @@ export default function DonsPage() {
         title="Dons du sang"
         subtitle="Banque de sang de l'Hôpital de Sunagakure"
         actions={
-          <RequireBranche branche="medecin">
+          <RequireMembreBranche branche="medecin">
             <Button onClick={openCreate}><Plus size={14} /> Enregistrer un don</Button>
-          </RequireBranche>
+          </RequireMembreBranche>
         }
       >
-        {/* Grille des groupes sanguins */}
         <div className={styles.bloodGrid}>
           {GROUPES_SANGUINS.map((g) => {
             const s = statsByGroupe[g];
-            const isLow = s.volume < 1000;  // moins d'1 litre = bas
+            const isLow = s.volume < 1000;
             const isEmpty = s.count === 0;
             return (
               <div
@@ -183,7 +176,6 @@ export default function DonsPage() {
           <span>Volume total disponible : <strong>{totalVolume.toLocaleString('fr-FR')} mL</strong></span>
         </div>
 
-        {/* Toolbar */}
         <div className={styles.toolbar}>
           <div className={styles.searchBox}>
             <Search size={14} />
