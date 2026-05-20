@@ -8,6 +8,15 @@
  * Permissions :
  * - Voir : tout le monde (connecté)
  * - Retraits / config taux / suppressions : TOUS LES MEMBRES POLICE + Admin
+ *
+ * 🔍 AUDIT LOG (Phase 2) :
+ *   Page critique — toutes les opérations sont tracées dans /audit_log :
+ *     - create sur tresor:retrait        (retrait manuel)
+ *     - delete sur tresor:retrait        (annulation retrait)
+ *     - delete sur tresor:mouvement      (⚠️ efface une trace de versement)
+ *     - update sur tresor:config         (changement taux global)
+ *   Les versements entrants sont déjà loggés côté ComptaModule
+ *   (action=create, target=tresor:mouvement, lors d'une clôture).
  * ════════════════════════════════════════════════════════════════
  */
 
@@ -18,6 +27,7 @@ import {
 import { useFirebaseValue } from '@/hooks/useFirebaseValue';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { dbUpdate } from '@/lib/db';
+import { logAction } from '@/lib/audit';
 import { toast } from '@/lib/toast';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
@@ -37,6 +47,7 @@ type Tab = 'mouvements' | 'retraits';
 export default function TresorCentralPage() {
   const u = useCurrentUser();
   const CURRENT_USER = u.displayName;
+  const CURRENT_USER_ID = u.id;
   const canEdit = u.can.membreBranche('police');
 
   const { data, loading } = useFirebaseValue<TresorCentral | null>('tresorCentral');
@@ -106,6 +117,7 @@ export default function TresorCentralPage() {
     if (!retraitForm.motif?.trim()) {
       toast.error('Le motif est obligatoire'); return;
     }
+    let depassement = false;
     if (retraitForm.montant > totals.solde) {
       const ok = await confirmAction({
         title: 'Solde insuffisant',
@@ -113,6 +125,7 @@ export default function TresorCentralPage() {
         confirmLabel: 'Confirmer', variant: 'danger',
       });
       if (!ok) return;
+      depassement = true;
     }
     try {
       const newRetrait: TresorRetrait = {
@@ -124,6 +137,19 @@ export default function TresorCentralPage() {
       };
       const newRetraits = [newRetrait, ...(tresor.retraits || [])];
       await dbUpdate('tresorCentral', { ...tresor, retraits: newRetraits });
+
+      // 🔍 Audit log — opération sensible (sortie d'argent du Trésor)
+      logAction({
+        who: CURRENT_USER,
+        whoId: CURRENT_USER_ID,
+        action: 'create',
+        target: 'tresor:retrait',
+        targetId: newRetrait.id,
+        detail: `Trésor — Retrait manuel : −${fmtMoney(newRetrait.montant)} ₽ — ` +
+          `Motif : "${newRetrait.motif}" ` +
+          `(solde avant : ${fmtMoney(totals.solde)} ₽${depassement ? ', DÉPASSEMENT' : ''})`,
+      });
+
       toast.success(`Retrait de ${fmtMoney(newRetrait.montant)} ₽ enregistré`);
       setShowRetraitForm(false);
       setRetraitForm({});
@@ -142,6 +168,18 @@ export default function TresorCentralPage() {
         ...tresor,
         retraits: (tresor.retraits || []).filter((x) => x.id !== r.id),
       });
+
+      // 🔍 Audit log — annulation d'un retrait (réécrit l'historique du Trésor)
+      logAction({
+        who: CURRENT_USER,
+        whoId: CURRENT_USER_ID,
+        action: 'delete',
+        target: 'tresor:retrait',
+        targetId: r.id,
+        detail: `Trésor — Suppression retrait : −${fmtMoney(r.montant)} ₽ — ` +
+          `Motif initial : "${r.motif}" — Agent initial : ${r.agent || '?'}`,
+      });
+
       toast.success('Retrait supprimé');
     } catch { toast.error('Erreur'); }
   }
@@ -158,6 +196,21 @@ export default function TresorCentralPage() {
         ...tresor,
         mouvements: tresor.mouvements.filter((x) => x.id !== m.id),
       });
+
+      // 🔍 Audit log — ⚠️ ULTRA SENSIBLE : efface une trace de versement
+      // sans réinjecter l'argent dans la section d'origine
+      logAction({
+        who: CURRENT_USER,
+        whoId: CURRENT_USER_ID,
+        action: 'delete',
+        target: 'tresor:mouvement',
+        targetId: m.id,
+        detail: `Trésor — Suppression mouvement : +${fmtMoney(m.amount)} ₽ ` +
+          `depuis ${m.sectionLabel || m.section} ` +
+          `(taux ${m.rate}%, archive ${m.archiveId} "${m.archiveLabel || '?'}"). ` +
+          `⚠️ Trace effacée sans réinjection dans la section d'origine.`,
+      });
+
       toast.success('Mouvement supprimé');
     } catch { toast.error('Erreur'); }
   }
@@ -172,8 +225,26 @@ export default function TresorCentralPage() {
       toast.error('Le taux doit être entre 0 et 100');
       return;
     }
+    const oldRate = tresor.prelevementRate;
+    if (rateForm === oldRate) {
+      setShowConfigForm(false);
+      return;
+    }
     try {
       await dbUpdate('tresorCentral', { ...tresor, prelevementRate: rateForm });
+
+      // 🔍 Audit log — changement de paramètre global qui affecte
+      // toutes les clôtures futures de toutes les sections
+      logAction({
+        who: CURRENT_USER,
+        whoId: CURRENT_USER_ID,
+        action: 'update',
+        target: 'tresor:config',
+        targetId: 'prelevementRate',
+        detail: `Trésor — Taux de prélèvement modifié : ${oldRate}% → ${rateForm}% ` +
+          `(s'applique à toutes les clôtures futures, toutes sections)`,
+      });
+
       toast.success(`Taux mis à jour : ${rateForm}%`);
       setShowConfigForm(false);
     } catch { toast.error('Erreur'); }
