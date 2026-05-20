@@ -156,7 +156,7 @@ export default function CasiersPage() {
       });
       if (ok) {
         closeOpenForm();
-        router.push(`/police/casiers/${existing.id}`);
+        router.push(`/casiers/${existing.id}`);
       }
       return;
     }
@@ -200,7 +200,7 @@ export default function CasiersPage() {
 
       toast.success(`Casier ${numeroCasier} ouvert`);
       closeOpenForm();
-      router.push(`/police/casiers/${now}`);
+      router.push(`/casiers/${now}`);
     } catch (err) {
       console.error(err);
       toast.error('Erreur lors de l\'ouverture');
@@ -208,7 +208,7 @@ export default function CasiersPage() {
   }
 
   function openCasier(c: Casier) {
-    router.push(`/police/casiers/${c.id}`);
+    router.push(`/casiers/${c.id}`);
   }
 
   async function handleDelete(c: Casier, e: React.MouseEvent) {
