@@ -9,6 +9,8 @@
  *
  * Rapports scientifiques avec workflow : En cours → Publié → Archivé.
  * Click sur un rapport ouvre une modale viewer avec contenu complet.
+ *
+ * ⚠️ Accessible uniquement aux Gérants Scientifique
  * ════════════════════════════════════════════════════════════════
  */
 
@@ -23,6 +25,7 @@ import { toast } from '@/lib/toast';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Modal } from '@/components/ui/Modal';
+import { RequireBranche } from '@/components/Require';
 import { confirmAction } from '@/components/ui/ConfirmDialog';
 import {
   type RapportSci, type SciStatut, type SciType,
@@ -35,7 +38,10 @@ const FB_PATH = 'hospital_scientifique';
 type Tab = 'all' | SciStatut;
 
 export default function ScientifiquePage() {
-  const CURRENT_USER = useCurrentUser().displayName;
+  const { can, displayName } = useCurrentUser();
+  const canEdit = can.adminBranche('scientifique');
+  const CURRENT_USER = displayName;
+
   const { data, loading } = useFirebaseValue<RapportSci[] | null>(FB_PATH);
   const [tab, setTab] = useState<Tab>('encours');
   const [search, setSearch] = useState('');
@@ -76,6 +82,7 @@ export default function ScientifiquePage() {
     setShowForm(true);
   }
   function openEdit(r: RapportSci) {
+    if (!canEdit) return;
     setEditingId(r.id); setForm(r); setShowForm(true); setViewingId(null);
   }
   function closeForm() { setShowForm(false); setEditingId(null); setForm({}); }
@@ -147,7 +154,11 @@ export default function ScientifiquePage() {
       <Card
         title="Salon scientifique"
         subtitle="Rapports d'études, analyses et recherches"
-        actions={<Button onClick={openCreate}><Plus size={14} /> Nouveau rapport</Button>}
+        actions={
+          <RequireBranche branche="scientifique">
+            <Button onClick={openCreate}><Plus size={14} /> Nouveau rapport</Button>
+          </RequireBranche>
+        }
       >
         <div className={styles.tabs}>
           {(['encours', 'publie', 'archive', 'all'] as Tab[]).map((t) => (
@@ -191,11 +202,13 @@ export default function ScientifiquePage() {
                         <Calendar size={11} /> {fmtDateFR(r.date)}
                       </span>
                     )}
-                    <button
-                      className={styles.deleteBtn}
-                      onClick={(e) => { e.stopPropagation(); handleDelete(r); }}
-                      aria-label="Supprimer"
-                    ><Trash2 size={13} /></button>
+                    {canEdit && (
+                      <button
+                        className={styles.deleteBtn}
+                        onClick={(e) => { e.stopPropagation(); handleDelete(r); }}
+                        aria-label="Supprimer"
+                      ><Trash2 size={13} /></button>
+                    )}
                   </div>
                   <h3>{r.titre}</h3>
                   <div className={styles.scientifique}>
@@ -212,7 +225,7 @@ export default function ScientifiquePage() {
       <Modal open={!!viewing} onClose={() => setViewingId(null)}
         title={viewing?.titre || ''} size="lg"
         footer={
-          viewing && (
+          viewing && canEdit && (
             <>
               <Button variant="ghost" onClick={() => handleDelete(viewing)}><Trash2 size={14} /> Supprimer</Button>
               {viewing.statut === 'encours' && (
