@@ -1,5 +1,16 @@
 'use client';
 
+/**
+ * ════════════════════════════════════════════════════════════════
+ *  Page CONSULTATIONS — Module Médical
+ * ════════════════════════════════════════════════════════════════
+ *
+ * Permissions :
+ * - Voir : tout le monde (connecté)
+ * - Créer / modifier / supprimer : TOUS LES MEMBRES MÉDECIN + Admin
+ * ════════════════════════════════════════════════════════════════
+ */
+
 import { useMemo, useState } from 'react';
 import {
   Plus, Trash2, Save, Search, Stethoscope, Calendar, Clock,
@@ -13,7 +24,7 @@ import { toast } from '@/lib/toast';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Modal } from '@/components/ui/Modal';
-import { RequireBranche } from '@/components/Require';
+import { RequireMembreBranche } from '@/components/Require';
 import { confirmAction } from '@/components/ui/ConfirmDialog';
 import {
   type Consultation, type ConsultStatut,
@@ -27,7 +38,7 @@ type Tab = 'all' | ConsultStatut;
 
 export default function ConsultationsPage() {
   const { can, displayName } = useCurrentUser();
-  const canEdit = can.adminBranche('medecin');
+  const canEdit = can.membreBranche('medecin');
   const CURRENT_USER = displayName;
 
   const { data, loading } = useFirebaseValue<Consultation[] | null>(FB_PATH);
@@ -140,9 +151,9 @@ export default function ConsultationsPage() {
         title="Consultations"
         subtitle="Hôpital de Sunagakure"
         actions={
-          <RequireBranche branche="medecin">
+          <RequireMembreBranche branche="medecin">
             <Button onClick={openCreate}><Plus size={14} /> Nouvelle consultation</Button>
-          </RequireBranche>
+          </RequireMembreBranche>
         }
       >
         <div className={styles.tabs}>
