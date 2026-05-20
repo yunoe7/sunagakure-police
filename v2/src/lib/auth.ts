@@ -4,17 +4,18 @@
  * ═══════════════════════════════════════════════════════════════════
  *  - Scopes étendus : identify + email + guilds + guilds.members.read
  *  - Callback signIn : vérifie membre serveur OU whitelist + LOG FIREBASE
- *  - Callback jwt    : enrichit le token + REFRESH AUTO toutes les 60s
+ *  - Callback jwt    : enrichit le token + REFRESH AUTO toutes les 5 min
  *                      + SYNC FIREBASE si les rôles ont changé
  *  - Callback session: expose ces données au client
  *
- *  ✨ Refresh automatique des rôles Discord toutes les 60s
+ *  ✨ Refresh automatique des rôles Discord toutes les 5 minutes
  *  ✨ Sync Firebase si rôles changés (page /admin/membres à jour)
  *
  *  🛡️ GARDE-FOUS ANTI-ÉCRASEMENT :
  *  - Si l'appel Discord retourne null → garde l'ancien intranet
  *  - Si Discord renvoie 0 rôle alors qu'on en avait → garde l'ancien
  *  - Si une erreur survient pendant le refresh → garde l'ancien
+ *  - Si Discord rate limit (429) → garde l'ancien (testé en prod)
  * ═══════════════════════════════════════════════════════════════════
  */
 
@@ -24,7 +25,8 @@ import { fetchGuildMember } from "@/lib/discord";
 import { isInWhitelist } from "@/lib/whitelist";
 import { buildIntranetUser, type IntranetUser } from "@/lib/roles";
 
-const REFRESH_INTERVAL_MS = 60 * 1000;
+// Intervalle de refresh côté serveur (5 minutes pour éviter le rate limit Discord)
+const REFRESH_INTERVAL_MS = 5 * 60 * 1000;
 
 // ─── Helper : écrire un membre dans Firebase ──────────────────────
 async function logUserToFirebase(params: {
@@ -159,7 +161,7 @@ async function rebuildIntranetUser(
     const whitelisted = await isInWhitelist(discordId);
     const guildData = await fetchGuildMember(accessToken);
 
-    // 🛡️ Garde-fou 1 : appel Discord raté
+    // 🛡️ Garde-fou 1 : appel Discord raté (incluant rate limit 429)
     if (!guildData) {
       console.warn("[Auth] ⚠️ fetchGuildMember a renvoyé null, refresh annulé");
       return null;
@@ -277,12 +279,12 @@ export const authOptions: NextAuthOptions = {
     },
 
     /**
-     * Callback JWT : enrichit le token + REFRESH AUTO toutes les 60s.
+     * Callback JWT : enrichit le token + REFRESH AUTO toutes les 5 minutes.
      *
      * Trois cas :
      * 1. Login initial : on stocke tout (intranet + tokens Discord)
      * 2. Trigger 'update' (refresh manuel via useSession().update()) : refresh forcé
-     * 3. À chaque visite : si > 60s depuis le dernier refresh → re-fetch Discord
+     * 3. À chaque visite : si > 5 min depuis le dernier refresh → re-fetch Discord
      */
     async jwt({ token, account, profile, trigger }) {
       // ─── 1. Login initial : on stocke tout ───────────────────────
@@ -376,7 +378,7 @@ export const authOptions: NextAuthOptions = {
           previousRolesCount
         );
 
-        // 🛡️ Si le refresh a échoué (Discord API down, réponse vide, etc.),
+        // 🛡️ Si le refresh a échoué (Discord API down, rate limit, réponse vide, etc.),
         //    on garde l'ancien intranet pour ne pas perdre les permissions
         if (!newIntranet) {
           token.lastRefresh = Date.now();
