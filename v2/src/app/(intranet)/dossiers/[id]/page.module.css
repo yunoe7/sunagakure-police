@@ -843,3 +843,308 @@ textarea.infrInput {
   .sections { padding: 14px; }
   .name { font-size: 22px; }
 }
+/* ════════════════════════════════════════════════════════════════
+   MODE BATCH — Ajout multiple d'infractions
+   ════════════════════════════════════════════════════════════════ */
+
+.batchForm {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* ─── Section de recherche en haut ─── */
+.batchSearchSection {
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid rgba(160, 128, 32, 0.2);
+  border-radius: 6px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.suggAdd {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: rgba(200, 168, 80, 0.2);
+  border: 1px solid rgba(200, 168, 80, 0.5);
+  color: #c8a850;
+  font-size: 14px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+.suggestion:hover .suggAdd {
+  background: rgba(200, 168, 80, 0.4);
+  border-color: #c8a850;
+}
+
+.batchAddEmpty {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 14px;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px dashed rgba(200, 168, 80, 0.4);
+  border-radius: 4px;
+  color: #c8a850;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 10.5px;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s;
+  margin-top: 4px;
+}
+.batchAddEmpty:hover {
+  background: rgba(200, 168, 80, 0.1);
+  border-color: rgba(200, 168, 80, 0.7);
+  border-style: solid;
+}
+
+/* ─── Liste vide ─── */
+.batchEmpty {
+  text-align: center;
+  padding: 40px 20px;
+  color: var(--muted);
+  font-family: 'EB Garamond', Georgia, serif;
+  font-size: 14px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+/* ─── Liste des items à ajouter ─── */
+.batchListHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 14px;
+  background: rgba(200, 168, 80, 0.08);
+  border: 1px solid rgba(200, 168, 80, 0.3);
+  border-radius: 5px 5px 0 0;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: #c8a850;
+  font-weight: 700;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.batchTotal {
+  text-transform: none;
+  letter-spacing: 0.5px;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 400;
+}
+.batchTotal strong {
+  font-family: 'Cinzel', serif;
+  font-size: 15px;
+  color: #c8a850;
+  font-weight: 700;
+  margin-left: 4px;
+}
+
+.batchList {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 10px;
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(160, 128, 32, 0.2);
+  border-top: none;
+  border-radius: 0 0 5px 5px;
+  max-height: 500px;
+  overflow-y: auto;
+}
+
+/* ─── Carte d'un item dans le batch ─── */
+.batchItem {
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(160, 128, 32, 0.25);
+  border-radius: 4px;
+  padding: 10px 12px;
+  position: relative;
+}
+.batchItem::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 3px;
+  border-radius: 3px 0 0 3px;
+}
+.batchItem.infr-faible::before    { background: #b0a040; }
+.batchItem.infr-moyen::before     { background: #c08040; }
+.batchItem.infr-eleve::before     { background: #b85030; }
+.batchItem.infr-critique::before  { background: #b03020; }
+
+.batchItemHeader {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+  padding-left: 6px;
+}
+
+.batchItemNum {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 11px;
+  color: #c8a850;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  flex-shrink: 0;
+  padding: 3px 8px;
+  background: rgba(200, 168, 80, 0.1);
+  border: 1px solid rgba(200, 168, 80, 0.3);
+  border-radius: 3px;
+}
+
+.batchItemTitle {
+  flex: 1;
+  min-width: 0;
+  padding: 6px 10px;
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(160, 128, 32, 0.3);
+  border-radius: 3px;
+  color: #e8dcc0;
+  font-family: 'EB Garamond', Georgia, serif;
+  font-size: 14px;
+  font-weight: 700;
+}
+.batchItemTitle:focus {
+  outline: none;
+  border-color: rgba(200, 168, 80, 0.6);
+  background: rgba(0, 0, 0, 0.55);
+}
+.batchItemTitle::placeholder {
+  font-style: italic;
+  color: rgba(160, 128, 32, 0.4);
+  font-weight: 400;
+}
+
+.batchItemRemove {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  background: transparent;
+  border: 1px solid rgba(180, 80, 50, 0.25);
+  border-radius: 3px;
+  color: rgba(200, 130, 110, 0.6);
+  cursor: pointer;
+  transition: all 0.15s;
+  flex-shrink: 0;
+}
+.batchItemRemove:hover {
+  background: rgba(180, 80, 50, 0.15);
+  border-color: rgba(180, 80, 50, 0.6);
+  color: #e8a090;
+}
+
+.batchItemFields {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  padding-left: 6px;
+}
+
+.batchField {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.batchFieldWide {
+  grid-column: span 2;
+}
+
+.batchFieldLabel {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 8.5px;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  color: rgba(200, 168, 80, 0.7);
+  font-weight: 700;
+}
+
+.batchInput {
+  padding: 6px 9px;
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(160, 128, 32, 0.25);
+  border-radius: 3px;
+  color: var(--text);
+  font-size: 12px;
+  font-family: 'Barlow', sans-serif;
+  width: 100%;
+}
+.batchInput:focus {
+  outline: none;
+  border-color: rgba(200, 168, 80, 0.55);
+  background: rgba(0, 0, 0, 0.55);
+}
+textarea.batchInput {
+  resize: vertical;
+  min-height: 50px;
+  font-family: 'Barlow', sans-serif;
+}
+
+/* ─── Section "Plus de détails" repliable ─── */
+.batchItemMore {
+  margin-top: 8px;
+  padding-left: 6px;
+}
+.batchItemMore summary {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 9.5px;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  color: var(--muted);
+  cursor: pointer;
+  padding: 4px 0;
+  user-select: none;
+  outline: none;
+}
+.batchItemMore summary:hover {
+  color: #c8a850;
+}
+.batchItemMore[open] summary {
+  color: #c8a850;
+  margin-bottom: 8px;
+}
+
+/* ═══ MOBILE ═══ */
+@media (max-width: 768px) {
+  .batchItemFields {
+    grid-template-columns: 1fr 1fr;
+  }
+  .batchFieldWide {
+    grid-column: span 2;
+  }
+  .batchListHeader {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+  }
+}
+
+@media (max-width: 480px) {
+  .batchItemFields {
+    grid-template-columns: 1fr;
+  }
+  .batchFieldWide {
+    grid-column: auto;
+  }
+  .batchItemTitle {
+    width: 100%;
+  }
+}
