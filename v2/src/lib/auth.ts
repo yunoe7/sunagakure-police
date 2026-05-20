@@ -10,7 +10,11 @@
  *
  *  ✨ Refresh automatique des rôles Discord toutes les 60s
  *  ✨ Sync Firebase si rôles changés (page /admin/membres à jour)
- *  ✨ Si refresh échoue, on garde les anciens rôles (pas d'écrasement)
+ *
+ *  🛡️ GARDE-FOUS ANTI-ÉCRASEMENT :
+ *  - Si l'appel Discord retourne null → garde l'ancien intranet
+ *  - Si Discord renvoie 0 rôle alors qu'on en avait → garde l'ancien
+ *  - Si une erreur survient pendant le refresh → garde l'ancien
  * ═══════════════════════════════════════════════════════════════════
  */
 
@@ -138,20 +142,40 @@ async function refreshDiscordAccessToken(refreshToken: string): Promise<{
 }
 
 // ─── Helper : re-construit l'IntranetUser depuis Discord ──────────
+/**
+ * 🛡️ Garde-fous anti-écrasement :
+ * - Retourne null si l'appel Discord échoue (le caller garde l'ancien intranet)
+ * - Retourne null si Discord renvoie 0 rôle alors qu'on en avait avant
+ *   (signe d'un bug temporaire : rate limit, timeout, etc.)
+ */
 async function rebuildIntranetUser(
   discordId: string,
   accessToken: string,
   username: string,
-  avatarUrl: string | null
+  avatarUrl: string | null,
+  previousRolesCount = 0
 ): Promise<IntranetUser | null> {
   try {
     const whitelisted = await isInWhitelist(discordId);
     const guildData = await fetchGuildMember(accessToken);
 
-    // 🔒 Si l'appel Discord a échoué (pas de rôles retournés), on retourne null
-    //    pour signaler qu'on ne doit PAS écraser l'intranet existant
+    // 🛡️ Garde-fou 1 : appel Discord raté
     if (!guildData) {
       console.warn("[Auth] ⚠️ fetchGuildMember a renvoyé null, refresh annulé");
+      return null;
+    }
+
+    const newRoles = guildData.roles ?? [];
+
+    // 🛡️ Garde-fou 2 : réponse vide suspecte
+    // Si on avait des rôles avant et que Discord renvoie 0 rôle maintenant,
+    // c'est presque certainement un bug temporaire. On préfère garder l'ancien.
+    if (newRoles.length === 0 && previousRolesCount > 0) {
+      console.warn(
+        "[Auth] ⚠️ Discord a renvoyé 0 rôle alors qu'on en avait",
+        previousRolesCount,
+        "→ refresh annulé pour protéger les permissions"
+      );
       return null;
     }
 
@@ -159,7 +183,7 @@ async function rebuildIntranetUser(
       discordId,
       username,
       avatarUrl,
-      roleIds: guildData.roles ?? [],
+      roleIds: newRoles,
       isMembreServeur: guildData.isMember ?? false,
       isWhitelisted: whitelisted,
     });
@@ -184,7 +208,7 @@ export const authOptions: NextAuthOptions = {
 
   session: {
     strategy: "jwt",
-    maxAge: 30 * 24 * 60 * 60,
+    maxAge: 30 * 24 * 60 * 60, // 30 jours
   },
 
   pages: {
@@ -193,6 +217,7 @@ export const authOptions: NextAuthOptions = {
   },
 
   callbacks: {
+    // ─── signIn : bloque les non-autorisés + LOG FIREBASE ────────────
     async signIn({ account, profile, user }) {
       try {
         if (account?.provider !== "discord") return false;
@@ -253,6 +278,11 @@ export const authOptions: NextAuthOptions = {
 
     /**
      * Callback JWT : enrichit le token + REFRESH AUTO toutes les 60s.
+     *
+     * Trois cas :
+     * 1. Login initial : on stocke tout (intranet + tokens Discord)
+     * 2. Trigger 'update' (refresh manuel via useSession().update()) : refresh forcé
+     * 3. À chaque visite : si > 60s depuis le dernier refresh → re-fetch Discord
      */
     async jwt({ token, account, profile, trigger }) {
       // ─── 1. Login initial : on stocke tout ───────────────────────
@@ -285,6 +315,7 @@ export const authOptions: NextAuthOptions = {
           token.discordAvatar = avatarUrl;
           if (intranet) token.intranet = intranet;
 
+          // Tokens Discord pour refresh ultérieur
           token.accessToken = account.access_token;
           token.refreshToken = account.refresh_token;
           token.expiresAt = account.expires_at ?? (Math.floor(Date.now() / 1000) + 604800);
@@ -308,9 +339,9 @@ export const authOptions: NextAuthOptions = {
         const refreshToken = token.refreshToken as string;
         const expiresAt = (token.expiresAt as number) ?? 0;
 
+        // 🛡️ Garde-fou : si pas assez d'infos pour refresh, on garde le token tel quel
         if (!discordId || !refreshToken || !accessToken) {
-          // JWT trop ancien (sans tokens) → user devra se relog manuellement
-          console.warn("[Auth] ⚠️ JWT sans tokens Discord, refresh impossible");
+          console.warn("[Auth] ⚠️ JWT sans tokens Discord (vieux JWT), refresh impossible");
           token.lastRefresh = Date.now();
           return token;
         }
@@ -326,21 +357,27 @@ export const authOptions: NextAuthOptions = {
             token.refreshToken = refreshed.refresh_token;
             token.expiresAt = refreshed.expires_at;
           } else {
+            // Refresh failed : on garde l'ancien intranet
             console.warn("[Auth] ⚠️ Refresh token Discord échoué, on garde l'ancien intranet");
             token.lastRefresh = Date.now();
             return token;
           }
         }
 
-        // Re-fetch les rôles Discord
+        // 🛡️ On compte les rôles actuels pour détecter les réponses Discord vides suspectes
+        const previousRolesCount = (token.intranet as IntranetUser)?.rolesRaw?.length ?? 0;
+
+        // Re-fetch les rôles Discord avec garde-fou anti-écrasement
         const newIntranet = await rebuildIntranetUser(
           discordId,
           accessToken,
           (token.discordUsername as string) ?? "Inconnu",
-          (token.discordAvatar as string) ?? null
+          (token.discordAvatar as string) ?? null,
+          previousRolesCount
         );
 
-        // 🔒 Si le refresh a échoué (Discord API down, etc.), on garde l'ancien intranet
+        // 🛡️ Si le refresh a échoué (Discord API down, réponse vide, etc.),
+        //    on garde l'ancien intranet pour ne pas perdre les permissions
         if (!newIntranet) {
           token.lastRefresh = Date.now();
           return token;
@@ -367,7 +404,7 @@ export const authOptions: NextAuthOptions = {
         }
       } catch (err) {
         console.error("[Auth] ❌ Erreur refresh jwt :", err);
-        token.lastRefresh = Date.now();
+        token.lastRefresh = Date.now(); // évite la boucle d'erreurs
       }
 
       return token;
@@ -377,6 +414,7 @@ export const authOptions: NextAuthOptions = {
       if (token.intranet) {
         (session as { intranet?: IntranetUser }).intranet = token.intranet as IntranetUser;
       }
+      // Expose un flag pour que le client sache quand a eu lieu le dernier refresh
       (session as { lastRefresh?: number }).lastRefresh = token.lastRefresh as number;
       return session;
     },
