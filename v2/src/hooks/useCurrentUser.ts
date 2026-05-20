@@ -12,9 +12,12 @@
  *    Pour un effet INSTANTANÉ, utiliser le bouton "Refresh mes rôles"
  *    dans le menu avatar de la sidebar.
  *
- * 🥷 RÈGLE JONIN : À partir du rang Jonin (niveau 7) et au-dessus,
- *    l'utilisateur obtient automatiquement toutes les permissions
- *    de branche (Membre ET Gérant), PARTOUT, sans exception.
+ * 🥷 RÈGLE "ALL PERM" : Les utilisateurs suivants obtiennent
+ *    automatiquement toutes les permissions de branche
+ *    (Membre ET Gérant), PARTOUT, sans exception :
+ *    - Rang Jonin (niveau 7) et au-dessus
+ *    - Membres du Conseil du Vent
+ *
  *    Les pages "admin technique" (Maintenance, Whitelist) restent
  *    réservées aux admins techniques (isAdmin) UNIQUEMENT.
  *
@@ -98,18 +101,22 @@ export function useCurrentUser() {
 
   // ─── Helpers de permissions ────────────────────────────────────
 
-  // 🥷 Si l'user est Jonin (7) ou plus → "all perm" automatique
-  const isJoninOuPlus =
-    intranetUser && intranetUser.rang
-      ? intranetUser.rang.niveau >= JONIN_NIVEAU
-      : false;
+  // 🥷 "All perm" automatique si :
+  //    - rang Jonin (7) ou plus, OU
+  //    - membre du Conseil du Vent
+  const hasAllPerm =
+    intranetUser !== null &&
+    (
+      (intranetUser.rang ? intranetUser.rang.niveau >= JONIN_NIVEAU : false) ||
+      intranetUser.isConseilDuVent
+    );
 
   const can: Permissions = {
     adminBranche: (slug: string | string[]) => {
       if (!intranetUser) return false;
       if (intranetUser.isAdmin) return true;
-      // 🥷 Jonin+ = Gérant de toutes les branches automatiquement
-      if (isJoninOuPlus) return true;
+      // 🥷 Jonin+ OU Conseil du Vent = Gérant de toutes les branches
+      if (hasAllPerm) return true;
       const slugs = Array.isArray(slug) ? slug : [slug];
       return slugs.some(
         (s) =>
@@ -120,16 +127,17 @@ export function useCurrentUser() {
     membreBranche: (slug: string | string[]) => {
       if (!intranetUser) return false;
       if (intranetUser.isAdmin) return true;
-      // 🥷 Jonin+ = Membre de toutes les branches automatiquement
-      if (isJoninOuPlus) return true;
+      // 🥷 Jonin+ OU Conseil du Vent = Membre de toutes les branches
+      if (hasAllPerm) return true;
       const slugs = Array.isArray(slug) ? slug : [slug];
       return intranetUser.branches.some((b) => slugs.includes(b.slug));
     },
 
     adminGeneral: () => {
       if (!intranetUser) return false;
-      // ⚠️ adminGeneral NE PREND PAS isJoninOuPlus :
+      // ⚠️ adminGeneral NE PREND PAS hasAllPerm :
       //    Maintenance/Whitelist restent réservés aux admins techniques.
+      //    (mais isConseilDuVent y est inclus historiquement, on garde)
       return (
         intranetUser.isAdmin ||
         intranetUser.isStaff ||
