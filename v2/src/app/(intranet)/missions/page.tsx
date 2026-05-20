@@ -5,17 +5,11 @@
  *  Page MISSIONS — Tableau de répartition des missions
  * ════════════════════════════════════════════════════════════════
  *
- * Page unique avec 3 onglets internes :
- *   - Disponibles (statut === 'ouverte')
- *   - Actives (statut === 'en_cours')
- *   - Archives (terminee | echouee | annulee)
- *
- * Stockage Firebase : sunagakure/missions (TABLEAU, format legacy)
- *
- * Actions disponibles selon le statut :
- *   - Disponibles : Accepter (devient en_cours pour l'utilisateur)
- *   - Actives : Marquer terminée / Échouée / Abandonner
- *   - Toutes : Édition, Suppression (admin)
+ * Permissions :
+ * - Voir / Accepter / Terminer / Échouer / Abandonner : tout le monde
+ *   (n'importe quel ninja peut prendre une mission affichée)
+ * - Créer / Modifier / Supprimer : Membres Bureau des missions
+ *   (le Bureau publie, les ninjas exécutent)
  * ════════════════════════════════════════════════════════════════
  */
 
@@ -39,6 +33,7 @@ import {
 
 import { useFirebaseValue } from '@/hooks/useFirebaseValue';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
+import { RequireMembreBranche } from '@/components/Require';
 import { dbSet } from '@/lib/db';
 import { toast } from '@/lib/toast';
 import { Card } from '@/components/ui/Card';
@@ -64,7 +59,8 @@ const FB_PATH = 'missions';
 type Tab = 'dispo' | 'actives' | 'archives';
 
 export default function MissionsPage() {
-  const CURRENT_USER = useCurrentUser().displayName;
+  const { displayName: CURRENT_USER, can } = useCurrentUser();
+  const canManage = can.membreBranche('bureau-missions');
   const { data, loading } = useFirebaseValue<Mission[] | null>(FB_PATH);
 
   const [tab, setTab] = useState<Tab>('dispo');
@@ -124,7 +120,6 @@ export default function MissionsPage() {
       });
     }
 
-    // Tri : disponibles → plus récentes en premier, actives → plus anciennes en premier (urgence)
     list.sort((a, b) => {
       if (tab === 'actives') return (a.creeLe ?? a.id) - (b.creeLe ?? b.id);
       return (b.creeLe ?? b.id) - (a.creeLe ?? a.id);
@@ -230,9 +225,8 @@ export default function MissionsPage() {
     }
   }
 
-  // ─── Actions de workflow ───
+  // ─── Actions de workflow (ouvertes à tous) ───
 
-  /** Disponible → En cours : on s'auto-assigne et change le statut */
   async function handleAccept(m: Mission) {
     try {
       const list = getCurrentList();
@@ -254,7 +248,6 @@ export default function MissionsPage() {
     }
   }
 
-  /** En cours → Terminée */
   async function handleComplete(m: Mission) {
     const ok = await confirmAction({
       title: 'Marquer la mission terminée',
@@ -280,7 +273,6 @@ export default function MissionsPage() {
     }
   }
 
-  /** En cours → Échouée */
   async function handleFail(m: Mission) {
     const ok = await confirmAction({
       title: 'Mission échouée',
@@ -301,7 +293,6 @@ export default function MissionsPage() {
     }
   }
 
-  /** En cours → Annulée (abandon) */
   async function handleAbandon(m: Mission) {
     const ok = await confirmAction({
       title: 'Abandonner la mission',
@@ -322,13 +313,11 @@ export default function MissionsPage() {
     }
   }
 
-  // ─── Suggestion automatique de récompense quand on change de rang ───
   function handleRangChange(newRang: MissionRang) {
     const suggested = MS_REWARD_BY_RANK[newRang];
     setForm({
       ...form,
       rang: newRang,
-      // Ne remplace que si l'utilisateur n'a pas saisi de récompense custom
       recompense:
         form.recompense === undefined ||
         form.recompense === MS_REWARD_BY_RANK[form.rang as MissionRang]
@@ -344,9 +333,11 @@ export default function MissionsPage() {
         title="Missions"
         subtitle="Tableau de répartition officiel"
         actions={
-          <Button onClick={openCreate}>
-            <Plus size={14} /> Nouvelle mission
-          </Button>
+          <RequireMembreBranche branche="bureau-missions">
+            <Button onClick={openCreate}>
+              <Plus size={14} /> Nouvelle mission
+            </Button>
+          </RequireMembreBranche>
         }
       >
         {/* Onglets */}
@@ -446,17 +437,23 @@ export default function MissionsPage() {
                     {m.statut === 'ouverte' && <Target size={11} />}
                     {MISSION_STATUT_LABEL[m.statut]}
                   </span>
-                  <button
-                    className={styles.deleteBtn}
-                    onClick={() => handleDelete(m)}
-                    aria-label="Supprimer"
-                  >
-                    <Trash2 size={13} />
-                  </button>
+                  <RequireMembreBranche branche="bureau-missions">
+                    <button
+                      className={styles.deleteBtn}
+                      onClick={() => handleDelete(m)}
+                      aria-label="Supprimer"
+                    >
+                      <Trash2 size={13} />
+                    </button>
+                  </RequireMembreBranche>
                 </header>
 
-                {/* Corps cliquable pour éditer */}
-                <div className={styles.body} onClick={() => openEdit(m)}>
+                {/* Corps cliquable pour éditer (Bureau uniquement) */}
+                <div
+                  className={styles.body}
+                  onClick={() => canManage && openEdit(m)}
+                  style={{ cursor: canManage ? 'pointer' : 'default' }}
+                >
                   <h3 className={styles.title}>{m.titre}</h3>
                   {m.desc && <p className={styles.desc}>{m.desc}</p>}
 
@@ -488,7 +485,7 @@ export default function MissionsPage() {
                   )}
                 </div>
 
-                {/* Actions selon statut */}
+                {/* Actions selon statut (ouvertes à tous) */}
                 <footer className={styles.actions}>
                   {m.statut === 'ouverte' && (
                     <Button size="sm" onClick={() => handleAccept(m)}>
