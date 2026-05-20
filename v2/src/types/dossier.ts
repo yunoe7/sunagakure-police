@@ -197,3 +197,12 @@ export function computeAmendeTotals(infractions: DossierInfraction[]): {
     impayee: Math.max(0, total - payee),
   };
 }
+export interface Dossier {
+  id: number;
+  numeroDossier?: string;
+  nom: string;
+  /** 🆕 NOUVEAU : lien vers la fiche recensé (sunagakure/recenses) */
+  recenseId?: number;
+  danger: DossierDanger;
+  // ... le reste inchangé
+}
