@@ -57,6 +57,11 @@
  *  //  4 = Chunin          10 = Bras droit du Kazekage
  *  //  5 = Kakunin         11 = Kazekage
  *  //  6 = Tokubetsu Jonin
+ *
+ *  🥷 RÈGLE "ALL PERM" automatique pour :
+ *  - Rang Jonin (niveau 7) et au-dessus
+ *  - Membres du Conseil du Vent
+ *  (Tous gérée par useCurrentUser via can.membreBranche / can.adminBranche)
  * ═══════════════════════════════════════════════════════════════════
  */
 
@@ -71,9 +76,7 @@ type RequireProps = {
 /**
  * Affiche le contenu UNIQUEMENT pour les Gérants / Co-gérants de la (ou des) branche(s)
  * donnée(s), OU pour tout Admin (whitelist + Kazekage RP).
- *
- * @param branche slug de branche ou liste de slugs (au moins un suffit).
- *                Ex: "police", ["medecin", "scientifique"]
+ * 🥷 Aussi pour les Jonin+ et Conseil du Vent (via can.adminBranche).
  */
 export function RequireBranche({
   branche,
@@ -132,6 +135,8 @@ export function RequireRang({
  * Affiche le contenu UNIQUEMENT pour les membres d'une (ou plusieurs) branche(s).
  * Différent de RequireBranche : ici PAS de check Gérant, juste l'appartenance.
  *
+ * 🥷 Utilise can.membreBranche() qui inclut la règle Jonin+ et Conseil du Vent.
+ *
  * @param branche slug de branche ou liste de slugs (au moins un suffit).
  *                Ex: "police", ["medecin", "scientifique"]
  */
@@ -140,11 +145,8 @@ export function RequireMembreBranche({
   children,
   fallback = null,
 }: RequireProps & { branche: string | string[] }) {
-  const { user, isLoading } = useCurrentUser();
+  const { can, isLoading } = useCurrentUser();
   if (isLoading) return null;
-  if (!user) return <>{fallback}</>;
-  const slugs = Array.isArray(branche) ? branche : [branche];
-  const isMembre = user.branches.some((b) => slugs.includes(b.slug));
-  if (!isMembre && !user.isAdmin) return <>{fallback}</>;
+  if (!can.membreBranche(branche)) return <>{fallback}</>;
   return <>{children}</>;
 }
