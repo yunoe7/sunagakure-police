@@ -8,7 +8,7 @@ import * as Icons from 'lucide-react';
 import { NAV_SECTIONS } from '@/lib/navigation';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { useSidebar } from './SidebarContext';
-import { UserBadges } from './UserBadges';
+import { UserBadges } from '../UserBadges';
 import { toast } from '@/lib/toast';
 import styles from './Sidebar.module.css';
 
