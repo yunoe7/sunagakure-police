@@ -5,12 +5,9 @@
  *  Page SALON SCIENTIFIQUE — Rapports d'études et recherches
  * ════════════════════════════════════════════════════════════════
  *
- * Stockage Firebase : sunagakure/hospital_scientifique (TABLEAU)
- *
- * Rapports scientifiques avec workflow : En cours → Publié → Archivé.
- * Click sur un rapport ouvre une modale viewer avec contenu complet.
- *
- * ⚠️ Accessible uniquement aux Gérants Scientifique
+ * Permissions :
+ * - Voir : tout le monde (connecté)
+ * - Créer / modifier / supprimer : TOUS LES MEMBRES SCIENTIFIQUE + Admin
  * ════════════════════════════════════════════════════════════════
  */
 
@@ -25,7 +22,7 @@ import { toast } from '@/lib/toast';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Modal } from '@/components/ui/Modal';
-import { RequireBranche } from '@/components/Require';
+import { RequireMembreBranche } from '@/components/Require';
 import { confirmAction } from '@/components/ui/ConfirmDialog';
 import {
   type RapportSci, type SciStatut, type SciType,
@@ -39,7 +36,7 @@ type Tab = 'all' | SciStatut;
 
 export default function ScientifiquePage() {
   const { can, displayName } = useCurrentUser();
-  const canEdit = can.adminBranche('scientifique');
+  const canEdit = can.membreBranche('scientifique');
   const CURRENT_USER = displayName;
 
   const { data, loading } = useFirebaseValue<RapportSci[] | null>(FB_PATH);
@@ -155,9 +152,9 @@ export default function ScientifiquePage() {
         title="Salon scientifique"
         subtitle="Rapports d'études, analyses et recherches"
         actions={
-          <RequireBranche branche="scientifique">
+          <RequireMembreBranche branche="scientifique">
             <Button onClick={openCreate}><Plus size={14} /> Nouveau rapport</Button>
-          </RequireBranche>
+          </RequireMembreBranche>
         }
       >
         <div className={styles.tabs}>
