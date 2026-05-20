@@ -3,6 +3,8 @@
 import { useMemo, useState } from 'react';
 import { Plus, Trash2, Save, Search, FileSignature, Calendar } from 'lucide-react';
 import { useFirebaseValue } from '@/hooks/useFirebaseValue';
+import { useCurrentUser } from '@/hooks/useCurrentUser';
+import { RequireMembreBranche } from '@/components/Require';
 import { dbSet } from '@/lib/db';
 import { toast } from '@/lib/toast';
 import { Card } from '@/components/ui/Card';
@@ -19,6 +21,8 @@ const FB_PATH = 'diplo_traites';
 type Filter = 'all' | TraiteStatut;
 
 export default function TraitesPage() {
+  const { can } = useCurrentUser();
+  const canEdit = can.membreBranche('diplomate');
   const { data, loading } = useFirebaseValue<Traite[] | null>(FB_PATH);
   const [filter, setFilter] = useState<Filter>('all');
   const [search, setSearch] = useState('');
@@ -100,7 +104,11 @@ export default function TraitesPage() {
       <Card
         title="Traités"
         subtitle="Accords diplomatiques signés et brouillons"
-        actions={<Button onClick={openCreate}><Plus size={14} /> Nouveau traité</Button>}
+        actions={
+          <RequireMembreBranche branche="diplomate">
+            <Button onClick={openCreate}><Plus size={14} /> Nouveau traité</Button>
+          </RequireMembreBranche>
+        }
       >
         <div className={styles.toolbar}>
           <div className={styles.searchBox}>
@@ -143,11 +151,13 @@ export default function TraitesPage() {
                         <Calendar size={11} /> {fmtDateFR(t.date)}
                       </span>
                     )}
-                    <button
-                      className={styles.deleteBtn}
-                      onClick={(e) => { e.stopPropagation(); handleDelete(t); }}
-                      aria-label="Supprimer"
-                    ><Trash2 size={13} /></button>
+                    <RequireMembreBranche branche="diplomate">
+                      <button
+                        className={styles.deleteBtn}
+                        onClick={(e) => { e.stopPropagation(); handleDelete(t); }}
+                        aria-label="Supprimer"
+                      ><Trash2 size={13} /></button>
+                    </RequireMembreBranche>
                   </div>
                   <h3>{t.titre}</h3>
                   {t.parties && <div className={styles.parties}>📜 Parties : {t.parties}</div>}
@@ -167,7 +177,7 @@ export default function TraitesPage() {
       <Modal open={!!viewing} onClose={() => setViewingId(null)}
         title={viewing?.titre || ''} size="lg"
         footer={
-          viewing && (
+          viewing && canEdit && (
             <>
               <Button variant="ghost" onClick={() => handleDelete(viewing)}>
                 <Trash2 size={14} /> Supprimer
