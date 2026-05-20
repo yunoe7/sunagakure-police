@@ -3,6 +3,8 @@
 import { useMemo, useState } from 'react';
 import { Plus, Trash2, Save, Search, Globe } from 'lucide-react';
 import { useFirebaseValue } from '@/hooks/useFirebaseValue';
+import { useCurrentUser } from '@/hooks/useCurrentUser';
+import { RequireMembreBranche } from '@/components/Require';
 import { dbSet } from '@/lib/db';
 import { toast } from '@/lib/toast';
 import { Card } from '@/components/ui/Card';
@@ -16,6 +18,8 @@ const FB_PATH = 'diplo_villages';
 type Filter = 'all' | VillageStatut;
 
 export default function VillagesPage() {
+  const { can } = useCurrentUser();
+  const canEdit = can.membreBranche('diplomate');
   const { data, loading } = useFirebaseValue<Village[] | null>(FB_PATH);
   const [filter, setFilter] = useState<Filter>('all');
   const [search, setSearch] = useState('');
@@ -102,7 +106,11 @@ export default function VillagesPage() {
       <Card
         title="Villages"
         subtitle="Carnet diplomatique des villages connus"
-        actions={<Button onClick={openCreate}><Plus size={14} /> Ajouter un village</Button>}
+        actions={
+          <RequireMembreBranche branche="diplomate">
+            <Button onClick={openCreate}><Plus size={14} /> Ajouter un village</Button>
+          </RequireMembreBranche>
+        }
       >
         <div className={styles.statRow}>
           <div className={`${styles.statCard} ${styles.scAllie}`}>
@@ -152,7 +160,8 @@ export default function VillagesPage() {
               {visible.map((v) => (
                 <article key={v.id}
                   className={`${styles.village} ${styles[`v-${v.statut}`]}`}
-                  onClick={() => openEdit(v)}
+                  onClick={() => canEdit && openEdit(v)}
+                  style={{ cursor: canEdit ? 'pointer' : 'default' }}
                 >
                   <div className={styles.vHeader}>
                     <h3>{v.nom}</h3>
@@ -167,11 +176,13 @@ export default function VillagesPage() {
                     {v.population && <span>👥 {v.population.toLocaleString('fr-FR')}</span>}
                   </div>
                   {v.notes && <p className={styles.notes}>{v.notes}</p>}
-                  <button
-                    className={styles.deleteBtn}
-                    onClick={(e) => { e.stopPropagation(); handleDelete(v); }}
-                    aria-label="Supprimer"
-                  ><Trash2 size={13} /></button>
+                  <RequireMembreBranche branche="diplomate">
+                    <button
+                      className={styles.deleteBtn}
+                      onClick={(e) => { e.stopPropagation(); handleDelete(v); }}
+                      aria-label="Supprimer"
+                    ><Trash2 size={13} /></button>
+                  </RequireMembreBranche>
                 </article>
               ))}
             </div>
