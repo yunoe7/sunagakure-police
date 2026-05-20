@@ -7,11 +7,17 @@
  *
  * Route : /dossiers/[id]
  *
- * ✨ NOUVEAUTÉS :
- * - Casier criminel = liste structurée d'infractions
- * - Modale "Ajouter infraction" avec autocomplétion Code Pénal
- * - Migration auto de l'ancien champ "infractions" (string)
- * - Style "rapport police vintage" (sépia, rouille)
+ * ✨ MISE À JOUR :
+ * - AJOUT BATCH : la modale "+ Ajouter" permet d'ajouter PLUSIEURS
+ *   infractions d'un coup avant de valider
+ * - L'édition individuelle reste en modale dédiée (bouton ✏️)
+ *
+ * Logique :
+ * - Modale Batch : on construit un tableau `batch[]` localement
+ *   On peut ajouter via suggestion Code Pénal OU vide
+ *   Chaque item est éditable en place
+ *   "Ajouter au casier" → unique dbSet
+ * - Modale Édit individuelle : modifie 1 infraction existante
  * ════════════════════════════════════════════════════════════════
  */
 
@@ -19,8 +25,8 @@ import { useEffect, useMemo, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import {
   ArrowLeft, Pencil, Trash2, Save, Camera, Plus,
-  User, AlertTriangle, FileText, Coins, Calendar, Skull,
-  ScrollText, Scale, Search, X, BookOpen,
+  AlertTriangle, FileText, Coins, Calendar, Skull,
+  ScrollText, Scale, BookOpen, FilePlus,
 } from 'lucide-react';
 
 import { useFirebaseValue } from '@/hooks/useFirebaseValue';
@@ -44,32 +50,31 @@ import listStyles from '../page.module.css';
 import styles from './page.module.css';
 
 const FB_PATH = 'dossiers';
-const FB_INFRACTIONS_PATH = 'infractions'; // Code Pénal
+const FB_INFRACTIONS_PATH = 'infractions';
 
-// ─── Fuzzy match helper (ignore accents + casse) ───
+// ─── Fuzzy match helper ───
 function normalize(s: string): string {
   return (s || '')
     .toLowerCase()
     .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, ''); // retire les diacritiques
+    .replace(/[\u0300-\u036f]/g, '');
 }
-
 function fuzzyMatch(needle: string, haystack: string): boolean {
   const n = normalize(needle.trim());
   if (!n) return false;
   const h = normalize(haystack);
-  // Match si tous les mots du needle sont présents dans haystack
   const words = n.split(/\s+/).filter(Boolean);
   return words.every((w) => h.includes(w));
 }
-
-// ─── Parse l'amende string du Code Pénal (ex: "500 ryos") ───
 function parseAmende(amendeStr?: string): number {
   if (!amendeStr) return 0;
   const match = amendeStr.match(/[\d\s,]+/);
   if (!match) return 0;
   return parseInt(match[0].replace(/[\s,]/g, ''), 10) || 0;
 }
+
+// Type local pour les items dans le batch (id local négatif pour distinguer)
+type BatchItem = DossierInfraction & { _localId: number };
 
 export default function FicheDossierPage() {
   const router = useRouter();
@@ -82,12 +87,19 @@ export default function FicheDossierPage() {
   const { data, loading } = useFirebaseValue<Dossier[] | null>(FB_PATH);
   const { data: codePenalData } = useFirebaseValue<Infraction[] | null>(FB_INFRACTIONS_PATH);
 
-  // Modales
+  // ─── Modales ───
   const [showEdit, setShowEdit] = useState(false);
-  const [showInfraction, setShowInfraction] = useState(false);
-  const [editingInfractionId, setEditingInfractionId] = useState<number | null>(null);
   const [editForm, setEditForm] = useState<Partial<Dossier>>({});
+
+  // Mode BATCH (ajout multiple)
+  const [showBatch, setShowBatch] = useState(false);
+  const [batchItems, setBatchItems] = useState<BatchItem[]>([]);
+  const [batchSearch, setBatchSearch] = useState('');
+
+  // Mode édition individuelle (1 infraction existante)
+  const [editingInfractionId, setEditingInfractionId] = useState<number | null>(null);
   const [infrForm, setInfrForm] = useState<Partial<DossierInfraction>>({});
+  const [showInfractionEdit, setShowInfractionEdit] = useState(false);
 
   const all = useMemo<Dossier[]>(() => {
     if (!data) return [];
@@ -105,12 +117,11 @@ export default function FicheDossierPage() {
     );
   }, [codePenalData]);
 
-  // ─── Migration auto à l'ouverture de la fiche ───
+  // ─── Migration auto à l'ouverture ───
   useEffect(() => {
     if (!dossier) return;
     if (dossier.infractionsList && dossier.infractionsList.length > 0) return;
     if (!dossier.infractions?.trim()) return;
-    // On a une ancienne string mais pas de liste : on migre auto
     migrateThisDossier();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dossier?.id]);
@@ -128,26 +139,12 @@ export default function FicheDossierPage() {
       const list = [...all];
       const idx = list.findIndex((d) => d.id === id);
       if (idx === -1) return;
-      list[idx] = {
-        ...list[idx],
-        infractionsList: migrated,
-        // On peut garder infractions string en backup ou la vider
-      };
+      list[idx] = { ...list[idx], infractionsList: migrated };
       await dbSet(FB_PATH, list);
-      console.log('[Dossier] Migration auto effectuée pour', dossier.numeroDossier || dossier.id);
     } catch (err) {
       console.error('[Dossier] Erreur migration :', err);
     }
   }
-
-  // ─── Suggestions pour l'autocomplétion ───
-  const suggestions = useMemo<Infraction[]>(() => {
-    const q = (infrForm.nom || '').trim();
-    if (q.length < 2) return [];
-    return codePenal
-      .filter((i) => fuzzyMatch(q, i.nom))
-      .slice(0, 8);
-  }, [infrForm.nom, codePenal]);
 
   // ─── HANDLERS : ÉDITION DU DOSSIER ───
   function openEdit() {
@@ -155,12 +152,10 @@ export default function FicheDossierPage() {
     setEditForm({ ...dossier });
     setShowEdit(true);
   }
-
   function closeEdit() {
     setShowEdit(false);
     setEditForm({});
   }
-
   async function handlePhotoUpload(file: File) {
     if (!file.type.startsWith('image/')) {
       toast.error("Ce n'est pas une image");
@@ -173,7 +168,6 @@ export default function FicheDossierPage() {
       toast.error("Impossible de charger l'image");
     }
   }
-
   async function handleSaveEdit() {
     if (!editForm.nom?.trim()) {
       toast.error('Le nom est obligatoire');
@@ -183,12 +177,7 @@ export default function FicheDossierPage() {
       const list = [...all];
       const idx = list.findIndex((d) => d.id === id);
       if (idx === -1) throw new Error('Introuvable');
-
-      list[idx] = {
-        ...list[idx],
-        ...editForm,
-        id,
-      } as Dossier;
+      list[idx] = { ...list[idx], ...editForm, id } as Dossier;
 
       logAction({
         who: CURRENT_USER,
@@ -207,7 +196,6 @@ export default function FicheDossierPage() {
       toast.error('Erreur lors de la sauvegarde');
     }
   }
-
   async function handleDelete() {
     if (!dossier) return;
     const ok = await confirmAction({
@@ -226,7 +214,6 @@ export default function FicheDossierPage() {
         targetId: String(id),
         detail: `Suppression du dossier ${dossier.numeroDossier || id} de ${dossier.nom}`,
       });
-
       await dbSet(FB_PATH, all.filter((x) => x.id !== id));
       toast.success('Dossier supprimé');
       router.push('/dossiers');
@@ -235,49 +222,88 @@ export default function FicheDossierPage() {
     }
   }
 
-  // ─── HANDLERS : INFRACTIONS ───
-  function openAddInfraction() {
-    setEditingInfractionId(null);
-    setInfrForm({
-      gravite: dossier?.danger || 'moyen',
-      date: Date.now(),
-      statut: 'impunie',
-    });
-    setShowInfraction(true);
+  // ═══════════════════════════════════════════════════════════════
+  //  MODE BATCH : ajouter plusieurs infractions d'un coup
+  // ═══════════════════════════════════════════════════════════════
+
+  function openBatch() {
+    setBatchItems([]);
+    setBatchSearch('');
+    setShowBatch(true);
+  }
+  function closeBatch() {
+    if (batchItems.length > 0) {
+      // Évite la perte accidentelle si on a déjà saisi des trucs
+      const ok = window.confirm(`Tu as ${batchItems.length} infraction(s) en cours de saisie. Vraiment annuler ?`);
+      if (!ok) return;
+    }
+    setShowBatch(false);
+    setBatchItems([]);
+    setBatchSearch('');
   }
 
-  function openEditInfraction(inf: DossierInfraction) {
-    setEditingInfractionId(inf.id);
-    setInfrForm({ ...inf });
-    setShowInfraction(true);
-  }
+  // Suggestions pour la recherche dans le batch
+  const batchSuggestions = useMemo<Infraction[]>(() => {
+    const q = batchSearch.trim();
+    if (q.length < 2) return [];
+    return codePenal.filter((i) => fuzzyMatch(q, i.nom)).slice(0, 8);
+  }, [batchSearch, codePenal]);
 
-  function closeInfraction() {
-    setShowInfraction(false);
-    setEditingInfractionId(null);
-    setInfrForm({});
-  }
-
-  function pickFromCodePenal(cp: Infraction) {
-    setInfrForm({
-      ...infrForm,
+  function addFromCodePenal(cp: Infraction) {
+    const newItem: BatchItem = {
+      _localId: -Date.now() - Math.random(),
+      id: 0, // ID Firebase à attribuer au save
       codePenalId: cp.id,
-      cat: (cp.cat as 'violet' | 'vert' | 'rouge' | 'noir'),
+      cat: cp.cat as 'violet' | 'vert' | 'rouge' | 'noir',
       nom: cp.nom,
       gravite: catToGravite(cp.cat),
+      date: Date.now(),
       amende: parseAmende(cp.amende),
+      amendePayee: 0,
       prison: cp.prison === 'Oui' ? (cp.duree || 'Oui') : undefined,
-      notes: cp.notes || infrForm.notes,
-    });
-    toast.success(`Infraction "${cp.nom}" pré-remplie`);
+      statut: 'impunie',
+      notes: cp.notes || undefined,
+    };
+    setBatchItems([...batchItems, newItem]);
+    setBatchSearch('');
   }
 
-  async function handleSaveInfraction() {
+  function addEmptyInfraction() {
+    const newItem: BatchItem = {
+      _localId: -Date.now() - Math.random(),
+      id: 0,
+      nom: '',
+      gravite: dossier?.danger || 'moyen',
+      date: Date.now(),
+      amende: 0,
+      statut: 'impunie',
+    };
+    setBatchItems([...batchItems, newItem]);
+  }
+
+  function updateBatchItem(localId: number, updates: Partial<BatchItem>) {
+    setBatchItems((items) =>
+      items.map((it) => (it._localId === localId ? { ...it, ...updates } : it)),
+    );
+  }
+
+  function removeBatchItem(localId: number) {
+    setBatchItems((items) => items.filter((it) => it._localId !== localId));
+  }
+
+  async function handleSaveBatch() {
     if (!dossier) return;
-    if (!infrForm.nom?.trim()) {
-      toast.error("L'intitulé de l'infraction est obligatoire");
+    if (batchItems.length === 0) {
+      toast.error('Ajoute au moins une infraction');
       return;
     }
+    // Validation : nom obligatoire pour chaque
+    const invalid = batchItems.find((it) => !it.nom?.trim());
+    if (invalid) {
+      toast.error('Toutes les infractions doivent avoir un intitulé');
+      return;
+    }
+
     try {
       const list = [...all];
       const idx = list.findIndex((d) => d.id === id);
@@ -285,34 +311,23 @@ export default function FicheDossierPage() {
 
       const current = list[idx];
       const currentInfractions = current.infractionsList || [];
-      let newInfractions: DossierInfraction[];
 
-      if (editingInfractionId) {
-        newInfractions = currentInfractions.map((i) =>
-          i.id === editingInfractionId
-            ? ({ ...i, ...infrForm, id: editingInfractionId } as DossierInfraction)
-            : i,
-        );
-      } else {
-        newInfractions = [
-          ...currentInfractions,
-          {
-            id: Date.now(),
-            nom: infrForm.nom!.trim(),
-            codePenalId: infrForm.codePenalId,
-            cat: infrForm.cat,
-            gravite: infrForm.gravite || 'moyen',
-            date: infrForm.date || Date.now(),
-            amende: Number(infrForm.amende) || 0,
-            amendePayee: Number(infrForm.amendePayee) || 0,
-            prison: infrForm.prison?.trim() || undefined,
-            statut: infrForm.statut || 'impunie',
-            notes: infrForm.notes?.trim() || undefined,
-          },
-        ];
-      }
+      // Convertit chaque BatchItem en vraie DossierInfraction (avec ID propre)
+      const now = Date.now();
+      const newOnes: DossierInfraction[] = batchItems.map((it, i) => {
+        const { _localId, ...rest } = it;
+        return {
+          ...rest,
+          id: now + i, // ID unique basé sur le timestamp
+          nom: it.nom.trim(),
+          amende: Number(it.amende) || 0,
+          amendePayee: Number(it.amendePayee) || 0,
+          prison: it.prison?.trim() || undefined,
+          notes: it.notes?.trim() || undefined,
+        };
+      });
 
-      // Recalcule les totaux
+      const newInfractions = [...currentInfractions, ...newOnes];
       const totals = computeAmendeTotals(newInfractions);
 
       list[idx] = {
@@ -326,17 +341,104 @@ export default function FicheDossierPage() {
       logAction({
         who: CURRENT_USER,
         whoId: u.id ?? null,
-        action: editingInfractionId ? 'update' : 'create',
+        action: 'create',
         target: 'dossier_infraction',
-        targetId: String(editingInfractionId ?? Date.now()),
-        detail: editingInfractionId
-          ? `Modification d'une infraction sur le dossier ${current.numeroDossier || id} : ${infrForm.nom}`
-          : `Ajout d'une infraction au dossier ${current.numeroDossier || id} : ${infrForm.nom}`,
+        targetId: String(id),
+        detail: `Ajout de ${newOnes.length} infraction${newOnes.length > 1 ? 's' : ''} au dossier ${current.numeroDossier || id} : ${newOnes.map(i => i.nom).join(' ; ')}`,
       });
 
       await dbSet(FB_PATH, list);
-      toast.success(editingInfractionId ? 'Infraction modifiée' : 'Infraction ajoutée');
-      closeInfraction();
+      toast.success(`${newOnes.length} infraction${newOnes.length > 1 ? 's ajoutées' : ' ajoutée'} au casier`);
+      setShowBatch(false);
+      setBatchItems([]);
+      setBatchSearch('');
+    } catch (err) {
+      console.error(err);
+      toast.error('Erreur lors de la sauvegarde');
+    }
+  }
+
+  // Total batch (affichage en temps réel)
+  const batchTotal = useMemo(() => {
+    return batchItems.reduce((sum, it) => sum + (Number(it.amende) || 0), 0);
+  }, [batchItems]);
+
+  // ═══════════════════════════════════════════════════════════════
+  //  MODE ÉDITION INDIVIDUELLE (1 infraction existante)
+  // ═══════════════════════════════════════════════════════════════
+
+  function openEditInfraction(inf: DossierInfraction) {
+    setEditingInfractionId(inf.id);
+    setInfrForm({ ...inf });
+    setShowInfractionEdit(true);
+  }
+  function closeInfractionEdit() {
+    setShowInfractionEdit(false);
+    setEditingInfractionId(null);
+    setInfrForm({});
+  }
+
+  // Suggestions pour l'édition individuelle (même logique que batch)
+  const editSuggestions = useMemo<Infraction[]>(() => {
+    const q = (infrForm.nom || '').trim();
+    if (q.length < 2) return [];
+    return codePenal.filter((i) => fuzzyMatch(q, i.nom)).slice(0, 8);
+  }, [infrForm.nom, codePenal]);
+
+  function pickFromCodePenalEdit(cp: Infraction) {
+    setInfrForm({
+      ...infrForm,
+      codePenalId: cp.id,
+      cat: cp.cat as 'violet' | 'vert' | 'rouge' | 'noir',
+      nom: cp.nom,
+      gravite: catToGravite(cp.cat),
+      amende: parseAmende(cp.amende),
+      prison: cp.prison === 'Oui' ? (cp.duree || 'Oui') : undefined,
+      notes: cp.notes || infrForm.notes,
+    });
+    toast.success(`"${cp.nom}" pré-remplie`);
+  }
+
+  async function handleSaveEditInfraction() {
+    if (!dossier || !editingInfractionId) return;
+    if (!infrForm.nom?.trim()) {
+      toast.error("L'intitulé est obligatoire");
+      return;
+    }
+    try {
+      const list = [...all];
+      const idx = list.findIndex((d) => d.id === id);
+      if (idx === -1) throw new Error('Introuvable');
+
+      const current = list[idx];
+      const newInfractions = (current.infractionsList || []).map((i) =>
+        i.id === editingInfractionId
+          ? ({ ...i, ...infrForm, id: editingInfractionId } as DossierInfraction)
+          : i,
+      );
+
+      const totals = computeAmendeTotals(newInfractions);
+
+      list[idx] = {
+        ...current,
+        infractionsList: newInfractions,
+        amendeTotal: totals.total,
+        amendePayee: totals.payee,
+        amendeImpayee: totals.impayee,
+      };
+
+      logAction({
+        who: CURRENT_USER,
+        whoId: u.id ?? null,
+        action: 'update',
+        target: 'dossier_infraction',
+        targetId: String(editingInfractionId),
+        detail: `Modification d'une infraction du dossier ${current.numeroDossier || id} : ${infrForm.nom}`,
+      });
+
+      await dbSet(FB_PATH, list);
+      toast.success('Infraction modifiée');
+      closeInfractionEdit();
     } catch (err) {
       console.error(err);
       toast.error('Erreur');
@@ -426,11 +528,10 @@ export default function FicheDossierPage() {
         )}
       </div>
 
-      {/* Fiche complète */}
+      {/* Fiche */}
       <article
         className={`${styles.fiche} ${styles[dangerClass]} ${dossier.defunt ? styles.ficheDefunt : ''}`}
       >
-        {/* Cachets en surimpression sur le header */}
         {dossier.statut === 'recherche' && !dossier.defunt && (
           <div className={styles.stamp}>RECHERCHÉ</div>
         )}
@@ -441,7 +542,6 @@ export default function FicheDossierPage() {
           <div className={`${styles.stamp} ${styles.stampDefunt}`}>DÉFUNT</div>
         )}
 
-        {/* ─── HEADER ─── */}
         <header className={styles.header}>
           {dossier.photo ? (
             // eslint-disable-next-line @next/next/no-img-element
@@ -478,7 +578,6 @@ export default function FicheDossierPage() {
           </div>
         </header>
 
-        {/* ─── SECTIONS ─── */}
         <div className={styles.sections}>
           {/* CASIER CRIMINEL */}
           <section className={styles.section}>
@@ -492,7 +591,7 @@ export default function FicheDossierPage() {
                 )}
               </h2>
               {canEdit && (
-                <button className={styles.addBtn} onClick={openAddInfraction}>
+                <button className={styles.addBtn} onClick={openBatch}>
                   <Plus size={12} /> Ajouter
                 </button>
               )}
@@ -567,7 +666,6 @@ export default function FicheDossierPage() {
                   </article>
                 ))}
 
-                {/* Totaux des amendes */}
                 {totals.total > 0 && (
                   <div className={styles.totalsBar}>
                     <div className={styles.totalItem}>
@@ -588,7 +686,6 @@ export default function FicheDossierPage() {
             )}
           </section>
 
-          {/* Notes */}
           {dossier.notes && (
             <section className={styles.section}>
               <h2 className={styles.sectionTitle}>
@@ -598,7 +695,6 @@ export default function FicheDossierPage() {
             </section>
           )}
 
-          {/* Métadonnées */}
           <section className={`${styles.section} ${styles.meta}`}>
             <h2 className={styles.sectionTitle}>
               <Calendar size={14} /> Métadonnées
@@ -613,7 +709,7 @@ export default function FicheDossierPage() {
         </div>
       </article>
 
-      {/* ═══ MODALE D'ÉDITION DU DOSSIER ═══ */}
+      {/* ═══ MODALE ÉDITION DU DOSSIER ═══ */}
       <Modal
         open={showEdit}
         onClose={closeEdit}
@@ -666,7 +762,6 @@ export default function FicheDossierPage() {
           <label>
             <input
               type="checkbox"
-              id="defunt-check"
               checked={!!editForm.defunt}
               onChange={(e) => setEditForm({ ...editForm, defunt: e.target.checked })}
               style={{ marginRight: 8 }}
@@ -684,8 +779,7 @@ export default function FicheDossierPage() {
           </label>
 
           <label>
-            <Camera size={11} style={{ marginRight: 4, display: 'inline' }} />
-            Photo
+            <Camera size={11} style={{ marginRight: 4, display: 'inline' }} /> Photo
             <div className={listStyles.uploadZone}>
               {editForm.photo ? (
                 // eslint-disable-next-line @next/next/no-img-element
@@ -718,48 +812,50 @@ export default function FicheDossierPage() {
         </div>
       </Modal>
 
-      {/* ═══ MODALE INFRACTION (avec autocomplétion) ═══ */}
+      {/* ═══ MODALE BATCH : ajouter plusieurs infractions ═══ */}
       <Modal
-        open={showInfraction}
-        onClose={closeInfraction}
-        title={editingInfractionId ? 'Modifier une infraction' : 'Ajouter une infraction'}
+        open={showBatch}
+        onClose={closeBatch}
+        title="Ajouter des infractions"
         size="lg"
         footer={
           <>
-            <Button variant="outline" onClick={closeInfraction}>Annuler</Button>
-            <Button onClick={handleSaveInfraction}>
-              <Save size={14} /> {editingInfractionId ? 'Enregistrer' : 'Ajouter au casier'}
+            <Button variant="outline" onClick={closeBatch}>Annuler</Button>
+            <Button onClick={handleSaveBatch} disabled={batchItems.length === 0}>
+              <Save size={14} />
+              {batchItems.length === 0
+                ? 'Aucune infraction à ajouter'
+                : `Ajouter ${batchItems.length === 1 ? 'l\'infraction' : `les ${batchItems.length} infractions`} au casier`
+              }
             </Button>
           </>
         }
       >
-        <div className={styles.infrForm}>
-          {/* Intitulé + suggestions */}
-          <div className={styles.infrFormField}>
+        <div className={styles.batchForm}>
+          {/* ─── Section recherche Code Pénal ─── */}
+          <div className={styles.batchSearchSection}>
             <label className={styles.infrFormLabel}>
-              <Scale size={11} /> Intitulé de l&apos;infraction *
+              <BookOpen size={11} /> Rechercher dans le Code Pénal
             </label>
             <input
               type="text"
-              value={infrForm.nom ?? ''}
-              onChange={(e) => setInfrForm({ ...infrForm, nom: e.target.value, codePenalId: undefined })}
-              autoFocus
-              placeholder="Tape pour rechercher dans le Code Pénal..."
+              value={batchSearch}
+              onChange={(e) => setBatchSearch(e.target.value)}
+              placeholder="Tape pour rechercher (ex: course, vol, coups...)"
               className={styles.infrInput}
             />
 
-            {/* Suggestions Code Pénal */}
-            {suggestions.length > 0 && (
+            {batchSuggestions.length > 0 && (
               <div className={styles.suggestions}>
                 <div className={styles.suggestionsLabel}>
-                  <BookOpen size={11} /> Suggestions du Code Pénal ({suggestions.length})
+                  <BookOpen size={11} /> Click pour ajouter à la liste ({batchSuggestions.length})
                 </div>
-                {suggestions.map((sug) => (
+                {batchSuggestions.map((sug) => (
                   <button
                     key={sug.id}
                     type="button"
-                    className={`${styles.suggestion} ${infrForm.codePenalId === sug.id ? styles.suggestionPicked : ''}`}
-                    onClick={() => pickFromCodePenal(sug)}
+                    className={styles.suggestion}
+                    onClick={() => addFromCodePenal(sug)}
                   >
                     <span className={`${styles.suggDot} ${styles[`dot-${sug.cat}`]}`} />
                     <div className={styles.suggInfo}>
@@ -770,24 +866,219 @@ export default function FicheDossierPage() {
                         {sug.prison === 'Oui' && sug.duree && ` · Prison : ${sug.duree}`}
                       </div>
                     </div>
-                    {infrForm.codePenalId === sug.id && <span className={styles.suggCheck}>✓</span>}
+                    <span className={styles.suggAdd}>+</span>
                   </button>
                 ))}
               </div>
             )}
 
-            {(infrForm.nom || '').trim().length > 0 && (infrForm.nom || '').trim().length < 2 && (
-              <p className={styles.hintInline}>Tape au moins 2 lettres pour voir les suggestions du Code Pénal</p>
+            {batchSearch.trim().length > 0 && batchSearch.trim().length < 2 && (
+              <p className={styles.hintInline}>Tape au moins 2 lettres pour voir les suggestions</p>
+            )}
+            {batchSearch.trim().length >= 2 && batchSuggestions.length === 0 && (
+              <p className={styles.hintInline}>
+                <em>Aucune correspondance — tu peux ajouter une infraction libre ci-dessous</em>
+              </p>
             )}
 
-            {(infrForm.nom || '').trim().length >= 2 && suggestions.length === 0 && (
-              <p className={styles.hintInline}>
-                <em>Aucune correspondance dans le Code Pénal — saisie libre acceptée</em>
-              </p>
+            <button type="button" className={styles.batchAddEmpty} onClick={addEmptyInfraction}>
+              <FilePlus size={13} /> Ajouter une infraction libre (hors Code Pénal)
+            </button>
+          </div>
+
+          {/* ─── Liste des infractions à ajouter ─── */}
+          {batchItems.length === 0 ? (
+            <div className={styles.batchEmpty}>
+              <ScrollText size={28} style={{ opacity: 0.3 }} />
+              <p><em>Aucune infraction encore. Recherche ou ajout libre ci-dessus.</em></p>
+            </div>
+          ) : (
+            <>
+              <div className={styles.batchListHeader}>
+                <span>📋 Infractions à ajouter au casier ({batchItems.length})</span>
+                <span className={styles.batchTotal}>
+                  Total : <strong>{fmtMoney(batchTotal)} ₽</strong>
+                </span>
+              </div>
+
+              <div className={styles.batchList}>
+                {batchItems.map((item, idx) => (
+                  <div
+                    key={item._localId}
+                    className={`${styles.batchItem} ${styles[`infr-${item.gravite || 'moyen'}`]}`}
+                  >
+                    <div className={styles.batchItemHeader}>
+                      <span className={styles.batchItemNum}>§ #{idx + 1}</span>
+                      <input
+                        type="text"
+                        value={item.nom}
+                        onChange={(e) => updateBatchItem(item._localId, { nom: e.target.value })}
+                        placeholder="Intitulé de l'infraction *"
+                        className={styles.batchItemTitle}
+                      />
+                      <button
+                        type="button"
+                        className={styles.batchItemRemove}
+                        onClick={() => removeBatchItem(item._localId)}
+                        title="Retirer"
+                      >
+                        <Trash2 size={12} />
+                      </button>
+                    </div>
+
+                    <div className={styles.batchItemFields}>
+                      <div className={styles.batchField}>
+                        <span className={styles.batchFieldLabel}>Gravité</span>
+                        <select
+                          value={item.gravite ?? 'moyen'}
+                          onChange={(e) => updateBatchItem(item._localId, { gravite: e.target.value as DossierDanger })}
+                          className={styles.batchInput}
+                        >
+                          <option value="faible">Faible</option>
+                          <option value="moyen">Moyen</option>
+                          <option value="eleve">Élevé</option>
+                          <option value="critique">Critique</option>
+                        </select>
+                      </div>
+
+                      <div className={styles.batchField}>
+                        <span className={styles.batchFieldLabel}>Date</span>
+                        <input
+                          type="date"
+                          value={item.date ? new Date(item.date).toISOString().slice(0, 10) : ''}
+                          onChange={(e) => updateBatchItem(item._localId, {
+                            date: e.target.value ? new Date(e.target.value).getTime() : undefined,
+                          })}
+                          className={styles.batchInput}
+                        />
+                      </div>
+
+                      <div className={styles.batchField}>
+                        <span className={styles.batchFieldLabel}>Amende (₽)</span>
+                        <input
+                          type="number"
+                          value={item.amende ?? ''}
+                          onChange={(e) => updateBatchItem(item._localId, {
+                            amende: e.target.value ? Number(e.target.value) : 0,
+                          })}
+                          className={styles.batchInput}
+                          placeholder="0"
+                        />
+                      </div>
+
+                      <div className={styles.batchField}>
+                        <span className={styles.batchFieldLabel}>Prison</span>
+                        <input
+                          type="text"
+                          value={item.prison ?? ''}
+                          onChange={(e) => updateBatchItem(item._localId, { prison: e.target.value })}
+                          className={styles.batchInput}
+                          placeholder="Ex: 3 jours"
+                        />
+                      </div>
+                    </div>
+
+                    <details className={styles.batchItemMore}>
+                      <summary>Plus de détails (statut, notes)</summary>
+                      <div className={styles.batchItemFields}>
+                        <div className={styles.batchField}>
+                          <span className={styles.batchFieldLabel}>Déjà payé (₽)</span>
+                          <input
+                            type="number"
+                            value={item.amendePayee ?? ''}
+                            onChange={(e) => updateBatchItem(item._localId, {
+                              amendePayee: e.target.value ? Number(e.target.value) : 0,
+                            })}
+                            className={styles.batchInput}
+                            placeholder="0"
+                          />
+                        </div>
+                        <div className={`${styles.batchField} ${styles.batchFieldWide}`}>
+                          <span className={styles.batchFieldLabel}>Statut</span>
+                          <select
+                            value={item.statut ?? 'impunie'}
+                            onChange={(e) => updateBatchItem(item._localId, { statut: e.target.value as InfractionStatut })}
+                            className={styles.batchInput}
+                          >
+                            {Object.entries(INFRACTION_STATUT_LABEL).map(([k, v]) => (
+                              <option key={k} value={k}>{v}</option>
+                            ))}
+                          </select>
+                        </div>
+                      </div>
+                      <div className={styles.batchField} style={{ marginTop: 8 }}>
+                        <span className={styles.batchFieldLabel}>Notes / Circonstances</span>
+                        <textarea
+                          value={item.notes ?? ''}
+                          onChange={(e) => updateBatchItem(item._localId, { notes: e.target.value })}
+                          className={styles.batchInput}
+                          placeholder="Témoins, lieu, contexte…"
+                          rows={2}
+                        />
+                      </div>
+                    </details>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
+        </div>
+      </Modal>
+
+      {/* ═══ MODALE ÉDITION 1 INFRACTION EXISTANTE ═══ */}
+      <Modal
+        open={showInfractionEdit}
+        onClose={closeInfractionEdit}
+        title="Modifier l'infraction"
+        size="md"
+        footer={
+          <>
+            <Button variant="outline" onClick={closeInfractionEdit}>Annuler</Button>
+            <Button onClick={handleSaveEditInfraction}>
+              <Save size={14} /> Enregistrer
+            </Button>
+          </>
+        }
+      >
+        <div className={styles.infrForm}>
+          <div className={styles.infrFormField}>
+            <label className={styles.infrFormLabel}>
+              <Scale size={11} /> Intitulé de l&apos;infraction *
+            </label>
+            <input
+              type="text"
+              value={infrForm.nom ?? ''}
+              onChange={(e) => setInfrForm({ ...infrForm, nom: e.target.value, codePenalId: undefined })}
+              autoFocus
+              className={styles.infrInput}
+            />
+            {editSuggestions.length > 0 && (
+              <div className={styles.suggestions}>
+                <div className={styles.suggestionsLabel}>
+                  <BookOpen size={11} /> Suggestions du Code Pénal ({editSuggestions.length})
+                </div>
+                {editSuggestions.map((sug) => (
+                  <button
+                    key={sug.id}
+                    type="button"
+                    className={`${styles.suggestion} ${infrForm.codePenalId === sug.id ? styles.suggestionPicked : ''}`}
+                    onClick={() => pickFromCodePenalEdit(sug)}
+                  >
+                    <span className={`${styles.suggDot} ${styles[`dot-${sug.cat}`]}`} />
+                    <div className={styles.suggInfo}>
+                      <div className={styles.suggName}>{sug.nom}</div>
+                      <div className={styles.suggMeta}>
+                        {INFRACTION_CAT_LABEL[sug.cat as keyof typeof INFRACTION_CAT_LABEL] || sug.cat}
+                        {sug.amende && ` · ${sug.amende}`}
+                      </div>
+                    </div>
+                    {infrForm.codePenalId === sug.id && <span className={styles.suggCheck}>✓</span>}
+                  </button>
+                ))}
+              </div>
             )}
           </div>
 
-          {/* Gravité + Date */}
           <div className={styles.infrFormRow}>
             <div className={styles.infrFormField}>
               <label className={styles.infrFormLabel}>Gravité</label>
@@ -803,7 +1094,7 @@ export default function FicheDossierPage() {
               </select>
             </div>
             <div className={styles.infrFormField}>
-              <label className={styles.infrFormLabel}>Date de l&apos;acte</label>
+              <label className={styles.infrFormLabel}>Date</label>
               <input
                 type="date"
                 value={infrForm.date ? new Date(infrForm.date).toISOString().slice(0, 10) : ''}
@@ -816,7 +1107,6 @@ export default function FicheDossierPage() {
             </div>
           </div>
 
-          {/* Amende + Payé + Prison */}
           <div className={styles.infrFormRow3}>
             <div className={styles.infrFormField}>
               <label className={styles.infrFormLabel}>Amende (₽)</label>
@@ -837,20 +1127,18 @@ export default function FicheDossierPage() {
               />
             </div>
             <div className={styles.infrFormField}>
-              <label className={styles.infrFormLabel}>Peine de prison</label>
+              <label className={styles.infrFormLabel}>Prison</label>
               <input
                 type="text"
                 value={infrForm.prison ?? ''}
                 onChange={(e) => setInfrForm({ ...infrForm, prison: e.target.value })}
-                placeholder="Ex: 3 jours"
                 className={styles.infrInput}
               />
             </div>
           </div>
 
-          {/* Statut + Notes */}
           <div className={styles.infrFormField}>
-            <label className={styles.infrFormLabel}>Statut de l&apos;infraction</label>
+            <label className={styles.infrFormLabel}>Statut</label>
             <select
               value={infrForm.statut ?? 'impunie'}
               onChange={(e) => setInfrForm({ ...infrForm, statut: e.target.value as InfractionStatut })}
@@ -863,12 +1151,11 @@ export default function FicheDossierPage() {
           </div>
 
           <div className={styles.infrFormField}>
-            <label className={styles.infrFormLabel}>Notes / Circonstances</label>
+            <label className={styles.infrFormLabel}>Notes</label>
             <textarea
               rows={2}
               value={infrForm.notes ?? ''}
               onChange={(e) => setInfrForm({ ...infrForm, notes: e.target.value })}
-              placeholder="Témoins, contexte, lieu…"
               className={styles.infrInput}
             />
           </div>
@@ -878,7 +1165,6 @@ export default function FicheDossierPage() {
   );
 }
 
-// ─── KV sous-composant ───
 function KV({ label, value, mono }: {
   label: string;
   value: React.ReactNode;
