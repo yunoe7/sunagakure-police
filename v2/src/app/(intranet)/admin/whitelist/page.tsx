@@ -8,7 +8,7 @@
  *  Permet aux Admin techniques d'ajouter/retirer des admins
  *  sans toucher au code.
  *
- *  Stockage : Firebase (admin_whitelist)
+ *  Stockage : Firebase (sunagakure/admin_whitelist)
  *  Sécurité : protégée par RequireAdminStrict (whitelistés + Kazekage RP)
  *
  *  Note : les admins hardcodés (dans lib/whitelist.ts) sont affichés
@@ -27,6 +27,8 @@ import { Button } from '@/components/ui/Button';
 import { Modal } from '@/components/ui/Modal';
 import { confirmAction } from '@/components/ui/ConfirmDialog';
 import { toast } from '@/lib/toast';
+
+import styles from './page.module.css';
 
 export default function AdminWhitelistPage() {
   return (
@@ -104,171 +106,85 @@ function WhitelistManager() {
         }
       >
         {/* Info banner */}
-        <div
-          style={{
-            display: 'flex',
-            gap: '0.75rem',
-            padding: '0.75rem 1rem',
-            background: 'rgba(212, 172, 13, 0.08)',
-            border: '1px solid rgba(212, 172, 13, 0.25)',
-            borderRadius: 4,
-            marginBottom: '1.5rem',
-            fontSize: 13,
-            lineHeight: 1.5,
-          }}
-        >
-          <Info size={16} style={{ flexShrink: 0, marginTop: 2, color: '#d4ac0d' }} />
-          <div>
-            Les admins inscrits ici ont <strong>accès complet à l'intranet</strong>, peuvent
-            modifier toutes les branches, et peuvent gérer cette whitelist.
+        <div className={styles.infoBanner}>
+          <Info size={16} />
+          <p>
+            Les admins inscrits ici ont <strong>accès complet à l&apos;intranet</strong>,
+            peuvent modifier toutes les branches, et peuvent gérer cette whitelist.
             <br />
             Pour récupérer un Discord ID : clic droit sur le pseudo dans Discord →
-            <em> Copier l'identifiant utilisateur</em> (Mode développeur activé requis).
-          </div>
+            <em> Copier l&apos;identifiant utilisateur</em> (Mode développeur activé requis).
+          </p>
         </div>
 
         {loading ? (
-          <p style={{ textAlign: 'center', padding: '2rem', opacity: 0.6 }}>Chargement…</p>
+          <p className={styles.empty}>Chargement…</p>
         ) : entries.length === 0 ? (
-          <p style={{ textAlign: 'center', padding: '2rem', opacity: 0.6 }}>
-            Aucun admin pour le moment.
-          </p>
+          <div className={styles.empty}>
+            <Shield size={32} style={{ opacity: 0.3 }} />
+            <p>Aucun admin pour le moment.</p>
+          </div>
         ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          <div className={styles.list}>
             {entries.map((entry) => {
               const isMe = entry.discordId === user?.discordId;
+              const cardClass = [
+                styles.adminCard,
+                entry.isHardcoded ? styles.adminCardHardcoded : '',
+                isMe ? styles.adminCardMe : '',
+              ]
+                .filter(Boolean)
+                .join(' ');
+
               return (
-                <div
-                  key={entry.discordId}
-                  style={{
-                    display: 'grid',
-                    gridTemplateColumns: '40px 1fr auto',
-                    gap: '1rem',
-                    alignItems: 'center',
-                    padding: '0.85rem 1rem',
-                    background: entry.isHardcoded
-                      ? 'rgba(212, 172, 13, 0.06)'
-                      : 'rgba(255, 255, 255, 0.02)',
-                    border: '1px solid rgba(255, 255, 255, 0.08)',
-                    borderRadius: 4,
-                  }}
-                >
+                <div key={entry.discordId} className={cardClass}>
                   {/* Icône */}
-                  <div
-                    style={{
-                      width: 40,
-                      height: 40,
-                      borderRadius: '50%',
-                      background: entry.isHardcoded
-                        ? 'rgba(212, 172, 13, 0.2)'
-                        : 'rgba(255, 255, 255, 0.05)',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      color: entry.isHardcoded ? '#d4ac0d' : '#888',
-                    }}
-                  >
+                  <div className={styles.iconWrap}>
                     <Shield size={18} />
                   </div>
 
                   {/* Infos */}
-                  <div style={{ minWidth: 0 }}>
-                    <div
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 8,
-                        marginBottom: 4,
-                      }}
-                    >
-                      <strong style={{ fontSize: 14 }}>{entry.note}</strong>
+                  <div className={styles.info}>
+                    <div className={styles.infoHeader}>
+                      <span className={styles.adminName}>{entry.note}</span>
                       {entry.isHardcoded && (
-                        <span
-                          style={{
-                            fontSize: 10,
-                            padding: '2px 6px',
-                            background: 'rgba(212, 172, 13, 0.15)',
-                            color: '#d4ac0d',
-                            borderRadius: 3,
-                            textTransform: 'uppercase',
-                            letterSpacing: '0.05em',
-                          }}
-                        >
+                        <span className={`${styles.badge} ${styles.badgeHardcoded}`}>
                           Hardcodé
                         </span>
                       )}
                       {isMe && (
-                        <span
-                          style={{
-                            fontSize: 10,
-                            padding: '2px 6px',
-                            background: 'rgba(100, 200, 100, 0.15)',
-                            color: '#7dd87d',
-                            borderRadius: 3,
-                            textTransform: 'uppercase',
-                            letterSpacing: '0.05em',
-                          }}
-                        >
-                          Toi
-                        </span>
+                        <span className={`${styles.badge} ${styles.badgeMe}`}>Toi</span>
                       )}
                     </div>
-                    <div
-                      style={{
-                        fontSize: 11,
-                        opacity: 0.6,
-                        fontFamily: 'monospace',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 6,
-                      }}
-                    >
+                    <div className={styles.idLine}>
                       <span>{entry.discordId}</span>
                       <button
                         type="button"
                         onClick={() => copyId(entry.discordId)}
-                        style={{
-                          background: 'none',
-                          border: 'none',
-                          color: 'inherit',
-                          opacity: 0.5,
-                          cursor: 'pointer',
-                          padding: 2,
-                          display: 'flex',
-                        }}
+                        className={styles.copyBtn}
                         title="Copier l'ID"
+                        aria-label="Copier l'ID Discord"
                       >
                         <Copy size={11} />
                       </button>
                     </div>
                     {!entry.isHardcoded && (
-                      <div style={{ fontSize: 11, opacity: 0.5, marginTop: 4 }}>
+                      <div className={styles.meta}>
                         Ajouté par {entry.addedBy ?? 'inconnu'} · {fmtDate(entry.addedAt)}
                       </div>
                     )}
                   </div>
 
-                  {/* Bouton supprimer */}
-                  <div>
+                  {/* Actions */}
+                  <div className={styles.actions}>
                     {entry.isHardcoded ? (
-                      <span style={{ fontSize: 11, opacity: 0.4 }}>Protégé</span>
+                      <span className={styles.protectedLabel}>Protégé</span>
                     ) : (
                       <button
                         type="button"
                         onClick={() => handleRemove(entry.discordId, entry.note)}
                         disabled={saving}
-                        style={{
-                          background: 'rgba(220, 70, 70, 0.1)',
-                          border: '1px solid rgba(220, 70, 70, 0.3)',
-                          color: '#e87878',
-                          padding: '6px 10px',
-                          borderRadius: 3,
-                          cursor: saving ? 'not-allowed' : 'pointer',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: 4,
-                          fontSize: 12,
-                        }}
+                        className={styles.removeBtn}
                       >
                         <Trash2 size={12} /> Retirer
                       </button>
@@ -298,32 +214,32 @@ function WhitelistManager() {
           </>
         }
       >
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-          <label style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-            <span style={{ fontSize: 12, opacity: 0.7 }}>Discord ID *</span>
+        <div className={styles.formFields}>
+          <label>
+            <span className={styles.fieldLabel}>Discord ID *</span>
             <input
               type="text"
               value={newId}
               onChange={(e) => setNewId(e.target.value)}
               placeholder="1234567890123456789"
               autoFocus
-              style={{ fontFamily: 'monospace' }}
+              className={styles.idInput}
             />
-            <span style={{ fontSize: 11, opacity: 0.5 }}>
+            <span className={styles.hint}>
               17 à 19 chiffres. Pour le récupérer : clic droit sur le pseudo dans Discord →
-              "Copier l'identifiant utilisateur" (Mode développeur activé).
+              <em> &quot;Copier l&apos;identifiant utilisateur&quot;</em> (Mode développeur activé).
             </span>
           </label>
 
-          <label style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-            <span style={{ fontSize: 12, opacity: 0.7 }}>Pseudo Discord / Note *</span>
+          <label>
+            <span className={styles.fieldLabel}>Pseudo Discord / Note *</span>
             <input
               type="text"
               value={newNote}
               onChange={(e) => setNewNote(e.target.value)}
               placeholder="Hyo Ryuzen"
             />
-            <span style={{ fontSize: 11, opacity: 0.5 }}>
+            <span className={styles.hint}>
               Pour pouvoir reconnaître facilement cette personne dans la liste.
             </span>
           </label>
