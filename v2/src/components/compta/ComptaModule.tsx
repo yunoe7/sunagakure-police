@@ -22,6 +22,15 @@
  *   - Onglet "Archives" pour consulter les semaines passées
  *
  * Le % prélevé par le Trésor est lu depuis sunagakure/tresorCentral.
+ *
+ * 🔍 AUDIT LOG (Phase 2) :
+ *   Toutes les opérations sensibles sont tracées dans /audit_log :
+ *     - create/update/delete d'une transaction
+ *     - compress (clôture de semaine)
+ *     - create (versement au Trésor Central, target=tresor:mouvement)
+ *     - delete (suppression d'archive)
+ *   Le `target` encode la section (compta:police:transaction, etc.)
+ *   pour pouvoir filtrer par module dans la future page Maintenance.
  * ════════════════════════════════════════════════════════════════
  */
 
@@ -33,6 +42,7 @@ import {
 import { useFirebaseValue } from '@/hooks/useFirebaseValue';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { dbSet, dbUpdate } from '@/lib/db';
+import { logAction } from '@/lib/audit';
 import { toast } from '@/lib/toast';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
@@ -71,7 +81,7 @@ const SECTION_TO_BRANCHE: Record<ComptaSection, string> = {
 };
 
 export default function ComptaModule({ section }: Props) {
-  const { displayName: CURRENT_USER, can } = useCurrentUser();
+  const { displayName: CURRENT_USER, id: CURRENT_USER_ID, can } = useCurrentUser();
   const fbPath = SECTION_FB_PATH[section];
   const branche = SECTION_TO_BRANCHE[section];
 
@@ -128,6 +138,11 @@ export default function ComptaModule({ section }: Props) {
     ? archives.find((a) => a.id === viewingArchiveId)
     : null;
 
+  // ─── Audit helper ───
+  // Préfixe target avec section pour filtrer facilement par module compta
+  const auditTargetTransaction = `compta:${section}:transaction`;
+  const auditTargetArchive = `compta:${section}:archive`;
+
   // ─── Handlers ───
   function openCreate(type: TransactionType = 'entree') {
     setEditingId(null);
@@ -157,12 +172,20 @@ export default function ComptaModule({ section }: Props) {
     try {
       const list = [...transactions];
       const now = Date.now();
+      const sectionLbl = SECTION_LABEL[section];
+      let savedTx: ComptaTransaction;
+      let isUpdate = false;
+      let oldTx: ComptaTransaction | undefined;
+
       if (editingId) {
         const idx = list.findIndex((t) => t.id === editingId);
         if (idx === -1) throw new Error('Introuvable');
+        oldTx = list[idx];
         list[idx] = { ...list[idx], ...form, type, id: editingId } as ComptaTransaction;
+        savedTx = list[idx];
+        isUpdate = true;
       } else {
-        list.push({
+        savedTx = {
           id: now,
           type,
           category: form.category,
@@ -171,9 +194,48 @@ export default function ComptaModule({ section }: Props) {
           date: form.date || now,
           agent: form.agent?.trim() || CURRENT_USER,
           ref: form.ref?.trim() || undefined,
+        };
+        list.push(savedTx);
+      }
+
+      await persistData({ transactions: list, archives });
+
+      // 🔍 Audit log (non-bloquant)
+      const sign = savedTx.type === 'entree' ? '+' : '−';
+      const catLbl = TRANSACTION_CATEGORY_LABEL[savedTx.category];
+      const desc = savedTx.description ? ` — ${savedTx.description}` : '';
+
+      if (isUpdate && oldTx) {
+        const changes: string[] = [];
+        if (oldTx.montant !== savedTx.montant) {
+          changes.push(`montant ${fmtMoney(oldTx.montant)} → ${fmtMoney(savedTx.montant)} ₽`);
+        }
+        if (oldTx.category !== savedTx.category) {
+          changes.push(`catégorie ${TRANSACTION_CATEGORY_LABEL[oldTx.category]} → ${catLbl}`);
+        }
+        if ((oldTx.description || '') !== (savedTx.description || '')) {
+          changes.push('description');
+        }
+        const changeSummary = changes.length > 0 ? ` (${changes.join(', ')})` : '';
+        logAction({
+          who: CURRENT_USER,
+          whoId: CURRENT_USER_ID,
+          action: 'update',
+          target: auditTargetTransaction,
+          targetId: String(savedTx.id),
+          detail: `Compta ${sectionLbl} — Modification ${catLbl} : ${sign}${fmtMoney(savedTx.montant)} ₽${desc}${changeSummary}`,
+        });
+      } else {
+        logAction({
+          who: CURRENT_USER,
+          whoId: CURRENT_USER_ID,
+          action: 'create',
+          target: auditTargetTransaction,
+          targetId: String(savedTx.id),
+          detail: `Compta ${sectionLbl} — Nouvelle ${savedTx.type} (${catLbl}) : ${sign}${fmtMoney(savedTx.montant)} ₽${desc}`,
         });
       }
-      await persistData({ transactions: list, archives });
+
       toast.success(editingId ? 'Transaction mise à jour' : 'Transaction enregistrée');
       closeForm();
     } catch (err) {
@@ -194,6 +256,20 @@ export default function ComptaModule({ section }: Props) {
         transactions: transactions.filter((x) => x.id !== t.id),
         archives,
       });
+
+      // 🔍 Audit log
+      const sign = t.type === 'entree' ? '+' : '−';
+      const catLbl = TRANSACTION_CATEGORY_LABEL[t.category];
+      const desc = t.description ? ` — ${t.description}` : '';
+      logAction({
+        who: CURRENT_USER,
+        whoId: CURRENT_USER_ID,
+        action: 'delete',
+        target: auditTargetTransaction,
+        targetId: String(t.id),
+        detail: `Compta ${SECTION_LABEL[section]} — Suppression ${catLbl} : ${sign}${fmtMoney(t.montant)} ₽${desc}`,
+      });
+
       toast.success('Supprimée');
     } catch (err) {
       console.error('[COMPTA DELETE]', err);
@@ -207,6 +283,10 @@ export default function ComptaModule({ section }: Props) {
    *
    * 🔒 Réservé aux Gérants de la branche (vérifié à 2 niveaux :
    *    bouton caché ET garde-fou ici au cas où).
+   *
+   * 🔍 Trace 2 entrées d'audit log :
+   *    - compress sur compta:<section>:archive (la clôture)
+   *    - create sur tresor:mouvement (le versement, si > 0)
    */
   async function handleClotureSemaine() {
     if (!canCloture) {
@@ -234,6 +314,7 @@ export default function ComptaModule({ section }: Props) {
 
     try {
       const now = Date.now();
+      const sectionLbl = SECTION_LABEL[section];
       const arch: ComptaArchive = {
         id: 'AR-' + now,
         label: `Semaine du ${new Date(now - 7 * 86400000).toLocaleDateString('fr-FR')} au ${new Date(now).toLocaleDateString('fr-FR')}`,
@@ -254,6 +335,19 @@ export default function ComptaModule({ section }: Props) {
         archives: [arch, ...archives],
       });
 
+      // 🔍 Audit log de la clôture (compress = "regrouper N tx en 1 archive")
+      logAction({
+        who: CURRENT_USER,
+        whoId: CURRENT_USER_ID,
+        action: 'compress',
+        target: auditTargetArchive,
+        targetId: arch.id,
+        detail: `Compta ${sectionLbl} — Clôture "${arch.label}" : ${arch.count} tx, ` +
+          `+${fmtMoney(arch.totalEntrees)} ₽ / −${fmtMoney(arch.totalSorties)} ₽ ` +
+          `(solde ${arch.total >= 0 ? '+' : ''}${fmtMoney(arch.total)} ₽), ` +
+          `prélèvement Trésor ${rate}% : ${fmtMoney(prelevement)} ₽`,
+      });
+
       // 2. Verser au Trésor Central si prélèvement > 0
       if (prelevement > 0) {
         const tresor: TresorCentral = tresorData || { prelevementRate: TRESOR_DEFAULT_RATE, mouvements: [] };
@@ -261,7 +355,7 @@ export default function ComptaModule({ section }: Props) {
         const newMouv: TresorMouvement = {
           id: 'TC-' + now,
           section,
-          sectionLabel: SECTION_LABEL[section],
+          sectionLabel: sectionLbl,
           amount: prelevement,
           date: now,
           archiveId: arch.id,
@@ -271,6 +365,18 @@ export default function ComptaModule({ section }: Props) {
         };
         mouvements.unshift(newMouv);
         await dbUpdate('tresorCentral', { ...tresor, mouvements });
+
+        // 🔍 Audit log du versement (target=tresor:mouvement pour pouvoir
+        // filtrer "d'où viennent les fonds du Trésor ?")
+        logAction({
+          who: CURRENT_USER,
+          whoId: CURRENT_USER_ID,
+          action: 'create',
+          target: 'tresor:mouvement',
+          targetId: newMouv.id,
+          detail: `Versement Trésor depuis Compta ${sectionLbl} : +${fmtMoney(prelevement)} ₽ ` +
+            `(${rate}% du solde ${fmtMoney(totals.solde)} ₽, clôture ${arch.id})`,
+        });
       }
 
       toast.success(`📦 Semaine clôturée — ${fmtMoney(prelevement)} ₽ versés au Trésor`);
@@ -296,6 +402,19 @@ export default function ComptaModule({ section }: Props) {
         transactions,
         archives: archives.filter((x) => x.id !== a.id),
       });
+
+      // 🔍 Audit log (action critique — on perd la donnée)
+      logAction({
+        who: CURRENT_USER,
+        whoId: CURRENT_USER_ID,
+        action: 'delete',
+        target: auditTargetArchive,
+        targetId: a.id,
+        detail: `Compta ${SECTION_LABEL[section]} — Suppression archive "${a.label}" : ` +
+          `${a.count} tx, solde ${a.total >= 0 ? '+' : ''}${fmtMoney(a.total)} ₽, ` +
+          `prélèvement Trésor ${a.tresorRate}% : ${fmtMoney(a.tresorPrelevement)} ₽`,
+      });
+
       toast.success('Archive supprimée');
       if (viewingArchiveId === a.id) setViewingArchiveId(null);
     } catch (err) {
