@@ -216,7 +216,7 @@ export default function FicheCasierPage() {
           `(${(casier.infractions || []).length} infractions, ${(casier.decisions || []).length} décisions, ${(casier.notes || []).length} notes)`,
       });
       toast.success('Casier supprimé');
-      router.push('/police/casiers');
+      router.push('/casiers');
     } catch {
       toast.error('Erreur');
     }
@@ -584,7 +584,7 @@ export default function FicheCasierPage() {
       <div className={styles.notFound}>
         <h2>Casier introuvable</h2>
         <p>Ce casier n&apos;existe pas ou a été supprimé.</p>
-        <Button onClick={() => router.push('/police/casiers')}>
+        <Button onClick={() => router.push('/casiers')}>
           <ArrowLeft size={14} /> Retour aux casiers
         </Button>
       </div>
@@ -610,7 +610,7 @@ export default function FicheCasierPage() {
     <>
       {/* Barre d'actions sticky */}
       <div className={styles.actionsBar}>
-        <button className={styles.backBtn} onClick={() => router.push('/police/casiers')}>
+        <button className={styles.backBtn} onClick={() => router.push('/casiers')}>
           <ArrowLeft size={16} />
           <span className={styles.backLabel}>Retour aux casiers</span>
           <span className={styles.backLabelMobile}>Retour</span>
