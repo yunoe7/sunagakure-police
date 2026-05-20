@@ -7,14 +7,9 @@
  *
  * Stockage Firebase : sunagakure/caisse_police/transactions (TABLEAU)
  *
- * Affiche :
- *   - Solde courant (entrées - sorties)
- *   - Total entrées / sorties sur la période
- *   - Liste chronologique des transactions
- *   - Filtres par type
- *
- * Note : on utilise un sous-chemin (caisse_police/transactions) pour
- * laisser de la place à d'autres données plus tard (archives, etc.).
+ * 🔍 AUDIT LOG (Phase 2) :
+ *   - create/update sur caisse:police:transaction
+ *   - delete sur caisse:police:transaction
  * ════════════════════════════════════════════════════════════════
  */
 
@@ -34,6 +29,7 @@ import {
 import { useFirebaseValue } from '@/hooks/useFirebaseValue';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { dbSet } from '@/lib/db';
+import { logAction } from '@/lib/audit';
 import { toast } from '@/lib/toast';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
@@ -57,7 +53,9 @@ const FB_PATH = 'caisse_police/transactions';
 type Filter = 'all' | 'entrees' | 'sorties';
 
 export default function CaissePage() {
-  const CURRENT_USER = useCurrentUser().displayName;
+  const u = useCurrentUser();
+  const CURRENT_USER = u.displayName;
+  const CURRENT_USER_ID = u.id;
   const { data, loading } = useFirebaseValue<Transaction[] | null>(FB_PATH);
 
   const [filter, setFilter] = useState<Filter>('all');
@@ -127,22 +125,56 @@ export default function CaissePage() {
     try {
       const list = [...all];
       const now = Date.now();
+      let savedTx: Transaction;
+      let oldTx: Transaction | undefined;
 
       if (editingId) {
         const idx = list.findIndex((t) => t.id === editingId);
         if (idx === -1) throw new Error('Introuvable');
+        oldTx = list[idx];
         list[idx] = { ...list[idx], ...form, id: editingId } as Transaction;
+        savedTx = list[idx];
       } else {
-        list.push({
+        savedTx = {
           id: now,
           type: form.type || 'amende',
           montant: Number(form.montant),
           description: form.description!.trim(),
           date: form.date || now,
           agent: CURRENT_USER,
-        } as Transaction);
+        } as Transaction;
+        list.push(savedTx);
       }
       await dbSet(FB_PATH, list);
+
+      // 🔍 Audit log
+      const sign = isEntree(savedTx.type) ? '+' : '−';
+      const typeLbl = TRANSACTION_TYPE_LABEL[savedTx.type];
+      if (editingId && oldTx) {
+        const changes: string[] = [];
+        if (oldTx.montant !== savedTx.montant) changes.push(`montant ${fmtMoney(oldTx.montant)} → ${fmtMoney(savedTx.montant)} ₽`);
+        if (oldTx.type !== savedTx.type) changes.push(`type ${TRANSACTION_TYPE_LABEL[oldTx.type]} → ${typeLbl}`);
+        if ((oldTx.description || '') !== (savedTx.description || '')) changes.push('description');
+        const changeSummary = changes.length > 0 ? ` (${changes.join(', ')})` : '';
+        logAction({
+          who: CURRENT_USER,
+          whoId: CURRENT_USER_ID,
+          action: 'update',
+          target: 'caisse:police:transaction',
+          targetId: String(savedTx.id),
+          detail: `Caisse Police — Modification ${typeLbl} : ${sign}${fmtMoney(savedTx.montant)} ₽ — ${savedTx.description}${changeSummary}`,
+        });
+      } else {
+        logAction({
+          who: CURRENT_USER,
+          whoId: CURRENT_USER_ID,
+          action: 'create',
+          target: 'caisse:police:transaction',
+          targetId: String(savedTx.id),
+          detail: `Caisse Police — Nouvelle ${typeLbl} : ${sign}${fmtMoney(savedTx.montant)} ₽ — ${savedTx.description}`,
+        });
+      }
+
       toast.success(editingId ? 'Transaction mise à jour' : 'Transaction enregistrée');
       closeForm();
     } catch (err) {
@@ -161,6 +193,18 @@ export default function CaissePage() {
     if (!ok) return;
     try {
       await dbSet(FB_PATH, all.filter((x) => x.id !== t.id));
+
+      // 🔍 Audit log
+      const sign = isEntree(t.type) ? '+' : '−';
+      logAction({
+        who: CURRENT_USER,
+        whoId: CURRENT_USER_ID,
+        action: 'delete',
+        target: 'caisse:police:transaction',
+        targetId: String(t.id),
+        detail: `Caisse Police — Suppression ${TRANSACTION_TYPE_LABEL[t.type]} : ${sign}${fmtMoney(t.montant)} ₽ — ${t.description}`,
+      });
+
       toast.success('Transaction supprimée');
     } catch {
       toast.error('Erreur');
