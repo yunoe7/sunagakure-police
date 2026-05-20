@@ -89,7 +89,9 @@ export default function ImpotsPage() {
 
   const baremeByRang = useMemo(() => {
     const m = new Map<string, number>();
-    for (const g of grades) m.set(g.rang, g.montant);
+    for (const g of grades) {
+      if (g && g.rang) m.set(g.rang, g.montant);
+    }
     return m;
   }, [grades]);
 
@@ -156,8 +158,8 @@ export default function ImpotsPage() {
       await dbSet(FB_PAIEMENTS, [...paiements, newPaiement]);
       toast.success(`Paiement enregistré : ${fmtMoney(montant)} ₽`);
     } catch (err) {
-      console.error('[MARKPAID ERREUR]', err);
-      toast.error('Erreur MARKPAID : ' + String(err));
+      console.error('[MARKPAID]', err);
+      toast.error('Erreur lors du paiement');
     }
   }
 
@@ -174,8 +176,8 @@ export default function ImpotsPage() {
       await dbSet(FB_PAIEMENTS, paiements.filter((x) => x.id !== p.id));
       toast.success('Paiement annulé');
     } catch (err) {
-      console.error('[UNMARKPAID ERREUR]', err);
-      toast.error('Erreur UNMARKPAID : ' + String(err));
+      console.error('[UNMARKPAID]', err);
+      toast.error('Erreur');
     }
   }
 
@@ -190,27 +192,35 @@ export default function ImpotsPage() {
       await dbSet(FB_PAIEMENTS, paiements.filter((x) => x.id !== p.id));
       toast.success('Supprimé');
     } catch (err) {
-      console.error('[DELETE PAIEMENT ERREUR]', err);
-      toast.error('Erreur DELETE : ' + String(err));
+      console.error('[DELETE PAIEMENT]', err);
+      toast.error('Erreur');
     }
   }
 
   function openBareme() {
-    setBaremeForm([...grades]);
+    // Filtre défensif : ne charge que les entrées valides depuis grades
+    const safe = grades
+      .filter((g) => g && typeof g === 'object')
+      .map((g) => ({
+        rang: g.rang ?? '',
+        montant: typeof g.montant === 'number' ? g.montant : 0,
+      }));
+    setBaremeForm(safe);
     setShowBareme(true);
   }
 
   async function saveBareme() {
     try {
-      const filtered = baremeForm.filter((g) => g.rang.trim() !== '');
+      // 🔒 Filtre défensif : ignore les entrées avec rang manquant/vide
+      const filtered = baremeForm.filter((g) => (g?.rang ?? '').trim() !== '');
       console.log('[BAREME] Tentative de save :', filtered);
       await dbSet(FB_GRADES, filtered);
       console.log('[BAREME] Save réussi !');
       toast.success('Barème enregistré');
       setShowBareme(false);
     } catch (err) {
-      console.error('[BAREME ERREUR DÉTAILLÉE]', err);
-      toast.error('Erreur BAREME : ' + String(err));
+      console.error('[BAREME ERREUR]', err);
+      toast.error('Erreur lors de l\'enregistrement du barème');
     }
   }
 
@@ -408,7 +418,7 @@ export default function ImpotsPage() {
             <div key={idx} className={styles.baremeRow}>
               <input
                 type="text"
-                value={g.rang}
+                value={g.rang ?? ''}
                 onChange={(e) => updateBaremeLine(idx, 'rang', e.target.value)}
                 placeholder="Ex: Genin"
                 className={styles.baremeInput}
@@ -416,7 +426,7 @@ export default function ImpotsPage() {
               <input
                 type="number"
                 min="0"
-                value={g.montant}
+                value={g.montant ?? 0}
                 onChange={(e) => updateBaremeLine(idx, 'montant', e.target.value)}
                 className={styles.baremeInput}
               />
