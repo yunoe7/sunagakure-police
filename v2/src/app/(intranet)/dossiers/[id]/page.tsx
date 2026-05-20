@@ -7,17 +7,12 @@
  *
  * Route : /dossiers/[id]
  *
- * ✨ MISE À JOUR :
+ * ✨ FEATURES :
  * - AJOUT BATCH : la modale "+ Ajouter" permet d'ajouter PLUSIEURS
  *   infractions d'un coup avant de valider
  * - L'édition individuelle reste en modale dédiée (bouton ✏️)
- *
- * Logique :
- * - Modale Batch : on construit un tableau `batch[]` localement
- *   On peut ajouter via suggestion Code Pénal OU vide
- *   Chaque item est éditable en place
- *   "Ajouter au casier" → unique dbSet
- * - Modale Édit individuelle : modifie 1 infraction existante
+ * - AUTOCOMPLÉTION : nom du suspect depuis le Recensement
+ * - LIEN : bouton "Voir la fiche recensé" dans les métadonnées
  * ════════════════════════════════════════════════════════════════
  */
 
@@ -26,7 +21,7 @@ import { useParams, useRouter } from 'next/navigation';
 import {
   ArrowLeft, Pencil, Trash2, Save, Camera, Plus,
   AlertTriangle, FileText, Coins, Calendar, Skull,
-  ScrollText, Scale, BookOpen, FilePlus,
+  ScrollText, Scale, BookOpen, FilePlus, Users, ExternalLink,
 } from 'lucide-react';
 
 import { useFirebaseValue } from '@/hooks/useFirebaseValue';
@@ -45,12 +40,14 @@ import {
   fmtMoney, fmtDateFR, computeAmendeTotals, migrateInfractionsString, catToGravite,
 } from '@/types/dossier';
 import { type Infraction, INFRACTION_CAT_LABEL } from '@/types/infraction';
+import type { Recense } from '@/types/recense';
 
 import listStyles from '../page.module.css';
 import styles from './page.module.css';
 
 const FB_PATH = 'dossiers';
 const FB_INFRACTIONS_PATH = 'infractions';
+const FB_RECENSES_PATH = 'recenses';
 
 // ─── Fuzzy match helper ───
 function normalize(s: string): string {
@@ -73,7 +70,7 @@ function parseAmende(amendeStr?: string): number {
   return parseInt(match[0].replace(/[\s,]/g, ''), 10) || 0;
 }
 
-// Type local pour les items dans le batch (id local négatif pour distinguer)
+// Type local pour les items dans le batch
 type BatchItem = DossierInfraction & { _localId: number };
 
 export default function FicheDossierPage() {
@@ -86,17 +83,18 @@ export default function FicheDossierPage() {
 
   const { data, loading } = useFirebaseValue<Dossier[] | null>(FB_PATH);
   const { data: codePenalData } = useFirebaseValue<Infraction[] | null>(FB_INFRACTIONS_PATH);
+  const { data: recensesData } = useFirebaseValue<Recense[] | null>(FB_RECENSES_PATH);
 
   // ─── Modales ───
   const [showEdit, setShowEdit] = useState(false);
   const [editForm, setEditForm] = useState<Partial<Dossier>>({});
 
-  // Mode BATCH (ajout multiple)
+  // Mode BATCH
   const [showBatch, setShowBatch] = useState(false);
   const [batchItems, setBatchItems] = useState<BatchItem[]>([]);
   const [batchSearch, setBatchSearch] = useState('');
 
-  // Mode édition individuelle (1 infraction existante)
+  // Mode édition individuelle d'1 infraction existante
   const [editingInfractionId, setEditingInfractionId] = useState<number | null>(null);
   const [infrForm, setInfrForm] = useState<Partial<DossierInfraction>>({});
   const [showInfractionEdit, setShowInfractionEdit] = useState(false);
@@ -116,6 +114,45 @@ export default function FicheDossierPage() {
       (i): i is Infraction => i !== null && typeof i === 'object' && !!i.id
     );
   }, [codePenalData]);
+
+  const recenses = useMemo<Recense[]>(() => {
+    if (!recensesData) return [];
+    return (Array.isArray(recensesData) ? recensesData : Object.values(recensesData)).filter(
+      (r): r is Recense => r !== null && typeof r === 'object' && !!r.id
+    );
+  }, [recensesData]);
+
+  // Lien recensé du dossier
+  const linkedRecense = useMemo(
+    () => dossier?.recenseId ? recenses.find((r) => r.id === dossier.recenseId) : null,
+    [dossier?.recenseId, recenses],
+  );
+
+  // Suggestions Recensement pour la modale d'édition
+  const editRecenseSuggestions = useMemo<Recense[]>(() => {
+    const q = (editForm.nom || '').trim();
+    if (q.length < 2) return [];
+    if (editForm.recenseId) {
+      const picked = recenses.find((r) => r.id === editForm.recenseId);
+      if (picked && normalize(`${picked.prenom} ${picked.nom}`) === normalize(q)) {
+        return [];
+      }
+    }
+    return recenses
+      .filter((r) => fuzzyMatch(q, `${r.prenom || ''} ${r.nom || ''}`))
+      .slice(0, 6);
+  }, [editForm.nom, editForm.recenseId, recenses]);
+
+  function pickRecenseEdit(r: Recense) {
+    const nomComplet = `${r.prenom || ''} ${r.nom || ''}`.trim();
+    setEditForm({
+      ...editForm,
+      nom: nomComplet,
+      recenseId: r.id,
+      photo: r.photo || editForm.photo,
+    });
+    toast.success(`"${nomComplet}" lié·e depuis le recensement`);
+  }
 
   // ─── Migration auto à l'ouverture ───
   useEffect(() => {
@@ -223,7 +260,7 @@ export default function FicheDossierPage() {
   }
 
   // ═══════════════════════════════════════════════════════════════
-  //  MODE BATCH : ajouter plusieurs infractions d'un coup
+  //  MODE BATCH
   // ═══════════════════════════════════════════════════════════════
 
   function openBatch() {
@@ -233,7 +270,6 @@ export default function FicheDossierPage() {
   }
   function closeBatch() {
     if (batchItems.length > 0) {
-      // Évite la perte accidentelle si on a déjà saisi des trucs
       const ok = window.confirm(`Tu as ${batchItems.length} infraction(s) en cours de saisie. Vraiment annuler ?`);
       if (!ok) return;
     }
@@ -242,7 +278,6 @@ export default function FicheDossierPage() {
     setBatchSearch('');
   }
 
-  // Suggestions pour la recherche dans le batch
   const batchSuggestions = useMemo<Infraction[]>(() => {
     const q = batchSearch.trim();
     if (q.length < 2) return [];
@@ -252,7 +287,7 @@ export default function FicheDossierPage() {
   function addFromCodePenal(cp: Infraction) {
     const newItem: BatchItem = {
       _localId: -Date.now() - Math.random(),
-      id: 0, // ID Firebase à attribuer au save
+      id: 0,
       codePenalId: cp.id,
       cat: cp.cat as 'violet' | 'vert' | 'rouge' | 'noir',
       nom: cp.nom,
@@ -297,7 +332,6 @@ export default function FicheDossierPage() {
       toast.error('Ajoute au moins une infraction');
       return;
     }
-    // Validation : nom obligatoire pour chaque
     const invalid = batchItems.find((it) => !it.nom?.trim());
     if (invalid) {
       toast.error('Toutes les infractions doivent avoir un intitulé');
@@ -312,13 +346,12 @@ export default function FicheDossierPage() {
       const current = list[idx];
       const currentInfractions = current.infractionsList || [];
 
-      // Convertit chaque BatchItem en vraie DossierInfraction (avec ID propre)
       const now = Date.now();
       const newOnes: DossierInfraction[] = batchItems.map((it, i) => {
         const { _localId, ...rest } = it;
         return {
           ...rest,
-          id: now + i, // ID unique basé sur le timestamp
+          id: now + i,
           nom: it.nom.trim(),
           amende: Number(it.amende) || 0,
           amendePayee: Number(it.amendePayee) || 0,
@@ -358,13 +391,12 @@ export default function FicheDossierPage() {
     }
   }
 
-  // Total batch (affichage en temps réel)
   const batchTotal = useMemo(() => {
     return batchItems.reduce((sum, it) => sum + (Number(it.amende) || 0), 0);
   }, [batchItems]);
 
   // ═══════════════════════════════════════════════════════════════
-  //  MODE ÉDITION INDIVIDUELLE (1 infraction existante)
+  //  ÉDITION INDIVIDUELLE D'UNE INFRACTION
   // ═══════════════════════════════════════════════════════════════
 
   function openEditInfraction(inf: DossierInfraction) {
@@ -378,7 +410,6 @@ export default function FicheDossierPage() {
     setInfrForm({});
   }
 
-  // Suggestions pour l'édition individuelle (même logique que batch)
   const editSuggestions = useMemo<Infraction[]>(() => {
     const q = (infrForm.nom || '').trim();
     if (q.length < 2) return [];
@@ -704,6 +735,21 @@ export default function FicheDossierPage() {
               <KV label="Ouvert par" value={dossier.auteur ?? '—'} />
               <KV label="Date d'ouverture" value={fmtDateFR(dossier.date)} />
               <KV label="ID interne" value={String(dossier.id)} mono />
+              {linkedRecense && (
+                <KV
+                  label="Recensé lié"
+                  value={
+                    <button
+                      type="button"
+                      className={styles.linkRecenseBtn}
+                      onClick={() => router.push(`/recensement/${linkedRecense.id}`)}
+                    >
+                      <Users size={11} /> {linkedRecense.prenom} {linkedRecense.nom}
+                      <ExternalLink size={10} />
+                    </button>
+                  }
+                />
+              )}
             </div>
           </section>
         </div>
@@ -728,10 +774,78 @@ export default function FicheDossierPage() {
             <input
               type="text"
               value={editForm.nom ?? ''}
-              onChange={(e) => setEditForm({ ...editForm, nom: e.target.value })}
+              onChange={(e) => setEditForm({
+                ...editForm,
+                nom: e.target.value,
+                recenseId: undefined,
+              })}
               autoFocus
+              placeholder="Prénom et nom (cherche dans le recensement)"
             />
           </label>
+
+          {/* Suggestions Recensement */}
+          {editRecenseSuggestions.length > 0 && (
+            <div className={styles.suggestions}>
+              <div className={styles.suggestionsLabel}>
+                <BookOpen size={11} /> Suggestions du Recensement ({editRecenseSuggestions.length})
+              </div>
+              {editRecenseSuggestions.map((r) => (
+                <button
+                  key={r.id}
+                  type="button"
+                  className={styles.suggestion}
+                  onClick={() => pickRecenseEdit(r)}
+                >
+                  {r.photo ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={r.photo} alt={`${r.prenom} ${r.nom}`} className={styles.editSuggestionPhoto} />
+                  ) : (
+                    <div className={styles.editSuggestionPhotoPh}>
+                      {(r.prenom?.[0] || '?').toUpperCase()}
+                    </div>
+                  )}
+                  <div className={styles.suggInfo}>
+                    <div className={styles.suggName}>{r.prenom} {r.nom}</div>
+                    <div className={styles.suggMeta}>
+                      {r.rang || 'Sans rang'}
+                      {r.faction && ` · ${r.faction}`}
+                      {r.clan && ` · Clan ${r.clan}`}
+                    </div>
+                  </div>
+                </button>
+              ))}
+            </div>
+          )}
+
+          {(editForm.nom || '').trim().length >= 2 && editRecenseSuggestions.length === 0 && !editForm.recenseId && (
+            <p className={styles.hintInline}>
+              <em>Personne non recensée — saisie libre acceptée</em>
+            </p>
+          )}
+
+          {/* Lien recensé déjà sélectionné */}
+          {editForm.recenseId && (() => {
+            const picked = recenses.find((r) => r.id === editForm.recenseId);
+            if (!picked) return null;
+            return (
+              <div className={styles.editLinkedRecense}>
+                <Users size={12} />
+                <span>
+                  Lié au recensé : <strong>{picked.prenom} {picked.nom}</strong>
+                  {picked.rang && ` (${picked.rang})`}
+                </span>
+                <button
+                  type="button"
+                  className={styles.editUnlinkBtn}
+                  onClick={() => setEditForm({ ...editForm, recenseId: undefined })}
+                  title="Retirer le lien"
+                >
+                  ✕
+                </button>
+              </div>
+            );
+          })()}
 
           <div className={listStyles.row}>
             <label>
@@ -812,7 +926,7 @@ export default function FicheDossierPage() {
         </div>
       </Modal>
 
-      {/* ═══ MODALE BATCH : ajouter plusieurs infractions ═══ */}
+      {/* ═══ MODALE BATCH ═══ */}
       <Modal
         open={showBatch}
         onClose={closeBatch}
@@ -832,7 +946,6 @@ export default function FicheDossierPage() {
         }
       >
         <div className={styles.batchForm}>
-          {/* ─── Section recherche Code Pénal ─── */}
           <div className={styles.batchSearchSection}>
             <label className={styles.infrFormLabel}>
               <BookOpen size={11} /> Rechercher dans le Code Pénal
@@ -886,7 +999,6 @@ export default function FicheDossierPage() {
             </button>
           </div>
 
-          {/* ─── Liste des infractions à ajouter ─── */}
           {batchItems.length === 0 ? (
             <div className={styles.batchEmpty}>
               <ScrollText size={28} style={{ opacity: 0.3 }} />
@@ -1025,7 +1137,7 @@ export default function FicheDossierPage() {
         </div>
       </Modal>
 
-      {/* ═══ MODALE ÉDITION 1 INFRACTION EXISTANTE ═══ */}
+      {/* ═══ MODALE ÉDITION 1 INFRACTION ═══ */}
       <Modal
         open={showInfractionEdit}
         onClose={closeInfractionEdit}
