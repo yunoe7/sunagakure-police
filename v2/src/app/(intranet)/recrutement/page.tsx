@@ -9,6 +9,14 @@
  *
  * Workflow : En attente → Acceptée / Refusée
  * Permet de gérer les candidatures avec motif, expérience et casier.
+ *
+ * 🔍 AUDIT LOG (Phase 2) :
+ *   - create sur police:candidature       (nouvelle candidature)
+ *   - update sur police:candidature       (modif fiche)
+ *   - update sur police:candidature:statut (décision : accepté/refusé)
+ *   - delete sur police:candidature       (suppression)
+ *   Le changement de statut a son propre target dédié car c'est
+ *   la décision métier la plus significative de cette page.
  * ════════════════════════════════════════════════════════════════
  */
 
@@ -17,7 +25,9 @@ import {
   Plus, Trash2, Save, Search, Award, CheckCircle2, XCircle,
 } from 'lucide-react';
 import { useFirebaseValue } from '@/hooks/useFirebaseValue';
+import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { dbSet } from '@/lib/db';
+import { logAction } from '@/lib/audit';
 import { toast } from '@/lib/toast';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
@@ -35,6 +45,10 @@ const FB_PATH = 'candidatures';
 type Tab = 'all' | CandidatureStatut;
 
 export default function RecrutementPage() {
+  const u = useCurrentUser();
+  const CURRENT_USER = u.displayName;
+  const CURRENT_USER_ID = u.id;
+
   const { data, loading } = useFirebaseValue<Candidature[] | null>(FB_PATH);
 
   const [tab, setTab] = useState<Tab>('en_attente');
@@ -89,12 +103,17 @@ export default function RecrutementPage() {
     try {
       const list = [...all];
       const now = Date.now();
+      let savedC: Candidature;
+      let oldC: Candidature | undefined;
+
       if (editingId) {
         const idx = list.findIndex((c) => c.id === editingId);
         if (idx === -1) throw new Error('Introuvable');
+        oldC = list[idx];
         list[idx] = { ...list[idx], ...form, id: editingId } as Candidature;
+        savedC = list[idx];
       } else {
-        list.push({
+        savedC = {
           id: now,
           nom: form.nom!.trim(),
           age: form.age || undefined,
@@ -108,9 +127,57 @@ export default function RecrutementPage() {
           casier: form.casier?.trim() || undefined,
           statut: form.statut || 'en_attente',
           date: now,
-        });
+        };
+        list.push(savedC);
       }
       await dbSet(FB_PATH, list);
+
+      // 🔍 Audit log
+      if (editingId && oldC) {
+        // Si le statut a changé via le formulaire, on logge DEUX events :
+        // l'update général + un event statut dédié (cf. setStatut)
+        const statutChanged = oldC.statut !== savedC.statut;
+        const changes: string[] = [];
+        if (statutChanged) changes.push(`statut ${oldC.statut} → ${savedC.statut}`);
+        if ((oldC.section || '') !== (savedC.section || '')) changes.push(`section ${oldC.section || '?'} → ${savedC.section || '?'}`);
+        if ((oldC.motif || '') !== (savedC.motif || '')) changes.push('motif');
+        if ((oldC.exp || '') !== (savedC.exp || '')) changes.push('expérience');
+        if ((oldC.casier || '') !== (savedC.casier || '')) changes.push('casier');
+        const changeSummary = changes.length > 0 ? ` (${changes.join(', ')})` : ' (aucun changement détecté)';
+
+        logAction({
+          who: CURRENT_USER,
+          whoId: CURRENT_USER_ID,
+          action: 'update',
+          target: 'police:candidature',
+          targetId: String(savedC.id),
+          detail: `Recrutement — Modification candidature de ${savedC.nom}${changeSummary}`,
+        });
+
+        if (statutChanged) {
+          logAction({
+            who: CURRENT_USER,
+            whoId: CURRENT_USER_ID,
+            action: 'update',
+            target: 'police:candidature:statut',
+            targetId: String(savedC.id),
+            detail: `Recrutement — Décision sur candidature de ${savedC.nom} : ` +
+              `${CANDIDATURE_STATUT_LABEL[oldC.statut]} → ${CANDIDATURE_STATUT_LABEL[savedC.statut]}`,
+          });
+        }
+      } else {
+        logAction({
+          who: CURRENT_USER,
+          whoId: CURRENT_USER_ID,
+          action: 'create',
+          target: 'police:candidature',
+          targetId: String(savedC.id),
+          detail: `Recrutement — Nouvelle candidature de ${savedC.nom}` +
+            (savedC.section ? ` (section visée : ${savedC.section})` : '') +
+            (savedC.gradeShinobi ? `, grade ${savedC.gradeShinobi}` : ''),
+        });
+      }
+
       toast.success(editingId ? 'Candidature mise à jour' : 'Candidature enregistrée');
       closeForm();
     } catch (err) { console.error(err); toast.error('Erreur'); }
@@ -125,6 +192,19 @@ export default function RecrutementPage() {
     if (!ok) return;
     try {
       await dbSet(FB_PATH, all.filter((x) => x.id !== c.id));
+
+      // 🔍 Audit log
+      logAction({
+        who: CURRENT_USER,
+        whoId: CURRENT_USER_ID,
+        action: 'delete',
+        target: 'police:candidature',
+        targetId: String(c.id),
+        detail: `Recrutement — Suppression candidature de ${c.nom} ` +
+          `(statut au moment : ${CANDIDATURE_STATUT_LABEL[c.statut]}` +
+          (c.section ? `, section ${c.section}` : '') + ')',
+      });
+
       toast.success('Supprimée');
       if (viewingId === c.id) setViewingId(null);
     } catch { toast.error('Erreur'); }
@@ -135,8 +215,23 @@ export default function RecrutementPage() {
       const list = [...all];
       const idx = list.findIndex((x) => x.id === c.id);
       if (idx === -1) return;
+      const oldStatut = list[idx].statut;
       list[idx] = { ...list[idx], statut };
       await dbSet(FB_PATH, list);
+
+      // 🔍 Audit log — décision métier importante (acceptation/refus)
+      if (oldStatut !== statut) {
+        logAction({
+          who: CURRENT_USER,
+          whoId: CURRENT_USER_ID,
+          action: 'update',
+          target: 'police:candidature:statut',
+          targetId: String(c.id),
+          detail: `Recrutement — Décision sur candidature de ${c.nom} : ` +
+            `${CANDIDATURE_STATUT_LABEL[oldStatut]} → ${CANDIDATURE_STATUT_LABEL[statut]}`,
+        });
+      }
+
       toast.success(`Candidature → ${CANDIDATURE_STATUT_LABEL[statut]}`);
     } catch { toast.error('Erreur'); }
   }
