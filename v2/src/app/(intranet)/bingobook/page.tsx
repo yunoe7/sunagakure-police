@@ -15,9 +15,10 @@
  * On utilise donc dbSet(`bingobook/${id}`, ninja) pour respecter le format
  * de l'ancien intranet.
  *
- * Permissions (Phase C) :
+ * Permissions :
  * - Voir / chercher / filtrer : tout le monde (connecté)
- * - Créer / modifier / supprimer : Gérants Police + Admin
+ * - Créer / modifier / supprimer : TOUS LES MEMBRES POLICE + Admin
+ *   (action opérationnelle, pas réservée aux Gérants)
  * ════════════════════════════════════════════════════════════════
  */
 
@@ -26,7 +27,7 @@ import { Plus, Trash2, Save, Search, Skull, AlertTriangle } from 'lucide-react';
 
 import { useFirebaseValue } from '@/hooks/useFirebaseValue';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
-import { RequireBranche } from '@/components/Require';
+import { RequireMembreBranche } from '@/components/Require';
 import { dbSet, dbRemove } from '@/lib/db';
 import { toast } from '@/lib/toast';
 import { Card } from '@/components/ui/Card';
@@ -60,8 +61,8 @@ export default function BingoBookPage() {
   const [editingId, setEditingId] = useState<number | null>(null);
   const [form, setForm] = useState<Partial<NinjaFiche>>({});
 
-  // Permission centralisée
-  const canEdit = can.adminBranche('police');
+  // Permission : TOUS les membres Police (opérationnel)
+  const canEdit = can.membreBranche('police');
 
   // ─── Liste filtrée ───
   const fiches = useMemo(() => {
@@ -199,11 +200,11 @@ export default function BingoBookPage() {
         title="Bingo Book"
         subtitle="Registre officiel des fugitifs recherchés"
         actions={
-          <RequireBranche branche="police">
+          <RequireMembreBranche branche="police">
             <Button onClick={openCreate}>
               <Plus size={14} /> Ajouter une fiche
             </Button>
-          </RequireBranche>
+          </RequireMembreBranche>
         }
       >
         {/* Barre d'outils : recherche + filtres */}
@@ -279,7 +280,7 @@ export default function BingoBookPage() {
                   {f.status === 'evade' && (
                     <span className={styles.evadedBadge}>ÉVADÉ</span>
                   )}
-                  <RequireBranche branche="police">
+                  <RequireMembreBranche branche="police">
                     <button
                       className={styles.deleteBtn}
                       onClick={(e) => {
@@ -290,7 +291,7 @@ export default function BingoBookPage() {
                     >
                       <Trash2 size={13} />
                     </button>
-                  </RequireBranche>
+                  </RequireMembreBranche>
                 </div>
 
                 <div className={styles.portrait}>
