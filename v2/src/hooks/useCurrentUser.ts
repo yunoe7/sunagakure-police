@@ -12,6 +12,12 @@
  *    Pour un effet INSTANTANÉ, utiliser le bouton "Refresh mes rôles"
  *    dans le menu avatar de la sidebar.
  *
+ * 🥷 RÈGLE JONIN : À partir du rang Jonin (niveau 7) et au-dessus,
+ *    l'utilisateur obtient automatiquement toutes les permissions
+ *    de branche (Membre ET Gérant), PARTOUT, sans exception.
+ *    Les pages "admin technique" (Maintenance, Whitelist) restent
+ *    réservées aux admins techniques (isAdmin) UNIQUEMENT.
+ *
  * Usage :
  *   const { username, displayName, avatar, isLoading, refreshRoles } = useCurrentUser();
  *
@@ -31,6 +37,10 @@ import type { IntranetUser } from '@/lib/roles';
 
 // Intervalle de refresh côté client (5 minutes pour éviter le rate limit Discord)
 const CLIENT_REFRESH_INTERVAL = 5 * 60 * 1000;
+
+// 🥷 Niveau minimum pour avoir "all perm" automatiquement
+//    7 = Jonin (et au-dessus : Sairin, Commandant Jonin, Bras droit, Kazekage)
+const JONIN_NIVEAU = 7;
 
 export type Permissions = {
   adminBranche: (slug: string | string[]) => boolean;
@@ -63,7 +73,7 @@ export function useCurrentUser() {
   // ─── Refresh manuel (utilisable par un bouton) ─────────────────
   const refreshRoles = useCallback(async () => {
     try {
-      await update(); // déclenche le callback jwt({ trigger: 'update' })
+      await update();
       console.log('[useCurrentUser] 🔄 Refresh manuel terminé');
     } catch (err) {
       console.error('[useCurrentUser] ❌ Erreur refresh :', err);
@@ -76,7 +86,6 @@ export function useCurrentUser() {
   useEffect(() => {
     if (status !== 'authenticated') return;
 
-    // Refresh périodique toutes les 5 minutes
     const interval = setInterval(() => {
       lastTriggerRef.current = Date.now();
       update().catch((err) => console.error('[useCurrentUser] refresh interval :', err));
@@ -88,10 +97,19 @@ export function useCurrentUser() {
   }, [status, update]);
 
   // ─── Helpers de permissions ────────────────────────────────────
+
+  // 🥷 Si l'user est Jonin (7) ou plus → "all perm" automatique
+  const isJoninOuPlus =
+    intranetUser && intranetUser.rang
+      ? intranetUser.rang.niveau >= JONIN_NIVEAU
+      : false;
+
   const can: Permissions = {
     adminBranche: (slug: string | string[]) => {
       if (!intranetUser) return false;
       if (intranetUser.isAdmin) return true;
+      // 🥷 Jonin+ = Gérant de toutes les branches automatiquement
+      if (isJoninOuPlus) return true;
       const slugs = Array.isArray(slug) ? slug : [slug];
       return slugs.some(
         (s) =>
@@ -102,12 +120,16 @@ export function useCurrentUser() {
     membreBranche: (slug: string | string[]) => {
       if (!intranetUser) return false;
       if (intranetUser.isAdmin) return true;
+      // 🥷 Jonin+ = Membre de toutes les branches automatiquement
+      if (isJoninOuPlus) return true;
       const slugs = Array.isArray(slug) ? slug : [slug];
       return intranetUser.branches.some((b) => slugs.includes(b.slug));
     },
 
     adminGeneral: () => {
       if (!intranetUser) return false;
+      // ⚠️ adminGeneral NE PREND PAS isJoninOuPlus :
+      //    Maintenance/Whitelist restent réservés aux admins techniques.
       return (
         intranetUser.isAdmin ||
         intranetUser.isStaff ||
@@ -136,7 +158,6 @@ export function useCurrentUser() {
     can,
     isAuthenticated: status === 'authenticated' && intranetUser !== null,
 
-    // ✨ Bouton manuel de refresh (pour effet instantané)
     refreshRoles,
   };
 }
