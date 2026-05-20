@@ -5,10 +5,10 @@
  *  Page CODE DE PROCÉDURE — Articles régissant le tribunal
  * ════════════════════════════════════════════════════════════════
  *
- * Stockage Firebase : sunagakure/procedures (TABLEAU)
- *
- * Articles éditables avec numéro (ex: "Art. 12"), titre, contenu
- * et catégorie. Click → modale viewer en mode lecture.
+ * Permissions :
+ * - Voir : tout le monde (connecté)
+ * - Créer / modifier / supprimer : GÉRANTS POLICE + Admin
+ *   (texte officiel)
  * ════════════════════════════════════════════════════════════════
  */
 
@@ -27,8 +27,12 @@ import { type ArticleProcedure, fmtDateFR } from '@/types/justice-plus';
 import styles from './page.module.css';
 
 const FB_PATH = 'procedures';
+
 export default function ProcedurePage() {
-  const CURRENT_USER = useCurrentUser().displayName;
+  const u = useCurrentUser();
+  const CURRENT_USER = u.displayName;
+  const canEdit = u.can.adminBranche('police');
+
   const { data, loading } = useFirebaseValue<ArticleProcedure[] | null>(FB_PATH);
 
   const [search, setSearch] = useState('');
@@ -51,7 +55,6 @@ export default function ProcedurePage() {
       ((a.numero || '') + ' ' + (a.titre || '') + ' ' + (a.contenu || '') + ' ' + (a.categorie || ''))
         .toLowerCase().includes(q)
     );
-    // Tri : par numéro d'article (extrait le nombre)
     return [...list].sort((a, b) => {
       const numA = parseInt((a.numero || '').replace(/\D/g, ''), 10) || 999999;
       const numB = parseInt((b.numero || '').replace(/\D/g, ''), 10) || 999999;
@@ -67,6 +70,7 @@ export default function ProcedurePage() {
     setShowForm(true);
   }
   function openEdit(a: ArticleProcedure) {
+    if (!canEdit) return;
     setEditingId(a.id); setForm(a); setShowForm(true); setViewingId(null);
   }
   function closeForm() { setShowForm(false); setEditingId(null); setForm({}); }
@@ -80,9 +84,7 @@ export default function ProcedurePage() {
       if (editingId) {
         const idx = list.findIndex((a) => a.id === editingId);
         if (idx === -1) throw new Error('Introuvable');
-        list[idx] = {
-          ...list[idx], ...form, id: editingId, updatedAt: now,
-        } as ArticleProcedure;
+        list[idx] = { ...list[idx], ...form, id: editingId, updatedAt: now } as ArticleProcedure;
       } else {
         list.push({
           id: now,
@@ -119,7 +121,7 @@ export default function ProcedurePage() {
       <Card
         title="Code de procédure"
         subtitle="Articles régissant le déroulement des procédures judiciaires"
-        actions={<Button onClick={openCreate}><Plus size={14} /> Nouvel article</Button>}
+        actions={canEdit && <Button onClick={openCreate}><Plus size={14} /> Nouvel article</Button>}
       >
         <div className={styles.toolbar}>
           <div className={styles.searchBox}>
@@ -136,7 +138,7 @@ export default function ProcedurePage() {
           : visible.length === 0 ? (
             <div className={styles.empty}>
               <BookText size={32} style={{ opacity: 0.3 }} />
-              <p>Aucun article. Ajoute le premier !</p>
+              <p>Aucun article. {canEdit ? 'Ajoute le premier !' : ''}</p>
             </div>
           ) : (
             <div className={styles.list}>
@@ -145,11 +147,13 @@ export default function ProcedurePage() {
                   <div className={styles.aHeader}>
                     {a.numero && <span className={styles.numero}>{a.numero}</span>}
                     {a.categorie && <span className={styles.cat}>{a.categorie}</span>}
-                    <button
-                      className={styles.deleteBtn}
-                      onClick={(e) => { e.stopPropagation(); handleDelete(a); }}
-                      aria-label="Supprimer"
-                    ><Trash2 size={13} /></button>
+                    {canEdit && (
+                      <button className={styles.deleteBtn}
+                        onClick={(e) => { e.stopPropagation(); handleDelete(a); }}
+                        aria-label="Supprimer">
+                        <Trash2 size={13} />
+                      </button>
+                    )}
                   </div>
                   <h3>{a.titre}</h3>
                   <p className={styles.preview}>{a.contenu}</p>
@@ -164,7 +168,7 @@ export default function ProcedurePage() {
         title={viewing ? (viewing.numero ? `${viewing.numero} — ${viewing.titre}` : viewing.titre) : ''}
         size="lg"
         footer={
-          viewing && (
+          viewing && canEdit && (
             <>
               <Button variant="ghost" onClick={() => handleDelete(viewing)}><Trash2 size={14} /> Supprimer</Button>
               <Button onClick={() => openEdit(viewing)}>Modifier</Button>
@@ -175,9 +179,7 @@ export default function ProcedurePage() {
         {viewing && (
           <div className={styles.viewer}>
             <div className={styles.vMeta}>
-              {viewing.categorie && (
-                <span className={styles.cat}>{viewing.categorie}</span>
-              )}
+              {viewing.categorie && <span className={styles.cat}>{viewing.categorie}</span>}
               {viewing.auteur && <span>✍ {viewing.auteur}</span>}
               <span>📅 {fmtDateFR(viewing.updatedAt ?? viewing.createdAt)}</span>
             </div>
