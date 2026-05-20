@@ -1,14 +1,7 @@
 /* ═══════════════════════════════════════════════════════════════════
-   SIDEBAR — Refonte Phase C.1
-   ═══════════════════════════════════════════════════════════════════
-   - Logo plus intégré et chic
-   - Section titles avec ligne décorative dorée
-   - Active state visible (fond + barre + glow)
-   - Hover fluide avec slide subtil
-   - Footer mieux délimité
-   - Custom scrollbar dorée
+   SIDEBAR — Refonte Phase C.1 + Mobile responsive
    ═══════════════════════════════════════════════════════════════════ */
- 
+
 .sidebar {
   position: fixed;
   left: 0;
@@ -25,10 +18,31 @@
   box-shadow:
     4px 0 30px rgba(0, 0, 0, 0.4),
     inset -1px 0 0 rgba(255, 255, 255, 0.02);
+  transition: transform 0.25s ease-out;
 }
- 
+
+/* ─── OVERLAY MOBILE ─────────────────────────────────────────────
+   Cliquable noir transparent qui couvre la page derrière la sidebar
+   sur mobile. Invisible sur desktop.
+   ─────────────────────────────────────────────────────────────── */
+.overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  z-index: 99; /* juste en dessous de la sidebar */
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+}
+
+.overlayOpen {
+  opacity: 1;
+  pointer-events: auto;
+}
+
 /* ─── LOGO ─────────────────────────────────────────────────────── */
- 
+
 .logo {
   padding: 22px 14px 18px;
   border-bottom: 1px solid rgba(180, 140, 20, 0.18);
@@ -37,7 +51,7 @@
     radial-gradient(ellipse at center top, rgba(212, 172, 13, 0.1), transparent 70%);
   position: relative;
 }
- 
+
 .logo::after {
   content: '';
   position: absolute;
@@ -47,7 +61,7 @@
   height: 1px;
   background: linear-gradient(90deg, transparent, rgba(212, 172, 13, 0.5), transparent);
 }
- 
+
 .logoBadge {
   width: 52px;
   height: 52px;
@@ -70,7 +84,7 @@
     inset 0 1px 1px rgba(255, 255, 255, 0.2);
   position: relative;
 }
- 
+
 .logoBadge::before {
   content: '';
   position: absolute;
@@ -81,7 +95,7 @@
   filter: blur(8px);
   opacity: 0.6;
 }
- 
+
 .logo h1 {
   font-family: 'Cinzel', serif;
   font-size: 16px;
@@ -91,7 +105,7 @@
   text-shadow: 0 0 12px rgba(212, 172, 13, 0.4);
   margin: 0 0 4px 0;
 }
- 
+
 .logo span {
   font-size: 8.5px;
   color: rgba(255, 255, 255, 0.4);
@@ -99,36 +113,35 @@
   font-family: 'Share Tech Mono', monospace;
   text-transform: uppercase;
 }
- 
+
 /* ─── NAVIGATION ────────────────────────────────────────────────── */
- 
+
 .nav {
   flex: 1;
   padding: 8px 0 12px;
   overflow-y: auto;
-  /* Custom scrollbar */
   scrollbar-width: thin;
   scrollbar-color: rgba(212, 172, 13, 0.25) transparent;
 }
- 
+
 .nav::-webkit-scrollbar {
   width: 6px;
 }
- 
+
 .nav::-webkit-scrollbar-track {
   background: transparent;
 }
- 
+
 .nav::-webkit-scrollbar-thumb {
   background: rgba(212, 172, 13, 0.2);
   border-radius: 3px;
   transition: background 0.2s;
 }
- 
+
 .nav::-webkit-scrollbar-thumb:hover {
   background: rgba(212, 172, 13, 0.4);
 }
- 
+
 .navSection {
   padding: 16px 20px 6px;
   font-size: 9px;
@@ -141,14 +154,14 @@
   align-items: center;
   gap: 8px;
 }
- 
+
 .navSection::after {
   content: '';
   flex: 1;
   height: 1px;
   background: linear-gradient(90deg, rgba(212, 172, 13, 0.2), transparent);
 }
- 
+
 .navItem {
   display: flex;
   align-items: center;
@@ -170,8 +183,7 @@
   text-decoration: none;
   overflow: hidden;
 }
- 
-/* Petit shimmer doré au survol */
+
 .navItem::before {
   content: '';
   position: absolute;
@@ -183,22 +195,22 @@
   opacity: 0;
   transition: opacity 0.2s ease;
 }
- 
+
 .navItem:hover {
   color: #fff;
   background: rgba(255, 255, 255, 0.05);
   transform: translateX(2px);
 }
- 
+
 .navItem:hover::before {
   opacity: 1;
 }
- 
+
 .navItem:hover .icon {
   color: rgba(212, 172, 13, 0.9);
   filter: drop-shadow(0 0 4px rgba(212, 172, 13, 0.4));
 }
- 
+
 .navItem.active {
   color: #fff;
   background:
@@ -211,22 +223,22 @@
     0 0 12px rgba(192, 65, 14, 0.15);
   font-weight: 600;
 }
- 
+
 .navItem.active::before {
   opacity: 0;
 }
- 
+
 .navItem.active .icon {
   color: #ffb070;
   filter: drop-shadow(0 0 6px rgba(255, 150, 80, 0.6));
 }
- 
+
 .icon {
   flex-shrink: 0;
   color: inherit;
   transition: color 0.2s, filter 0.2s;
 }
- 
+
 .badge {
   margin-left: auto;
   background: var(--red, #dc2626);
@@ -238,9 +250,9 @@
   font-weight: 700;
   box-shadow: 0 0 8px rgba(220, 38, 38, 0.4);
 }
- 
+
 /* ─── FOOTER UTILISATEUR ────────────────────────────────────────── */
- 
+
 .footer {
   padding: 14px 14px;
   border-top: 1px solid rgba(180, 140, 20, 0.2);
@@ -252,7 +264,7 @@
   gap: 8px;
   position: relative;
 }
- 
+
 .footer::before {
   content: '';
   position: absolute;
@@ -262,7 +274,7 @@
   height: 1px;
   background: linear-gradient(90deg, transparent, rgba(212, 172, 13, 0.5), transparent);
 }
- 
+
 .userPill {
   display: flex;
   align-items: center;
@@ -279,7 +291,7 @@
 .userPill:hover {
   background: rgba(212, 180, 74, 0.08);
 }
- 
+
 .avatar {
   width: 36px;
   height: 36px;
@@ -296,7 +308,7 @@
     0 2px 12px rgba(0, 0, 0, 0.4),
     0 0 0 2px rgba(212, 172, 13, 0.2);
 }
- 
+
 .avatarImg {
   width: 36px;
   height: 36px;
@@ -308,7 +320,7 @@
     0 0 0 2px rgba(212, 172, 13, 0.3);
   border: 1px solid rgba(212, 180, 74, 0.4);
 }
- 
+
 .userInfo {
   font-size: 11px;
   min-width: 0;
@@ -317,7 +329,7 @@
   flex-direction: column;
   gap: 1px;
 }
- 
+
 .uname {
   font-weight: 600;
   color: #fff;
@@ -328,7 +340,7 @@
   display: flex;
   align-items: center;
 }
- 
+
 .urank {
   color: rgba(255, 255, 255, 0.5);
   font-size: 9.5px;
@@ -338,20 +350,20 @@
   text-overflow: ellipsis;
   letter-spacing: 0.5px;
 }
- 
+
 /* ─── BOUTON DÉCONNEXION ────────────────────────────────────────── */
- 
+
 .logoutBtn {
   cursor: pointer;
   color: rgba(255, 255, 255, 0.3);
   flex-shrink: 0;
   transition: color 0.2s;
 }
- 
+
 .logoutBtn:hover {
   color: #f87171;
 }
- 
+
 .logoutBtnAction {
   background: transparent;
   border: 1px solid transparent;
@@ -370,4 +382,30 @@
   background: rgba(248, 113, 113, 0.1);
   border-color: rgba(248, 113, 113, 0.25);
   transform: scale(1.05);
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   📱 MOBILE — < 768px : sidebar off-canvas (slide-in)
+   ═══════════════════════════════════════════════════════════════════
+   - Par défaut : translateX(-100%) → cachée hors écran à gauche
+   - .sidebarOpen : translateX(0) → visible
+   - Overlay activé en parallèle
+   ═══════════════════════════════════════════════════════════════════ */
+
+@media (max-width: 768px) {
+  .sidebar {
+    transform: translateX(-100%);
+    width: min(85vw, 320px); /* max 320px mais s'adapte aux petits écrans */
+  }
+
+  .sidebarOpen {
+    transform: translateX(0);
+    box-shadow:
+      8px 0 40px rgba(0, 0, 0, 0.6),
+      inset -1px 0 0 rgba(255, 255, 255, 0.02);
+  }
+
+  .overlay {
+    display: block;
+  }
 }
