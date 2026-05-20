@@ -19,6 +19,13 @@
  * - Voir / chercher / filtrer : tout le monde (connecté)
  * - Créer / modifier / supprimer : TOUS LES MEMBRES POLICE + Admin
  *   (action opérationnelle, pas réservée aux Gérants)
+ *
+ * 🔍 AUDIT LOG (Phase 2) :
+ *   - create sur police:bingobook (nouvelle fiche)
+ *   - update sur police:bingobook (modif fiche)
+ *   - delete sur police:bingobook (retrait fiche)
+ *   Note importante : si le statut passe à "tue" ou "capture", c'est tracé
+ *   dans le diff de l'update — utile pour audit des neutralisations.
  * ════════════════════════════════════════════════════════════════
  */
 
@@ -29,6 +36,7 @@ import { useFirebaseValue } from '@/hooks/useFirebaseValue';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { RequireMembreBranche } from '@/components/Require';
 import { dbSet, dbRemove } from '@/lib/db';
+import { logAction } from '@/lib/audit';
 import { toast } from '@/lib/toast';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
@@ -49,7 +57,10 @@ const FB_PATH = 'bingobook';
 type DangerFilter = 'all' | DangerLevel;
 
 export default function BingoBookPage() {
-  const { can } = useCurrentUser();
+  const u = useCurrentUser();
+  const CURRENT_USER = u.displayName;
+  const CURRENT_USER_ID = u.id;
+  const { can } = u;
 
   // ─── Lecture temps réel ───
   const { data, loading } = useFirebaseValue<Record<string, NinjaFiche>>(FB_PATH);
@@ -121,6 +132,12 @@ export default function BingoBookPage() {
     setForm({});
   }
 
+  // Helper : retrouve la fiche d'origine (pour le diff de l'update)
+  function findOriginal(id: number): NinjaFiche | undefined {
+    if (!data) return undefined;
+    return Object.values(data).find((f): f is NinjaFiche => !!f && f.id === id);
+  }
+
   async function handleSave() {
     if (!form.nom?.trim()) {
       toast.error('Le nom est obligatoire');
@@ -133,6 +150,8 @@ export default function BingoBookPage() {
 
     try {
       const now = Date.now();
+      const oldFiche = editingId ? findOriginal(editingId) : undefined;
+
       const ficheToSave: NinjaFiche = {
         id: editingId ?? now,
         nom: form.nom!.trim(),
@@ -153,6 +172,41 @@ export default function BingoBookPage() {
       // numérique on est tranquille.
       await dbSet(`${FB_PATH}/${ficheToSave.id}`, ficheToSave);
 
+      // 🔍 Audit log
+      const fullName = `${ficheToSave.prenom ? ficheToSave.prenom + ' ' : ''}${ficheToSave.nom}`;
+      const dangerLbl = ficheToSave.danger.toUpperCase();
+      const statusLbl = STATUS_LABEL[ficheToSave.status] || ficheToSave.status;
+
+      if (editingId && oldFiche) {
+        const changes: string[] = [];
+        if (oldFiche.danger !== ficheToSave.danger) changes.push(`danger ${oldFiche.danger} → ${ficheToSave.danger}`);
+        if (oldFiche.status !== ficheToSave.status) changes.push(`statut ${oldFiche.status} → ${ficheToSave.status}`);
+        if ((oldFiche.reward || 0) !== (ficheToSave.reward || 0)) changes.push(`récompense ${oldFiche.reward || 0} → ${ficheToSave.reward || 0} ₽`);
+        if (oldFiche.grade !== ficheToSave.grade) changes.push(`grade ${oldFiche.grade} → ${ficheToSave.grade}`);
+        if ((oldFiche.desc || '') !== (ficheToSave.desc || '')) changes.push('description');
+        if ((oldFiche.portrait || '') !== (ficheToSave.portrait || '')) changes.push('portrait');
+        const changeSummary = changes.length > 0 ? ` (${changes.join(', ')})` : ' (aucun changement détecté)';
+        logAction({
+          who: CURRENT_USER,
+          whoId: CURRENT_USER_ID,
+          action: 'update',
+          target: 'police:bingobook',
+          targetId: String(ficheToSave.id),
+          detail: `Bingo Book — Modification fiche ${fullName} (${dangerLbl}, ${statusLbl})${changeSummary}`,
+        });
+      } else {
+        logAction({
+          who: CURRENT_USER,
+          whoId: CURRENT_USER_ID,
+          action: 'create',
+          target: 'police:bingobook',
+          targetId: String(ficheToSave.id),
+          detail: `Bingo Book — Nouvelle fiche ${fullName} — Danger ${dangerLbl}` +
+            (ficheToSave.reward ? `, récompense ${ficheToSave.reward.toLocaleString('fr-FR')} ₽` : '') +
+            (ficheToSave.village ? `, origine ${ficheToSave.village}` : ''),
+        });
+      }
+
       toast.success(editingId ? 'Fiche mise à jour' : 'Fiche créée');
       closeForm();
     } catch (err) {
@@ -172,6 +226,20 @@ export default function BingoBookPage() {
 
     try {
       await dbRemove(`${FB_PATH}/${f.id}`);
+
+      // 🔍 Audit log
+      const fullName = `${f.prenom ? f.prenom + ' ' : ''}${f.nom}`;
+      logAction({
+        who: CURRENT_USER,
+        whoId: CURRENT_USER_ID,
+        action: 'delete',
+        target: 'police:bingobook',
+        targetId: String(f.id),
+        detail: `Bingo Book — Suppression fiche ${fullName} ` +
+          `(danger ${f.danger.toUpperCase()}, statut ${STATUS_LABEL[f.status] || f.status}` +
+          (f.reward ? `, récompense ${f.reward.toLocaleString('fr-FR')} ₽` : '') + ')',
+      });
+
       toast.success('Fiche supprimée');
     } catch {
       toast.error('Erreur lors de la suppression');
