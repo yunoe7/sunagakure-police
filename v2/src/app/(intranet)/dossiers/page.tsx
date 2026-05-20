@@ -5,35 +5,24 @@
  *  Page DOSSIERS — Dossiers criminels de la police
  * ════════════════════════════════════════════════════════════════
  *
- * Stockage Firebase : sunagakure/dossiers (TABLEAU, format legacy)
- *
- * Un dossier = fiche officielle ouverte sur une personne suspectée
- * ou condamnée. Contient identité, infractions, amendes, photo.
- *
- * Filtres : par danger, par statut. Recherche full-text.
- * Tri : par date d'ouverture (plus récent en premier).
+ * ✨ Pattern "vue détaillée" :
+ *   - Clic sur une fiche → navigation vers /dossiers/[id]
+ *   - Bouton "Ouvrir un dossier" → modale de création rapide
+ *   - Suppression → directement depuis la card (avec confirm)
  *
  * Permissions :
- * - Voir / chercher / filtrer : tout le monde (connecté)
- * - Créer / modifier / supprimer : TOUS LES MEMBRES POLICE + Admin
- *   (action opérationnelle, pas réservée aux Gérants)
+ * - Voir : tout le monde (connecté)
+ * - Créer / modifier / supprimer : MEMBRES POLICE + Admin
  *
- * 📜 Audit log : toutes les créations/modifications/suppressions
- *    sont tracées dans /audit_log Firebase.
+ * 📜 Audit log : créations/suppressions tracées dans /audit_log.
  * ════════════════════════════════════════════════════════════════
  */
 
 import { useMemo, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import {
-  Plus,
-  Trash2,
-  Save,
-  Search,
-  Camera,
-  Skull,
-  Folder,
-  AlertTriangle,
-  Coins,
+  Plus, Trash2, Save, Search, Camera, Skull, Folder,
+  AlertTriangle, Coins,
 } from 'lucide-react';
 
 import { useFirebaseValue } from '@/hooks/useFirebaseValue';
@@ -48,13 +37,8 @@ import { Modal } from '@/components/ui/Modal';
 import { confirmAction } from '@/components/ui/ConfirmDialog';
 import { compressImage } from '@/lib/image';
 import {
-  type Dossier,
-  type DossierDanger,
-  type DossierStatut,
-  DANGER_LABEL,
-  DOSSIER_STATUT_LABEL,
-  fmtMoney,
-  fmtDateFR,
+  type Dossier, type DossierDanger, type DossierStatut,
+  DANGER_LABEL, DOSSIER_STATUT_LABEL, fmtMoney, fmtDateFR,
 } from '@/types/dossier';
 
 import styles from './page.module.css';
@@ -64,6 +48,7 @@ type DangerFilter = 'all' | DossierDanger;
 type StatutFilter = 'all' | DossierStatut;
 
 export default function DossiersPage() {
+  const router = useRouter();
   const u = useCurrentUser();
   const CURRENT_USER = u.displayName;
   const { data, loading } = useFirebaseValue<Dossier[] | null>(FB_PATH);
@@ -72,14 +57,12 @@ export default function DossiersPage() {
   const [dangerFilter, setDangerFilter] = useState<DangerFilter>('all');
   const [statutFilter, setStatutFilter] = useState<StatutFilter>('all');
 
+  // Modale uniquement pour CRÉATION (édition sur la page dédiée)
   const [showForm, setShowForm] = useState(false);
-  const [editingId, setEditingId] = useState<number | null>(null);
   const [form, setForm] = useState<Partial<Dossier>>({});
 
-  // Permission : TOUS les membres Police (opérationnel)
   const canEdit = u.can.membreBranche('police');
 
-  // ─── Données normalisées ───
   const all = useMemo<Dossier[]>(() => {
     if (!data) return [];
     return (Array.isArray(data) ? data : Object.values(data)).filter(
@@ -95,14 +78,12 @@ export default function DossiersPage() {
     if (q) {
       list = list.filter((d) =>
         ((d.nom || '') + ' ' + (d.notes || '') + ' ' + (d.infractions || '') + ' ' + (d.auteur || ''))
-          .toLowerCase()
-          .includes(q)
+          .toLowerCase().includes(q)
       );
     }
     return [...list].sort((a, b) => (b.date ?? b.id) - (a.date ?? a.id));
   }, [all, search, dangerFilter, statutFilter]);
 
-  // Stats hero
   const stats = useMemo(() => {
     const total = all.length;
     const recherches = all.filter((d) => d.statut === 'recherche').length;
@@ -111,23 +92,18 @@ export default function DossiersPage() {
     return { total, recherches, gardeVue, totalAmendeImpayee };
   }, [all]);
 
-  // ─── Handlers ───
   function openCreate() {
-    setEditingId(null);
     setForm({ danger: 'moyen', statut: 'ouvert', defunt: false });
-    setShowForm(true);
-  }
-
-  function openEdit(d: Dossier) {
-    setEditingId(d.id);
-    setForm(d);
     setShowForm(true);
   }
 
   function closeForm() {
     setShowForm(false);
-    setEditingId(null);
     setForm({});
+  }
+
+  function openFiche(d: Dossier) {
+    router.push(`/dossiers/${d.id}`);
   }
 
   async function handleSave() {
@@ -136,65 +112,48 @@ export default function DossiersPage() {
       return;
     }
     try {
-      const list = [...all];
       const now = Date.now();
       const amendePayee = Number(form.amendePayee) || 0;
       const amendeTotal = Number(form.amendeTotal) || 0;
       const amendeImpayee = form.defunt ? 0 : Math.max(0, amendeTotal - amendePayee);
 
-      const isUpdate = !!editingId;
+      const newDossier: Dossier = {
+        id: now,
+        nom: form.nom!.trim(),
+        danger: form.danger || 'moyen',
+        statut: form.statut || 'ouvert',
+        notes: form.notes?.trim() || undefined,
+        photo: form.photo || undefined,
+        defunt: !!form.defunt,
+        auteur: CURRENT_USER,
+        date: now,
+        infractions: form.infractions?.trim() || undefined,
+        amendePayee,
+        amendeImpayee,
+        amendeTotal,
+      };
 
-      if (editingId) {
-        const idx = list.findIndex((d) => d.id === editingId);
-        if (idx === -1) throw new Error('Introuvable');
-        list[idx] = {
-          ...list[idx],
-          ...form,
-          id: editingId,
-          amendePayee,
-          amendeImpayee,
-          amendeTotal,
-        } as Dossier;
-      } else {
-        list.push({
-          id: now,
-          nom: form.nom!.trim(),
-          danger: form.danger || 'moyen',
-          statut: form.statut || 'ouvert',
-          notes: form.notes?.trim() || undefined,
-          photo: form.photo || undefined,
-          defunt: !!form.defunt,
-          auteur: CURRENT_USER,
-          date: now,
-          infractions: form.infractions?.trim() || undefined,
-          amendePayee,
-          amendeImpayee,
-          amendeTotal,
-        } as Dossier);
-      }
-
-      // 📜 AUDIT LOG (non-bloquant, avant le dbSet)
       logAction({
         who: CURRENT_USER,
         whoId: u.id ?? null,
-        action: isUpdate ? 'update' : 'create',
+        action: 'create',
         target: 'dossier',
-        targetId: String(editingId ?? now),
-        detail: isUpdate
-          ? `Modification du dossier de ${form.nom!.trim()}`
-          : `Ouverture d'un dossier criminel sur ${form.nom!.trim()} (danger: ${form.danger || 'moyen'})`,
+        targetId: String(now),
+        detail: `Ouverture d'un dossier criminel sur ${form.nom!.trim()} (danger: ${form.danger || 'moyen'})`,
       });
 
-      await dbSet(FB_PATH, list);
-      toast.success(editingId ? 'Dossier mis à jour' : 'Dossier ouvert');
+      await dbSet(FB_PATH, [...all, newDossier]);
+      toast.success('Dossier ouvert');
       closeForm();
+      router.push(`/dossiers/${now}`);
     } catch (err) {
       console.error(err);
       toast.error('Erreur lors de la sauvegarde');
     }
   }
 
-  async function handleDelete(d: Dossier) {
+  async function handleDelete(d: Dossier, e: React.MouseEvent) {
+    e.stopPropagation();
     const ok = await confirmAction({
       title: 'Supprimer le dossier',
       message: `Supprimer définitivement le dossier de ${d.nom} ? Cette action est irréversible.`,
@@ -203,7 +162,6 @@ export default function DossiersPage() {
     });
     if (!ok) return;
     try {
-      // 📜 AUDIT LOG (non-bloquant, avant le dbSet)
       logAction({
         who: CURRENT_USER,
         whoId: u.id ?? null,
@@ -233,7 +191,6 @@ export default function DossiersPage() {
     }
   }
 
-  // ─── Rendu ───
   return (
     <>
       <Card
@@ -288,14 +245,11 @@ export default function DossiersPage() {
           >
             <option value="all">Tous statuts</option>
             {Object.entries(DOSSIER_STATUT_LABEL).map(([k, v]) => (
-              <option key={k} value={k}>
-                {v}
-              </option>
+              <option key={k} value={k}>{v}</option>
             ))}
           </select>
         </div>
 
-        {/* Liste */}
         {loading ? (
           <p className={styles.empty}>Chargement…</p>
         ) : visible.length === 0 ? (
@@ -313,8 +267,8 @@ export default function DossiersPage() {
               <article
                 key={d.id}
                 className={`${styles.dossier} ${styles[`d-${d.danger}`]} ${d.defunt ? styles.defunt : ''}`}
-                onClick={() => canEdit && openEdit(d)}
-                style={{ cursor: canEdit ? 'pointer' : 'default' }}
+                onClick={() => openFiche(d)}
+                style={{ cursor: 'pointer' }}
               >
                 <div className={styles.header}>
                   <span className={`${styles.dangerBadge} ${styles[`db-${d.danger}`]}`}>
@@ -334,10 +288,7 @@ export default function DossiersPage() {
                   <RequireMembreBranche branche="police">
                     <button
                       className={styles.deleteBtn}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleDelete(d);
-                      }}
+                      onClick={(e) => handleDelete(d, e)}
                       aria-label="Supprimer"
                     >
                       <Trash2 size={13} />
@@ -402,20 +353,16 @@ export default function DossiersPage() {
         )}
       </Card>
 
-      {/* Modale */}
+      {/* Modale de CRÉATION uniquement */}
       <Modal
         open={showForm}
         onClose={closeForm}
-        title={editingId ? 'Modifier le dossier' : 'Nouveau dossier criminel'}
+        title="Nouveau dossier criminel"
         size="lg"
         footer={
           <>
-            <Button variant="outline" onClick={closeForm}>
-              Annuler
-            </Button>
-            <Button onClick={handleSave}>
-              <Save size={14} /> Enregistrer
-            </Button>
+            <Button variant="outline" onClick={closeForm}>Annuler</Button>
+            <Button onClick={handleSave}><Save size={14} /> Enregistrer</Button>
           </>
         }
       >
@@ -448,14 +395,10 @@ export default function DossiersPage() {
               Statut
               <select
                 value={form.statut ?? 'ouvert'}
-                onChange={(e) =>
-                  setForm({ ...form, statut: e.target.value as DossierStatut })
-                }
+                onChange={(e) => setForm({ ...form, statut: e.target.value as DossierStatut })}
               >
                 {Object.entries(DOSSIER_STATUT_LABEL).map(([k, v]) => (
-                  <option key={k} value={k}>
-                    {v}
-                  </option>
+                  <option key={k} value={k}>{v}</option>
                 ))}
               </select>
             </label>
@@ -477,12 +420,7 @@ export default function DossiersPage() {
               <input
                 type="number"
                 value={form.amendeTotal ?? ''}
-                onChange={(e) =>
-                  setForm({
-                    ...form,
-                    amendeTotal: e.target.value ? Number(e.target.value) : 0,
-                  })
-                }
+                onChange={(e) => setForm({ ...form, amendeTotal: e.target.value ? Number(e.target.value) : 0 })}
               />
             </label>
             <label>
@@ -490,12 +428,7 @@ export default function DossiersPage() {
               <input
                 type="number"
                 value={form.amendePayee ?? ''}
-                onChange={(e) =>
-                  setForm({
-                    ...form,
-                    amendePayee: e.target.value ? Number(e.target.value) : 0,
-                  })
-                }
+                onChange={(e) => setForm({ ...form, amendePayee: e.target.value ? Number(e.target.value) : 0 })}
               />
             </label>
             <label>
@@ -507,9 +440,7 @@ export default function DossiersPage() {
                   checked={!!form.defunt}
                   onChange={(e) => setForm({ ...form, defunt: e.target.checked })}
                 />
-                <label htmlFor="defunt-check" style={{ cursor: 'pointer' }}>
-                  ⚱ Défunt
-                </label>
+                <label htmlFor="defunt-check" style={{ cursor: 'pointer' }}>⚱ Défunt</label>
               </div>
             </label>
           </div>
@@ -565,11 +496,7 @@ export default function DossiersPage() {
 }
 
 // ─── Stat card sous-composant ───
-function StatCard({
-  label,
-  value,
-  variant,
-}: {
+function StatCard({ label, value, variant }: {
   label: string;
   value: number | string;
   variant: 'default' | 'danger' | 'warning' | 'gold';
