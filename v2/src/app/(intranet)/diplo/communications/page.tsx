@@ -4,6 +4,7 @@ import { useMemo, useState } from 'react';
 import { Plus, Trash2, Save, Search, MessageSquare, AlertTriangle } from 'lucide-react';
 import { useFirebaseValue } from '@/hooks/useFirebaseValue';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
+import { RequireMembreBranche } from '@/components/Require';
 import { dbSet } from '@/lib/db';
 import { toast } from '@/lib/toast';
 import { Card } from '@/components/ui/Card';
@@ -20,7 +21,8 @@ const FB_PATH = 'diplo_communications';
 type Filter = 'all' | CommType | 'urgent';
 
 export default function CommunicationsPage() {
-  const CURRENT_USER = useCurrentUser().displayName;
+  const { displayName: CURRENT_USER, can } = useCurrentUser();
+  const canEdit = can.membreBranche('diplomate');
   const { data, loading } = useFirebaseValue<Communication[] | null>(FB_PATH);
   const [filter, setFilter] = useState<Filter>('all');
   const [search, setSearch] = useState('');
@@ -46,7 +48,6 @@ export default function CommunicationsPage() {
         .toLowerCase().includes(q)
     );
     return [...list].sort((a, b) => {
-      // Urgences en premier, puis par date
       const ua = (a.urgent || a.type === 'urgence') ? 1 : 0;
       const ub = (b.urgent || b.type === 'urgence') ? 1 : 0;
       if (ua !== ub) return ub - ua;
@@ -122,7 +123,11 @@ export default function CommunicationsPage() {
       <Card
         title="Communications"
         subtitle="Messages et rapports diplomatiques"
-        actions={<Button onClick={openCreate}><Plus size={14} /> Nouvelle communication</Button>}
+        actions={
+          <RequireMembreBranche branche="diplomate">
+            <Button onClick={openCreate}><Plus size={14} /> Nouvelle communication</Button>
+          </RequireMembreBranche>
+        }
       >
         <div className={styles.toolbar}>
           <div className={styles.searchBox}>
@@ -167,11 +172,13 @@ export default function CommunicationsPage() {
                         {COMM_TYPE_LABEL[c.type]}
                       </span>
                       {c.date && <span className={styles.dateChip}>{fmtDateFR(c.date)}</span>}
-                      <button
-                        className={styles.deleteBtn}
-                        onClick={(e) => { e.stopPropagation(); handleDelete(c); }}
-                        aria-label="Supprimer"
-                      ><Trash2 size={13} /></button>
+                      <RequireMembreBranche branche="diplomate">
+                        <button
+                          className={styles.deleteBtn}
+                          onClick={(e) => { e.stopPropagation(); handleDelete(c); }}
+                          aria-label="Supprimer"
+                        ><Trash2 size={13} /></button>
+                      </RequireMembreBranche>
                     </div>
 
                     <h3>{c.sujet}</h3>
@@ -192,7 +199,7 @@ export default function CommunicationsPage() {
       <Modal open={!!viewing} onClose={() => setViewingId(null)}
         title={viewing?.sujet || ''} size="lg"
         footer={
-          viewing && (
+          viewing && canEdit && (
             <>
               <Button variant="ghost" onClick={() => handleDelete(viewing)}><Trash2 size={14} /> Supprimer</Button>
               <Button onClick={() => openEdit(viewing)}>Modifier</Button>
