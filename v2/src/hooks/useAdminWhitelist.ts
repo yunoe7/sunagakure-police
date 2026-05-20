@@ -11,12 +11,17 @@
  *
  *    await addAdmin('1234...', 'Hyo Ryuzen');
  *    await removeAdmin('1234...');
+ *
+ *  📜 Audit log : toute action sensible (ajout/retrait d'admin) est
+ *     tracée dans /audit_log Firebase. C'est la fonctionnalité LA
+ *     plus sensible du projet : qui peut accéder à toute l'intranet.
  * ═══════════════════════════════════════════════════════════════════
  */
 
 import { useState } from 'react';
 import { useFirebaseValue } from '@/hooks/useFirebaseValue';
 import { dbSet } from '@/lib/db';
+import { logAction } from '@/lib/audit';
 import { toast } from '@/lib/toast';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import {
@@ -35,7 +40,8 @@ export type WhitelistDisplayEntry = {
 };
 
 export function useAdminWhitelist() {
-  const { displayName: CURRENT_USER } = useCurrentUser();
+  const u = useCurrentUser();
+  const CURRENT_USER = u.displayName;
   const { data, loading } = useFirebaseValue<Record<string, WhitelistEntry> | null>(FB_PATH);
   const [saving, setSaving] = useState(false);
 
@@ -76,6 +82,7 @@ export function useAdminWhitelist() {
 
   /**
    * Ajoute un Discord ID à la whitelist Firebase.
+   * 📜 Action loggée dans /audit_log.
    */
   async function addAdmin(discordId: string, note: string): Promise<boolean> {
     const cleanId = discordId.trim();
@@ -109,6 +116,17 @@ export function useAdminWhitelist() {
           addedBy: CURRENT_USER ?? 'Inconnu',
         } as WhitelistEntry,
       };
+
+      // 📜 AUDIT LOG (avant l'écriture — action très sensible)
+      logAction({
+        who: CURRENT_USER ?? 'Inconnu',
+        whoId: u.id ?? null,
+        action: 'create',
+        target: 'admin_whitelist',
+        targetId: cleanId,
+        detail: `🔒 Ajout d'un administrateur technique : ${cleanNote} (Discord ID: ${cleanId})`,
+      });
+
       await dbSet(FB_PATH, newData);
       toast.success(`${cleanNote} ajouté(e) à la whitelist`);
       return true;
@@ -124,6 +142,7 @@ export function useAdminWhitelist() {
   /**
    * Retire un Discord ID de la whitelist Firebase.
    * Impossible de retirer un hardcodé.
+   * 📜 Action loggée dans /audit_log.
    */
   async function removeAdmin(discordId: string): Promise<boolean> {
     if (ADMIN_WHITELIST_HARDCODED.includes(discordId)) {
@@ -139,6 +158,17 @@ export function useAdminWhitelist() {
     try {
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { [discordId]: removed, ...rest } = data;
+
+      // 📜 AUDIT LOG (avant l'écriture — action très sensible)
+      logAction({
+        who: CURRENT_USER ?? 'Inconnu',
+        whoId: u.id ?? null,
+        action: 'delete',
+        target: 'admin_whitelist',
+        targetId: discordId,
+        detail: `🔒 Retrait d'un administrateur technique : ${removed.note} (Discord ID: ${discordId}, ajouté(e) par ${removed.addedBy ?? 'inconnu'})`,
+      });
+
       await dbSet(FB_PATH, rest);
       toast.success(`${removed.note} retiré(e) de la whitelist`);
       return true;
