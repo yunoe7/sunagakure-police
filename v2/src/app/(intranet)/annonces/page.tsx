@@ -7,15 +7,15 @@
  *
  * Lit/écrit le tableau `annonces` dans Firebase (compatible ancien intranet).
  *
- * Différences clés vs page Patients :
- *   - Données stockées en TABLEAU (pas en objet à clés)
- *   - Pas de dbPush : on lit le tableau, on modifie, on dbSet() le tout
- *   - Tri : épinglées d'abord, puis par date décroissante
+ * ✨ NOUVEAU : Clic sur une annonce → ouvre une modale de visualisation
+ *    (lecture confortable, gros titre, contenu en entier).
+ *    Boutons "Modifier" et "Supprimer" disponibles dans le viewer.
+ *    Petit crayon ✏️ sur la carte pour édition directe.
  * ════════════════════════════════════════════════════════════════
  */
 
 import { useMemo, useState } from 'react';
-import { Plus, Trash2, Save, Pin, Calendar, User } from 'lucide-react';
+import { Plus, Trash2, Save, Pin, Calendar, User, Pencil } from 'lucide-react';
 
 import { useFirebaseValue } from '@/hooks/useFirebaseValue';
 import { dbSet } from '@/lib/db';
@@ -44,6 +44,9 @@ export default function AnnoncesPage() {
   const [editingId, setEditingId] = useState<number | null>(null);
   const [form, setForm] = useState<Partial<Annonce>>({});
 
+  // 🆕 État pour la modale de visualisation
+  const [viewingId, setViewingId] = useState<number | null>(null);
+
   // ─── Liste triée : épinglées d'abord, puis par date décroissante ───
   const annonces = useMemo(() => {
     if (!data) return [];
@@ -56,6 +59,12 @@ export default function AnnoncesPage() {
       return (b.date ?? 0) - (a.date ?? 0);
     });
   }, [data]);
+
+  // 🆕 Annonce actuellement visualisée
+  const viewing = useMemo(
+    () => (viewingId ? annonces.find((a) => a.id === viewingId) || null : null),
+    [viewingId, annonces],
+  );
 
   // ─── Handlers ───
   function openCreate() {
@@ -72,6 +81,17 @@ export default function AnnoncesPage() {
     setEditingId(a.id);
     setForm(a);
     setShowForm(true);
+    // Si on était en train de visualiser cette annonce, on ferme le viewer
+    setViewingId(null);
+  }
+
+  // 🆕 Ouvre la modale de visualisation
+  function openView(a: Annonce) {
+    setViewingId(a.id);
+  }
+
+  function closeView() {
+    setViewingId(null);
   }
 
   function closeForm() {
@@ -130,6 +150,8 @@ export default function AnnoncesPage() {
       const filtered = current.filter((x) => x && x.id !== a.id);
       await dbSet(FB_PATH, filtered);
       toast.success('Annonce supprimée');
+      // Si on était en train de visualiser cette annonce, on ferme le viewer
+      if (viewingId === a.id) setViewingId(null);
     } catch {
       toast.error('Erreur lors de la suppression');
     }
@@ -157,7 +179,7 @@ export default function AnnoncesPage() {
               <article
                 key={a.id}
                 className={styles.annonce}
-                onClick={() => openEdit(a)}
+                onClick={() => openView(a)}
               >
                 <header className={styles.annHeader}>
                   <span
@@ -175,6 +197,18 @@ export default function AnnoncesPage() {
                     <span className={styles.dot}>·</span>
                     <Calendar size={11} /> {fmtDate(a.date)}
                   </span>
+                  {/* 🆕 Crayon édition rapide */}
+                  <button
+                    className={styles.editBtn}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      openEdit(a);
+                    }}
+                    aria-label="Modifier"
+                    title="Modifier l'annonce"
+                  >
+                    <Pencil size={13} />
+                  </button>
                   <button
                     className={styles.deleteBtn}
                     onClick={(e) => {
@@ -182,6 +216,7 @@ export default function AnnoncesPage() {
                       handleDelete(a);
                     }}
                     aria-label="Supprimer"
+                    title="Supprimer l'annonce"
                   >
                     <Trash2 size={14} />
                   </button>
@@ -194,6 +229,61 @@ export default function AnnoncesPage() {
         )}
       </Card>
 
+      {/* 🆕 MODALE DE VISUALISATION */}
+      <Modal
+        open={!!viewing}
+        onClose={closeView}
+        title={viewing?.titre || ''}
+        size="lg"
+        footer={
+          viewing && (
+            <>
+              <Button variant="ghost" onClick={() => handleDelete(viewing)}>
+                <Trash2 size={14} /> Supprimer
+              </Button>
+              <Button variant="outline" onClick={closeView}>
+                Fermer
+              </Button>
+              <Button onClick={() => openEdit(viewing)}>
+                <Pencil size={14} /> Modifier
+              </Button>
+            </>
+          )
+        }
+      >
+        {viewing && (
+          <div className={styles.viewer}>
+            <div className={styles.viewerHeader}>
+              <span
+                className={`${styles.catBadge} ${styles[annCatKey(viewing.cat)]}`}
+              >
+                {viewing.cat || '—'}
+              </span>
+              {viewing.pin && (
+                <span className={styles.pinBadge}>
+                  <Pin size={11} /> Épinglée
+                </span>
+              )}
+            </div>
+
+            <div className={styles.viewerMeta}>
+              <span>
+                <User size={12} /> {viewing.auteur || '—'}
+              </span>
+              <span className={styles.viewerDot}>·</span>
+              <span>
+                <Calendar size={12} /> {fmtDate(viewing.date)}
+              </span>
+            </div>
+
+            <div className={styles.viewerContent}>
+              {viewing.contenu}
+            </div>
+          </div>
+        )}
+      </Modal>
+
+      {/* MODALE DE CRÉATION / ÉDITION */}
       <Modal
         open={showForm}
         onClose={closeForm}
