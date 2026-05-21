@@ -1,228 +1,67 @@
-/* ───────────────────────────────────────────────────────
-   ANNONCES — style gazette moderne
-   Inspiré du design de l'ancien intranet
-   ─────────────────────────────────────────────────────── */
+/* ════════════════════════════════════════════════════════════════
+   🆕 PATCH À AJOUTER À LA FIN DE TON page.module.css EXISTANT
+   ════════════════════════════════════════════════════════════════
+   (Ne supprime pas le reste, ajoute juste ce bloc tout en bas)
+*/
 
-.empty {
-  text-align: center;
-  padding: 60px 20px;
-  color: var(--muted);
-  font-style: italic;
-}
-
-.list {
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-}
-
-/* ─── Carte d'annonce ─── */
-.annonce {
-  background: linear-gradient(180deg, #15110b, #1a140c);
-  border: 1px solid rgba(180, 140, 20, 0.22);
-  border-radius: 12px;
-  padding: 18px 20px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  position: relative;
-  overflow: hidden;
-}
-.annonce::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 2px;
-  background: linear-gradient(90deg, transparent, #c9a227 30%, #fbbf24 50%, #c9a227 70%, transparent);
-  opacity: 0.5;
-}
-.annonce:hover {
-  border-color: rgba(212, 180, 74, 0.5);
-  transform: translateY(-1px);
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35);
-}
-
-.annHeader {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  flex-wrap: wrap;
-  margin-bottom: 10px;
-}
-
-.titleH3 {
-  font-family: 'Barlow Condensed', sans-serif;
-  font-size: 20px;
-  font-weight: 700;
-  letter-spacing: 0.5px;
-  color: var(--text);
-  margin-bottom: 8px;
-  line-height: 1.25;
-}
-
-.content {
-  color: var(--text2);
-  font-size: 13.5px;
-  line-height: 1.55;
-  white-space: pre-wrap;
-  display: -webkit-box;
-  -webkit-line-clamp: 4;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-
-/* ─── Badges catégorie ─── */
-.catBadge {
-  display: inline-flex;
-  align-items: center;
-  font-family: 'Share Tech Mono', monospace;
-  font-size: 10px;
-  letter-spacing: 1px;
-  padding: 3px 9px;
-  border-radius: 4px;
-  text-transform: uppercase;
-  font-weight: 700;
-}
-.catBadge.info  { background: rgba(59,130,246,0.16); color: #60a5fa; border: 1px solid rgba(59,130,246,0.32); }
-.catBadge.opera { background: rgba(217,119,6,0.16); color: #fbbf24; border: 1px solid rgba(217,119,6,0.34); }
-.catBadge.alert {
-  background: rgba(220,38,38,0.16);
-  color: #f87171;
-  border: 1px solid rgba(220,38,38,0.34);
-  animation: alertPulse 2s ease-in-out infinite;
-}
-.catBadge.disci { background: rgba(168,85,247,0.16); color: #c084fc; border: 1px solid rgba(168,85,247,0.34); }
-.catBadge.other { background: rgba(107,114,128,0.16); color: #9ca3af; border: 1px solid rgba(107,114,128,0.32); }
-
-@keyframes alertPulse {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(220,38,38,0.4); }
-  50% { box-shadow: 0 0 0 4px rgba(220,38,38,0); }
-}
-
-/* ─── Badge épinglée ─── */
-.pinBadge {
-  display: inline-flex;
-  align-items: center;
-  gap: 3px;
-  font-family: 'Share Tech Mono', monospace;
-  font-size: 9px;
-  letter-spacing: 1px;
-  padding: 3px 8px;
-  background: rgba(212, 180, 74, 0.15);
-  color: var(--gold2);
-  border: 1px solid rgba(212, 180, 74, 0.4);
-  border-radius: 4px;
-  text-transform: uppercase;
-  font-weight: 700;
-}
-
-/* ─── Meta (auteur, date) ─── */
-.meta {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  font-family: 'Share Tech Mono', monospace;
-  font-size: 10px;
-  color: var(--muted);
-  margin-left: auto;
-}
-.dot {
-  opacity: 0.5;
-  margin: 0 4px;
-}
-
-/* ─── Bouton supprimer ─── */
-.deleteBtn {
+/* Bouton crayon (édition rapide depuis la carte) */
+.editBtn {
   padding: 5px 7px;
   border-radius: 4px;
   color: var(--muted);
   background: transparent;
+  border: none;
+  cursor: pointer;
   transition: all 0.15s;
 }
-.deleteBtn:hover {
-  color: var(--red);
-  background: rgba(239, 68, 68, 0.1);
-}
-
-/* ─── Formulaire (dans Modal) ─── */
-.formFields {
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-}
-.formFields label {
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-  font-family: 'Share Tech Mono', monospace;
-  font-size: 10px;
-  letter-spacing: 1.5px;
-  text-transform: uppercase;
-  color: rgba(212, 180, 74, 0.85);
-  font-weight: 700;
-}
-.formFields input[type="text"],
-.formFields textarea,
-.formFields select {
-  padding: 10px 12px;
-  background: rgba(0, 0, 0, 0.4);
-  border: 1px solid rgba(180, 140, 20, 0.35);
-  border-radius: 6px;
-  color: var(--text);
-  font-size: 13px;
-  font-family: 'Barlow', sans-serif;
-  text-transform: none;
-  letter-spacing: normal;
-  font-weight: normal;
-  transition: border-color 0.15s, background 0.15s;
-}
-.formFields input:focus,
-.formFields textarea:focus,
-.formFields select:focus {
-  outline: none;
-  border-color: rgba(212, 180, 74, 0.65);
-  background: rgba(0, 0, 0, 0.55);
-  box-shadow: 0 0 0 3px rgba(212, 180, 74, 0.1);
-}
-.formFields textarea {
-  resize: vertical;
-  min-height: 100px;
-  line-height: 1.5;
-}
-
-.row {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px;
-}
-
-/* ─── Case à cocher Épingler ─── */
-.checkboxLabel {
-  flex-direction: row !important;
-  align-items: center !important;
-  gap: 8px !important;
-  cursor: pointer;
-  padding: 8px 10px;
-  background: rgba(212, 180, 74, 0.05);
-  border: 1px solid rgba(212, 180, 74, 0.2);
-  border-radius: 6px;
-  transition: background 0.15s;
-}
-.checkboxLabel:hover {
+.editBtn:hover {
+  color: var(--gold2);
   background: rgba(212, 180, 74, 0.1);
 }
-.checkboxLabel input[type="checkbox"] {
-  width: 16px;
-  height: 16px;
-  cursor: pointer;
-  accent-color: var(--gold2);
+
+/* ═══ MODALE DE VISUALISATION ═══ */
+.viewer {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
 }
-.checkboxLabel span {
-  font-family: 'Barlow', sans-serif;
-  font-size: 13px;
-  text-transform: none;
-  letter-spacing: normal;
-  font-weight: normal;
-  color: var(--text2);
+
+.viewerHeader {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.viewerMeta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.5px;
+  color: var(--muted);
+  text-transform: uppercase;
+  padding-bottom: 14px;
+  border-bottom: 1px solid rgba(201, 162, 39, 0.12);
+}
+
+.viewerMeta span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.viewerDot {
+  opacity: 0.5;
+}
+
+.viewerContent {
+  font-size: 14.5px;
+  line-height: 1.7;
+  color: var(--text);
+  white-space: pre-wrap;
+  word-break: break-word;
+  padding: 4px 0;
 }
