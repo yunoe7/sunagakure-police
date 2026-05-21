@@ -1,10 +1,133 @@
 /* ════════════════════════════════════════════════════════════════
-   🆕 PATCH À AJOUTER À LA FIN DE TON page.module.css EXISTANT
-   ════════════════════════════════════════════════════════════════
-   (Ne supprime pas le reste, ajoute juste ce bloc tout en bas)
-*/
+   ANNONCES — Page complète
+   ════════════════════════════════════════════════════════════════ */
 
-/* Bouton crayon (édition rapide depuis la carte) */
+/* ─── Empty state ─── */
+.empty {
+  text-align: center;
+  padding: 60px 20px;
+  color: var(--muted);
+  font-style: italic;
+}
+
+/* ─── Liste des annonces ─── */
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* ─── Carte annonce ─── */
+.annonce {
+  background: linear-gradient(180deg, #15110b, #1a140c);
+  border: 1px solid rgba(180, 140, 20, 0.22);
+  border-radius: 10px;
+  padding: 16px 18px;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  position: relative;
+}
+.annonce:hover {
+  transform: translateY(-1px);
+  border-color: rgba(212, 180, 74, 0.4);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.4);
+}
+
+/* ─── Header de la carte ─── */
+.annHeader {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid rgba(201, 162, 39, 0.1);
+}
+
+/* ─── Badge catégorie ─── */
+.catBadge {
+  display: inline-block;
+  padding: 3px 9px;
+  border-radius: 4px;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 9.5px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  font-weight: 700;
+  border: 1px solid;
+}
+
+/* Couleurs par catégorie */
+.information {
+  background: rgba(59, 130, 246, 0.15);
+  color: #93c5fd;
+  border-color: rgba(59, 130, 246, 0.35);
+}
+.evenement {
+  background: rgba(168, 85, 247, 0.15);
+  color: #c4b5fd;
+  border-color: rgba(168, 85, 247, 0.35);
+}
+.alerte {
+  background: rgba(239, 68, 68, 0.15);
+  color: #fca5a5;
+  border-color: rgba(239, 68, 68, 0.4);
+}
+.urgence {
+  background: rgba(239, 68, 68, 0.18);
+  color: #fca5a5;
+  border-color: rgba(239, 68, 68, 0.5);
+  animation: urgencePulse 2s ease-in-out infinite;
+}
+@keyframes urgencePulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+  50% { box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.15); }
+}
+.officiel {
+  background: rgba(212, 180, 74, 0.18);
+  color: var(--gold2);
+  border-color: rgba(212, 180, 74, 0.4);
+}
+.communaute {
+  background: rgba(34, 197, 94, 0.15);
+  color: #86efac;
+  border-color: rgba(34, 197, 94, 0.35);
+}
+
+/* ─── Badge épinglée ─── */
+.pinBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 9px;
+  border-radius: 4px;
+  background: rgba(212, 180, 74, 0.12);
+  color: var(--gold2);
+  border: 1px solid rgba(212, 180, 74, 0.35);
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 9.5px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  font-weight: 700;
+}
+
+/* ─── Meta (auteur + date) ─── */
+.meta {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 10.5px;
+  color: var(--muted);
+  letter-spacing: 0.5px;
+  margin-left: auto;
+}
+.dot {
+  margin: 0 4px;
+  opacity: 0.5;
+}
+
+/* ─── Boutons d'action sur la carte ─── */
 .editBtn {
   padding: 5px 7px;
   border-radius: 4px;
@@ -19,20 +142,56 @@
   background: rgba(212, 180, 74, 0.1);
 }
 
+.deleteBtn {
+  padding: 5px 7px;
+  border-radius: 4px;
+  color: var(--muted);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.deleteBtn:hover {
+  color: var(--red);
+  background: rgba(239, 68, 68, 0.1);
+}
+
+/* ─── Titre de l'annonce ─── */
+.titleH3 {
+  font-family: 'Cinzel', serif;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text);
+  margin: 0 0 8px 0;
+  line-height: 1.3;
+  letter-spacing: 0.3px;
+}
+
+/* ─── Contenu de l'annonce (aperçu sur la carte) ─── */
+.content {
+  font-size: 13.5px;
+  line-height: 1.6;
+  color: var(--text2);
+  margin: 0;
+  /* Limite à 3 lignes avec ellipsis */
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
 /* ═══ MODALE DE VISUALISATION ═══ */
 .viewer {
   display: flex;
   flex-direction: column;
   gap: 16px;
 }
-
 .viewerHeader {
   display: flex;
   align-items: center;
   gap: 8px;
   flex-wrap: wrap;
 }
-
 .viewerMeta {
   display: flex;
   align-items: center;
@@ -46,17 +205,14 @@
   padding-bottom: 14px;
   border-bottom: 1px solid rgba(201, 162, 39, 0.12);
 }
-
 .viewerMeta span {
   display: inline-flex;
   align-items: center;
   gap: 5px;
 }
-
 .viewerDot {
   opacity: 0.5;
 }
-
 .viewerContent {
   font-size: 14.5px;
   line-height: 1.7;
@@ -64,4 +220,89 @@
   white-space: pre-wrap;
   word-break: break-word;
   padding: 4px 0;
+}
+
+/* ═══ MODALE DE FORMULAIRE (création / édition) ═══ */
+.formFields {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.formFields label {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: rgba(212, 180, 74, 0.85);
+  font-weight: 700;
+}
+.formFields input[type="text"],
+.formFields textarea,
+.formFields select {
+  padding: 10px 12px;
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(180, 140, 20, 0.35);
+  border-radius: 6px;
+  color: var(--text);
+  font-size: 13px;
+  font-family: 'Barlow', sans-serif;
+  text-transform: none;
+  letter-spacing: normal;
+  font-weight: normal;
+}
+.formFields input[type="text"]:focus,
+.formFields textarea:focus,
+.formFields select:focus {
+  outline: none;
+  border-color: rgba(212, 180, 74, 0.65);
+  background: rgba(0, 0, 0, 0.55);
+  box-shadow: 0 0 0 3px rgba(212, 180, 74, 0.1);
+}
+.formFields textarea {
+  resize: vertical;
+  min-height: 120px;
+  font-family: 'Barlow', sans-serif;
+}
+
+.row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.checkboxLabel {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  gap: 8px !important;
+  cursor: pointer;
+  padding: 10px 12px;
+  background: rgba(212, 180, 74, 0.05);
+  border: 1px solid rgba(212, 180, 74, 0.2);
+  border-radius: 6px;
+  text-transform: none !important;
+  letter-spacing: normal !important;
+  color: var(--text) !important;
+  font-family: 'Barlow', sans-serif !important;
+  font-size: 13px !important;
+  font-weight: normal !important;
+}
+.checkboxLabel input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+  accent-color: var(--gold2);
+}
+
+@media (max-width: 700px) {
+  .row {
+    grid-template-columns: 1fr;
+  }
+  .meta {
+    margin-left: 0;
+    width: 100%;
+  }
 }
