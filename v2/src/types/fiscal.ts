@@ -37,6 +37,11 @@ export interface NinjaImpot {
 
 /**
  * Un paiement d'impôt enregistré.
+ *
+ * ⭐ Vision C (lien Impôts → Trésor) :
+ *   Quand un paiement est marqué "payé", un TresorMouvement est créé
+ *   en parallèle dans sunagakure/tresorCentral/mouvements, et son ID
+ *   est stocké ici pour permettre la suppression couplée.
  */
 export interface PaiementImpot {
   id: number;
@@ -48,6 +53,7 @@ export interface PaiementImpot {
   semaine?: string;      // ex: "2026-W12"
   agent?: string;        // qui a encaissé
   notes?: string;
+  tresorMouvementId?: string;  // ⭐ ID du mouvement Trésor lié (Vision C)
 }
 
 // Barème par défaut si rien en base
