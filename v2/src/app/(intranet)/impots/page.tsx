@@ -11,6 +11,12 @@
  *
  * 📜 Audit log : paiements, annulations, suppressions et modifications
  *    du barème sont tracés dans /audit_log Firebase.
+ *
+ * ⭐ Vision C — LIEN IMPÔTS → TRÉSOR :
+ *    Marquer payé  → crée aussi un TresorMouvement dans tresorCentral
+ *    Annuler/Suppr → supprime aussi le mouvement Trésor lié
+ *    Liaison via le champ tresorMouvementId du PaiementImpot.
+ *    Mouvement Trésor : section='police', sectionLabel='Impôts'.
  * ════════════════════════════════════════════════════════════════
  */
 
@@ -21,7 +27,7 @@ import {
 } from 'lucide-react';
 import { useFirebaseValue } from '@/hooks/useFirebaseValue';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
-import { dbSet } from '@/lib/db';
+import { dbSet, dbUpdate } from '@/lib/db';
 import { logAction } from '@/lib/audit';
 import { toast } from '@/lib/toast';
 import { Card } from '@/components/ui/Card';
@@ -34,6 +40,9 @@ import {
   DEFAULT_BAREME, currentWeek, fmtMoney, fmtDateFR,
 } from '@/types/fiscal';
 import type { Recense } from '@/types/recense';
+// ⭐ Vision C : types Trésor pour la liaison Impôts → Trésor
+import type { TresorCentral, TresorMouvement, TresorRetrait } from '@/types/compta';
+import { TRESOR_DEFAULT_RATE } from '@/types/compta';
 
 import styles from './page.module.css';
 
@@ -49,6 +58,8 @@ export default function ImpotsPage() {
   const { data: gradesData } = useFirebaseValue<GradeBareme[] | null>(FB_GRADES);
   const { data: paiementsData } = useFirebaseValue<PaiementImpot[] | null>(FB_PAIEMENTS);
   const { data: recensesData } = useFirebaseValue<Recense[] | null>('recenses');
+  // ⭐ Vision C : lecture du Trésor pour la liaison
+  const { data: tresorData } = useFirebaseValue<TresorCentral | null>('tresorCentral');
 
   const [tab, setTab] = useState<Tab>('registre');
   const [search, setSearch] = useState('');
@@ -66,6 +77,17 @@ export default function ImpotsPage() {
     ),
     [paiementsData]
   );
+
+  // ⭐ Vision C : Trésor normalisé (même pattern que la page /tresor)
+  const tresorCurrent = useMemo<TresorCentral>(() => ({
+    prelevementRate: tresorData?.prelevementRate ?? TRESOR_DEFAULT_RATE,
+    mouvements: (Array.isArray(tresorData?.mouvements) ? tresorData!.mouvements :
+                 tresorData?.mouvements ? Object.values(tresorData.mouvements) : [])
+                 .filter((m): m is TresorMouvement => m !== null && typeof m === 'object' && !!m.id),
+    retraits: (Array.isArray(tresorData?.retraits) ? tresorData!.retraits :
+               tresorData?.retraits ? Object.values(tresorData.retraits) : [])
+               .filter((r): r is TresorRetrait => r !== null && typeof r === 'object' && !!r.id),
+  }), [tresorData]);
 
   const contribuables = useMemo<NinjaImpot[]>(() => {
     const recenses = (Array.isArray(recensesData) ? recensesData : recensesData ? Object.values(recensesData) : [])
@@ -144,34 +166,70 @@ export default function ImpotsPage() {
     }
     const ok = await confirmAction({
       title: 'Enregistrer le paiement',
-      message: `Marquer ${n.prenom} ${n.nom} comme ayant payé ${fmtMoney(montant)} ₽ pour la semaine ${currentSemaine} ?`,
+      message: `Marquer ${n.prenom} ${n.nom} comme ayant payé ${fmtMoney(montant)} ₽ pour la semaine ${currentSemaine} ? Le montant sera ajouté au Trésor Central.`,
       confirmLabel: 'Confirmer',
     });
     if (!ok) return;
     try {
+      const now = Date.now();
+      const paiementId = now;
+
+      // ⭐ Vision C : crée le mouvement Trésor associé
+      const tresorMouvement: TresorMouvement = {
+        id: 'TM-IMPOT-' + paiementId,
+        section: 'police',
+        sectionLabel: 'Impôts',       // override du label "Police" par défaut
+        amount: montant,
+        date: now,
+        archiveId: 'IMPOT-' + paiementId,
+        archiveLabel: `Impôt ${n.prenom} ${n.nom} — semaine ${currentSemaine}`,
+        rate: 100,                    // versement direct (pas un prélèvement de clôture)
+        soldeOrigine: montant,
+      };
+
       const newPaiement: PaiementImpot = {
-        id: Date.now(),
+        id: paiementId,
         ninjaId: n.id,
         prenom: n.prenom,
         nom: n.nom,
         montant,
-        date: Date.now(),
+        date: now,
         semaine: currentSemaine,
         agent: CURRENT_USER,
+        tresorMouvementId: tresorMouvement.id,  // ⭐ liaison
       };
 
-      // 📜 AUDIT LOG
+      // 1. Trésor d'abord (si ça échoue, pas de paiement orphelin)
+      await dbUpdate('tresorCentral', {
+        ...tresorCurrent,
+        mouvements: [...tresorCurrent.mouvements, tresorMouvement],
+      });
+
+      // 2. Paiement ensuite
+      await dbSet(FB_PAIEMENTS, [...paiements, newPaiement]);
+
+      // 📜 AUDIT LOG — paiement
       logAction({
         who: CURRENT_USER,
         whoId: u.id ?? null,
         action: 'create',
         target: 'impot_paiement',
         targetId: String(newPaiement.id),
-        detail: `Paiement d'impôt enregistré pour ${n.prenom} ${n.nom} : ${fmtMoney(montant)} ₽ (semaine ${currentSemaine})`,
+        detail: `Paiement d'impôt enregistré pour ${n.prenom} ${n.nom} : ${fmtMoney(montant)} ₽ (semaine ${currentSemaine}) — versé au Trésor (${tresorMouvement.id})`,
       });
 
-      await dbSet(FB_PAIEMENTS, [...paiements, newPaiement]);
-      toast.success(`Paiement enregistré : ${fmtMoney(montant)} ₽`);
+      // 📜 AUDIT LOG — mouvement Trésor (cohérent avec ComptaModule)
+      logAction({
+        who: CURRENT_USER,
+        whoId: u.id ?? null,
+        action: 'create',
+        target: 'tresor:mouvement',
+        targetId: tresorMouvement.id,
+        detail: `Trésor — Versement Impôts : +${fmtMoney(montant)} ₽ ` +
+          `(Impôt ${n.prenom} ${n.nom}, semaine ${currentSemaine})`,
+      });
+
+      toast.success(`Paiement enregistré : ${fmtMoney(montant)} ₽ → Trésor`);
     } catch (err) {
       console.error('[MARKPAID]', err);
       toast.error('Erreur lors du paiement');
@@ -183,23 +241,48 @@ export default function ImpotsPage() {
     if (!p) return;
     const ok = await confirmAction({
       title: 'Annuler le paiement ?',
-      message: `Retirer le paiement de ${n.prenom} ${n.nom} pour la semaine ${currentSemaine} ?`,
+      message: `Retirer le paiement de ${p.prenom} ${p.nom} pour la semaine ${currentSemaine} ?${p.tresorMouvementId ? ' Le mouvement Trésor associé sera aussi supprimé.' : ''}`,
       confirmLabel: 'Annuler le paiement', variant: 'danger',
     });
     if (!ok) return;
     try {
-      // 📜 AUDIT LOG
+      // ⭐ Vision C : si lié à un mouvement Trésor, le supprimer aussi
+      if (p.tresorMouvementId) {
+        const mouvementExisteEncore = tresorCurrent.mouvements.some(
+          (m) => m.id === p.tresorMouvementId
+        );
+        if (mouvementExisteEncore) {
+          await dbUpdate('tresorCentral', {
+            ...tresorCurrent,
+            mouvements: tresorCurrent.mouvements.filter((m) => m.id !== p.tresorMouvementId),
+          });
+
+          logAction({
+            who: CURRENT_USER,
+            whoId: u.id ?? null,
+            action: 'delete',
+            target: 'tresor:mouvement',
+            targetId: p.tresorMouvementId,
+            detail: `Trésor — Annulation versement Impôts : −${fmtMoney(p.montant)} ₽ ` +
+              `(annulation paiement ${p.prenom} ${p.nom}, semaine ${p.semaine})`,
+          });
+        }
+      }
+
+      await dbSet(FB_PAIEMENTS, paiements.filter((x) => x.id !== p.id));
+
+      // 📜 AUDIT LOG — annulation paiement
       logAction({
         who: CURRENT_USER,
         whoId: u.id ?? null,
         action: 'delete',
         target: 'impot_paiement',
         targetId: String(p.id),
-        detail: `Annulation du paiement de ${p.prenom} ${p.nom} : ${fmtMoney(p.montant)} ₽ (semaine ${p.semaine})`,
+        detail: `Annulation du paiement de ${p.prenom} ${p.nom} : ${fmtMoney(p.montant)} ₽ (semaine ${p.semaine})` +
+          (p.tresorMouvementId ? ` — mouvement Trésor lié supprimé (${p.tresorMouvementId})` : ''),
       });
 
-      await dbSet(FB_PAIEMENTS, paiements.filter((x) => x.id !== p.id));
-      toast.success('Paiement annulé');
+      toast.success(p.tresorMouvementId ? 'Paiement et mouvement Trésor annulés' : 'Paiement annulé');
     } catch (err) {
       console.error('[UNMARKPAID]', err);
       toast.error('Erreur');
@@ -209,22 +292,47 @@ export default function ImpotsPage() {
   async function handleDeletePaiement(p: PaiementImpot) {
     const ok = await confirmAction({
       title: 'Supprimer le paiement',
-      message: `Supprimer le paiement de ${p.prenom} ${p.nom} (${fmtMoney(p.montant)} ₽) ?`,
+      message: `Supprimer le paiement de ${p.prenom} ${p.nom} (${fmtMoney(p.montant)} ₽) ?${p.tresorMouvementId ? ' Le mouvement Trésor associé sera aussi supprimé.' : ''}`,
       confirmLabel: 'Supprimer', variant: 'danger',
     });
     if (!ok) return;
     try {
-      // 📜 AUDIT LOG
+      // ⭐ Vision C : si lié à un mouvement Trésor, le supprimer aussi
+      if (p.tresorMouvementId) {
+        const mouvementExisteEncore = tresorCurrent.mouvements.some(
+          (m) => m.id === p.tresorMouvementId
+        );
+        if (mouvementExisteEncore) {
+          await dbUpdate('tresorCentral', {
+            ...tresorCurrent,
+            mouvements: tresorCurrent.mouvements.filter((m) => m.id !== p.tresorMouvementId),
+          });
+
+          logAction({
+            who: CURRENT_USER,
+            whoId: u.id ?? null,
+            action: 'delete',
+            target: 'tresor:mouvement',
+            targetId: p.tresorMouvementId,
+            detail: `Trésor — Suppression versement Impôts : −${fmtMoney(p.montant)} ₽ ` +
+              `(suppression historique paiement ${p.prenom} ${p.nom}, semaine ${p.semaine})`,
+          });
+        }
+      }
+
+      await dbSet(FB_PAIEMENTS, paiements.filter((x) => x.id !== p.id));
+
+      // 📜 AUDIT LOG — suppression historique
       logAction({
         who: CURRENT_USER,
         whoId: u.id ?? null,
         action: 'delete',
         target: 'impot_paiement',
         targetId: String(p.id),
-        detail: `Suppression historique du paiement de ${p.prenom} ${p.nom} : ${fmtMoney(p.montant)} ₽ (semaine ${p.semaine})`,
+        detail: `Suppression historique du paiement de ${p.prenom} ${p.nom} : ${fmtMoney(p.montant)} ₽ (semaine ${p.semaine})` +
+          (p.tresorMouvementId ? ` — mouvement Trésor lié supprimé (${p.tresorMouvementId})` : ''),
       });
 
-      await dbSet(FB_PAIEMENTS, paiements.filter((x) => x.id !== p.id));
       toast.success('Supprimé');
     } catch (err) {
       console.error('[DELETE PAIEMENT]', err);
