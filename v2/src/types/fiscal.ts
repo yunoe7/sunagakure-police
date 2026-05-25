@@ -7,11 +7,11 @@
  *   sunagakure/impots/paiements    (historique paiements)
  *   sunagakure/adoptions           (registre des adoptions)
  */
-
+ 
 // ═══════════════════════════════════════════════════════════════════════
 //  IMPÔTS
 // ═══════════════════════════════════════════════════════════════════════
-
+ 
 /**
  * Un grade dans le barème fiscal.
  * Lié à un rang officiel (Genin, Chunin, etc.) avec un montant d'impôt.
@@ -20,7 +20,7 @@ export interface GradeBareme {
   rang: string;      // Ex: "Genin", "Chunin"...
   montant: number;   // Montant en ryos
 }
-
+ 
 /**
  * Un ninja dans le registre fiscal.
  * Lié à un recensé via prenom + nom (pas d'id strict pour rétrocompat).
@@ -34,7 +34,7 @@ export interface NinjaImpot {
   exempte?: boolean;     // exempté d'impôt (apprenti, défunt, etc.)
   notes?: string;
 }
-
+ 
 /**
  * Un paiement d'impôt enregistré.
  *
@@ -55,7 +55,7 @@ export interface PaiementImpot {
   notes?: string;
   tresorMouvementId?: string;  // ⭐ ID du mouvement Trésor lié (Vision C)
 }
-
+ 
 // Barème par défaut si rien en base
 export const DEFAULT_BAREME: GradeBareme[] = [
   { rang: 'Genin', montant: 500 },
@@ -70,7 +70,7 @@ export const DEFAULT_BAREME: GradeBareme[] = [
   { rang: 'Kazekage', montant: 0 },
   { rang: 'Civil', montant: 300 },
 ];
-
+ 
 /**
  * Retourne la semaine ISO courante (ex: "2026-W12")
  */
@@ -83,11 +83,11 @@ export function currentWeek(): string {
   const weekNum = 1 + Math.round(((d.getTime() - week1.getTime()) / 86400000 - 3 + ((week1.getDay() + 6) % 7)) / 7);
   return `${d.getFullYear()}-W${String(weekNum).padStart(2, '0')}`;
 }
-
+ 
 // ═══════════════════════════════════════════════════════════════════════
 //  ADOPTIONS
 // ═══════════════════════════════════════════════════════════════════════
-
+ 
 export interface Adoption {
   id: number;
   numero?: string;        // ex: "AD-2026-001"
@@ -103,28 +103,35 @@ export interface Adoption {
   createdAt: number;
   editedAt?: number;
 }
-
+ 
+/**
+ * Calcule le prochain numéro d'adoption disponible.
+ *
+ * ⚠️ Protection : filtre strictement les `numero` qui sont des strings
+ * commençant par le préfixe attendu. Cela évite les crashes si une
+ * ancienne adoption a un `numero` au format inattendu (number, null, etc).
+ */
 export function nextAdoptionNumero(existing: Adoption[]): string {
   const year = new Date().getFullYear();
   const prefix = `AD-${year}-`;
   const nums = existing
     .map((a) => a.numero)
-    .filter((n): n is string => !!n && n.startsWith(prefix))
+    .filter((n): n is string => typeof n === 'string' && n.startsWith(prefix))
     .map((n) => parseInt(n.slice(prefix.length), 10))
     .filter((n) => !isNaN(n));
   const next = nums.length === 0 ? 1 : Math.max(...nums) + 1;
   return `${prefix}${String(next).padStart(3, '0')}`;
 }
-
+ 
 // ═══════════════════════════════════════════════════════════════════════
 //  HELPERS
 // ═══════════════════════════════════════════════════════════════════════
-
+ 
 export function fmtMoney(n: number | undefined): string {
   if (typeof n !== 'number' || isNaN(n)) return '0';
   return n.toLocaleString('fr-FR');
 }
-
+ 
 export function fmtDateFR(d: string | number | undefined): string {
   if (!d) return '—';
   try {
@@ -133,3 +140,4 @@ export function fmtDateFR(d: string | number | undefined): string {
     return String(d);
   }
 }
+ 
