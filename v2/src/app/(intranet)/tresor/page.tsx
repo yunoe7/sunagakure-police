@@ -344,6 +344,7 @@ export default function TresorCentralPage() {
               <option value="missions">🎯 Missions</option>
               <option value="diplo">🌍 Diplomatie</option>
               <option value="police">👮 Police</option>
+              <option value="koeki">🏯 Kōeki</option>
             </select>
           )}
         </div>
