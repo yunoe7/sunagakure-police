@@ -114,7 +114,7 @@ export interface TresorRetrait {
 }
 
 // ─── SECTIONS ───
-export type ComptaSection = 'avocat' | 'medical' | 'justice' | 'missions' | 'diplo' | 'police';
+export type ComptaSection = 'avocat' | 'medical' | 'justice' | 'missions' | 'diplo' | 'police' | 'koeki';
 
 export const SECTION_LABEL: Record<ComptaSection, string> = {
   avocat: 'Cabinet d\'avocat',
@@ -123,6 +123,7 @@ export const SECTION_LABEL: Record<ComptaSection, string> = {
   missions: 'Missions',
   diplo: 'Diplomatie',
   police: 'Police',
+  koeki: 'Kōeki',
 };
 
 export const SECTION_FB_PATH: Record<ComptaSection, string> = {
@@ -132,6 +133,7 @@ export const SECTION_FB_PATH: Record<ComptaSection, string> = {
   missions: 'comptaMissions',
   diplo: 'comptaDiplo',
   police: 'caisse_police',     // déjà existant pour la police
+  koeki: 'comptaKoeki',
 };
 
 export const SECTION_ICON: Record<ComptaSection, string> = {
@@ -141,6 +143,7 @@ export const SECTION_ICON: Record<ComptaSection, string> = {
   missions: '🎯',
   diplo: '🌍',
   police: '👮',
+  koeki: '🏯',
 };
 
 // ─── HELPERS ───
