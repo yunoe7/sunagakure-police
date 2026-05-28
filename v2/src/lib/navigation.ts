@@ -94,6 +94,15 @@ export const NAV_SECTIONS: NavSection[] = [
     ],
   },
   {
+    title: 'KŌEKI',
+    items: [
+      { label: 'Économie', href: '/koeki/economie', icon: 'Building2' },
+      { label: 'Marché', href: '/koeki/marche', icon: 'Store' },
+      { label: 'Comptas', href: '/koeki/compta', icon: 'Wallet' },
+      { label: 'Paramètres', href: '/koeki/parametres', icon: 'Settings' },
+    ],
+  },
+  {
     title: 'ADMINISTRATION',
     items: [
       { label: 'Équipes', href: '/equipes', icon: 'Users2' },
