@@ -1,5 +1,55 @@
-/* KŌEKI — COMPTAS (historique déclarations) */
+/* KŌEKI — COMPTAS (fiches membres + déclarations) */
 
+/* ─── Tabs ─── */
+.tabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 18px;
+  padding: 4px;
+  background: rgba(0,0,0,0.35);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  width: fit-content;
+}
+.tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 16px;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 7px;
+  color: var(--muted);
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+.tab:hover { color: var(--text2); background: rgba(255,255,255,0.04); }
+.tabActive {
+  background: linear-gradient(180deg, rgba(212,180,74,0.22), rgba(212,180,74,0.08));
+  border-color: rgba(212,180,74,0.45);
+  color: var(--gold2);
+}
+.tabCount {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 17px;
+  padding: 0 5px;
+  border-radius: 9px;
+  background: rgba(0,0,0,0.5);
+  color: var(--gold2);
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 9.5px;
+  font-weight: 700;
+  border: 1px solid rgba(212,180,74,0.3);
+}
+
+/* ─── Stat cards ─── */
 .statRow {
   display: flex;
   flex-wrap: wrap;
@@ -45,6 +95,7 @@
 .scGold .statVal { color: var(--gold2); }
 .scBlue .statVal { color: #93c5fd; }
 
+/* ─── Toolbar ─── */
 .toolbar {
   display: flex;
   gap: 10px;
@@ -91,6 +142,7 @@
   gap: 14px;
 }
 
+/* ─── Table ─── */
 .table {
   width: 100%;
   border-collapse: collapse;
@@ -118,6 +170,20 @@
 }
 .table tbody tr:last-child td { border-bottom: none; }
 
+.linkName {
+  background: none;
+  border: none;
+  color: var(--gold2);
+  font-weight: 700;
+  font-size: 13px;
+  cursor: pointer;
+  padding: 0;
+  font-family: inherit;
+  text-decoration: underline;
+  text-decoration-color: rgba(212,180,74,0.3);
+}
+.linkName:hover { text-decoration-color: var(--gold2); }
+
 .typeChip {
   display: inline-block;
   padding: 3px 9px;
@@ -127,6 +193,19 @@
   border-radius: 4px;
   font-size: 11px;
   white-space: nowrap;
+}
+
+.payeTag {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px; height: 20px;
+  border-radius: 50%;
+  background: rgba(134,239,172,0.12);
+  color: #86efac;
+  border: 1px solid rgba(134,239,172,0.4);
+  font-size: 11px;
+  font-weight: 700;
 }
 
 .mono {
@@ -144,8 +223,10 @@
   color: var(--text);
   white-space: nowrap;
 }
-.amtImpot { color: #86efac !important; }
+.amtPos { color: #86efac !important; }
+.amtNeg { color: #fca5a5 !important; }
 
+.rowActions { display: flex; gap: 6px; align-items: center; }
 .deleteBtn {
   padding: 5px 7px;
   border-radius: 4px;
@@ -155,3 +236,75 @@
   cursor: pointer;
 }
 .deleteBtn:hover { color: var(--red); background: rgba(239,68,68,0.1); }
+
+.paieHelp {
+  margin-top: 14px;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--text2);
+  padding: 10px 14px;
+  background: rgba(212,180,74,0.05);
+  border: 1px solid rgba(212,180,74,0.2);
+  border-radius: 6px;
+}
+
+/* ─── Form ─── */
+.formFields { display: flex; flex-direction: column; gap: 14px; }
+.formFields label {
+  display: flex; flex-direction: column; gap: 5px;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase;
+  color: rgba(212,180,74,0.85); font-weight: 700;
+}
+.formFields input, .formFields textarea, .formFields select {
+  padding: 10px 12px;
+  background: rgba(0,0,0,0.4);
+  border: 1px solid rgba(180,140,20,0.35);
+  border-radius: 6px;
+  color: var(--text);
+  font-size: 13px;
+  font-family: 'Barlow', sans-serif;
+  text-transform: none; letter-spacing: normal; font-weight: normal;
+}
+.formFields input:focus, .formFields textarea:focus, .formFields select:focus {
+  outline: none;
+  border-color: rgba(212,180,74,0.65);
+  background: rgba(0,0,0,0.55);
+  box-shadow: 0 0 0 3px rgba(212,180,74,0.1);
+}
+.formFields textarea { resize: vertical; min-height: 50px; }
+
+.help {
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--text2);
+  margin: -6px 0 0 0;
+}
+.help strong { color: var(--gold2); }
+
+/* ─── Détail fiche ─── */
+.ficheHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px;
+  margin-bottom: 16px;
+  background: linear-gradient(135deg, #1a1308 0%, #221a0e 100%);
+  border: 1px solid rgba(212,180,74,0.35);
+  border-radius: 10px;
+}
+.ficheGrade {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 6px;
+}
+.ficheSolde {
+  font-family: 'Cinzel', serif;
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--gold2);
+  text-shadow: 0 2px 12px rgba(212,180,74,0.25);
+}
