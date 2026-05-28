@@ -52,8 +52,9 @@ import {
 import {
   type TresorCentral, type TresorMouvement, type TresorRetrait,
   type ComptaData, type ComptaTransaction,
-  TRESOR_DEFAULT_RATE, currentWeek,
+  TRESOR_DEFAULT_RATE,
 } from '@/types/compta';
+import { currentWeek } from '@/types/fiscal';
 
 import styles from './page.module.css';
 
