@@ -7,7 +7,7 @@
  *
  * Permissions :
  * - Voir : tout le monde (connecté)
- * - Marquer payé / annuler / config barème : TOUS LES MEMBRES POLICE + Admin
+ * - Marquer payé / annuler / config barème : MEMBRES POLICE + Direction Kōeki + Admin
  *
  * 📜 Audit log : paiements, annulations, suppressions et modifications
  *    du barème sont tracés dans /audit_log Firebase.
@@ -53,7 +53,7 @@ type Tab = 'registre' | 'historique' | 'bareme';
 export default function ImpotsPage() {
   const u = useCurrentUser();
   const CURRENT_USER = u.displayName;
-  const canEdit = u.can.membreBranche('police');
+  const canEdit = u.can.membreBranche('police') || u.can.koeki.renflouerBDM();
 
   const { data: gradesData } = useFirebaseValue<GradeBareme[] | null>(FB_GRADES);
   const { data: paiementsData } = useFirebaseValue<PaiementImpot[] | null>(FB_PAIEMENTS);
@@ -400,11 +400,11 @@ export default function ImpotsPage() {
         title="Impôts"
         subtitle={`Registre fiscal — Semaine ${currentSemaine}`}
         actions={
-          <RequireMembreBranche branche="police">
+          canEdit ? (
             <Button variant="outline" onClick={openBareme}>
               <Settings size={14} /> Configurer le barème
             </Button>
-          </RequireMembreBranche>
+          ) : null
         }
       >
         <div className={styles.statRow}>
