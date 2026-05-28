@@ -18,6 +18,10 @@
  *    - Rang Jonin (niveau 7) et au-dessus
  *    - Membres du Conseil du Vent
  *
+ *    Cette règle s'applique aussi à Kōeki (can.koeki.*) : un Jonin+
+ *    ou Conseil du Vent a tous les droits Kōeki comme pour les
+ *    autres branches.
+ *
  *    Les pages "admin technique" (Maintenance, Whitelist) restent
  *    réservées aux admins techniques (isAdmin) UNIQUEMENT.
  *
@@ -31,12 +35,18 @@
  *   const { user, can } = useCurrentUser();
  *   if (can.adminBranche('police')) { ... }
  *   if (can.membreBranche('police')) { ... }
+ *   if (can.koeki.gererSocietes()) { ... }
  * ════════════════════════════════════════════════════════════════
  */
 
 import { useSession } from 'next-auth/react';
 import { useCallback, useEffect, useRef } from 'react';
 import type { IntranetUser } from '@/lib/roles';
+import {
+  canVoirEconomie, canGererSocietes, canDeclarerCA, canModifierTaux,
+  canRenflouerBDM, canVoirMarche, canGererMarche, canVoirComptaGlobale,
+  canPointerCompta, canVoirSaCompta, canVoirParametres, isKoeki,
+} from '@/lib/roles';
 
 // Intervalle de refresh côté client (5 minutes pour éviter le rate limit Discord)
 const CLIENT_REFRESH_INTERVAL = 5 * 60 * 1000;
@@ -45,11 +55,27 @@ const CLIENT_REFRESH_INTERVAL = 5 * 60 * 1000;
 //    7 = Jonin (et au-dessus : Sairin, Commandant Jonin, Bras droit, Kazekage)
 const JONIN_NIVEAU = 7;
 
+export type KoekiPermissions = {
+  acces: () => boolean;
+  voirEconomie: () => boolean;
+  gererSocietes: () => boolean;
+  declarerCA: () => boolean;
+  modifierTaux: () => boolean;
+  renflouerBDM: () => boolean;
+  voirMarche: () => boolean;
+  gererMarche: () => boolean;
+  voirComptaGlobale: () => boolean;
+  pointerCompta: () => boolean;
+  voirSaCompta: () => boolean;
+  voirParametres: () => boolean;
+};
+
 export type Permissions = {
   adminBranche: (slug: string | string[]) => boolean;
   membreBranche: (slug: string | string[]) => boolean;
   adminGeneral: () => boolean;
   rangAuMoins: (niveauMin: number) => boolean;
+  koeki: KoekiPermissions;
 };
 
 function getInitials(name: string | undefined): string {
@@ -111,6 +137,11 @@ export function useCurrentUser() {
       intranetUser.isConseilDuVent
     );
 
+  // Court-circuit pour Kōeki : isAdmin technique OU hasAllPerm (Jonin+/Conseil).
+  // On le passe comme 2e argument des helpers purs de roles.ts.
+  const koekiOverride = !!intranetUser && (intranetUser.isAdmin || hasAllPerm);
+  const koekiInfo = intranetUser?.koeki ?? null;
+
   const can: Permissions = {
     adminBranche: (slug: string | string[]) => {
       if (!intranetUser) return false;
@@ -149,6 +180,24 @@ export function useCurrentUser() {
     rangAuMoins: (niveauMin: number) => {
       if (!intranetUser || !intranetUser.rang) return false;
       return intranetUser.rang.niveau >= niveauMin;
+    },
+
+    // ─── KŌEKI ───
+    // Chaque helper passe koekiOverride (isAdmin OU hasAllPerm) comme 2e arg,
+    // de sorte qu'un Jonin+/Conseil du Vent a tous les droits Kōeki.
+    koeki: {
+      acces: () => isKoeki(koekiInfo, koekiOverride),
+      voirEconomie: () => canVoirEconomie(koekiInfo, koekiOverride),
+      gererSocietes: () => canGererSocietes(koekiInfo, koekiOverride),
+      declarerCA: () => canDeclarerCA(koekiInfo, koekiOverride),
+      modifierTaux: () => canModifierTaux(koekiInfo, koekiOverride),
+      renflouerBDM: () => canRenflouerBDM(koekiInfo, koekiOverride),
+      voirMarche: () => canVoirMarche(koekiInfo, koekiOverride),
+      gererMarche: () => canGererMarche(koekiInfo, koekiOverride),
+      voirComptaGlobale: () => canVoirComptaGlobale(koekiInfo, koekiOverride),
+      pointerCompta: () => canPointerCompta(koekiInfo, koekiOverride),
+      voirSaCompta: () => canVoirSaCompta(koekiInfo, koekiOverride),
+      voirParametres: () => canVoirParametres(koekiInfo, koekiOverride),
     },
   };
 
