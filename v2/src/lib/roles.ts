@@ -113,6 +113,149 @@ export const CO_GERANT_TO_BRANCHE: Record<string, string> = {
   [CO_GERANTS.RENSEIGNEMENT]: "renseignement",
 };
 
+// ═══════════════════════════════════════════════════════════════════
+//  KŌEKI — Grades, mapping, permissions
+// ═══════════════════════════════════════════════════════════════════
+// ⚠️ PLACEHOLDERS : les 8 IDs ci-dessous sont des placeholders. Les rôles
+//    Discord ne sont pas encore créés (Phase 6). Tant qu'ils valent ces
+//    chaînes, AUCUN membre ne matchera — c'est volontaire et sûr.
+//    Remplace-les par les vrais IDs une fois les rôles créés.
+
+export const KOEKI_ROLES = {
+  GERANT: "KOEKI_GERANT_PLACEHOLDER",
+  CO_GERANT: "KOEKI_CO_GERANT_PLACEHOLDER",
+  SUPERVISEUR_ECO: "KOEKI_SUPERVISEUR_ECO_PLACEHOLDER",
+  SUPERVISEUR_EVENT: "KOEKI_SUPERVISEUR_EVENT_PLACEHOLDER",
+  CHEF_ECO: "KOEKI_CHEF_ECO_PLACEHOLDER",
+  CHEF_EVENT: "KOEKI_CHEF_EVENT_PLACEHOLDER",
+  MEMBRE_ECO: "KOEKI_MEMBRE_ECO_PLACEHOLDER",
+  MEMBRE_EVENT: "KOEKI_MEMBRE_EVENT_PLACEHOLDER",
+} as const;
+
+// Type de grade (aligné sur KoekiGrade dans types/koeki.ts)
+export type KoekiGrade =
+  | 'gerant' | 'co-gerant'
+  | 'superviseur-eco' | 'superviseur-event'
+  | 'chef-eco' | 'chef-event'
+  | 'membre-eco' | 'membre-event';
+
+// Pôle d'appartenance, dérivé du grade
+export type KoekiPole = 'economie' | 'evenementiel' | 'both';
+
+// Mapping ID Discord → grade Kōeki.
+// Ordre = priorité (du + haut au + bas) : si un membre cumule plusieurs
+// rôles Kōeki, on retient le plus élevé.
+const KOEKI_ROLE_TO_GRADE: { id: string; grade: KoekiGrade }[] = [
+  { id: KOEKI_ROLES.GERANT, grade: 'gerant' },
+  { id: KOEKI_ROLES.CO_GERANT, grade: 'co-gerant' },
+  { id: KOEKI_ROLES.SUPERVISEUR_ECO, grade: 'superviseur-eco' },
+  { id: KOEKI_ROLES.SUPERVISEUR_EVENT, grade: 'superviseur-event' },
+  { id: KOEKI_ROLES.CHEF_ECO, grade: 'chef-eco' },
+  { id: KOEKI_ROLES.CHEF_EVENT, grade: 'chef-event' },
+  { id: KOEKI_ROLES.MEMBRE_ECO, grade: 'membre-eco' },
+  { id: KOEKI_ROLES.MEMBRE_EVENT, grade: 'membre-event' },
+];
+
+// Pôle de chaque grade
+const KOEKI_GRADE_POLE: Record<KoekiGrade, KoekiPole> = {
+  'gerant': 'both',
+  'co-gerant': 'both',
+  'superviseur-eco': 'economie',
+  'superviseur-event': 'evenementiel',
+  'chef-eco': 'economie',
+  'chef-event': 'evenementiel',
+  'membre-eco': 'economie',
+  'membre-event': 'evenementiel',
+};
+
+export type KoekiInfo = {
+  grade: KoekiGrade;
+  pole: KoekiPole;
+} | null;
+
+/**
+ * Récupère le grade Kōeki le plus élevé d'un user (null si aucun).
+ */
+export function getKoekiGrade(roleIds: string[]): KoekiInfo {
+  for (const { id, grade } of KOEKI_ROLE_TO_GRADE) {
+    if (roleIds.includes(id)) {
+      return { grade, pole: KOEKI_GRADE_POLE[grade] };
+    }
+  }
+  return null;
+}
+
+// ─── HELPERS DE PERMISSION KŌEKI (fonctions pures) ──────────────────
+// Convention : (koeki: KoekiInfo, isAdmin = false). isAdmin court-circuite en true.
+// Implémente la table du brief.
+
+const KOEKI_DIRECTION: KoekiGrade[] = ['gerant', 'co-gerant'];
+
+function koekiHas(koeki: KoekiInfo, grades: KoekiGrade[]): boolean {
+  return !!koeki && grades.includes(koeki.grade);
+}
+
+/** Accès au module Kōeki en général (n'importe quel grade ou admin). */
+export function isKoeki(koeki: KoekiInfo, isAdmin = false): boolean {
+  return isAdmin || !!koeki;
+}
+
+// ── ÉCONOMIE : sociétés ──
+export function canVoirEconomie(koeki: KoekiInfo, isAdmin = false): boolean {
+  return isAdmin || koekiHas(koeki, [
+    'gerant', 'co-gerant', 'superviseur-eco', 'chef-eco', 'membre-eco',
+  ]);
+}
+export function canGererSocietes(koeki: KoekiInfo, isAdmin = false): boolean {
+  return isAdmin || koekiHas(koeki, [
+    'gerant', 'co-gerant', 'superviseur-eco', 'chef-eco',
+  ]);
+}
+export function canDeclarerCA(koeki: KoekiInfo, isAdmin = false): boolean {
+  return isAdmin || koekiHas(koeki, [
+    'gerant', 'co-gerant', 'superviseur-eco', 'chef-eco', 'membre-eco',
+  ]);
+}
+export function canModifierTaux(koeki: KoekiInfo, isAdmin = false): boolean {
+  return isAdmin || koekiHas(koeki, ['gerant', 'co-gerant', 'superviseur-eco']);
+}
+export function canRenflouerBDM(koeki: KoekiInfo, isAdmin = false): boolean {
+  return isAdmin || koekiHas(koeki, KOEKI_DIRECTION);
+}
+
+// ── MARCHÉ ──
+export function canVoirMarche(koeki: KoekiInfo, isAdmin = false): boolean {
+  return isAdmin || koekiHas(koeki, [
+    'gerant', 'co-gerant', 'superviseur-event', 'chef-event', 'membre-event',
+  ]);
+}
+export function canGererMarche(koeki: KoekiInfo, isAdmin = false): boolean {
+  return isAdmin || koekiHas(koeki, [
+    'gerant', 'co-gerant', 'superviseur-event', 'chef-event',
+  ]);
+}
+
+// ── COMPTAS INTERNES ──
+export function canVoirComptaGlobale(koeki: KoekiInfo, isAdmin = false): boolean {
+  return isAdmin || koekiHas(koeki, [
+    'gerant', 'co-gerant', 'superviseur-eco', 'superviseur-event',
+    'chef-eco', 'chef-event',
+  ]);
+}
+export function canPointerCompta(koeki: KoekiInfo, isAdmin = false): boolean {
+  return isAdmin || koekiHas(koeki, [
+    'gerant', 'co-gerant', 'superviseur-eco', 'superviseur-event',
+  ]);
+}
+export function canVoirSaCompta(koeki: KoekiInfo, isAdmin = false): boolean {
+  return isAdmin || !!koeki;
+}
+
+// ── PARAMÈTRES ──
+export function canVoirParametres(koeki: KoekiInfo, isAdmin = false): boolean {
+  return canModifierTaux(koeki, isAdmin);
+}
+
 // ─── RÔLES SPÉCIAUX / INSTITUTIONNELS ───────────────────────────────
 export const SPECIAUX = {
   CONSEIL_DU_VENT: "1380772738528186375",
@@ -169,6 +312,10 @@ export type IntranetUser = {
   coGerantDe: string[];
   /** Clan d'appartenance (null si aucun) */
   clan: string | null;
+
+  // ─── KŌEKI ───
+  /** Grade Kōeki le plus élevé + pôle (null si pas membre Kōeki) */
+  koeki: KoekiInfo;
 
   /** Drapeaux d'accès */
   /** Rôle RP : a vraiment le rôle Discord Kazekage */
@@ -262,6 +409,9 @@ export function buildIntranetUser(params: {
     gerantDe: getGerantDe(roleIds),
     coGerantDe: getCoGerantDe(roleIds),
     clan: getClan(roleIds),
+
+    // ─── KŌEKI ───
+    koeki: getKoekiGrade(roleIds),
 
     isKazekage: roleIds.includes(RANGS.KAZEKAGE),
     isAdmin: isWhitelisted || roleIds.includes(RANGS.KAZEKAGE),
