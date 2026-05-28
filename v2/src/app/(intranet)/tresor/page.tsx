@@ -48,7 +48,7 @@ export default function TresorCentralPage() {
   const u = useCurrentUser();
   const CURRENT_USER = u.displayName;
   const CURRENT_USER_ID = u.id;
-  const canEdit = u.can.membreBranche('police');
+  const canEdit = u.can.membreBranche('police') || u.can.koeki.renflouerBDM();
 
   const { data, loading } = useFirebaseValue<TresorCentral | null>('tresorCentral');
 
