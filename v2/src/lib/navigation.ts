@@ -100,14 +100,14 @@ export const NAV_SECTIONS: NavSection[] = [
       { label: 'Marché', href: '/koeki/marche', icon: 'Store' },
       { label: 'Comptas', href: '/koeki/compta', icon: 'Wallet' },
       { label: 'Paramètres', href: '/koeki/parametres', icon: 'Settings' },
+      { label: 'Impôts', href: '/impots', icon: 'Receipt' },
+      { label: 'Trésor Central', href: '/tresor', icon: 'Landmark' },
     ],
   },
   {
     title: 'ADMINISTRATION',
     items: [
       { label: 'Équipes', href: '/equipes', icon: 'Users2' },
-      { label: 'Impôts', href: '/impots', icon: 'Receipt' },
-      { label: 'Trésor Central', href: '/tresor', icon: 'Landmark' },
       { label: 'Membres', href: '/admin/membres', icon: 'Users' },
       { label: 'Whitelist', href: '/admin/whitelist', icon: 'ShieldCheck' },
       { label: 'Maintenance', href: '/admin/maintenance', icon: 'Wrench' },
