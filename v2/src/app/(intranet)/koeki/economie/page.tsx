@@ -472,6 +472,21 @@ export default function KoekiEconomiePage() {
     }
   }
 
+  // ─── Note société (édition rapide depuis le détail) ──────────
+  async function handleSaveNoteSociete(s: Societe, note: string) {
+    try {
+      const updated: Societe = { ...s, notes: note.trim() || undefined };
+      await dbSet(FB_SOCIETES, societes.map((x) => (x.id === s.id ? updated : x)));
+      setDetailSociete(updated);
+      logAction({
+        who: CURRENT_USER, whoId: u.id ?? null,
+        action: 'update', target: 'koeki:societe', targetId: s.id,
+        detail: `Kōeki — Note modifiée pour la société "${s.nom}"`,
+      });
+      toast.success('Note enregistrée');
+    } catch { toast.error('Erreur'); }
+  }
+
   // Aperçu de l'impôt dans le modal de déclaration
   const declarePreview = useMemo(() => {
     if (!declareSociete) return null;
@@ -757,6 +772,8 @@ export default function KoekiEconomiePage() {
             societe={detailSociete}
             taux={tauxEffectif(detailSociete, params)}
             declarations={declarations.filter((d) => d.societeId === detailSociete.id)}
+            canEdit={canGerer}
+            onSaveNote={(note) => handleSaveNoteSociete(detailSociete, note)}
           />
         )}
       </Modal>
@@ -764,12 +781,16 @@ export default function KoekiEconomiePage() {
   );
 }
 
-// ─── Composant détail société : stats + mini-graphe CA + historique ───
-function SocieteDetail({ societe, taux, declarations }: {
+// ─── Composant détail société : stats + mini-graphe CA + historique + note ───
+function SocieteDetail({ societe, taux, declarations, canEdit = false, onSaveNote }: {
   societe: Societe;
   taux: number;
   declarations: DeclarationCA[];
+  canEdit?: boolean;
+  onSaveNote?: (note: string) => void;
 }) {
+  const [noteDraft, setNoteDraft] = useState(societe.notes || '');
+  const noteModifiee = noteDraft.trim() !== (societe.notes || '').trim();
   const sorted = [...declarations].sort((a, b) => b.date - a.date);
   const totalCA = declarations.reduce((s, d) => s + (d.chiffreAffaires || 0), 0);
   const totalImpot = declarations.reduce((s, d) => s + (d.impot || 0), 0);
@@ -797,6 +818,29 @@ function SocieteDetail({ societe, taux, declarations }: {
         </div>
         <div className={styles.detailOwner}>Propriétaire : <strong>{societe.proprietaireNom || '—'}</strong></div>
         <div className={styles.detailOwner}>Taux effectif : <strong>{taux}%</strong> {societe.tauxImposition !== null ? '(personnalisé)' : '(global)'}</div>
+      </div>
+
+      {/* Note / mémo */}
+      <div className={styles.noteBox}>
+        <div className={styles.noteLabel}>📝 Note</div>
+        {canEdit ? (
+          <>
+            <textarea
+              className={styles.noteTextarea}
+              rows={2}
+              value={noteDraft}
+              onChange={(e) => setNoteDraft(e.target.value)}
+              placeholder="Ajouter une note sur cette société…"
+            />
+            {noteModifiee && (
+              <div className={styles.noteActions}>
+                <Button size="sm" onClick={() => onSaveNote?.(noteDraft)}><Save size={12} /> Enregistrer la note</Button>
+              </div>
+            )}
+          </>
+        ) : (
+          <div className={styles.noteReadonly}>{societe.notes?.trim() || 'Aucune note.'}</div>
+        )}
       </div>
 
       {/* Stats */}
