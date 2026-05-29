@@ -225,6 +225,7 @@ export interface ComptaKoeki {
   mouvements: MouvementCompta[];
   solde: number;                 // recalculable depuis mouvements, dénormalisé pour affichage
   dernierVersement?: string;     // semaine ISO du dernier versement de paie (anti-doublon)
+  notes?: string;                // note/mémo libre sur le membre
 }
 
 /**
