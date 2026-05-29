@@ -17,7 +17,7 @@ import Link from 'next/link';
 import {
   Landmark, Building2, Receipt, Store, Users, Banknote,
   TrendingUp, TrendingDown, ArrowRight, Wallet, Coins, Handshake, CheckCircle2,
-  PieChart, LineChart, BarChart3,
+  PieChart, LineChart, BarChart3, AlertTriangle,
 } from 'lucide-react';
 import { useFirebaseValue } from '@/hooks/useFirebaseValue';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
@@ -104,6 +104,15 @@ export default function KoekiDashboardPage() {
     const totalCA = declarations.reduce((s, d) => s + (d.chiffreAffaires || 0), 0);
     return { totalImpot, semaineImpot, totalCA, count: declarations.length };
   }, [declarations, semaine]);
+
+  // Relance fiscale : sociétés actives qui n'ont pas déclaré cette semaine
+  const relanceStats = useMemo(() => {
+    const declareSet = new Set<string>();
+    for (const d of declarations) if (d.semaine === semaine && d.societeId) declareSet.add(d.societeId);
+    const actives = societes.filter((s) => s.actif !== false);
+    const aJour = actives.filter((s) => declareSet.has(s.id)).length;
+    return { total: actives.length, aJour, aRelancer: actives.length - aJour };
+  }, [societes, declarations, semaine]);
 
   const marcheStats = useMemo(() => {
     const ouvertes = demandes.filter((d) => d.statut === 'ouverte').length;
@@ -232,6 +241,19 @@ export default function KoekiDashboardPage() {
           <div className={styles.blockBreak}><span className={styles.miniStat}>Cumul de toutes les déclarations</span></div>
           <div className={styles.blockNote}>Taux de prélèvement Trésor : {tresor.prelevementRate}%</div>
         </div>
+
+        <Link href="/koeki/economie" className={styles.block}>
+          <div className={styles.blockHead}><AlertTriangle size={16} /><span>Relance fiscale</span></div>
+          <div className={styles.blockBig} style={{ color: relanceStats.aRelancer > 0 ? '#fca5a5' : '#86efac' }}>
+            {relanceStats.aRelancer}<span className={styles.bigUnit}> à relancer</span>
+          </div>
+          <div className={styles.blockBreak}>
+            <span className={styles.miniStat}>{relanceStats.aJour}/{relanceStats.total} ont déclaré cette semaine</span>
+          </div>
+          <div className={styles.blockGo}>
+            {relanceStats.aRelancer > 0 ? 'Voir qui relancer' : 'Tout le monde est à jour'} <ArrowRight size={12} />
+          </div>
+        </Link>
       </div>
 
       {/* ─── GRAPHIQUES ─── */}
