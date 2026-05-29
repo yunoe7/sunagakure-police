@@ -13,7 +13,7 @@
 import { useMemo, useState } from 'react';
 import {
   Plus, Trash2, Search, Receipt, Coins, Users, Wallet, Save,
-  Banknote, UserPlus, Link2, Pencil,
+  Banknote, UserPlus, Link2, Pencil, CalendarClock,
 } from 'lucide-react';
 import { useFirebaseValue } from '@/hooks/useFirebaseValue';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
@@ -53,7 +53,7 @@ const GRADES_LISTE: KoekiGrade[] = [
   'chef-eco', 'chef-event', 'membre-eco', 'membre-event',
 ];
 
-type Tab = 'membres' | 'declarations';
+type Tab = 'membres' | 'declarations' | 'paies';
 type MembreConnu = { discordId: string; username: string };
 
 export default function KoekiComptaPage() {
@@ -138,6 +138,37 @@ export default function KoekiComptaPage() {
   }), [tresorData]);
 
   const semaine = currentWeek();
+
+  // ─── Historique des paies versées (regroupées par semaine) ───
+  const historiquePaies = useMemo(() => {
+    type Ligne = { username: string; montant: number; date: number; organisateur: boolean };
+    const parSemaine = new Map<string, { total: number; lignes: Ligne[] }>();
+    for (const c of comptas) {
+      const mvts = Array.isArray(c.mouvements) ? c.mouvements : [];
+      for (const m of mvts) {
+        if (m.type !== 'paie') continue;
+        const sem = m.semaine || '—';
+        if (!parSemaine.has(sem)) parSemaine.set(sem, { total: 0, lignes: [] });
+        const entry = parSemaine.get(sem)!;
+        entry.total += m.montant || 0;
+        entry.lignes.push({
+          username: c.username || c.discordId,
+          montant: m.montant || 0,
+          date: m.date,
+          organisateur: /organisateur/i.test(m.motif || ''),
+        });
+      }
+    }
+    const semaines = Array.from(parSemaine.entries())
+      .map(([sem, v]) => ({ semaine: sem, total: v.total, count: v.lignes.length, lignes: v.lignes.sort((a, b) => b.montant - a.montant) }))
+      .sort((a, b) => b.semaine.localeCompare(a.semaine));
+    const totalGlobal = semaines.reduce((acc, x) => acc + x.total, 0);
+    // Graphe : 8 dernières semaines en ordre chronologique
+    const chrono = [...semaines].sort((a, b) => a.semaine.localeCompare(b.semaine)).slice(-8);
+    const maxSem = chrono.reduce((m, x) => Math.max(m, x.total), 0);
+    return { semaines, totalGlobal, chrono, maxSem };
+  }, [comptas]);
+
   const maFiche = useMemo(() => comptas.find((c) => c.discordId === CURRENT_USER_ID) ?? null, [comptas, CURRENT_USER_ID]);
 
   async function persistComptas(next: ComptaKoeki[]) { await dbSet(FB_COMPTAS, next); }
@@ -441,6 +472,7 @@ export default function KoekiComptaPage() {
         <div className={styles.tabs}>
           <button className={`${styles.tab} ${tab === 'membres' ? styles.tabActive : ''}`} onClick={() => setTab('membres')}><Users size={13} /> Fiches membres <span className={styles.tabCount}>{comptas.length}</span></button>
           <button className={`${styles.tab} ${tab === 'declarations' ? styles.tabActive : ''}`} onClick={() => setTab('declarations')}><Receipt size={13} /> Déclarations CA <span className={styles.tabCount}>{declarations.length}</span></button>
+          <button className={`${styles.tab} ${tab === 'paies' ? styles.tabActive : ''}`} onClick={() => setTab('paies')}><Banknote size={13} /> Historique des paies <span className={styles.tabCount}>{historiquePaies.semaines.length}</span></button>
         </div>
 
         {tab === 'membres' && (
@@ -524,6 +556,52 @@ export default function KoekiComptaPage() {
                   ))}
                 </tbody>
               </table>
+            )}
+          </>
+        )}
+
+        {tab === 'paies' && (
+          <>
+            <div className={styles.statRow}>
+              <div className={`${styles.statCard} ${styles.scGold}`}><Banknote size={16} /><div className={styles.statVal}>{fmtMoney(historiquePaies.totalGlobal)} ₽</div><div className={styles.statLbl}>Total versé (toutes semaines)</div></div>
+              <div className={`${styles.statCard} ${styles.scBlue}`}><CalendarClock size={16} /><div className={styles.statVal}>{historiquePaies.semaines.length}</div><div className={styles.statLbl}>Semaines de paie</div></div>
+            </div>
+
+            {historiquePaies.chrono.length >= 2 && (
+              <div className={styles.paieChart}>
+                <div className={styles.paieChartTitle}><Banknote size={13} /> Évolution du total versé par semaine</div>
+                <PaieBars chrono={historiquePaies.chrono} max={historiquePaies.maxSem} />
+              </div>
+            )}
+
+            {historiquePaies.semaines.length === 0 ? (
+              <div className={styles.empty}><Banknote size={32} style={{ opacity: 0.3 }} /><p>Aucune paie versée pour l'instant. Les versements depuis « Verser la paie » apparaîtront ici, regroupés par semaine.</p></div>
+            ) : (
+              <div className={styles.paieList}>
+                {historiquePaies.semaines.map((sem) => (
+                  <div key={sem.semaine} className={styles.paieWeek}>
+                    <div className={styles.paieWeekHead}>
+                      <div className={styles.paieWeekTitle}><CalendarClock size={14} /> Semaine {sem.semaine}</div>
+                      <div className={styles.paieWeekStats}>
+                        <span className={styles.paieWeekTotal}>{fmtMoney(sem.total)} ₽</span>
+                        <span className={styles.paieWeekCount}>{sem.count} membre{sem.count > 1 ? 's' : ''}</span>
+                      </div>
+                    </div>
+                    <table className={styles.table}>
+                      <thead><tr><th>Membre</th><th>Date</th><th style={{ textAlign: 'right' }}>Montant</th></tr></thead>
+                      <tbody>
+                        {sem.lignes.map((l, i) => (
+                          <tr key={i}>
+                            <td><strong>{l.username}</strong>{l.organisateur && <span className={styles.eventBadge}>event</span>}</td>
+                            <td className={styles.mono}>{fmtDateTimeFR(l.date)}</td>
+                            <td className={`${styles.amount} ${styles.amtPos}`} style={{ textAlign: 'right' }}>+{fmtMoney(l.montant)} ₽</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                ))}
+              </div>
             )}
           </>
         )}
@@ -653,5 +731,32 @@ function FicheDetail({ fiche, canEdit = false, onEditMvt, onDeleteMvt, onSaveNot
         </table>
       )}
     </div>
+  );
+}
+
+
+// ─── Graphe SVG : total de paie versé par semaine (barres) ───
+function PaieBars({ chrono, max }: { chrono: { semaine: string; total: number }[]; max: number }) {
+  const W = 460, H = 130, padB = 26, padT = 16, padL = 12, padR = 12;
+  const innerW = W - padL - padR;
+  const innerH = H - padB - padT;
+  const slot = innerW / Math.max(1, chrono.length);
+  const barW = Math.min(48, slot * 0.55);
+  const y = (v: number) => padT + innerH - (max === 0 ? 0 : (v / max) * innerH);
+  return (
+    <svg width="100%" height={H} viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="xMidYMid meet">
+      <line x1={padL} y1={padT + innerH} x2={W - padR} y2={padT + innerH} stroke="#9a8c6a" strokeOpacity="0.2" strokeWidth="1" />
+      {chrono.map((d, i) => {
+        const cx = padL + slot * i + slot / 2;
+        const h = padT + innerH - y(d.total);
+        return (
+          <g key={d.semaine}>
+            <rect x={cx - barW / 2} y={y(d.total)} width={barW} height={h} rx="3" fill="#d4b44a" fillOpacity="0.85" />
+            <text x={cx} y={y(d.total) - 5} textAnchor="middle" fontSize="8" fontWeight="700" fill="#e8dcc0" fontFamily="monospace">{fmtMoney(d.total)}</text>
+            <text x={cx} y={H - 9} textAnchor="middle" fontSize="7.5" fill="#9a8c6a" fontFamily="monospace">{d.semaine.replace(/^\d{4}-/, '')}</text>
+          </g>
+        );
+      })}
+    </svg>
   );
 }
