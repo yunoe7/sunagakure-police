@@ -10,6 +10,10 @@
  *   (n'importe quel ninja peut prendre une mission affichée)
  * - Créer / Modifier / Supprimer : Membres Bureau des missions
  *   (le Bureau publie, les ninjas exécutent)
+ *
+ * 🆕 Lien Discord : à la création, on peut coller un lien vers le salon
+ *    ou le message Discord de la mission. Un bouton "Voir sur Discord"
+ *    apparaît alors sur la carte pour rediriger les ninjas intéressés.
  * ════════════════════════════════════════════════════════════════
  */
 
@@ -29,6 +33,7 @@ import {
   CheckCircle2,
   XCircle,
   Play,
+  ExternalLink,
 } from 'lucide-react';
 
 import { useFirebaseValue } from '@/hooks/useFirebaseValue';
@@ -51,6 +56,7 @@ import {
   MISSION_STATUT_LABEL,
   fmtMoney,
   fmtDateFR,
+  isDiscordLink,
 } from '@/types/mission';
 
 import styles from './page.module.css';
@@ -170,6 +176,12 @@ export default function MissionsPage() {
       toast.error('Le rang est obligatoire');
       return;
     }
+    // 🆕 Validation souple du lien Discord (s'il est renseigné)
+    const lien = form.discordLink?.trim();
+    if (lien && !isDiscordLink(lien)) {
+      toast.error('Le lien Discord doit commencer par https://discord.com/channels/…');
+      return;
+    }
 
     try {
       const list = getCurrentList();
@@ -178,7 +190,12 @@ export default function MissionsPage() {
       if (editingId) {
         const idx = list.findIndex((m) => m.id === editingId);
         if (idx === -1) throw new Error('Mission introuvable');
-        list[idx] = { ...list[idx], ...form, id: editingId } as Mission;
+        list[idx] = {
+          ...list[idx],
+          ...form,
+          id: editingId,
+          discordLink: lien || undefined,
+        } as Mission;
         await persistAll(list);
         toast.success('Mission mise à jour');
       } else {
@@ -192,6 +209,7 @@ export default function MissionsPage() {
           statut: 'ouverte',
           lieu: form.lieu?.trim() || undefined,
           deadline: form.deadline || undefined,
+          discordLink: lien || undefined,
           creePar: CURRENT_USER,
           creeLe: now,
           assignes: [],
@@ -485,6 +503,19 @@ export default function MissionsPage() {
                   )}
                 </div>
 
+                {/* 🆕 Lien Discord (si renseigné) */}
+                {m.discordLink && (
+                  <a
+                    className={styles.discordBtn}
+                    href={m.discordLink}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <ExternalLink size={12} /> Voir sur Discord
+                  </a>
+                )}
+
                 {/* Actions selon statut (ouvertes à tous) */}
                 <footer className={styles.actions}>
                   {m.statut === 'ouverte' && (
@@ -615,6 +646,21 @@ export default function MissionsPage() {
               />
             </label>
           </div>
+
+          {/* 🆕 Lien Discord */}
+          <label>
+            Lien Discord (optionnel)
+            <input
+              type="text"
+              value={form.discordLink ?? ''}
+              onChange={(e) => setForm({ ...form, discordLink: e.target.value })}
+              placeholder="https://discord.com/channels/…"
+            />
+            <span className={styles.fieldHint}>
+              Clic droit sur le salon ou le message dans Discord → « Copier le lien »,
+              puis colle-le ici. Les ninjas intéressés seront redirigés vers Discord.
+            </span>
+          </label>
         </div>
       </Modal>
     </>
