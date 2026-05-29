@@ -116,19 +116,22 @@ export const CO_GERANT_TO_BRANCHE: Record<string, string> = {
 // ═══════════════════════════════════════════════════════════════════
 //  KŌEKI — Grades, mapping, permissions
 // ═══════════════════════════════════════════════════════════════════
-// ⚠️ PLACEHOLDERS : les 8 IDs ci-dessous sont des placeholders. Les rôles
-//    Discord ne sont pas encore créés (Phase 6). Tant qu'ils valent ces
-//    chaînes, AUCUN membre ne matchera — c'est volontaire et sûr.
-//    Remplace-les par les vrais IDs une fois les rôles créés.
+// ✅ PHASE 6 (partielle) : 3 rôles Kōeki réellement créés et branchés :
+//      GERANT, CO_GERANT, et MEMBRE_ECO (= le rôle "Koeki" générique,
+//      membre simple qui voit tout le Kōeki sauf l'édition du Trésor).
+//    Les 5 autres restent des PLACEHOLDERS : tant qu'ils valent ces
+//    chaînes, aucun membre ne matchera (sûr). À remplacer plus tard
+//    si tu crées les rôles superviseurs / chefs / membre-event.
 
 export const KOEKI_ROLES = {
-  GERANT: "KOEKI_GERANT_PLACEHOLDER",
-  CO_GERANT: "KOEKI_CO_GERANT_PLACEHOLDER",
+  GERANT: "1509952675339567194",
+  CO_GERANT: "1509952850099441674",
   SUPERVISEUR_ECO: "KOEKI_SUPERVISEUR_ECO_PLACEHOLDER",
   SUPERVISEUR_EVENT: "KOEKI_SUPERVISEUR_EVENT_PLACEHOLDER",
   CHEF_ECO: "KOEKI_CHEF_ECO_PLACEHOLDER",
   CHEF_EVENT: "KOEKI_CHEF_EVENT_PLACEHOLDER",
-  MEMBRE_ECO: "KOEKI_MEMBRE_ECO_PLACEHOLDER",
+  // Rôle "Koeki" générique (membre simple, accès aux deux pôles, pas le Trésor)
+  MEMBRE_ECO: "1509952923357024286",
   MEMBRE_EVENT: "KOEKI_MEMBRE_EVENT_PLACEHOLDER",
 } as const;
 
@@ -191,6 +194,11 @@ export function getKoekiGrade(roleIds: string[]): KoekiInfo {
 
 const KOEKI_DIRECTION: KoekiGrade[] = ['gerant', 'co-gerant'];
 
+// Tous les grades "membre simple" (les deux pôles).
+// 🆕 Les membres voient TOUT le Kōeki (éco + event) en lecture, mais
+//    n'éditent rien de sensible (pas de gestion, pas de Trésor).
+const KOEKI_MEMBRES: KoekiGrade[] = ['membre-eco', 'membre-event'];
+
 function koekiHas(koeki: KoekiInfo, grades: KoekiGrade[]): boolean {
   return !!koeki && grades.includes(koeki.grade);
 }
@@ -201,9 +209,10 @@ export function isKoeki(koeki: KoekiInfo, isAdmin = false): boolean {
 }
 
 // ── ÉCONOMIE : sociétés ──
+// 🆕 Voir l'économie : direction + pôle éco + TOUS les membres (les deux pôles).
 export function canVoirEconomie(koeki: KoekiInfo, isAdmin = false): boolean {
   return isAdmin || koekiHas(koeki, [
-    'gerant', 'co-gerant', 'superviseur-eco', 'chef-eco', 'membre-eco',
+    'gerant', 'co-gerant', 'superviseur-eco', 'chef-eco', ...KOEKI_MEMBRES,
   ]);
 }
 export function canGererSocietes(koeki: KoekiInfo, isAdmin = false): boolean {
@@ -211,22 +220,26 @@ export function canGererSocietes(koeki: KoekiInfo, isAdmin = false): boolean {
     'gerant', 'co-gerant', 'superviseur-eco', 'chef-eco',
   ]);
 }
+// 🆕 Déclarer un CA : direction + pôle éco + tous les membres.
 export function canDeclarerCA(koeki: KoekiInfo, isAdmin = false): boolean {
   return isAdmin || koekiHas(koeki, [
-    'gerant', 'co-gerant', 'superviseur-eco', 'chef-eco', 'membre-eco',
+    'gerant', 'co-gerant', 'superviseur-eco', 'chef-eco', ...KOEKI_MEMBRES,
   ]);
 }
 export function canModifierTaux(koeki: KoekiInfo, isAdmin = false): boolean {
   return isAdmin || koekiHas(koeki, ['gerant', 'co-gerant', 'superviseur-eco']);
 }
+// Édition du Trésor / renflouement BDM : DIRECTION UNIQUEMENT (Gérant + Co-Gérant).
+// Les membres ne l'ont pas → Trésor en lecture seule pour eux.
 export function canRenflouerBDM(koeki: KoekiInfo, isAdmin = false): boolean {
   return isAdmin || koekiHas(koeki, KOEKI_DIRECTION);
 }
 
 // ── MARCHÉ ──
+// 🆕 Voir le marché : direction + pôle event + TOUS les membres (les deux pôles).
 export function canVoirMarche(koeki: KoekiInfo, isAdmin = false): boolean {
   return isAdmin || koekiHas(koeki, [
-    'gerant', 'co-gerant', 'superviseur-event', 'chef-event', 'membre-event',
+    'gerant', 'co-gerant', 'superviseur-event', 'chef-event', ...KOEKI_MEMBRES,
   ]);
 }
 export function canGererMarche(koeki: KoekiInfo, isAdmin = false): boolean {
