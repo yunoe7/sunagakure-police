@@ -58,6 +58,24 @@ const FB_PAIEMENTS = 'impots/paiements';
 type Tab = 'registre' | 'historique' | 'bareme';
 type CollecteMode = 'total' | 'tete';
 
+// Préfixe des mouvements Trésor issus de l'encart de collecte groupée
+const COLLECTE_PREFIX = 'TM-IMPOT-COLLECTE-';
+
+/**
+ * Calcule la semaine ISO (ex: "2026-W22") à partir d'un timestamp.
+ * Même algorithme que currentWeek() de @/types/fiscal, mais paramétrable
+ * par une date — currentWeek() ne prend pas d'argument, on en a besoin
+ * pour rattacher un mouvement Trésor passé à sa semaine.
+ */
+function isoWeekOf(ts: number): string {
+  const d = new Date(ts);
+  d.setHours(0, 0, 0, 0);
+  d.setDate(d.getDate() + 3 - ((d.getDay() + 6) % 7));
+  const week1 = new Date(d.getFullYear(), 0, 4);
+  const weekNum = 1 + Math.round(((d.getTime() - week1.getTime()) / 86400000 - 3 + ((week1.getDay() + 6) % 7)) / 7);
+  return `${d.getFullYear()}-W${String(weekNum).padStart(2, '0')}`;
+}
+
 export default function ImpotsPage() {
   const u = useCurrentUser();
   const CURRENT_USER = u.displayName;
@@ -164,13 +182,25 @@ export default function ImpotsPage() {
     return [...list].sort((a, b) => b.date - a.date);
   }, [paiements, search]);
 
+  // 💰 Somme des collectes groupées (encart) de la semaine courante.
+  // Repérées par le préfixe d'id COLLECTE_PREFIX, rattachées à leur
+  // semaine via isoWeekOf(date) puisque le mouvement n'a pas de champ semaine.
+  const collecteEncartSemaine = useMemo(() => {
+    return tresorCurrent.mouvements
+      .filter((m) => typeof m.id === 'string' && m.id.startsWith(COLLECTE_PREFIX))
+      .filter((m) => isoWeekOf(m.date) === currentSemaine)
+      .reduce((s, m) => s + (typeof m.amount === 'number' ? m.amount : 0), 0);
+  }, [tresorCurrent, currentSemaine]);
+
   const stats = useMemo(() => {
     const total = contribuables.length;
     const payes = contribuables.filter((c) => paiementsCurrentSemaine.has(c.id)).length;
     const impayes = total - payes;
-    const collecteSemaine = Array.from(paiementsCurrentSemaine.values()).reduce((s, p) => s + p.montant, 0);
+    const collectePaiements = Array.from(paiementsCurrentSemaine.values()).reduce((s, p) => s + p.montant, 0);
+    // Collecte semaine = paiements individuels + collectes groupées de l'encart
+    const collecteSemaine = collectePaiements + collecteEncartSemaine;
     return { total, payes, impayes, collecteSemaine };
-  }, [contribuables, paiementsCurrentSemaine]);
+  }, [contribuables, paiementsCurrentSemaine, collecteEncartSemaine]);
 
   // 💰 Total dû selon le barème = somme de TOUT le registre (tous les contribuables)
   const totalDuBareme = useMemo(() => {
@@ -392,7 +422,7 @@ export default function ImpotsPage() {
 
       // Mouvement Trésor distinct des paiements individuels
       const tresorMouvement: TresorMouvement = {
-        id: 'TM-IMPOT-COLLECTE-' + now,
+        id: COLLECTE_PREFIX + now,
         section: 'police',
         sectionLabel: 'Impôts',
         amount: montant,
