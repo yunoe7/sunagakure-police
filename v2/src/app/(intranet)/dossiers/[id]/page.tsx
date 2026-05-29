@@ -36,7 +36,7 @@ import {
 
 import { useFirebaseValue } from '@/hooks/useFirebaseValue';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
-import { dbSet, dbUpdate } from '@/lib/db';
+import { dbSet } from '@/lib/db';
 import { logAction } from '@/lib/audit';
 import { toast } from '@/lib/toast';
 import { Button } from '@/components/ui/Button';
@@ -52,10 +52,10 @@ import {
 import { type Infraction, INFRACTION_CAT_LABEL } from '@/types/infraction';
 import type { Recense } from '@/types/recense';
 // 💰 Encaissement : transaction dans la caisse police
-import {
-  type ComptaData, type ComptaTransaction,
-  SECTION_FB_PATH,
-} from '@/types/compta';
+// ⚠️ La caisse police utilise son PROPRE type (@/types/caisse), distinct de
+// @/types/compta : elle classe entrée/sortie via isEntree(type), où `type`
+// vaut directement 'amende'/'salaire'/etc. (PAS 'entree'/'sortie').
+import { type Transaction as CaisseTransaction } from '@/types/caisse';
 
 import listStyles from '../page.module.css';
 import styles from './page.module.css';
@@ -63,8 +63,9 @@ import styles from './page.module.css';
 const FB_PATH = 'dossiers';
 const FB_INFRACTIONS_PATH = 'infractions';
 const FB_RECENSES_PATH = 'recenses';
-// 💰 Chemin de la caisse police (préfixé sunagakure/ par db.ts)
-const FB_CAISSE_POLICE = SECTION_FB_PATH.police; // 'caisse_police'
+// 💰 Chemin de la caisse police : le TABLEAU de transactions directement
+// (la page /caisse lit caisse_police/transactions, pas caisse_police)
+const FB_CAISSE_POLICE = 'caisse_police/transactions';
 
 // ─── Fuzzy match helper ───
 function normalize(s: string): string {
@@ -102,7 +103,8 @@ export default function FicheDossierPage() {
   const { data: codePenalData } = useFirebaseValue<Infraction[] | null>(FB_INFRACTIONS_PATH);
   const { data: recensesData } = useFirebaseValue<Recense[] | null>(FB_RECENSES_PATH);
   // 💰 Caisse police pour y ajouter les transactions d'encaissement
-  const { data: caissePoliceData } = useFirebaseValue<ComptaData | null>(FB_CAISSE_POLICE);
+  // (tableau de Transaction, format @/types/caisse)
+  const { data: caissePoliceData } = useFirebaseValue<CaisseTransaction[] | null>(FB_CAISSE_POLICE);
 
   // ─── Modales ───
   const [showEdit, setShowEdit] = useState(false);
@@ -148,14 +150,12 @@ export default function FicheDossierPage() {
     );
   }, [recensesData]);
 
-  // 💰 Caisse police normalisée (transactions + archives)
-  const caissePolice = useMemo<ComptaData>(() => ({
-    transactions: (Array.isArray(caissePoliceData?.transactions) ? caissePoliceData!.transactions :
-                   caissePoliceData?.transactions ? Object.values(caissePoliceData.transactions) : [])
-                   .filter((t): t is ComptaTransaction => t !== null && typeof t === 'object' && !!t.id),
-    archives: (Array.isArray(caissePoliceData?.archives) ? caissePoliceData!.archives :
-               caissePoliceData?.archives ? Object.values(caissePoliceData.archives) : []),
-  }), [caissePoliceData]);
+  // 💰 Caisse police normalisée (tableau plat de transactions)
+  const caissePolice = useMemo<CaisseTransaction[]>(() => (
+    (Array.isArray(caissePoliceData) ? caissePoliceData :
+     caissePoliceData ? Object.values(caissePoliceData) : [])
+      .filter((t): t is CaisseTransaction => t !== null && typeof t === 'object' && !!t.id)
+  ), [caissePoliceData]);
 
   // Lien recensé du dossier
   const linkedRecense = useMemo(
@@ -613,23 +613,19 @@ export default function FicheDossierPage() {
     return { ...inf, amendePayee: nouvellePayee, statut };
   }
 
-  // Construit + enregistre une transaction d'entrée dans la caisse police
-  async function pushCaisseTransaction(montant: number, description: string, ref: string) {
+  // Construit + enregistre une transaction d'entrée dans la caisse police.
+  // Format @/types/caisse : type='amende' (classé en ENTRÉE par isEntree).
+  async function pushCaisseTransaction(montant: number, description: string) {
     const now = Date.now();
-    const tx: ComptaTransaction = {
+    const tx: CaisseTransaction = {
       id: now,
-      type: 'entree',
-      category: 'amende',
+      type: 'amende',          // entrée (isEntree('amende') === true)
       montant,
       description,
       date: now,
       agent: CURRENT_USER,
-      ref,
-    };
-    await dbUpdate(FB_CAISSE_POLICE, {
-      ...caissePolice,
-      transactions: [...caissePolice.transactions, tx],
-    });
+    } as CaisseTransaction;
+    await dbSet(FB_CAISSE_POLICE, [...caissePolice, tx]);
     return tx;
   }
 
@@ -674,7 +670,6 @@ export default function FicheDossierPage() {
         const tx = await pushCaisseTransaction(
           montant,
           `Amende — Dossier ${numero} — ${dossier.nom}`,
-          numero,
         );
 
         await dbSet(FB_PATH, list);
@@ -716,7 +711,6 @@ export default function FicheDossierPage() {
         const tx = await pushCaisseTransaction(
           montant,
           `Amende — ${target.nom} — Dossier ${numero} — ${dossier.nom}`,
-          numero,
         );
 
         await dbSet(FB_PATH, list);
