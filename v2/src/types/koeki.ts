@@ -77,6 +77,8 @@ export interface KoekiParametres {
   tauxParType: TauxParType;
   // Barème de paie hebdo par grade Kōeki (voir PAIE plus bas)
   paieParGrade?: Partial<Record<KoekiGrade, number>>;
+  // Montant versé à un organisateur d'event (remplace la paie de grade)
+  paieOrganisateurEvent?: number;
 }
 
 // Taux d'imposition par défaut si rien en base (en %)
@@ -245,9 +247,10 @@ export function paieDeLaSemaine(params: {
   grade: KoekiGrade | null;
   organisaEvent: boolean;
   bareme?: Partial<Record<KoekiGrade, number>>;
+  montantEvent?: number;
 }): number {
-  const { grade, organisaEvent, bareme } = params;
-  if (organisaEvent) return PAIE_ORGANISATEUR_EVENT;
+  const { grade, organisaEvent, bareme, montantEvent } = params;
+  if (organisaEvent) return typeof montantEvent === 'number' ? montantEvent : PAIE_ORGANISATEUR_EVENT;
   if (!grade) return 0;
   const table = { ...DEFAULT_PAIE_PAR_GRADE, ...(bareme ?? {}) };
   return table[grade] ?? 0;
