@@ -44,7 +44,7 @@ import styles from './page.module.css';
 const FB_DECLARATIONS = 'koeki/declarations';
 const FB_COMPTAS = 'koeki/comptas';
 const FB_TRESOR = 'tresorCentral';
-const FB_MEMBERS = 'members';
+const FB_MEMBERS = '/members';
 
 const GRADES_LISTE: KoekiGrade[] = [
   'gerant', 'co-gerant', 'superviseur-eco', 'superviseur-event',
