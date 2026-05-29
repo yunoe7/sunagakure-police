@@ -7,23 +7,30 @@
  *
  * Permissions :
  * - Voir : tout le monde (connecté)
- * - Marquer payé / annuler / config barème : MEMBRES POLICE + Direction Kōeki + Admin
+ * - Marquer payé / annuler / config barème / encaisser : MEMBRES POLICE + Direction Kōeki + Admin
  *
- * 📜 Audit log : paiements, annulations, suppressions et modifications
- *    du barème sont tracés dans /audit_log Firebase.
+ * 📜 Audit log : paiements, annulations, suppressions, modifications
+ *    du barème ET encaissements groupés sont tracés dans /audit_log Firebase.
  *
  * ⭐ Vision C — LIEN IMPÔTS → TRÉSOR :
  *    Marquer payé  → crée aussi un TresorMouvement dans tresorCentral
  *    Annuler/Suppr → supprime aussi le mouvement Trésor lié
  *    Liaison via le champ tresorMouvementId du PaiementImpot.
  *    Mouvement Trésor : section='police', sectionLabel='Impôts'.
+ *
+ * 💰 ENCART DE COLLECTE (collecte groupée) :
+ *    Crédite directement le Trésor d'un montant saisi (libre ou X/tête),
+ *    SANS modifier les statuts "payé" (l'encaissement et le suivi
+ *    individuel des paiements sont volontairement séparés).
+ *    Mouvement Trésor : id 'TM-IMPOT-COLLECTE-...' pour le distinguer
+ *    des paiements individuels.
  * ════════════════════════════════════════════════════════════════
  */
 
 import { useMemo, useState } from 'react';
 import {
   Plus, Trash2, Save, Search, Receipt, Coins,
-  CheckCircle2, AlertCircle, Settings,
+  CheckCircle2, AlertCircle, Settings, Banknote, Users,
 } from 'lucide-react';
 import { useFirebaseValue } from '@/hooks/useFirebaseValue';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
@@ -49,6 +56,7 @@ import styles from './page.module.css';
 const FB_GRADES = 'impots/grades';
 const FB_PAIEMENTS = 'impots/paiements';
 type Tab = 'registre' | 'historique' | 'bareme';
+type CollecteMode = 'total' | 'tete';
 
 export default function ImpotsPage() {
   const u = useCurrentUser();
@@ -65,6 +73,12 @@ export default function ImpotsPage() {
   const [search, setSearch] = useState('');
   const [showBareme, setShowBareme] = useState(false);
   const [baremeForm, setBaremeForm] = useState<GradeBareme[]>([]);
+
+  // 💰 État de l'encart de collecte
+  const [collecteMode, setCollecteMode] = useState<CollecteMode>('total');
+  const [collecteMontant, setCollecteMontant] = useState<string>('');
+  const [collecteParTete, setCollecteParTete] = useState<string>('');
+  const [collecteBusy, setCollecteBusy] = useState(false);
 
   const grades = useMemo<GradeBareme[]>(() => {
     if (!gradesData) return DEFAULT_BAREME;
@@ -157,6 +171,21 @@ export default function ImpotsPage() {
     const collecteSemaine = Array.from(paiementsCurrentSemaine.values()).reduce((s, p) => s + p.montant, 0);
     return { total, payes, impayes, collecteSemaine };
   }, [contribuables, paiementsCurrentSemaine]);
+
+  // 💰 Total dû selon le barème = somme de TOUT le registre (tous les contribuables)
+  const totalDuBareme = useMemo(() => {
+    return contribuables.reduce((s, n) => s + (baremeByRang.get(n.rang || '') || 0), 0);
+  }, [contribuables, baremeByRang]);
+
+  // 💰 Montant effectivement encaissé selon le mode choisi
+  const collecteCalcul = useMemo(() => {
+    if (collecteMode === 'tete') {
+      const parTete = Math.max(0, Math.round(Number(collecteParTete) || 0));
+      return { montant: parTete * stats.total, parTete };
+    }
+    const total = Math.max(0, Math.round(Number(collecteMontant) || 0));
+    return { montant: total, parTete: 0 };
+  }, [collecteMode, collecteMontant, collecteParTete, stats.total]);
 
   async function markPaid(n: NinjaImpot) {
     const montant = baremeByRang.get(n.rang || '') || 0;
@@ -340,6 +369,69 @@ export default function ImpotsPage() {
     }
   }
 
+  // 💰 Encaissement groupé → Trésor (NE touche PAS aux statuts payé)
+  async function encaisserCollecte() {
+    const montant = collecteCalcul.montant;
+    if (montant <= 0) {
+      toast.info('Saisis un montant à encaisser supérieur à 0');
+      return;
+    }
+    const detailMode = collecteMode === 'tete'
+      ? `${fmtMoney(collecteCalcul.parTete)} ₽ × ${stats.total} contribuable(s)`
+      : 'montant libre';
+    const ok = await confirmAction({
+      title: 'Encaisser la collecte',
+      message: `Ajouter ${fmtMoney(montant)} ₽ au Trésor Central (${detailMode}, semaine ${currentSemaine}) ? ` +
+        `Cela n'affecte pas les statuts "payé" des contribuables.`,
+      confirmLabel: 'Encaisser',
+    });
+    if (!ok) return;
+    setCollecteBusy(true);
+    try {
+      const now = Date.now();
+
+      // Mouvement Trésor distinct des paiements individuels
+      const tresorMouvement: TresorMouvement = {
+        id: 'TM-IMPOT-COLLECTE-' + now,
+        section: 'police',
+        sectionLabel: 'Impôts',
+        amount: montant,
+        date: now,
+        archiveId: 'IMPOT-COLLECTE-' + now,
+        archiveLabel: `Collecte d'impôts — semaine ${currentSemaine}` +
+          (collecteMode === 'tete' ? ` (${fmtMoney(collecteCalcul.parTete)} ₽ × ${stats.total})` : ''),
+        rate: 100,
+        soldeOrigine: montant,
+      };
+
+      // Trésor d'abord (pattern escrow)
+      await dbUpdate('tresorCentral', {
+        ...tresorCurrent,
+        mouvements: [...tresorCurrent.mouvements, tresorMouvement],
+      });
+
+      // 📜 AUDIT LOG — encaissement groupé
+      logAction({
+        who: CURRENT_USER,
+        whoId: u.id ?? null,
+        action: 'create',
+        target: 'tresor:mouvement',
+        targetId: tresorMouvement.id,
+        detail: `Trésor — Collecte d'impôts : +${fmtMoney(montant)} ₽ ` +
+          `(${detailMode}, semaine ${currentSemaine})`,
+      });
+
+      toast.success(`Collecte encaissée : ${fmtMoney(montant)} ₽ → Trésor`);
+      setCollecteMontant('');
+      setCollecteParTete('');
+    } catch (err) {
+      console.error('[ENCAISSER COLLECTE]', err);
+      toast.error('Erreur lors de l\'encaissement');
+    } finally {
+      setCollecteBusy(false);
+    }
+  }
+
   function openBareme() {
     // Filtre défensif : ne charge que les entrées valides depuis grades
     const safe = grades
@@ -438,6 +530,85 @@ export default function ImpotsPage() {
             Historique des paiements
           </button>
         </div>
+
+        {/* 💰 Encart de collecte groupée — crédite le Trésor sans toucher aux statuts payé */}
+        {canEdit && tab === 'registre' && (
+          <div className={styles.collecteBox}>
+            <div className={styles.collecteHead}>
+              <Banknote size={16} />
+              <span>Collecte vers le Trésor</span>
+              <span className={styles.collecteHint}>
+                n&apos;affecte pas les statuts « payé »
+              </span>
+            </div>
+
+            <div className={styles.collecteRef}>
+              <span>Total dû selon le barème (tout le registre)</span>
+              <strong>{fmtMoney(totalDuBareme)} ₽</strong>
+              <button
+                type="button"
+                className={styles.collecteRefBtn}
+                onClick={() => { setCollecteMode('total'); setCollecteMontant(String(totalDuBareme)); }}
+              >
+                Utiliser ce montant
+              </button>
+            </div>
+
+            <div className={styles.collecteModes}>
+              <button
+                type="button"
+                className={`${styles.collecteModeBtn} ${collecteMode === 'total' ? styles.collecteModeActive : ''}`}
+                onClick={() => setCollecteMode('total')}
+              >
+                <Coins size={13} /> Montant total
+              </button>
+              <button
+                type="button"
+                className={`${styles.collecteModeBtn} ${collecteMode === 'tete' ? styles.collecteModeActive : ''}`}
+                onClick={() => setCollecteMode('tete')}
+              >
+                <Users size={13} /> Par tête
+              </button>
+            </div>
+
+            <div className={styles.collecteRow}>
+              {collecteMode === 'total' ? (
+                <div className={styles.collecteField}>
+                  <label>Montant à encaisser (₽)</label>
+                  <input
+                    type="number"
+                    min="0"
+                    value={collecteMontant}
+                    onChange={(e) => setCollecteMontant(e.target.value)}
+                    placeholder="Ex: 150000"
+                    className={styles.collecteInput}
+                  />
+                </div>
+              ) : (
+                <div className={styles.collecteField}>
+                  <label>Montant par tête (₽) × {stats.total} contribuable(s)</label>
+                  <input
+                    type="number"
+                    min="0"
+                    value={collecteParTete}
+                    onChange={(e) => setCollecteParTete(e.target.value)}
+                    placeholder="Ex: 100"
+                    className={styles.collecteInput}
+                  />
+                </div>
+              )}
+
+              <div className={styles.collecteTotal}>
+                <span>Total encaissé</span>
+                <strong>{fmtMoney(collecteCalcul.montant)} ₽</strong>
+              </div>
+
+              <Button onClick={encaisserCollecte} disabled={collecteBusy || collecteCalcul.montant <= 0}>
+                <Banknote size={14} /> Encaisser → Trésor
+              </Button>
+            </div>
+          </div>
+        )}
 
         <div className={styles.searchBox}>
           <Search size={14} />
