@@ -36,7 +36,7 @@
 import { useMemo, useState } from 'react';
 import {
   Plus, Pencil, Archive, ArchiveRestore, Search, Building2, Save,
-  Coins, Landmark, HandCoins, AlertTriangle, CheckCircle2,
+  Coins, Landmark, HandCoins, AlertTriangle, CheckCircle2, Eye, TrendingUp,
 } from 'lucide-react';
 import { useFirebaseValue } from '@/hooks/useFirebaseValue';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
@@ -50,7 +50,7 @@ import { confirmAction } from '@/components/ui/ConfirmDialog';
 import {
   type Societe, type SocieteType, type KoekiParametres, type DeclarationCA,
   SOCIETE_TYPES, SOCIETE_TYPE_LABEL, SOCIETE_TYPE_ICON,
-  DEFAULT_TAUX_PAR_TYPE, tauxEffectif, calculImpot, genId, fmtMoney,
+  DEFAULT_TAUX_PAR_TYPE, tauxEffectif, calculImpot, genId, fmtMoney, fmtDateFR,
 } from '@/types/koeki';
 import {
   type TresorCentral, type TresorMouvement, type TresorRetrait,
@@ -99,6 +99,9 @@ export default function KoekiEconomiePage() {
   const [showBdm, setShowBdm] = useState(false);
   const [bdmMontant, setBdmMontant] = useState<string>('');
   const [bdmMotif, setBdmMotif] = useState<string>('');
+
+  // Détail société (historique CA)
+  const [detailSociete, setDetailSociete] = useState<Societe | null>(null);
 
   const semaineActuelle = currentWeek();
 
@@ -609,6 +612,9 @@ export default function KoekiEconomiePage() {
                     </td>
                     <td>
                       <div className={styles.rowActions}>
+                        <button className={styles.iconBtn} onClick={() => setDetailSociete(s)} aria-label="Détail / historique" title="Voir le détail et l'historique">
+                          <Eye size={13} />
+                        </button>
                         {canDeclarer && s.actif && (
                           <Button size="sm" onClick={() => openDeclare(s)}>
                             <Coins size={12} /> Déclarer CA
@@ -741,6 +747,110 @@ export default function KoekiEconomiePage() {
           </label>
         </div>
       </Modal>
+
+      {/* Modal détail société (historique CA) */}
+      <Modal open={!!detailSociete} onClose={() => setDetailSociete(null)}
+        title={detailSociete ? `${SOCIETE_TYPE_ICON[detailSociete.type]} ${detailSociete.nom}` : 'Détail société'} size="lg"
+        footer={<Button variant="outline" onClick={() => setDetailSociete(null)}>Fermer</Button>}>
+        {detailSociete && (
+          <SocieteDetail
+            societe={detailSociete}
+            taux={tauxEffectif(detailSociete, params)}
+            declarations={declarations.filter((d) => d.societeId === detailSociete.id)}
+          />
+        )}
+      </Modal>
     </>
+  );
+}
+
+// ─── Composant détail société : stats + mini-graphe CA + historique ───
+function SocieteDetail({ societe, taux, declarations }: {
+  societe: Societe;
+  taux: number;
+  declarations: DeclarationCA[];
+}) {
+  const sorted = [...declarations].sort((a, b) => b.date - a.date);
+  const totalCA = declarations.reduce((s, d) => s + (d.chiffreAffaires || 0), 0);
+  const totalImpot = declarations.reduce((s, d) => s + (d.impot || 0), 0);
+  const moyenneCA = declarations.length > 0 ? Math.round(totalCA / declarations.length) : 0;
+
+  // Données du mini-graphe : CA par déclaration, ordre chronologique, 8 derniers
+  const chrono = [...declarations].sort((a, b) => a.date - b.date).slice(-8);
+  const maxCA = chrono.reduce((m, d) => Math.max(m, d.chiffreAffaires || 0), 0);
+
+  // dimensions SVG
+  const W = 460, H = 120, padL = 44, padR = 12, padT = 10, padB = 22;
+  const innerW = W - padL - padR, innerH = H - padT - padB;
+  const n = chrono.length;
+  const x = (i: number) => padL + (n <= 1 ? innerW / 2 : (i / (n - 1)) * innerW);
+  const y = (v: number) => padT + innerH - (maxCA === 0 ? 0 : (v / maxCA) * innerH);
+  const linePath = chrono.map((d, i) => `${i === 0 ? 'M' : 'L'} ${x(i)} ${y(d.chiffreAffaires || 0)}`).join(' ');
+
+  return (
+    <div>
+      {/* En-tête infos */}
+      <div className={styles.detailHeader}>
+        <div className={styles.detailMeta}>
+          <span className={styles.typeChip}>{SOCIETE_TYPE_ICON[societe.type]} {SOCIETE_TYPE_LABEL[societe.type]}</span>
+          {!societe.actif && <span className={styles.archivedTag}>archivée</span>}
+        </div>
+        <div className={styles.detailOwner}>Propriétaire : <strong>{societe.proprietaireNom || '—'}</strong></div>
+        <div className={styles.detailOwner}>Taux effectif : <strong>{taux}%</strong> {societe.tauxImposition !== null ? '(personnalisé)' : '(global)'}</div>
+      </div>
+
+      {/* Stats */}
+      <div className={styles.detailStats}>
+        <div className={styles.detailStat}><div className={styles.detailStatVal}>{declarations.length}</div><div className={styles.detailStatLbl}>Déclarations</div></div>
+        <div className={styles.detailStat}><div className={styles.detailStatVal}>{fmtMoney(totalCA)} ₽</div><div className={styles.detailStatLbl}>CA total</div></div>
+        <div className={styles.detailStat}><div className={styles.detailStatVal}>{fmtMoney(totalImpot)} ₽</div><div className={styles.detailStatLbl}>Impôt versé</div></div>
+        <div className={styles.detailStat}><div className={styles.detailStatVal}>{fmtMoney(moyenneCA)} ₽</div><div className={styles.detailStatLbl}>CA moyen</div></div>
+      </div>
+
+      {/* Mini-graphe d'évolution du CA */}
+      {chrono.length >= 2 && (
+        <div className={styles.detailChart}>
+          <div className={styles.detailChartTitle}><TrendingUp size={13} /> Évolution du CA déclaré</div>
+          <svg width="100%" height={H} viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="xMidYMid meet">
+            {[0, 0.5, 1].map((f) => (
+              <line key={f} x1={padL} y1={padT + innerH * (1 - f)} x2={W - padR} y2={padT + innerH * (1 - f)} stroke="#9a8c6a" strokeOpacity="0.15" strokeWidth="1" />
+            ))}
+            <text x={padL - 6} y={padT + 4} textAnchor="end" fontSize="8" fill="#9a8c6a" fontFamily="monospace">{fmtMoney(maxCA)}</text>
+            <text x={padL - 6} y={padT + innerH + 3} textAnchor="end" fontSize="8" fill="#9a8c6a" fontFamily="monospace">0</text>
+            <path d={`${linePath} L ${x(n - 1)} ${padT + innerH} L ${x(0)} ${padT + innerH} Z`} fill="#d4b44a" fillOpacity="0.12" />
+            <path d={linePath} fill="none" stroke="#d4b44a" strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" />
+            {chrono.map((d, i) => (
+              <g key={d.id}>
+                <circle cx={x(i)} cy={y(d.chiffreAffaires || 0)} r="3" fill="#d4b44a" stroke="#15110b" strokeWidth="1.5" />
+                <text x={x(i)} y={H - 6} textAnchor="middle" fontSize="7.5" fill="#9a8c6a" fontFamily="monospace">{(d.semaine || '').replace(/^\d{4}-/, '')}</text>
+              </g>
+            ))}
+          </svg>
+        </div>
+      )}
+
+      {/* Liste des déclarations */}
+      {sorted.length === 0 ? (
+        <p className={styles.empty}>Aucune déclaration de CA pour cette société.</p>
+      ) : (
+        <table className={styles.table}>
+          <thead>
+            <tr><th>Date</th><th>Semaine</th><th style={{ textAlign: 'right' }}>CA</th><th style={{ textAlign: 'right' }}>Taux</th><th style={{ textAlign: 'right' }}>Impôt</th><th>Agent</th></tr>
+          </thead>
+          <tbody>
+            {sorted.map((d) => (
+              <tr key={d.id}>
+                <td className={styles.muted}>{fmtDateFR(d.date)}</td>
+                <td className={styles.muted}>{d.semaine || '—'}</td>
+                <td className={styles.amount} style={{ textAlign: 'right' }}>{fmtMoney(d.chiffreAffaires)} ₽</td>
+                <td style={{ textAlign: 'right' }} className={styles.muted}>{d.taux}%</td>
+                <td className={styles.amount} style={{ textAlign: 'right', color: '#86efac' }}>+{fmtMoney(d.impot)} ₽</td>
+                <td className={styles.muted}>{d.agent || '—'}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
+    </div>
   );
 }
