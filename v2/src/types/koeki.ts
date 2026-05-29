@@ -287,6 +287,8 @@ export interface DemandeMarche {
   ninjaAcceptanteNom?: string;
   dateCreation: number;
   dateCloture?: number;
+  rdvDate?: number;              // date+heure du RDV (timestamp ms)
+  rdvLieu?: string;              // lieu RP du RDV
   notes?: string;
 }
 
