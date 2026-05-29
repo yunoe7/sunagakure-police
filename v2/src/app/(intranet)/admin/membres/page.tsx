@@ -6,18 +6,35 @@
  * ════════════════════════════════════════════════════════════════
  *
  *  Affiche tous les utilisateurs qui se sont déjà connectés
- *  à l'intranet (enregistrés automatiquement dans users/ via auth.ts).
+ *  à l'intranet (enregistrés automatiquement dans members/ via auth.ts).
+ *
+ *  🆕 Attribution de GRADE KŌEKI par membre, stockée en base
+ *     (koeki/grades/{discordId}). Permet de gérer le Kōeki sans
+ *     dépendre des rôles Discord (qui se propagent mal via OAuth).
+ *     useCurrentUser lit ce grade en priorité sur le rôle Discord.
  *
  *  Sécurité : RequireAdminStrict (admin techniques uniquement)
  * ════════════════════════════════════════════════════════════════
  */
 
 import { useState, useMemo } from 'react';
-import { Search, Users, ShieldCheck, Activity, UserCog } from 'lucide-react';
+import { Search, Users, ShieldCheck, Activity, Briefcase } from 'lucide-react';
 
 import { useMembers, type Member } from '@/hooks/useMembers';
+import { useFirebaseValue } from '@/hooks/useFirebaseValue';
 import { RequireAdminStrict } from '@/components/Require';
 import { Card } from '@/components/ui/Card';
+import { useCurrentUser } from '@/hooks/useCurrentUser';
+import { dbSet } from '@/lib/db';
+import { logAction } from '@/lib/audit';
+import { toast } from '@/lib/toast';
+import {
+  KOEKI_GRADES_PATH,
+  KOEKI_GRADE_OPTIONS,
+  gradeLabel,
+  type KoekiGradeOverride,
+} from '@/types/koekiGrades';
+import type { KoekiGrade } from '@/lib/roles';
 
 export default function AdminMembresPage() {
   return (
@@ -38,6 +55,11 @@ export default function AdminMembresPage() {
 function MembresManager() {
   const { members, loading, stats } = useMembers();
   const [search, setSearch] = useState('');
+
+  // 🆕 Tous les grades Kōeki en base, en une seule lecture
+  const { data: gradesData } = useFirebaseValue<Record<string, KoekiGradeOverride> | null>(
+    KOEKI_GRADES_PATH
+  );
 
   // Tri : admins en premier, puis par dernière connexion descendante
   const sorted = useMemo(() => {
@@ -148,6 +170,7 @@ function MembresManager() {
                 isOnline={isOnline(m.lastLogin)}
                 lastLoginText={fmtRelative(m.lastLogin)}
                 firstLoginText={fmtRelative(m.firstLogin)}
+                koekiGrade={gradesData?.[m.discordId]?.grade ?? null}
               />
             ))}
           </div>
@@ -233,13 +256,53 @@ function MemberRow({
   isOnline,
   lastLoginText,
   firstLoginText,
+  koekiGrade,
 }: {
   member: Member;
   isOnline: boolean;
   lastLoginText: string;
   firstLoginText: string;
+  koekiGrade: KoekiGrade | null;
 }) {
   const m = member;
+  const { displayName, id: myId } = useCurrentUser();
+  const [saving, setSaving] = useState(false);
+
+  async function handleGradeChange(value: string) {
+    const newGrade = (value === '' ? null : value) as KoekiGrade | null;
+    setSaving(true);
+    try {
+      const payload: KoekiGradeOverride = {
+        grade: newGrade,
+        setBy: displayName,
+        setAt: Date.now(),
+      };
+      await dbSet(`${KOEKI_GRADES_PATH}/${m.discordId}`, payload);
+
+      logAction({
+        who: displayName,
+        whoId: myId ?? null,
+        action: 'update',
+        target: 'koeki:grade',
+        targetId: m.discordId,
+        detail: newGrade
+          ? `Grade Kōeki de ${m.username} défini sur « ${gradeLabel(newGrade)} »`
+          : `Grade Kōeki de ${m.username} retiré`,
+      });
+
+      toast.success(
+        newGrade
+          ? `${m.username} → ${gradeLabel(newGrade)}`
+          : `Grade Kōeki retiré pour ${m.username}`
+      );
+    } catch (err) {
+      console.error(err);
+      toast.error('Erreur lors de l\'enregistrement du grade');
+    } finally {
+      setSaving(false);
+    }
+  }
+
   return (
     <div
       style={{
@@ -312,6 +375,7 @@ function MemberRow({
           {m.isStaff && <Badge color="#a78bfa" label="Staff" />}
           {m.isKazekage && <Badge color="#f87171" label="Kazekage" />}
           {m.gerantDe.length > 0 && <Badge color="#60a5fa" label={`Gérant ${m.gerantDe[0]}`} />}
+          {koekiGrade && <Badge color="#34d399" label={gradeLabel(koekiGrade)} />}
         </div>
         <div
           style={{
@@ -348,12 +412,49 @@ function MemberRow({
         </div>
       </div>
 
-      {/* Dates */}
+      {/* Dates + sélecteur de grade Kōeki */}
       <div style={{ textAlign: 'right', fontSize: 11, color: 'rgba(255,255,255,0.5)' }}>
         <div title={`Première connexion : ${new Date(m.firstLogin).toLocaleString('fr-FR')}`}>
           <span style={{ opacity: 0.5 }}>Connecté</span> {lastLoginText}
         </div>
         <div style={{ fontSize: 10, opacity: 0.5, marginTop: 2 }}>Inscrit {firstLoginText}</div>
+
+        {/* 🆕 Sélecteur de grade Kōeki */}
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'flex-end',
+            gap: 5,
+            marginTop: 6,
+          }}
+        >
+          <Briefcase size={12} style={{ opacity: 0.5, color: '#34d399' }} />
+          <select
+            value={koekiGrade ?? ''}
+            disabled={saving}
+            onChange={(e) => handleGradeChange(e.target.value)}
+            title="Grade Kōeki (stocké dans l'intranet)"
+            style={{
+              fontSize: 11,
+              padding: '3px 6px',
+              background: 'rgba(0,0,0,0.4)',
+              color: koekiGrade ? '#34d399' : 'rgba(255,255,255,0.6)',
+              border: '1px solid rgba(52, 211, 153, 0.35)',
+              borderRadius: 4,
+              outline: 'none',
+              cursor: saving ? 'wait' : 'pointer',
+              fontFamily: 'Share Tech Mono, monospace',
+            }}
+          >
+            <option value="">Kōeki : Aucun</option>
+            {KOEKI_GRADE_OPTIONS.map((o) => (
+              <option key={o.value} value={o.value}>
+                {o.label}
+              </option>
+            ))}
+          </select>
+        </div>
       </div>
     </div>
   );
