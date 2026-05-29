@@ -8,16 +8,13 @@
  * Plus 2 statuts terminaux :
  *   echouee, annulee
  */
-
 export type MissionRang = 'D' | 'C' | 'B' | 'A' | 'S';
-
 export type MissionStatut =
   | 'ouverte'
   | 'en_cours'
   | 'terminee'
   | 'echouee'
   | 'annulee';
-
 export type MissionType =
   | 'Escorte'
   | 'Espionnage'
@@ -28,7 +25,6 @@ export type MissionType =
   | 'Capture'
   | 'Combat'
   | 'Autre';
-
 export const MISSION_TYPES: MissionType[] = [
   'Escorte',
   'Espionnage',
@@ -40,9 +36,7 @@ export const MISSION_TYPES: MissionType[] = [
   'Combat',
   'Autre',
 ];
-
 export const MISSION_RANGS: MissionRang[] = ['D', 'C', 'B', 'A', 'S'];
-
 // Récompenses suggérées par rang (en ryos)
 export const MS_REWARD_BY_RANK: Record<MissionRang, number> = {
   D: 500,
@@ -51,7 +45,6 @@ export const MS_REWARD_BY_RANK: Record<MissionRang, number> = {
   A: 15000,
   S: 50000,
 };
-
 // Labels affichables des statuts
 export const MISSION_STATUT_LABEL: Record<MissionStatut, string> = {
   ouverte: 'Disponible',
@@ -60,12 +53,10 @@ export const MISSION_STATUT_LABEL: Record<MissionStatut, string> = {
   echouee: 'Échouée',
   annulee: 'Annulée',
 };
-
 export interface MissionAssignment {
   nom: string;
   acceptedAt?: number;
 }
-
 export interface Mission {
   id: number;
   titre: string;
@@ -83,14 +74,14 @@ export interface Mission {
   termineLe?: number;
   validePar?: string;
   valideLe?: number;
+  /** 🆕 Lien Discord (salon ou message) pour plus d'infos sur la mission */
+  discordLink?: string;
 }
-
 // Helper : format monétaire
 export function fmtMoney(n: number | undefined): string {
   if (typeof n !== 'number' || isNaN(n)) return '0';
   return n.toLocaleString('fr-FR');
 }
-
 // Helper : format date
 export function fmtDateFR(d: string | number | undefined): string {
   if (!d) return '—';
@@ -99,4 +90,13 @@ export function fmtDateFR(d: string | number | undefined): string {
   } catch {
     return '—';
   }
+}
+
+/**
+ * 🆕 Valide qu'une chaîne est bien un lien Discord (salon ou message).
+ * Accepte discord.com et discordapp.com.
+ */
+export function isDiscordLink(url: string | undefined): boolean {
+  if (!url) return false;
+  return /^https:\/\/(?:\w+\.)?discord(?:app)?\.com\/channels\/\d+\/\d+(?:\/\d+)?/.test(url.trim());
 }
