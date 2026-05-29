@@ -96,6 +96,7 @@ export const NAV_SECTIONS: NavSection[] = [
   {
     title: 'KŌEKI',
     items: [
+      { label: 'Tableau de bord', href: '/koeki/dashboard', icon: 'LayoutDashboard' },
       { label: 'Économie', href: '/koeki/economie', icon: 'Building2' },
       { label: 'Marché', href: '/koeki/marche', icon: 'Store' },
       { label: 'Comptas', href: '/koeki/compta', icon: 'Wallet' },
