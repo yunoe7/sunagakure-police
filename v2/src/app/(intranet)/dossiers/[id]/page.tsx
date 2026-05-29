@@ -13,6 +13,15 @@
  * - L'édition individuelle reste en modale dédiée (bouton ✏️)
  * - AUTOCOMPLÉTION : nom du suspect depuis le Recensement
  * - LIEN : bouton "Voir la fiche recensé" dans les métadonnées
+ *
+ * 💰 ENCAISSEMENT (NOUVEAU) :
+ *   Bouton "Encaisser" par infraction + bouton "Tout encaisser" global.
+ *   - Montant libre, pré-rempli avec le reste dû, plafonné au reste dû.
+ *   - Met à jour amendePayee + statut (payee si soldé, sinon partielle).
+ *   - Crée une transaction d'ENTRÉE (catégorie 'amende') dans la caisse
+ *     police (sunagakure/caisse_police). Le Trésor se sert à la clôture
+ *     de la caisse — PAS de prélèvement immédiat (évite le double prélèvement).
+ *   - Audit log côté dossier ET côté caisse.
  * ════════════════════════════════════════════════════════════════
  */
 
@@ -22,11 +31,12 @@ import {
   ArrowLeft, Pencil, Trash2, Save, Camera, Plus,
   AlertTriangle, FileText, Coins, Calendar, Skull,
   ScrollText, Scale, BookOpen, FilePlus, Users, ExternalLink,
+  Banknote, HandCoins,
 } from 'lucide-react';
 
 import { useFirebaseValue } from '@/hooks/useFirebaseValue';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
-import { dbSet } from '@/lib/db';
+import { dbSet, dbUpdate } from '@/lib/db';
 import { logAction } from '@/lib/audit';
 import { toast } from '@/lib/toast';
 import { Button } from '@/components/ui/Button';
@@ -41,6 +51,11 @@ import {
 } from '@/types/dossier';
 import { type Infraction, INFRACTION_CAT_LABEL } from '@/types/infraction';
 import type { Recense } from '@/types/recense';
+// 💰 Encaissement : transaction dans la caisse police
+import {
+  type ComptaData, type ComptaTransaction,
+  SECTION_FB_PATH,
+} from '@/types/compta';
 
 import listStyles from '../page.module.css';
 import styles from './page.module.css';
@@ -48,6 +63,8 @@ import styles from './page.module.css';
 const FB_PATH = 'dossiers';
 const FB_INFRACTIONS_PATH = 'infractions';
 const FB_RECENSES_PATH = 'recenses';
+// 💰 Chemin de la caisse police (préfixé sunagakure/ par db.ts)
+const FB_CAISSE_POLICE = SECTION_FB_PATH.police; // 'caisse_police'
 
 // ─── Fuzzy match helper ───
 function normalize(s: string): string {
@@ -84,6 +101,8 @@ export default function FicheDossierPage() {
   const { data, loading } = useFirebaseValue<Dossier[] | null>(FB_PATH);
   const { data: codePenalData } = useFirebaseValue<Infraction[] | null>(FB_INFRACTIONS_PATH);
   const { data: recensesData } = useFirebaseValue<Recense[] | null>(FB_RECENSES_PATH);
+  // 💰 Caisse police pour y ajouter les transactions d'encaissement
+  const { data: caissePoliceData } = useFirebaseValue<ComptaData | null>(FB_CAISSE_POLICE);
 
   // ─── Modales ───
   const [showEdit, setShowEdit] = useState(false);
@@ -98,6 +117,13 @@ export default function FicheDossierPage() {
   const [editingInfractionId, setEditingInfractionId] = useState<number | null>(null);
   const [infrForm, setInfrForm] = useState<Partial<DossierInfraction>>({});
   const [showInfractionEdit, setShowInfractionEdit] = useState(false);
+
+  // 💰 Modale d'encaissement
+  // cibleId = id de l'infraction visée, ou 'all' pour tout le dossier
+  const [showEncaisse, setShowEncaisse] = useState(false);
+  const [encaisseCible, setEncaisseCible] = useState<number | 'all' | null>(null);
+  const [encaisseMontant, setEncaisseMontant] = useState<string>('');
+  const [encaisseBusy, setEncaisseBusy] = useState(false);
 
   const all = useMemo<Dossier[]>(() => {
     if (!data) return [];
@@ -121,6 +147,15 @@ export default function FicheDossierPage() {
       (r): r is Recense => r !== null && typeof r === 'object' && !!r.id
     );
   }, [recensesData]);
+
+  // 💰 Caisse police normalisée (transactions + archives)
+  const caissePolice = useMemo<ComptaData>(() => ({
+    transactions: (Array.isArray(caissePoliceData?.transactions) ? caissePoliceData!.transactions :
+                   caissePoliceData?.transactions ? Object.values(caissePoliceData.transactions) : [])
+                   .filter((t): t is ComptaTransaction => t !== null && typeof t === 'object' && !!t.id),
+    archives: (Array.isArray(caissePoliceData?.archives) ? caissePoliceData!.archives :
+               caissePoliceData?.archives ? Object.values(caissePoliceData.archives) : []),
+  }), [caissePoliceData]);
 
   // Lien recensé du dossier
   const linkedRecense = useMemo(
@@ -517,6 +552,204 @@ export default function FicheDossierPage() {
     }
   }
 
+  // ═══════════════════════════════════════════════════════════════
+  //  💰 ENCAISSEMENT DES AMENDES → CAISSE POLICE
+  // ═══════════════════════════════════════════════════════════════
+
+  // Reste dû d'une infraction (0 si amnistiée)
+  function resteDu(inf: DossierInfraction): number {
+    if (inf.statut === 'amnistiee') return 0;
+    return Math.max(0, (inf.amende || 0) - (inf.amendePayee || 0));
+  }
+
+  // Reste dû total du dossier (toutes infractions)
+  const resteDuTotal = useMemo(() => {
+    const list = dossier?.infractionsList || [];
+    return list.reduce((s, inf) => s + resteDu(inf), 0);
+  }, [dossier]);
+
+  function openEncaisse(cible: number | 'all') {
+    if (cible === 'all') {
+      setEncaisseCible('all');
+      setEncaisseMontant(String(resteDuTotal));
+    } else {
+      const inf = (dossier?.infractionsList || []).find((i) => i.id === cible);
+      if (!inf) return;
+      setEncaisseCible(cible);
+      setEncaisseMontant(String(resteDu(inf)));
+    }
+    setShowEncaisse(true);
+  }
+
+  function closeEncaisse() {
+    setShowEncaisse(false);
+    setEncaisseCible(null);
+    setEncaisseMontant('');
+  }
+
+  // Plafond saisissable selon la cible
+  const encaisseMax = useMemo(() => {
+    if (encaisseCible === 'all') return resteDuTotal;
+    if (typeof encaisseCible === 'number') {
+      const inf = (dossier?.infractionsList || []).find((i) => i.id === encaisseCible);
+      return inf ? resteDu(inf) : 0;
+    }
+    return 0;
+  }, [encaisseCible, dossier, resteDuTotal]);
+
+  const encaisseValue = useMemo(() => {
+    const v = Math.max(0, Math.round(Number(encaisseMontant) || 0));
+    return Math.min(v, encaisseMax);
+  }, [encaisseMontant, encaisseMax]);
+
+  // Applique un paiement à une infraction → renvoie l'infraction mise à jour
+  function applyPayment(inf: DossierInfraction, montant: number): DossierInfraction {
+    const nouvellePayee = (inf.amendePayee || 0) + montant;
+    const amende = inf.amende || 0;
+    let statut: InfractionStatut = inf.statut || 'impunie';
+    if (statut !== 'amnistiee' && statut !== 'purgee') {
+      statut = nouvellePayee >= amende && amende > 0 ? 'payee' : 'partielle';
+    }
+    return { ...inf, amendePayee: nouvellePayee, statut };
+  }
+
+  // Construit + enregistre une transaction d'entrée dans la caisse police
+  async function pushCaisseTransaction(montant: number, description: string, ref: string) {
+    const now = Date.now();
+    const tx: ComptaTransaction = {
+      id: now,
+      type: 'entree',
+      category: 'amende',
+      montant,
+      description,
+      date: now,
+      agent: CURRENT_USER,
+      ref,
+    };
+    await dbUpdate(FB_CAISSE_POLICE, {
+      ...caissePolice,
+      transactions: [...caissePolice.transactions, tx],
+    });
+    return tx;
+  }
+
+  async function handleEncaisser() {
+    if (!dossier || encaisseCible === null) return;
+    const montant = encaisseValue;
+    if (montant <= 0) {
+      toast.info('Saisis un montant supérieur à 0');
+      return;
+    }
+
+    const numero = dossier.numeroDossier || `DOS-${id}`;
+    setEncaisseBusy(true);
+    try {
+      const list = [...all];
+      const idx = list.findIndex((d) => d.id === id);
+      if (idx === -1) throw new Error('Introuvable');
+      const current = list[idx];
+      const infractions = current.infractionsList || [];
+
+      if (encaisseCible === 'all') {
+        // Répartit le montant sur les infractions, dans l'ordre, jusqu'à épuisement
+        let reste = montant;
+        const updated = infractions.map((inf) => {
+          if (reste <= 0) return inf;
+          const du = resteDu(inf);
+          if (du <= 0) return inf;
+          const part = Math.min(du, reste);
+          reste -= part;
+          return applyPayment(inf, part);
+        });
+        const totals = computeAmendeTotals(updated);
+        list[idx] = {
+          ...current,
+          infractionsList: updated,
+          amendeTotal: totals.total,
+          amendePayee: totals.payee,
+          amendeImpayee: totals.impayee,
+        };
+
+        // Transaction caisse (globale dossier)
+        const tx = await pushCaisseTransaction(
+          montant,
+          `Amende — Dossier ${numero} — ${dossier.nom}`,
+          numero,
+        );
+
+        await dbSet(FB_PATH, list);
+
+        logAction({
+          who: CURRENT_USER,
+          whoId: u.id ?? null,
+          action: 'update',
+          target: 'dossier_infraction',
+          targetId: String(id),
+          detail: `Encaissement de ${fmtMoney(montant)} ₽ sur le dossier ${numero} (${dossier.nom}) — versé à la caisse police`,
+        });
+        logAction({
+          who: CURRENT_USER,
+          whoId: u.id ?? null,
+          action: 'create',
+          target: 'compta:transaction',
+          targetId: String(tx.id),
+          detail: `Caisse police — Entrée amende : +${fmtMoney(montant)} ₽ (dossier ${numero}, ${dossier.nom})`,
+        });
+
+        toast.success(`${fmtMoney(montant)} ₽ encaissés → caisse police`);
+      } else {
+        // Encaissement sur une infraction précise
+        const target = infractions.find((i) => i.id === encaisseCible);
+        if (!target) throw new Error('Infraction introuvable');
+        const updated = infractions.map((inf) =>
+          inf.id === encaisseCible ? applyPayment(inf, montant) : inf
+        );
+        const totals = computeAmendeTotals(updated);
+        list[idx] = {
+          ...current,
+          infractionsList: updated,
+          amendeTotal: totals.total,
+          amendePayee: totals.payee,
+          amendeImpayee: totals.impayee,
+        };
+
+        const tx = await pushCaisseTransaction(
+          montant,
+          `Amende — ${target.nom} — Dossier ${numero} — ${dossier.nom}`,
+          numero,
+        );
+
+        await dbSet(FB_PATH, list);
+
+        logAction({
+          who: CURRENT_USER,
+          whoId: u.id ?? null,
+          action: 'update',
+          target: 'dossier_infraction',
+          targetId: String(encaisseCible),
+          detail: `Encaissement de ${fmtMoney(montant)} ₽ sur l'infraction "${target.nom}" (dossier ${numero}) — versé à la caisse police`,
+        });
+        logAction({
+          who: CURRENT_USER,
+          whoId: u.id ?? null,
+          action: 'create',
+          target: 'compta:transaction',
+          targetId: String(tx.id),
+          detail: `Caisse police — Entrée amende : +${fmtMoney(montant)} ₽ (${target.nom}, dossier ${numero})`,
+        });
+
+        toast.success(`${fmtMoney(montant)} ₽ encaissés → caisse police`);
+      }
+
+      closeEncaisse();
+    } catch (err) {
+      console.error('[ENCAISSER]', err);
+      toast.error("Erreur lors de l'encaissement");
+    } finally {
+      setEncaisseBusy(false);
+    }
+  }
+
   if (loading) {
     return <div className={styles.loading}><p>Chargement du dossier…</p></div>;
   }
@@ -536,6 +769,11 @@ export default function FicheDossierPage() {
   const dangerClass = `d-${dossier.danger}`;
   const infractions = dossier.infractionsList || [];
   const totals = computeAmendeTotals(infractions);
+
+  // Libellé de la cible d'encaissement (pour la modale)
+  const encaisseCibleInf = typeof encaisseCible === 'number'
+    ? infractions.find((i) => i.id === encaisseCible)
+    : null;
 
   return (
     <>
@@ -634,7 +872,9 @@ export default function FicheDossierPage() {
               </p>
             ) : (
               <div className={styles.infractionsList}>
-                {infractions.map((inf, idx) => (
+                {infractions.map((inf, idx) => {
+                  const du = resteDu(inf);
+                  return (
                   <article
                     key={inf.id}
                     className={`${styles.infractionCard} ${styles[`infr-${inf.gravite || 'moyen'}`]}`}
@@ -694,8 +934,19 @@ export default function FicheDossierPage() {
                     {inf.notes && (
                       <p className={styles.infrNotes}>{inf.notes}</p>
                     )}
+                    {canEdit && du > 0 && (
+                      <div className={styles.infrEncaisse}>
+                        <button
+                          className={styles.encaisseBtn}
+                          onClick={() => openEncaisse(inf.id)}
+                        >
+                          <HandCoins size={12} /> Encaisser ({fmtMoney(du)} ₽ dû{du > 1 ? 's' : ''})
+                        </button>
+                      </div>
+                    )}
                   </article>
-                ))}
+                  );
+                })}
 
                 {totals.total > 0 && (
                   <div className={styles.totalsBar}>
@@ -712,6 +963,15 @@ export default function FicheDossierPage() {
                       <strong className={styles.totalImpaye}>{fmtMoney(totals.impayee)} ₽</strong>
                     </div>
                   </div>
+                )}
+
+                {canEdit && resteDuTotal > 0 && (
+                  <button
+                    className={styles.encaisseAllBtn}
+                    onClick={() => openEncaisse('all')}
+                  >
+                    <Banknote size={14} /> Tout encaisser ({fmtMoney(resteDuTotal)} ₽) → caisse police
+                  </button>
                 )}
               </div>
             )}
@@ -1270,6 +1530,62 @@ export default function FicheDossierPage() {
               onChange={(e) => setInfrForm({ ...infrForm, notes: e.target.value })}
               className={styles.infrInput}
             />
+          </div>
+        </div>
+      </Modal>
+
+      {/* ═══ MODALE ENCAISSEMENT ═══ */}
+      <Modal
+        open={showEncaisse}
+        onClose={closeEncaisse}
+        title={encaisseCible === 'all' ? "Encaisser le dossier" : "Encaisser l'amende"}
+        size="sm"
+        footer={
+          <>
+            <Button variant="outline" onClick={closeEncaisse}>Annuler</Button>
+            <Button onClick={handleEncaisser} disabled={encaisseBusy || encaisseValue <= 0}>
+              <HandCoins size={14} /> Encaisser {fmtMoney(encaisseValue)} ₽
+            </Button>
+          </>
+        }
+      >
+        <div className={styles.infrForm}>
+          <p className={styles.encaisseHelp}>
+            {encaisseCible === 'all' ? (
+              <>Encaisse un paiement réparti sur les infractions du dossier <strong>{dossier.numeroDossier || `#${id}`}</strong>. Le montant est versé à la caisse police.</>
+            ) : (
+              <>Encaisse un paiement pour l&apos;infraction <strong>{encaisseCibleInf?.nom}</strong>. Le montant est versé à la caisse police.</>
+            )}
+          </p>
+
+          <div className={styles.encaisseRefRow}>
+            <span>Reste dû</span>
+            <strong>{fmtMoney(encaisseMax)} ₽</strong>
+          </div>
+
+          <div className={styles.infrFormField}>
+            <label className={styles.infrFormLabel}>
+              <Coins size={11} /> Montant à encaisser (₽)
+            </label>
+            <input
+              type="number"
+              min="0"
+              max={encaisseMax}
+              value={encaisseMontant}
+              onChange={(e) => setEncaisseMontant(e.target.value)}
+              className={styles.infrInput}
+              autoFocus
+            />
+            {encaisseValue < (Math.round(Number(encaisseMontant) || 0)) && (
+              <p className={styles.hintInline}>
+                <em>Plafonné au reste dû ({fmtMoney(encaisseMax)} ₽).</em>
+              </p>
+            )}
+            {encaisseValue > 0 && encaisseValue < encaisseMax && (
+              <p className={styles.hintInline}>
+                <em>Paiement partiel — l&apos;infraction passera en « partielle ».</em>
+              </p>
+            )}
           </div>
         </div>
       </Modal>
