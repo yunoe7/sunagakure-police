@@ -335,6 +335,33 @@
   letter-spacing: 0.5px;
 }
 
+/* ─── LIEN DISCORD ─── */
+.discordBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  align-self: flex-start;
+  margin: 0 16px 12px;
+  padding: 6px 12px;
+  background: rgba(88, 101, 242, 0.12);
+  border: 1px solid rgba(88, 101, 242, 0.45);
+  border-radius: 6px;
+  color: #b4bcf5;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  font-weight: 700;
+  text-decoration: none;
+  transition: all 0.15s;
+}
+.discordBtn:hover {
+  background: rgba(88, 101, 242, 0.22);
+  border-color: rgba(88, 101, 242, 0.7);
+  color: #d4d9fb;
+}
+.discordBtn svg { color: #b4bcf5; }
+
 /* ─── ACTIONS (footer) ─── */
 .actions {
   display: flex;
@@ -388,6 +415,18 @@
 .formFields textarea {
   resize: vertical;
   min-height: 90px;
+}
+
+.fieldHint {
+  font-family: 'Barlow', sans-serif;
+  font-size: 11px;
+  font-style: italic;
+  color: var(--muted);
+  text-transform: none;
+  letter-spacing: normal;
+  font-weight: normal;
+  line-height: 1.4;
+  margin-top: 2px;
 }
 
 .row {
