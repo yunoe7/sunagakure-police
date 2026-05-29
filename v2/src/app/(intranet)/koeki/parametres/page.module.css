@@ -1,5 +1,4 @@
 /* KŌEKI — PARAMÈTRES */
-
 .lockBanner {
   display: flex;
   align-items: center;
@@ -12,7 +11,6 @@
   color: #fca5a5;
   font-size: 12.5px;
 }
-
 .intro {
   font-size: 13px;
   line-height: 1.6;
@@ -24,16 +22,13 @@
   margin-bottom: 20px;
 }
 .intro strong { color: var(--gold2); }
-
 .muted { color: var(--muted); font-style: italic; }
-
 .tauxGrid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
   gap: 14px;
   margin-bottom: 22px;
 }
-
 .tauxCard {
   background: linear-gradient(180deg, #15110b, #1a140c);
   border: 1px solid rgba(180,140,20,0.22);
@@ -53,7 +48,6 @@
   background: linear-gradient(90deg, transparent, var(--gold2), transparent);
   opacity: 0.6;
 }
-
 .tauxHead {
   display: flex;
   align-items: center;
@@ -66,7 +60,6 @@
   font-weight: 700;
   color: var(--text);
 }
-
 .tauxInputWrap {
   position: relative;
   display: flex;
@@ -99,8 +92,110 @@
   color: var(--muted);
   pointer-events: none;
 }
-
 .actions {
   display: flex;
   justify-content: flex-end;
+}
+
+/* ─── Section titles & séparateur ─── */
+.sectionTitle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--gold2);
+  margin: 4px 0 10px 0;
+}
+.sep {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(212,180,74,0.3), transparent);
+  margin: 28px 0 20px 0;
+}
+
+/* ─── Barème de paie ─── */
+.paieGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.paieCard {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 14px 16px;
+  background: linear-gradient(180deg, #15110b, #1a140c);
+  border: 1px solid rgba(180,140,20,0.22);
+  border-radius: 10px;
+}
+.paieGradeName {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text2);
+  letter-spacing: 0.3px;
+}
+.paieInputWrap {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(0,0,0,0.4);
+  border: 1px solid rgba(180,140,20,0.35);
+  border-radius: 6px;
+  padding: 0 10px;
+}
+.paieInputWrap:focus-within {
+  border-color: rgba(212,180,74,0.65);
+  box-shadow: 0 0 0 3px rgba(212,180,74,0.1);
+}
+.paieInput {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: var(--gold2);
+  font-family: 'Cinzel', serif;
+  font-size: 17px;
+  font-weight: 700;
+  padding: 9px 0;
+  width: 100%;
+}
+.paieInput:disabled { color: var(--muted); }
+.ryoIcon {
+  font-family: 'Cinzel', serif;
+  font-size: 15px;
+  color: var(--gold2);
+  opacity: 0.7;
+}
+
+/* ─── Carte bonus event ─── */
+.eventCard {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 16px;
+  background: linear-gradient(135deg, #1a1308 0%, #221a0e 100%);
+  border: 1px solid rgba(212,180,74,0.35);
+  border-radius: 10px;
+  max-width: 360px;
+}
+.eventHead {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  color: var(--gold2);
+}
+.eventNote {
+  font-size: 11.5px;
+  font-style: italic;
+  color: var(--muted);
+  line-height: 1.4;
+  margin: 0;
 }
