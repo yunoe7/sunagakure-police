@@ -286,6 +286,22 @@ export default function KoekiComptaPage() {
     } catch { toast.error('Erreur'); }
   }
 
+  // ─── Note membre (édition rapide depuis le détail) ───────────
+  async function handleSaveNoteMembre(ficheId: string, note: string) {
+    try {
+      const next = comptas.map((c) => c.discordId === ficheId ? { ...c, notes: note.trim() || undefined } : c);
+      await persistComptas(next);
+      const fiche = comptas.find((c) => c.discordId === ficheId);
+      logAction({
+        who: CURRENT_USER, whoId: CURRENT_USER_ID,
+        action: 'update', target: 'koeki:compta', targetId: ficheId,
+        detail: `Kōeki — Note modifiée pour ${fiche?.username ?? '?'}`,
+      });
+      toast.success('Note enregistrée');
+      setDetailFiche((prev) => prev ? (next.find((c) => c.discordId === prev.discordId) ?? prev) : prev);
+    } catch { toast.error('Erreur'); }
+  }
+
   // ─── Éditer / supprimer un mouvement d'une fiche ──────────────
   function openEditMvt(ficheId: string, m: MouvementCompta) {
     setEditMvtFicheId(ficheId);
@@ -549,6 +565,7 @@ export default function KoekiComptaPage() {
             canEdit={canPointer}
             onEditMvt={(m) => openEditMvt(detailFiche.discordId, m)}
             onDeleteMvt={(m) => handleDeleteMvt(detailFiche.discordId, m)}
+            onSaveNote={(note) => handleSaveNoteMembre(detailFiche.discordId, note)}
           />
         )}
       </Modal>
@@ -570,14 +587,17 @@ export default function KoekiComptaPage() {
   );
 }
 
-function FicheDetail({ fiche, canEdit = false, onEditMvt, onDeleteMvt }: {
+function FicheDetail({ fiche, canEdit = false, onEditMvt, onDeleteMvt, onSaveNote }: {
   fiche: ComptaKoeki;
   canEdit?: boolean;
   onEditMvt?: (m: MouvementCompta) => void;
   onDeleteMvt?: (m: MouvementCompta) => void;
+  onSaveNote?: (note: string) => void;
 }) {
   const mouvements = Array.isArray(fiche.mouvements) ? fiche.mouvements : [];
   const sorted = [...mouvements].sort((a, b) => b.date - a.date);
+  const [noteDraft, setNoteDraft] = useState(fiche.notes || '');
+  const noteModifiee = noteDraft.trim() !== (fiche.notes || '').trim();
   return (
     <div>
       <div className={styles.ficheHeader}>
@@ -585,6 +605,29 @@ function FicheDetail({ fiche, canEdit = false, onEditMvt, onDeleteMvt }: {
           <div className={styles.ficheGrade}>{fiche.grade ? KOEKI_GRADE_LABEL[fiche.grade] : '—'}</div>
           <div className={styles.ficheSolde}>{fiche.solde >= 0 ? '+' : ''}{fmtMoney(fiche.solde)} ₽</div>
         </div>
+      </div>
+
+      {/* Note / mémo */}
+      <div className={styles.noteBox}>
+        <div className={styles.noteLabel}>📝 Note</div>
+        {canEdit ? (
+          <>
+            <textarea
+              className={styles.noteTextarea}
+              rows={2}
+              value={noteDraft}
+              onChange={(e) => setNoteDraft(e.target.value)}
+              placeholder="Ajouter une note sur ce membre…"
+            />
+            {noteModifiee && (
+              <div className={styles.noteActions}>
+                <Button size="sm" onClick={() => onSaveNote?.(noteDraft)}><Save size={12} /> Enregistrer la note</Button>
+              </div>
+            )}
+          </>
+        ) : (
+          <div className={styles.noteReadonly}>{fiche.notes?.trim() || 'Aucune note.'}</div>
+        )}
       </div>
       {sorted.length === 0 ? <p className={styles.empty}>Aucun mouvement.</p> : (
         <table className={styles.table}>
