@@ -86,6 +86,13 @@ export default function KoekiComptaPage() {
   const [detailFiche, setDetailFiche] = useState<ComptaKoeki | null>(null);
   const [eventChecks, setEventChecks] = useState<Record<string, boolean>>({});
 
+  // Édition / suppression d'un mouvement dans une fiche
+  const [showEditMvt, setShowEditMvt] = useState(false);
+  const [editMvtFicheId, setEditMvtFicheId] = useState<string | null>(null);
+  const [editMvt, setEditMvt] = useState<MouvementCompta | null>(null);
+  const [editMvtMontant, setEditMvtMontant] = useState('');
+  const [editMvtMotif, setEditMvtMotif] = useState('');
+
   const comptas = useMemo<ComptaKoeki[]>(() => {
     const list = Array.isArray(comptasData) ? comptasData : comptasData ? Object.values(comptasData) : [];
     return list.filter((c): c is ComptaKoeki => c !== null && typeof c === 'object' && !!c.discordId)
@@ -274,6 +281,89 @@ export default function KoekiComptaPage() {
     } catch { toast.error('Erreur'); }
   }
 
+  // ─── Éditer / supprimer un mouvement d'une fiche ──────────────
+  function openEditMvt(ficheId: string, m: MouvementCompta) {
+    setEditMvtFicheId(ficheId);
+    setEditMvt(m);
+    setEditMvtMontant(String(Math.abs(m.montant)));
+    setEditMvtMotif(m.motif || '');
+    setShowEditMvt(true);
+  }
+
+  async function handleSaveEditMvt() {
+    if (!editMvt || !editMvtFicheId) return;
+    const montantAbs = Number(editMvtMontant);
+    if (!editMvtMontant || isNaN(montantAbs) || montantAbs <= 0) { toast.error('Le montant doit être positif'); return; }
+    // On conserve le signe selon le type (sanction = négatif, reste positif)
+    const signe = editMvt.type === 'sanction' ? -1 : 1;
+    const nouveauMontant = signe * montantAbs;
+    try {
+      const next = comptas.map((c) => {
+        if (c.discordId !== editMvtFicheId) return c;
+        const mouvements = c.mouvements.map((mv) =>
+          mv.id === editMvt.id ? { ...mv, montant: nouveauMontant, motif: editMvtMotif.trim() || undefined } : mv
+        );
+        return { ...c, mouvements, solde: recomputeSolde(mouvements) };
+      });
+      await persistComptas(next);
+      const fiche = comptas.find((c) => c.discordId === editMvtFicheId);
+      logAction({
+        who: CURRENT_USER, whoId: CURRENT_USER_ID,
+        action: 'update', target: 'koeki:compta', targetId: editMvtFicheId,
+        detail: `Kōeki — Mouvement modifié (${MOUVEMENT_COMPTA_LABEL[editMvt.type]}) pour ${fiche?.username ?? '?'} : ` +
+          `${editMvt.montant >= 0 ? '+' : ''}${fmtMoney(editMvt.montant)} ₽ → ${nouveauMontant >= 0 ? '+' : ''}${fmtMoney(nouveauMontant)} ₽`,
+      });
+      toast.success('Mouvement modifié');
+      setShowEditMvt(false);
+      setEditMvt(null);
+      setEditMvtFicheId(null);
+      // garder le détail ouvert et à jour
+      setDetailFiche((prev) => prev ? (next.find((c) => c.discordId === prev.discordId) ?? prev) : prev);
+    } catch { toast.error('Erreur'); }
+  }
+
+  async function handleDeleteMvt(ficheId: string, m: MouvementCompta) {
+    const estPaie = m.type === 'paie';
+    const ok = await confirmAction({
+      title: 'Supprimer le mouvement',
+      message: `Supprimer ce mouvement (${MOUVEMENT_COMPTA_LABEL[m.type]} ${m.montant >= 0 ? '+' : ''}${fmtMoney(m.montant)} ₽) ?` +
+        (estPaie ? '\n\n⚠️ Cette paie a déjà été débitée du Trésor (retrait groupé). Supprimer la ligne ne recrédite PAS le Trésor automatiquement — régularise-le manuellement si nécessaire.' : ''),
+      confirmLabel: 'Supprimer', variant: 'danger',
+    });
+    if (!ok) return;
+
+    // Si on supprime la paie de la semaine courante, proposer de réinitialiser dernierVersement
+    let resetVersement = false;
+    if (estPaie && m.semaine === semaine) {
+      resetVersement = await confirmAction({
+        title: 'Réinitialiser le statut de paie ?',
+        message: `Ce membre était marqué « payé » pour la semaine ${semaine}. Veux-tu réinitialiser ce statut pour pouvoir le repayer via « Verser la paie » ?`,
+        confirmLabel: 'Oui, réinitialiser',
+      });
+    }
+
+    try {
+      const next = comptas.map((c) => {
+        if (c.discordId !== ficheId) return c;
+        const mouvements = c.mouvements.filter((mv) => mv.id !== m.id);
+        const updated = { ...c, mouvements, solde: recomputeSolde(mouvements) };
+        if (resetVersement && updated.dernierVersement === semaine) updated.dernierVersement = undefined;
+        return updated;
+      });
+      await persistComptas(next);
+      const fiche = comptas.find((c) => c.discordId === ficheId);
+      logAction({
+        who: CURRENT_USER, whoId: CURRENT_USER_ID,
+        action: 'delete', target: 'koeki:compta', targetId: ficheId,
+        detail: `Kōeki — Mouvement supprimé (${MOUVEMENT_COMPTA_LABEL[m.type]} ${m.montant >= 0 ? '+' : ''}${fmtMoney(m.montant)} ₽) pour ${fiche?.username ?? '?'}` +
+          (estPaie ? ' — ⚠️ paie : Trésor non recrédité automatiquement' : '') +
+          (resetVersement ? ` — statut de paie semaine ${semaine} réinitialisé` : ''),
+      });
+      toast.success('Mouvement supprimé');
+      setDetailFiche((prev) => prev ? (next.find((c) => c.discordId === prev.discordId) ?? prev) : prev);
+    } catch { toast.error('Erreur'); }
+  }
+
   const visibleMembres = useMemo(() => {
     let list = comptas;
     const q = search.trim().toLowerCase();
@@ -448,13 +538,39 @@ export default function KoekiComptaPage() {
 
       <Modal open={!!detailFiche} onClose={() => setDetailFiche(null)} title={detailFiche ? `Fiche — ${detailFiche.username}` : 'Fiche'} size="lg"
         footer={<Button variant="outline" onClick={() => setDetailFiche(null)}>Fermer</Button>}>
-        {detailFiche && <FicheDetail fiche={comptas.find((c) => c.discordId === detailFiche.discordId) ?? detailFiche} />}
+        {detailFiche && (
+          <FicheDetail
+            fiche={comptas.find((c) => c.discordId === detailFiche.discordId) ?? detailFiche}
+            canEdit={canPointer}
+            onEditMvt={(m) => openEditMvt(detailFiche.discordId, m)}
+            onDeleteMvt={(m) => handleDeleteMvt(detailFiche.discordId, m)}
+          />
+        )}
+      </Modal>
+
+      {/* Modal édition d'un mouvement */}
+      <Modal open={showEditMvt} onClose={() => setShowEditMvt(false)}
+        title={editMvt ? `Modifier — ${MOUVEMENT_COMPTA_LABEL[editMvt.type]}` : 'Modifier le mouvement'} size="md"
+        footer={<><Button variant="outline" onClick={() => setShowEditMvt(false)}>Annuler</Button><Button onClick={handleSaveEditMvt}><Save size={14} /> Enregistrer</Button></>}>
+        <div className={styles.formFields}>
+          <label>Montant (₽) *<input type="number" min="1" step="1" value={editMvtMontant} autoFocus onChange={(e) => setEditMvtMontant(e.target.value)} placeholder="Montant positif" /></label>
+          <label>Motif<textarea rows={2} value={editMvtMotif} onChange={(e) => setEditMvtMotif(e.target.value)} placeholder="Raison (optionnel)" /></label>
+          <p className={styles.help}>
+            {editMvt?.type === 'sanction' ? 'Sanction : le montant sera retiré du solde.' : 'Le montant sera ajouté au solde.'}
+            {editMvt?.type === 'paie' ? ' ⚠️ Modifier une paie ne réajuste pas le Trésor (déjà débité).' : ''}
+          </p>
+        </div>
       </Modal>
     </>
   );
 }
 
-function FicheDetail({ fiche }: { fiche: ComptaKoeki }) {
+function FicheDetail({ fiche, canEdit = false, onEditMvt, onDeleteMvt }: {
+  fiche: ComptaKoeki;
+  canEdit?: boolean;
+  onEditMvt?: (m: MouvementCompta) => void;
+  onDeleteMvt?: (m: MouvementCompta) => void;
+}) {
   const mouvements = Array.isArray(fiche.mouvements) ? fiche.mouvements : [];
   const sorted = [...mouvements].sort((a, b) => b.date - a.date);
   return (
@@ -467,7 +583,7 @@ function FicheDetail({ fiche }: { fiche: ComptaKoeki }) {
       </div>
       {sorted.length === 0 ? <p className={styles.empty}>Aucun mouvement.</p> : (
         <table className={styles.table}>
-          <thead><tr><th>Date</th><th>Type</th><th>Motif</th><th style={{ textAlign: 'right' }}>Montant</th></tr></thead>
+          <thead><tr><th>Date</th><th>Type</th><th>Motif</th><th style={{ textAlign: 'right' }}>Montant</th>{canEdit && <th aria-label="actions" />}</tr></thead>
           <tbody>
             {sorted.map((m) => (
               <tr key={m.id}>
@@ -475,6 +591,14 @@ function FicheDetail({ fiche }: { fiche: ComptaKoeki }) {
                 <td>{MOUVEMENT_COMPTA_LABEL[m.type]}</td>
                 <td className={styles.muted}>{m.motif || '—'}</td>
                 <td className={`${styles.amount} ${m.montant >= 0 ? styles.amtPos : styles.amtNeg}`} style={{ textAlign: 'right' }}>{m.montant >= 0 ? '+' : ''}{fmtMoney(m.montant)} ₽</td>
+                {canEdit && (
+                  <td>
+                    <div className={styles.rowActions}>
+                      <button className={styles.iconBtn} onClick={() => onEditMvt?.(m)} aria-label="Modifier le mouvement"><Pencil size={12} /></button>
+                      <button className={styles.deleteBtn} onClick={() => onDeleteMvt?.(m)} aria-label="Supprimer le mouvement"><Trash2 size={13} /></button>
+                    </div>
+                  </td>
+                )}
               </tr>
             ))}
           </tbody>
