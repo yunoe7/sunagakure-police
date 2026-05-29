@@ -151,3 +151,66 @@ a.block:hover {
   color: var(--muted);
   line-height: 1.4;
 }
+
+/* ─── GRAPHIQUES ─── */
+.chartsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 14px;
+  margin-top: 18px;
+}
+.chartCard {
+  background: linear-gradient(180deg, #15110b, #1a140c);
+  border: 1px solid rgba(180,140,20,0.22);
+  border-radius: 12px;
+  padding: 16px 18px;
+}
+.chartHead {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  color: var(--gold2);
+  margin-bottom: 14px;
+}
+.chartEmpty {
+  text-align: center;
+  padding: 40px 10px;
+  color: var(--muted);
+  font-style: italic;
+  font-size: 12px;
+}
+/* Camembert */
+.pieWrap {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.pieLegend {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+.legendRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--text2);
+}
+.legendDot {
+  width: 11px; height: 11px;
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+.legendVal {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-weight: 700;
+  color: var(--gold2);
+  margin-left: 4px;
+}
