@@ -7,35 +7,20 @@
  *
  * Récupère les infos du user Discord actuellement connecté via NextAuth.
  *
- * ✨ Refresh automatique des rôles Discord toutes les 5 minutes
- *    (compromise entre fraîcheur et rate limit Discord).
- *    Pour un effet INSTANTANÉ, utiliser le bouton "Refresh mes rôles"
- *    dans le menu avatar de la sidebar.
+ * ✨ Refresh automatique des rôles Discord toutes les 5 minutes.
+ *    Bouton "Refresh mes rôles" pour un effet instantané.
  *
- * 🆕 OVERRIDE KŌEKI EN BASE : le grade Kōeki peut être défini depuis
- *    l'intranet (page /admin/membres) et stocké dans Firebase
- *    (koeki/grades/{discordId}). S'il existe, il PRIME sur le rôle
- *    Discord — ce qui permet de gérer le Kōeki sans dépendre de la
- *    propagation parfois lente des rôles Discord via OAuth.
+ * 🆕 OVERRIDES EN BASE (modèle "ajout") : on peut attribuer des rôles
+ *    depuis /admin/membres, stockés dans Firebase. Ils COMPLÈTENT
+ *    Discord (ne retirent jamais) :
+ *      - overrides/{id}     → branches, gérant/co-gérant, rang, admin
+ *      - koeki/grades/{id}  → grade Kōeki (prime sur le rôle Discord)
+ *    Permet de gérer les accès sans dépendre de la propagation parfois
+ *    lente des rôles Discord via OAuth.
  *
- * 🥷 RÈGLE "ALL PERM" : Les utilisateurs suivants obtiennent
- *    automatiquement toutes les permissions de branche
- *    (Membre ET Gérant), PARTOUT, sans exception :
- *    - Rang Jonin (niveau 7) et au-dessus
- *    - Membres du Conseil du Vent
- *
- *    Cette règle s'applique aussi à Kōeki (can.koeki.*) : un Jonin+
- *    ou Conseil du Vent a tous les droits Kōeki comme pour les
- *    autres branches.
- *
- *    Les pages "admin technique" (Maintenance, Whitelist) restent
- *    réservées aux admins techniques (isAdmin) UNIQUEMENT.
- *
- * Usage :
- *   const { username, displayName, avatar, isLoading, refreshRoles } = useCurrentUser();
- *
- *   // Bouton manuel
- *   <button onClick={refreshRoles}>🔄 Refresh mes rôles</button>
+ * 🥷 RÈGLE "ALL PERM" : Jonin (niveau 7+) ou Conseil du Vent =
+ *    toutes les permissions de branche (membre ET gérant), Kōeki inclus.
+ *    Maintenance/Whitelist restent réservés aux admins techniques.
  *
  * Usage permissions :
  *   const { user, can } = useCurrentUser();
@@ -46,9 +31,10 @@
  */
 
 import { useSession } from 'next-auth/react';
-import { useCallback, useEffect, useRef } from 'react';
-import type { IntranetUser } from '@/lib/roles';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
+import type { IntranetUser, Rang } from '@/lib/roles';
 import {
+  RANG_HIERARCHIE,
   canVoirEconomie, canGererSocietes, canDeclarerCA, canModifierTaux,
   canRenflouerBDM, canVoirMarche, canGererMarche, canVoirComptaGlobale,
   canPointerCompta, canVoirSaCompta, canVoirParametres, isKoeki,
@@ -59,12 +45,13 @@ import {
   gradeToKoekiInfo,
   type KoekiGradeOverride,
 } from '@/types/koekiGrades';
+import {
+  OVERRIDES_PATH,
+  normalizeOverride,
+  type RoleOverride,
+} from '@/types/roleOverrides';
 
-// Intervalle de refresh côté client (5 minutes pour éviter le rate limit Discord)
 const CLIENT_REFRESH_INTERVAL = 5 * 60 * 1000;
-
-// 🥷 Niveau minimum pour avoir "all perm" automatiquement
-//    7 = Jonin (et au-dessus : Sairin, Commandant Jonin, Bras droit, Kazekage)
 const JONIN_NIVEAU = 7;
 
 export type KoekiPermissions = {
@@ -97,29 +84,84 @@ function getInitials(name: string | undefined): string {
   return (parts[0][0] + parts[1][0]).toUpperCase();
 }
 
+/** Construit un Rang à partir d'un niveau (pour l'override de rang). */
+function rangFromNiveau(niveau: number): Rang | null {
+  const found = RANG_HIERARCHIE.find((r) => r.niveau === niveau);
+  return found ? { id: found.id, nom: found.nom, niveau: found.niveau } : null;
+}
+
+/**
+ * Fusionne l'utilisateur Discord avec les overrides en base (modèle "ajout").
+ * - branches / gerantDe / coGerantDe : union (sans doublon)
+ * - rang : on garde le plus élevé (max niveau)
+ * - isAdmin : Discord OR base
+ * Ne retire jamais rien de ce que Discord a donné.
+ */
+function mergeOverride(base: IntranetUser, ov: RoleOverride): IntranetUser {
+  const union = (a: string[], b: string[] | undefined) =>
+    Array.from(new Set([...(a ?? []), ...(b ?? [])]));
+
+  // Rang : on prend le max entre Discord et l'override
+  let rang = base.rang;
+  if (typeof ov.rangNiveau === 'number') {
+    const currentNiveau = base.rang?.niveau ?? 0;
+    if (ov.rangNiveau > currentNiveau) {
+      rang = rangFromNiveau(ov.rangNiveau) ?? base.rang;
+    }
+  }
+
+  return {
+    ...base,
+    branches: (() => {
+      // union des slugs, en reconstruisant des objets Branche cohérents
+      const slugs = union(base.branches.map((b) => b.slug), ov.branches);
+      // on garde les objets Branche existants, et pour les slugs ajoutés
+      // on crée un objet minimal (id vide, nom = slug capitalisé)
+      return slugs.map((slug) => {
+        const existing = base.branches.find((b) => b.slug === slug);
+        if (existing) return existing;
+        return { id: '', nom: slug.charAt(0).toUpperCase() + slug.slice(1), slug };
+      });
+    })(),
+    gerantDe: union(base.gerantDe, ov.gerantDe),
+    coGerantDe: union(base.coGerantDe, ov.coGerantDe),
+    rang,
+    isAdmin: base.isAdmin || ov.isAdmin === true,
+  };
+}
+
 export function useCurrentUser() {
   const { data: session, status, update } = useSession();
   const user = session?.user;
 
-  const intranetUser =
+  const intranetUserRaw =
     ((session as unknown as { intranet?: IntranetUser } | null)?.intranet) ?? null;
 
   const displayName =
     user?.discordGlobalName ||
     user?.discordUsername ||
     user?.name ||
-    intranetUser?.username ||
+    intranetUserRaw?.username ||
     'Ninja';
 
-  // ─── 🆕 Override grade Kōeki depuis Firebase ───────────────────
-  // On lit koeki/grades/{discordId}. Si un grade y est défini, il
-  // remplace le koeki venu du JWT (rôle Discord).
-  const myDiscordId = user?.discordId ?? intranetUser?.discordId ?? null;
+  const myDiscordId = user?.discordId ?? intranetUserRaw?.discordId ?? null;
+
+  // ─── 🆕 Overrides depuis Firebase ──────────────────────────────
+  const { data: overrideData } = useFirebaseValue<RoleOverride | null>(
+    myDiscordId ? `${OVERRIDES_PATH}/${myDiscordId}` : null
+  );
   const { data: gradeOverrideData } = useFirebaseValue<KoekiGradeOverride | null>(
     myDiscordId ? `${KOEKI_GRADES_PATH}/${myDiscordId}` : null
   );
 
-  // ─── Refresh manuel (utilisable par un bouton) ─────────────────
+  // intranetUser fusionné avec les overrides de branches/rang/admin
+  const intranetUser = useMemo<IntranetUser | null>(() => {
+    if (!intranetUserRaw) return null;
+    if (!overrideData) return intranetUserRaw;
+    return mergeOverride(intranetUserRaw, normalizeOverride(overrideData));
+  }, [intranetUserRaw, overrideData]);
+
+  // ─── Refresh manuel ────────────────────────────────────────────
   const refreshRoles = useCallback(async () => {
     try {
       await update();
@@ -129,27 +171,18 @@ export function useCurrentUser() {
     }
   }, [update]);
 
-  // ─── Refresh auto en arrière-plan toutes les 5 minutes ─────────
+  // ─── Refresh auto toutes les 5 minutes ─────────────────────────
   const lastTriggerRef = useRef<number>(Date.now());
-
   useEffect(() => {
     if (status !== 'authenticated') return;
-
     const interval = setInterval(() => {
       lastTriggerRef.current = Date.now();
       update().catch((err) => console.error('[useCurrentUser] refresh interval :', err));
     }, CLIENT_REFRESH_INTERVAL);
-
-    return () => {
-      clearInterval(interval);
-    };
+    return () => clearInterval(interval);
   }, [status, update]);
 
   // ─── Helpers de permissions ────────────────────────────────────
-
-  // 🥷 "All perm" automatique si :
-  //    - rang Jonin (7) ou plus, OU
-  //    - membre du Conseil du Vent
   const hasAllPerm =
     intranetUser !== null &&
     (
@@ -157,13 +190,9 @@ export function useCurrentUser() {
       intranetUser.isConseilDuVent
     );
 
-  // Court-circuit pour Kōeki : isAdmin technique OU hasAllPerm (Jonin+/Conseil).
-  // On le passe comme 2e argument des helpers purs de roles.ts.
   const koekiOverride = !!intranetUser && (intranetUser.isAdmin || hasAllPerm);
 
-  // 🆕 Grade Kōeki effectif :
-  //    - si un grade est défini en base (koeki/grades/{id}) → il PRIME
-  //    - sinon → on garde le grade venu du rôle Discord (JWT)
+  // Grade Kōeki effectif : base prime sur Discord
   const baseGrade = gradeOverrideData?.grade ?? null;
   const koekiInfo = baseGrade
     ? gradeToKoekiInfo(baseGrade)
@@ -173,7 +202,6 @@ export function useCurrentUser() {
     adminBranche: (slug: string | string[]) => {
       if (!intranetUser) return false;
       if (intranetUser.isAdmin) return true;
-      // 🥷 Jonin+ OU Conseil du Vent = Gérant de toutes les branches
       if (hasAllPerm) return true;
       const slugs = Array.isArray(slug) ? slug : [slug];
       return slugs.some(
@@ -185,7 +213,6 @@ export function useCurrentUser() {
     membreBranche: (slug: string | string[]) => {
       if (!intranetUser) return false;
       if (intranetUser.isAdmin) return true;
-      // 🥷 Jonin+ OU Conseil du Vent = Membre de toutes les branches
       if (hasAllPerm) return true;
       const slugs = Array.isArray(slug) ? slug : [slug];
       return intranetUser.branches.some((b) => slugs.includes(b.slug));
@@ -193,9 +220,6 @@ export function useCurrentUser() {
 
     adminGeneral: () => {
       if (!intranetUser) return false;
-      // ⚠️ adminGeneral NE PREND PAS hasAllPerm :
-      //    Maintenance/Whitelist restent réservés aux admins techniques.
-      //    (mais isConseilDuVent y est inclus historiquement, on garde)
       return (
         intranetUser.isAdmin ||
         intranetUser.isStaff ||
@@ -209,10 +233,6 @@ export function useCurrentUser() {
       return intranetUser.rang.niveau >= niveauMin;
     },
 
-    // ─── KŌEKI ───
-    // Chaque helper passe koekiOverride (isAdmin OU hasAllPerm) comme 2e arg,
-    // de sorte qu'un Jonin+/Conseil du Vent a tous les droits Kōeki.
-    // koekiInfo intègre désormais l'override en base (priorité sur Discord).
     koeki: {
       acces: () => isKoeki(koekiInfo, koekiOverride),
       voirEconomie: () => canVoirEconomie(koekiInfo, koekiOverride),
