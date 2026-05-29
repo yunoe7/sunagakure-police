@@ -260,3 +260,21 @@
   box-shadow: 0 0 0 3px rgba(212,180,74,0.1);
 }
 .formFields textarea { resize: vertical; min-height: 60px; }
+
+/* ─── Encart RDV (date + lieu) sur la carte ─── */
+.rdvBox {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px 10px;
+  background: rgba(196,181,253,0.07);
+  border: 1px solid rgba(196,181,253,0.25);
+  border-radius: 6px;
+}
+.rdvLine {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: #c4b5fd;
+}
