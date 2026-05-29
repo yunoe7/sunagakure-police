@@ -18,7 +18,7 @@
  */
 
 import { useState, useMemo } from 'react';
-import { Search, Users, ShieldCheck, Activity, Briefcase } from 'lucide-react';
+import { Search, Users, ShieldCheck, Activity, Briefcase, ChevronDown } from 'lucide-react';
 
 import { useMembers, type Member } from '@/hooks/useMembers';
 import { useFirebaseValue } from '@/hooks/useFirebaseValue';
@@ -425,35 +425,104 @@ function MemberRow({
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'flex-end',
-            gap: 5,
-            marginTop: 6,
+            gap: 8,
+            marginTop: 8,
           }}
         >
-          <Briefcase size={12} style={{ opacity: 0.5, color: '#34d399' }} />
-          <select
-            value={koekiGrade ?? ''}
-            disabled={saving}
-            onChange={(e) => handleGradeChange(e.target.value)}
-            title="Grade Kōeki (stocké dans l'intranet)"
+          <span
             style={{
-              fontSize: 11,
-              padding: '3px 6px',
-              background: 'rgba(0,0,0,0.4)',
-              color: koekiGrade ? '#34d399' : 'rgba(255,255,255,0.6)',
-              border: '1px solid rgba(52, 211, 153, 0.35)',
-              borderRadius: 4,
-              outline: 'none',
-              cursor: saving ? 'wait' : 'pointer',
+              fontSize: 8,
+              letterSpacing: 1.5,
+              textTransform: 'uppercase',
+              color: 'rgba(255,255,255,0.35)',
               fontFamily: 'Share Tech Mono, monospace',
             }}
           >
-            <option value="">Kōeki : Aucun</option>
-            {KOEKI_GRADE_OPTIONS.map((o) => (
-              <option key={o.value} value={o.value}>
-                {o.label}
-              </option>
-            ))}
-          </select>
+            Kōeki
+          </span>
+          <div
+            style={{
+              position: 'relative',
+              display: 'inline-flex',
+              alignItems: 'center',
+            }}
+          >
+            <span
+              style={{
+                position: 'absolute',
+                left: 9,
+                display: 'inline-flex',
+                pointerEvents: 'none',
+                color: koekiGrade ? '#34d399' : 'rgba(255,255,255,0.3)',
+              }}
+            >
+              <Briefcase size={12} />
+            </span>
+            <select
+              value={koekiGrade ?? ''}
+              disabled={saving}
+              onChange={(e) => handleGradeChange(e.target.value)}
+              title="Grade Kōeki (géré dans l'intranet, indépendant de Discord)"
+              style={{
+                appearance: 'none',
+                WebkitAppearance: 'none',
+                MozAppearance: 'none',
+                fontSize: 11,
+                fontWeight: 600,
+                padding: '6px 26px 6px 28px',
+                minWidth: 150,
+                textAlign: 'left',
+                background: koekiGrade
+                  ? 'linear-gradient(180deg, rgba(52,211,153,0.16), rgba(52,211,153,0.06))'
+                  : 'rgba(255,255,255,0.04)',
+                color: koekiGrade ? '#6ee7b7' : 'rgba(255,255,255,0.6)',
+                border: koekiGrade
+                  ? '1px solid rgba(52,211,153,0.5)'
+                  : '1px solid rgba(255,255,255,0.12)',
+                borderRadius: 7,
+                outline: 'none',
+                cursor: saving ? 'wait' : 'pointer',
+                opacity: saving ? 0.5 : 1,
+                fontFamily: 'Barlow Condensed, sans-serif',
+                letterSpacing: 0.3,
+                transition: 'all 0.15s ease',
+                boxShadow: koekiGrade
+                  ? '0 0 0 1px rgba(52,211,153,0.08), 0 2px 8px rgba(52,211,153,0.1)'
+                  : 'none',
+              }}
+              onFocus={(e) => {
+                e.currentTarget.style.borderColor = 'rgba(212,172,13,0.6)';
+                e.currentTarget.style.boxShadow = '0 0 0 3px rgba(212,172,13,0.12)';
+              }}
+              onBlur={(e) => {
+                e.currentTarget.style.borderColor = koekiGrade
+                  ? 'rgba(52,211,153,0.5)'
+                  : 'rgba(255,255,255,0.12)';
+                e.currentTarget.style.boxShadow = koekiGrade
+                  ? '0 0 0 1px rgba(52,211,153,0.08), 0 2px 8px rgba(52,211,153,0.1)'
+                  : 'none';
+              }}
+            >
+              <option value="">Aucun</option>
+              {KOEKI_GRADE_OPTIONS.map((o) => (
+                <option key={o.value} value={o.value}>
+                  {o.label}
+                </option>
+              ))}
+            </select>
+            {/* Flèche custom */}
+            <span
+              style={{
+                position: 'absolute',
+                right: 9,
+                pointerEvents: 'none',
+                color: koekiGrade ? '#34d399' : 'rgba(255,255,255,0.4)',
+                display: 'inline-flex',
+              }}
+            >
+              <ChevronDown size={13} />
+            </span>
+          </div>
         </div>
       </div>
     </div>
