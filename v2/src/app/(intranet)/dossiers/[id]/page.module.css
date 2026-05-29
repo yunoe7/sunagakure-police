@@ -1146,6 +1146,104 @@ textarea.batchInput {
   margin-bottom: 8px;
 }
 
+/* ═══════════════════════════════════════════════════════════════
+   💰 ENCAISSEMENT DES AMENDES
+   ═══════════════════════════════════════════════════════════════ */
+
+/* Zone bouton "Encaisser" sous une infraction */
+.infrEncaisse {
+  margin-top: 8px;
+  padding-left: 8px;
+}
+.encaisseBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: linear-gradient(180deg, rgba(140, 160, 80, 0.2), rgba(140, 160, 80, 0.08));
+  border: 1px solid rgba(140, 160, 80, 0.45);
+  border-radius: 4px;
+  color: #b8c890;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.encaisseBtn:hover {
+  background: linear-gradient(180deg, rgba(140, 160, 80, 0.32), rgba(140, 160, 80, 0.14));
+  border-color: rgba(140, 160, 80, 0.7);
+  color: #cdda9e;
+}
+.encaisseBtn svg { color: #b8c890; }
+
+/* Bouton "Tout encaisser" sous la barre de totaux */
+.encaisseAllBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 8px;
+  padding: 10px 16px;
+  width: 100%;
+  background: linear-gradient(180deg, rgba(140, 160, 80, 0.18), rgba(140, 160, 80, 0.07));
+  border: 1px solid rgba(140, 160, 80, 0.5);
+  border-radius: 5px;
+  color: #b8c890;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.encaisseAllBtn:hover {
+  background: linear-gradient(180deg, rgba(140, 160, 80, 0.3), rgba(140, 160, 80, 0.12));
+  border-color: rgba(140, 160, 80, 0.75);
+  color: #cdda9e;
+}
+.encaisseAllBtn svg { color: #b8c890; }
+
+/* Texte d'aide dans la modale d'encaissement */
+.encaisseHelp {
+  font-family: 'EB Garamond', Georgia, serif;
+  font-size: 13.5px;
+  line-height: 1.5;
+  color: #d8c8a8;
+  margin: 0 0 4px;
+  font-style: italic;
+}
+.encaisseHelp strong {
+  color: #c8a850;
+  font-style: normal;
+}
+
+/* Ligne "Reste dû" dans la modale */
+.encaisseRefRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(200, 168, 80, 0.25);
+  border-radius: 4px;
+}
+.encaisseRefRow span {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.encaisseRefRow strong {
+  font-family: 'Cinzel', serif;
+  font-size: 18px;
+  color: #e8a090;
+}
+
 /* ═══ MOBILE ═══ */
 @media (max-width: 768px) {
   .actionsBar { padding: 10px 0; gap: 8px; }
