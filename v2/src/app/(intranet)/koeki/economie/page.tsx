@@ -21,6 +21,9 @@
  *   Renflouer BDM→ crée TresorRetrait (sortie Trésor) + entrée comptaMissions
  *   Trésor d'abord, métier ensuite. Audit sur tous les cas.
  *
+ * ⭐ Relance fiscale : une société active est "à déclarer" si elle n'a
+ *   aucune DeclarationCA pour la semaine courante. Badge + compteur + filtre.
+ *
  * Stockage Firebase :
  *   koeki/societes      → Societe[]
  *   koeki/declarations  → DeclarationCA[]
@@ -33,7 +36,7 @@
 import { useMemo, useState } from 'react';
 import {
   Plus, Pencil, Archive, ArchiveRestore, Search, Building2, Save,
-  Coins, Landmark, HandCoins,
+  Coins, Landmark, HandCoins, AlertTriangle, CheckCircle2,
 } from 'lucide-react';
 import { useFirebaseValue } from '@/hooks/useFirebaseValue';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
@@ -82,6 +85,7 @@ export default function KoekiEconomiePage() {
   const [search, setSearch] = useState('');
   const [filterType, setFilterType] = useState<'all' | SocieteType>('all');
   const [filterActif, setFilterActif] = useState<FilterActif>('actifs');
+  const [filterRelance, setFilterRelance] = useState(false);
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState<Societe | null>(null);
   const [form, setForm] = useState<Partial<Societe>>({});
@@ -95,6 +99,8 @@ export default function KoekiEconomiePage() {
   const [showBdm, setShowBdm] = useState(false);
   const [bdmMontant, setBdmMontant] = useState<string>('');
   const [bdmMotif, setBdmMotif] = useState<string>('');
+
+  const semaineActuelle = currentWeek();
 
   const params = useMemo<KoekiParametres>(() => ({
     tauxParType: paramsData?.tauxParType ?? DEFAULT_TAUX_PAR_TYPE,
@@ -114,6 +120,19 @@ export default function KoekiEconomiePage() {
       : declarationsData ? Object.values(declarationsData) : [];
     return list.filter((d): d is DeclarationCA => d !== null && typeof d === 'object' && !!d.id);
   }, [declarationsData]);
+
+  // ⭐ Ensemble des societeId ayant déclaré cette semaine
+  const declareCetteSemaine = useMemo(() => {
+    const s = new Set<string>();
+    for (const d of declarations) {
+      if (d.semaine === semaineActuelle && d.societeId) s.add(d.societeId);
+    }
+    return s;
+  }, [declarations, semaineActuelle]);
+
+  function aDeclare(s: Societe): boolean {
+    return declareCetteSemaine.has(s.id);
+  }
 
   // Trésor normalisé (même pattern que /tresor et /impots)
   const tresorCurrent = useMemo<TresorCentral>(() => ({
@@ -140,6 +159,7 @@ export default function KoekiEconomiePage() {
     if (filterActif === 'actifs') list = list.filter((s) => s.actif);
     else if (filterActif === 'archives') list = list.filter((s) => !s.actif);
     if (filterType !== 'all') list = list.filter((s) => s.type === filterType);
+    if (filterRelance) list = list.filter((s) => s.actif && !aDeclare(s));
     const q = search.trim().toLowerCase();
     if (q) {
       list = list.filter((s) =>
@@ -148,20 +168,24 @@ export default function KoekiEconomiePage() {
       );
     }
     return [...list].sort((a, b) => (a.nom || '').localeCompare(b.nom || ''));
-  }, [societes, filterActif, filterType, search]);
+  }, [societes, filterActif, filterType, filterRelance, search, declareCetteSemaine]);
 
   const stats = useMemo(() => {
     const actives = societes.filter((s) => s.actif);
     const parType = new Map<SocieteType, number>();
     for (const s of actives) parType.set(s.type, (parType.get(s.type) || 0) + 1);
     const totalImpotCollecte = declarations.reduce((acc, d) => acc + (d.impot || 0), 0);
+    const aJour = actives.filter((s) => declareCetteSemaine.has(s.id)).length;
+    const aRelancer = actives.length - aJour;
     return {
       total: actives.length,
       archivees: societes.length - actives.length,
       parType,
       totalImpotCollecte,
+      aJour,
+      aRelancer,
     };
-  }, [societes, declarations]);
+  }, [societes, declarations, declareCetteSemaine]);
 
   // ─── CRUD société ─────────────────────────────────────────────
   function openCreate() {
@@ -393,7 +417,6 @@ export default function KoekiEconomiePage() {
     try {
       const now = Date.now();
 
-      // Côté Trésor : un retrait (sortie d'argent)
       const retrait: TresorRetrait = {
         id: 'TR-BDM-' + now,
         date: now,
@@ -402,7 +425,6 @@ export default function KoekiEconomiePage() {
         agent: CURRENT_USER,
       };
 
-      // Côté BDM : une entrée dans la caisse missions
       const entreeBdm: ComptaTransaction = {
         id: now,
         type: 'entree',
@@ -414,26 +436,22 @@ export default function KoekiEconomiePage() {
         ref: retrait.id,
       };
 
-      // 1. Trésor d'abord (sortie)
       await dbUpdate(FB_TRESOR, {
         ...tresorCurrent,
         retraits: [retrait, ...(tresorCurrent.retraits || [])],
       });
 
-      // 2. BDM ensuite (entrée)
       await dbUpdate(FB_BDM, {
         ...bdmCurrent,
         transactions: [entreeBdm, ...bdmCurrent.transactions],
       });
 
-      // Audit — retrait Trésor
       logAction({
         who: CURRENT_USER, whoId: u.id ?? null,
         action: 'create', target: 'tresor:retrait', targetId: retrait.id,
         detail: `Trésor — Renflouement BDM : −${fmtMoney(montant)} ₽ — Motif : "${motif}" ` +
           `(solde avant : ${fmtMoney(soldeTresor)} ₽${depassement ? ', DÉPASSEMENT' : ''})`,
       });
-      // Audit — entrée BDM
       logAction({
         who: CURRENT_USER, whoId: u.id ?? null,
         action: 'create', target: 'koeki:bdm', targetId: String(entreeBdm.id),
@@ -491,6 +509,11 @@ export default function KoekiEconomiePage() {
             <div className={styles.statVal}>{fmtMoney(stats.totalImpotCollecte)} ₽</div>
             <div className={styles.statLbl}>Impôts collectés (total)</div>
           </div>
+          <div className={`${styles.statCard} ${stats.aRelancer > 0 ? styles.scDanger : styles.scGreen}`}>
+            {stats.aRelancer > 0 ? <AlertTriangle size={16} /> : <CheckCircle2 size={16} />}
+            <div className={styles.statVal}>{stats.aJour} / {stats.total}</div>
+            <div className={styles.statLbl}>Ont déclaré ({semaineActuelle})</div>
+          </div>
           {SOCIETE_TYPES.map((t) => (
             <div key={t} className={`${styles.statCard} ${styles.scBlue}`}>
               <span style={{ fontSize: 16 }}>{SOCIETE_TYPE_ICON[t]}</span>
@@ -519,6 +542,13 @@ export default function KoekiEconomiePage() {
             <option value="archives">Archivées</option>
             <option value="all">Toutes</option>
           </select>
+          <button
+            className={`${styles.relanceBtn} ${filterRelance ? styles.relanceBtnOn : ''}`}
+            onClick={() => setFilterRelance((v) => !v)}
+            title="N'afficher que les sociétés actives qui n'ont pas déclaré cette semaine"
+          >
+            <AlertTriangle size={13} /> À relancer{stats.aRelancer > 0 ? ` (${stats.aRelancer})` : ''}
+          </button>
         </div>
 
         {loading ? (
@@ -527,7 +557,9 @@ export default function KoekiEconomiePage() {
           <div className={styles.empty}>
             <Building2 size={32} style={{ opacity: 0.3 }} />
             <p>
-              {societes.length === 0 ? 'Aucune société enregistrée.' : 'Aucune société pour ces critères.'}
+              {filterRelance
+                ? 'Aucune société à relancer : tout le monde a déclaré cette semaine. 🎉'
+                : societes.length === 0 ? 'Aucune société enregistrée.' : 'Aucune société pour ces critères.'}
               {canGerer && societes.length === 0 ? ' Utilise « Nouvelle société » pour commencer.' : ''}
             </p>
           </div>
@@ -538,6 +570,7 @@ export default function KoekiEconomiePage() {
                 <th>Société</th>
                 <th>Type</th>
                 <th>Propriétaire</th>
+                <th style={{ textAlign: 'center' }}>Fisc. {semaineActuelle}</th>
                 <th style={{ textAlign: 'right' }}>Taux effectif</th>
                 <th aria-label="actions" />
               </tr>
@@ -546,6 +579,7 @@ export default function KoekiEconomiePage() {
               {visible.map((s) => {
                 const taux = tauxEffectif(s, params);
                 const override = s.tauxImposition !== null;
+                const declare = aDeclare(s);
                 return (
                   <tr key={s.id} className={s.actif ? '' : styles.rowArchived}>
                     <td>
@@ -558,6 +592,15 @@ export default function KoekiEconomiePage() {
                       </span>
                     </td>
                     <td className={styles.muted}>{s.proprietaireNom || '—'}</td>
+                    <td style={{ textAlign: 'center' }}>
+                      {!s.actif ? (
+                        <span className={styles.muted}>—</span>
+                      ) : declare ? (
+                        <span className={styles.fiscOk}><CheckCircle2 size={12} /> Déclaré</span>
+                      ) : (
+                        <span className={styles.fiscRelance}><AlertTriangle size={12} /> À déclarer</span>
+                      )}
+                    </td>
                     <td className={styles.amount} style={{ textAlign: 'right' }}>
                       {taux}%
                       {override
