@@ -12,6 +12,12 @@
  *    Pour un effet INSTANTANÉ, utiliser le bouton "Refresh mes rôles"
  *    dans le menu avatar de la sidebar.
  *
+ * 🆕 OVERRIDE KŌEKI EN BASE : le grade Kōeki peut être défini depuis
+ *    l'intranet (page /admin/membres) et stocké dans Firebase
+ *    (koeki/grades/{discordId}). S'il existe, il PRIME sur le rôle
+ *    Discord — ce qui permet de gérer le Kōeki sans dépendre de la
+ *    propagation parfois lente des rôles Discord via OAuth.
+ *
  * 🥷 RÈGLE "ALL PERM" : Les utilisateurs suivants obtiennent
  *    automatiquement toutes les permissions de branche
  *    (Membre ET Gérant), PARTOUT, sans exception :
@@ -47,6 +53,12 @@ import {
   canRenflouerBDM, canVoirMarche, canGererMarche, canVoirComptaGlobale,
   canPointerCompta, canVoirSaCompta, canVoirParametres, isKoeki,
 } from '@/lib/roles';
+import { useFirebaseValue } from '@/hooks/useFirebaseValue';
+import {
+  KOEKI_GRADES_PATH,
+  gradeToKoekiInfo,
+  type KoekiGradeOverride,
+} from '@/types/koekiGrades';
 
 // Intervalle de refresh côté client (5 minutes pour éviter le rate limit Discord)
 const CLIENT_REFRESH_INTERVAL = 5 * 60 * 1000;
@@ -99,6 +111,14 @@ export function useCurrentUser() {
     intranetUser?.username ||
     'Ninja';
 
+  // ─── 🆕 Override grade Kōeki depuis Firebase ───────────────────
+  // On lit koeki/grades/{discordId}. Si un grade y est défini, il
+  // remplace le koeki venu du JWT (rôle Discord).
+  const myDiscordId = user?.discordId ?? intranetUser?.discordId ?? null;
+  const { data: gradeOverrideData } = useFirebaseValue<KoekiGradeOverride | null>(
+    myDiscordId ? `${KOEKI_GRADES_PATH}/${myDiscordId}` : null
+  );
+
   // ─── Refresh manuel (utilisable par un bouton) ─────────────────
   const refreshRoles = useCallback(async () => {
     try {
@@ -140,7 +160,14 @@ export function useCurrentUser() {
   // Court-circuit pour Kōeki : isAdmin technique OU hasAllPerm (Jonin+/Conseil).
   // On le passe comme 2e argument des helpers purs de roles.ts.
   const koekiOverride = !!intranetUser && (intranetUser.isAdmin || hasAllPerm);
-  const koekiInfo = intranetUser?.koeki ?? null;
+
+  // 🆕 Grade Kōeki effectif :
+  //    - si un grade est défini en base (koeki/grades/{id}) → il PRIME
+  //    - sinon → on garde le grade venu du rôle Discord (JWT)
+  const baseGrade = gradeOverrideData?.grade ?? null;
+  const koekiInfo = baseGrade
+    ? gradeToKoekiInfo(baseGrade)
+    : (intranetUser?.koeki ?? null);
 
   const can: Permissions = {
     adminBranche: (slug: string | string[]) => {
@@ -185,6 +212,7 @@ export function useCurrentUser() {
     // ─── KŌEKI ───
     // Chaque helper passe koekiOverride (isAdmin OU hasAllPerm) comme 2e arg,
     // de sorte qu'un Jonin+/Conseil du Vent a tous les droits Kōeki.
+    // koekiInfo intègre désormais l'override en base (priorité sur Discord).
     koeki: {
       acces: () => isKoeki(koekiInfo, koekiOverride),
       voirEconomie: () => canVoirEconomie(koekiInfo, koekiOverride),
