@@ -27,6 +27,7 @@ import { confirmAction } from '@/components/ui/ConfirmDialog';
 import {
   type DeclarationCA, type SocieteType,
   type ComptaKoeki, type MouvementCompta, type MouvementComptaType, type KoekiGrade,
+  type KoekiParametres,
   SOCIETE_TYPES, SOCIETE_TYPE_LABEL, SOCIETE_TYPE_ICON,
   KOEKI_GRADE_LABEL, MOUVEMENT_COMPTA_LABEL,
   DEFAULT_PAIE_PAR_GRADE, PAIE_ORGANISATEUR_EVENT,
@@ -45,6 +46,7 @@ const FB_DECLARATIONS = 'koeki/declarations';
 const FB_COMPTAS = 'koeki/comptas';
 const FB_TRESOR = 'tresorCentral';
 const FB_MEMBERS = '/members';
+const FB_PARAMS = 'koeki/parametres';
 
 const GRADES_LISTE: KoekiGrade[] = [
   'gerant', 'co-gerant', 'superviseur-eco', 'superviseur-event',
@@ -66,6 +68,7 @@ export default function KoekiComptaPage() {
   const { data: declarationsData } = useFirebaseValue<DeclarationCA[] | null>(FB_DECLARATIONS);
   const { data: tresorData } = useFirebaseValue<TresorCentral | null>(FB_TRESOR);
   const { data: membersData } = useFirebaseValue<Record<string, { username?: string; discordId?: string }> | null>(FB_MEMBERS);
+  const { data: paramsData } = useFirebaseValue<KoekiParametres | null>(FB_PARAMS);
 
   const [tab, setTab] = useState<Tab>('membres');
   const [search, setSearch] = useState('');
@@ -227,9 +230,11 @@ export default function KoekiComptaPage() {
   async function handleVerserPaie() {
     const aPayer = comptas.filter((c) => c.dernierVersement !== semaine && c.grade);
     if (aPayer.length === 0) { toast.info('Tous les membres ont déjà été payés cette semaine.'); return; }
+    const bareme = paramsData?.paieParGrade ?? DEFAULT_PAIE_PAR_GRADE;
+    const montantEvent = typeof paramsData?.paieOrganisateurEvent === 'number' ? paramsData.paieOrganisateurEvent : PAIE_ORGANISATEUR_EVENT;
     const details = aPayer.map((c) => {
       const organisaEvent = !!eventChecks[c.discordId];
-      const montant = paieDeLaSemaine({ grade: c.grade, organisaEvent, bareme: DEFAULT_PAIE_PAR_GRADE });
+      const montant = paieDeLaSemaine({ grade: c.grade, organisaEvent, bareme, montantEvent });
       return { fiche: c, montant, organisaEvent };
     }).filter((d) => d.montant > 0);
     const total = details.reduce((s, d) => s + d.montant, 0);
@@ -464,7 +469,7 @@ export default function KoekiComptaPage() {
                 </tbody>
               </table>
             )}
-            <p className={styles.paieHelp}>💡 « Verser la paie » paie tous les membres non encore payés cette semaine selon leur grade (Membre {fmtMoney(DEFAULT_PAIE_PAR_GRADE['membre-eco'])} ₽, responsables {fmtMoney(DEFAULT_PAIE_PAR_GRADE['chef-eco'])} ₽, organisateur d'event {fmtMoney(PAIE_ORGANISATEUR_EVENT)} ₽). Lie une fiche à un compte Discord (bouton ✎) pour que le membre voie sa propre compta.</p>
+            <p className={styles.paieHelp}>💡 « Verser la paie » paie tous les membres non encore payés cette semaine selon le barème défini dans <strong>Paramètres</strong> (Membre {fmtMoney((paramsData?.paieParGrade?.['membre-eco']) ?? DEFAULT_PAIE_PAR_GRADE['membre-eco'])} ₽, responsables {fmtMoney((paramsData?.paieParGrade?.['chef-eco']) ?? DEFAULT_PAIE_PAR_GRADE['chef-eco'])} ₽, organisateur d'event {fmtMoney(paramsData?.paieOrganisateurEvent ?? PAIE_ORGANISATEUR_EVENT)} ₽). Lie une fiche à un compte Discord (bouton ✎) pour que le membre voie sa propre compta.</p>
           </>
         )}
 
