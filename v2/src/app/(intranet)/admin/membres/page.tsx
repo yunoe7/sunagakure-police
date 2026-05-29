@@ -503,9 +503,15 @@ function MemberRow({
                   : 'none';
               }}
             >
-              <option value="">Aucun</option>
+              <option value="" style={{ background: '#1a1410', color: '#e8dcc0' }}>
+                Aucun
+              </option>
               {KOEKI_GRADE_OPTIONS.map((o) => (
-                <option key={o.value} value={o.value}>
+                <option
+                  key={o.value}
+                  value={o.value}
+                  style={{ background: '#1a1410', color: '#e8dcc0' }}
+                >
                   {o.label}
                 </option>
               ))}
