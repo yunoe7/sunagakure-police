@@ -9,15 +9,19 @@
  *   - Camembert : sociétés par type
  *   - Courbe    : impôts collectés par semaine
  *   - Barres    : entrées (impôts) vs sorties (retraits Trésor)
+ *
+ *  🆕 Barre de recherche globale Kōeki (en haut) : cherche en parallèle
+ *     dans les sociétés, les demandes de marché et les membres Kōeki
+ *     (fusion koeki/comptas + koeki/grades). Champ vide = dashboard normal.
  * ════════════════════════════════════════════════════════════════
  */
 
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import {
   Landmark, Building2, Receipt, Store, Users, Banknote,
   TrendingUp, TrendingDown, ArrowRight, Wallet, Coins, Handshake, CheckCircle2,
-  PieChart, LineChart, BarChart3, AlertTriangle,
+  PieChart, LineChart, BarChart3, AlertTriangle, Search, X,
 } from 'lucide-react';
 import { useFirebaseValue } from '@/hooks/useFirebaseValue';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
@@ -31,6 +35,8 @@ import {
 } from '@/types/koeki';
 import { type TresorCentral, type TresorMouvement, type TresorRetrait, TRESOR_DEFAULT_RATE } from '@/types/compta';
 import { currentWeek } from '@/types/fiscal';
+import { KOEKI_GRADES_PATH, gradeLabel, type KoekiGradeOverride } from '@/types/koekiGrades';
+import type { KoekiGrade } from '@/lib/roles';
 
 import styles from './page.module.css';
 
@@ -40,22 +46,29 @@ const FB_COMPTAS = 'koeki/comptas';
 const FB_MARCHE = 'koeki/marche';
 const FB_TRESOR = 'tresorCentral';
 
-// Couleurs des types de société (cohérent avec la palette)
 const TYPE_COLORS: Record<SocieteType, string> = {
   restaurant: '#d4b44a',
   service: '#93c5fd',
   biens: '#c4b5fd',
 };
 
+// Normalisation pour la recherche (minuscules + sans accents)
+function norm(s: string): string {
+  return (s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+}
+
 export default function KoekiDashboardPage() {
   const u = useCurrentUser();
   const semaine = currentWeek();
+
+  const [query, setQuery] = useState('');
 
   const { data: societesData } = useFirebaseValue<Societe[] | null>(FB_SOCIETES);
   const { data: declarationsData } = useFirebaseValue<DeclarationCA[] | null>(FB_DECLARATIONS);
   const { data: comptasData } = useFirebaseValue<ComptaKoeki[] | Record<string, ComptaKoeki> | null>(FB_COMPTAS);
   const { data: marcheData } = useFirebaseValue<DemandeMarche[] | null>(FB_MARCHE);
   const { data: tresorData } = useFirebaseValue<TresorCentral | null>(FB_TRESOR);
+  const { data: gradesData } = useFirebaseValue<Record<string, KoekiGradeOverride> | null>(KOEKI_GRADES_PATH);
 
   const societes = useMemo<Societe[]>(() => {
     const list = Array.isArray(societesData) ? societesData : societesData ? Object.values(societesData) : [];
@@ -84,7 +97,56 @@ export default function KoekiDashboardPage() {
     retraits: (Array.isArray(tresorData?.retraits) ? tresorData!.retraits : tresorData?.retraits ? Object.values(tresorData.retraits) : []).filter((r): r is TresorRetrait => r !== null && typeof r === 'object' && !!r.id),
   }), [tresorData]);
 
-  // ─── Calculs indicateurs ───
+  // ─── 🆕 Membres Kōeki fusionnés (comptas + grades) ───
+  const membresKoeki = useMemo(() => {
+    // Map discordId → { nom, grade, solde }
+    const map = new Map<string, { discordId: string; nom: string; grade: KoekiGrade | null; solde: number | null }>();
+    // 1. À partir des comptas (ont username + grade + solde)
+    for (const c of comptas) {
+      map.set(c.discordId, {
+        discordId: c.discordId,
+        nom: c.username || c.discordId,
+        grade: (c.grade as KoekiGrade) ?? null,
+        solde: typeof c.solde === 'number' ? c.solde : null,
+      });
+    }
+    // 2. Compléter / ajouter avec les grades en base (koeki/grades)
+    if (gradesData) {
+      for (const [discordId, ov] of Object.entries(gradesData)) {
+        const g = ov?.grade ?? null;
+        if (!g) continue; // grade null = pas membre
+        const existing = map.get(discordId);
+        if (existing) {
+          // le grade en base prime sur celui de la compta
+          existing.grade = g;
+        } else {
+          map.set(discordId, { discordId, nom: discordId, grade: g, solde: null });
+        }
+      }
+    }
+    return Array.from(map.values());
+  }, [comptas, gradesData]);
+
+  // ─── 🆕 Résultats de recherche ───
+  const isSearching = query.trim().length >= 2;
+  const results = useMemo(() => {
+    if (!isSearching) return { societes: [], demandes: [], membres: [] };
+    const q = norm(query);
+    const matchSoc = societes.filter((s) =>
+      norm(`${s.nom} ${s.proprietaireNom || ''} ${SOCIETE_TYPE_LABEL[s.type] || ''}`).includes(q)
+    ).slice(0, 12);
+    const matchDem = demandes.filter((d) =>
+      norm(`${d.objet} ${d.auteurNom || ''} ${d.description || ''}`).includes(q)
+    ).slice(0, 12);
+    const matchMem = membresKoeki.filter((m) =>
+      norm(`${m.nom} ${m.grade ? gradeLabel(m.grade) : ''}`).includes(q)
+    ).slice(0, 12);
+    return { societes: matchSoc, demandes: matchDem, membres: matchMem };
+  }, [isSearching, query, societes, demandes, membresKoeki]);
+
+  const totalResults = results.societes.length + results.demandes.length + results.membres.length;
+
+  // ─── Calculs indicateurs (inchangés) ───
   const tresorStats = useMemo(() => {
     const recu = tresor.mouvements.reduce((s, m) => s + (m.amount || 0), 0);
     const retire = (tresor.retraits || []).reduce((s, r) => s + (r.montant || 0), 0);
@@ -105,7 +167,6 @@ export default function KoekiDashboardPage() {
     return { totalImpot, semaineImpot, totalCA, count: declarations.length };
   }, [declarations, semaine]);
 
-  // Relance fiscale : sociétés actives qui n'ont pas déclaré cette semaine
   const relanceStats = useMemo(() => {
     const declareSet = new Set<string>();
     for (const d of declarations) if (d.semaine === semaine && d.societeId) declareSet.add(d.societeId);
@@ -131,9 +192,7 @@ export default function KoekiDashboardPage() {
     return { count, soldes, payes, masse };
   }, [comptas, semaine]);
 
-  // ─── Données graphiques ───
-
-  // 1. Camembert sociétés par type
+  // ─── Données graphiques (inchangées) ───
   const pieData = useMemo(() => {
     const entries = SOCIETE_TYPES
       .map((t) => ({ type: t, value: societeStats.parType[t], color: TYPE_COLORS[t] }))
@@ -142,7 +201,6 @@ export default function KoekiDashboardPage() {
     return { entries, total };
   }, [societeStats]);
 
-  // 2. Courbe impôts par semaine (les 8 dernières semaines présentes dans les déclarations)
   const lineData = useMemo(() => {
     const parSemaine = new Map<string, number>();
     for (const d of declarations) {
@@ -157,9 +215,7 @@ export default function KoekiDashboardPage() {
     return { points, max };
   }, [declarations]);
 
-  // 3. Barres entrées vs sorties (Trésor) — par section pour les entrées, total retraits
   const barData = useMemo(() => {
-    // Entrées par section (mouvements), sorties = retraits
     const entreesKoeki = tresor.mouvements.filter((m) => m.section === 'koeki').reduce((s, m) => s + (m.amount || 0), 0);
     const entreesAutres = tresor.mouvements.filter((m) => m.section !== 'koeki').reduce((s, m) => s + (m.amount || 0), 0);
     const sorties = (tresor.retraits || []).reduce((s, r) => s + (r.montant || 0), 0);
@@ -174,143 +230,216 @@ export default function KoekiDashboardPage() {
 
   return (
     <Card title="🏯 Kōeki — Tableau de bord" subtitle={`Vue d'ensemble du pôle économique — Semaine ${semaine}`}>
-      {/* HERO : Trésor */}
-      <div className={styles.hero}>
-        <div className={styles.heroMain}>
-          <div className={styles.heroLbl}>Solde du Trésor Central</div>
-          <div className={styles.heroVal}>{tresorStats.solde >= 0 ? '+' : ''}{fmtMoney(tresorStats.solde)} ₽</div>
-          <div className={styles.heroSubs}>
-            <span className={styles.heroSub}><TrendingUp size={13} className={styles.green} /> +{fmtMoney(tresorStats.recu)} ₽ reçus</span>
-            <span className={styles.heroSub}><TrendingDown size={13} className={styles.red} /> −{fmtMoney(tresorStats.retire)} ₽ retirés</span>
-          </div>
-        </div>
-        <Link href="/tresor" className={styles.heroLink}><Landmark size={14} /> Ouvrir le Trésor <ArrowRight size={14} /></Link>
+      {/* 🆕 Barre de recherche globale */}
+      <div className={styles.searchBar}>
+        <Search size={16} />
+        <input
+          type="text"
+          placeholder="Rechercher une société, une demande du marché, un membre Kōeki…"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+        />
+        {query && (
+          <button className={styles.searchClear} onClick={() => setQuery('')} aria-label="Effacer">
+            <X size={15} />
+          </button>
+        )}
       </div>
 
-      {/* GRILLE DE BLOCS */}
-      <div className={styles.grid}>
-        <Link href="/koeki/economie" className={styles.block}>
-          <div className={styles.blockHead}><Building2 size={16} /><span>Sociétés actives</span></div>
-          <div className={styles.blockBig}>{societeStats.total}</div>
-          <div className={styles.blockBreak}>
-            {SOCIETE_TYPES.map((t) => (<span key={t} className={styles.miniStat}>{SOCIETE_TYPE_ICON[t]} {societeStats.parType[t]} {SOCIETE_TYPE_LABEL[t]}</span>))}
+      {isSearching ? (
+        /* ─── Mode résultats de recherche ─── */
+        <div className={styles.searchResults}>
+          <div className={styles.searchSummary}>
+            {totalResults === 0
+              ? `Aucun résultat pour « ${query} »`
+              : `${totalResults} résultat${totalResults > 1 ? 's' : ''} pour « ${query} »`}
           </div>
-          <div className={styles.blockGo}>Gérer <ArrowRight size={12} /></div>
-        </Link>
 
-        <Link href="/koeki/compta" className={styles.block}>
-          <div className={styles.blockHead}><Receipt size={16} /><span>Impôts collectés</span></div>
-          <div className={styles.blockBig}>{fmtMoney(fiscalStats.semaineImpot)} ₽</div>
-          <div className={styles.blockBreak}>
-            <span className={styles.miniStat}><Coins size={11} /> {fmtMoney(fiscalStats.totalImpot)} ₽ au total</span>
-            <span className={styles.miniStat}>{fiscalStats.count} déclaration(s)</span>
-          </div>
-          <div className={styles.blockGo}>Cette semaine · voir détail <ArrowRight size={12} /></div>
-        </Link>
+          {results.societes.length > 0 && (
+            <div className={styles.resGroup}>
+              <div className={styles.resGroupHead}><Building2 size={14} /> Sociétés ({results.societes.length})</div>
+              {results.societes.map((s) => (
+                <Link key={s.id} href="/koeki/economie" className={styles.resItem}>
+                  <span className={styles.resIcon}>{SOCIETE_TYPE_ICON[s.type]}</span>
+                  <span className={styles.resMain}>{s.nom}</span>
+                  <span className={styles.resMeta}>
+                    {SOCIETE_TYPE_LABEL[s.type]}{s.proprietaireNom ? ` · ${s.proprietaireNom}` : ''}
+                  </span>
+                  <ArrowRight size={13} className={styles.resArrow} />
+                </Link>
+              ))}
+            </div>
+          )}
 
-        <Link href="/koeki/marche" className={styles.block}>
-          <div className={styles.blockHead}><Store size={16} /><span>Marché</span></div>
-          <div className={styles.blockBig}>{marcheStats.ouvertes}<span className={styles.bigUnit}> ouvertes</span></div>
-          <div className={styles.blockBreak}>
-            <span className={styles.miniStat}><Handshake size={11} /> {marcheStats.enCours} en cours</span>
-            <span className={styles.miniStat}><CheckCircle2 size={11} /> {marcheStats.cloturees} clôturées</span>
-          </div>
-          <div className={styles.blockGo}>Voir le marché <ArrowRight size={12} /></div>
-        </Link>
+          {results.demandes.length > 0 && (
+            <div className={styles.resGroup}>
+              <div className={styles.resGroupHead}><Store size={14} /> Marché ({results.demandes.length})</div>
+              {results.demandes.map((d) => (
+                <Link key={d.id} href="/koeki/marche" className={styles.resItem}>
+                  <span className={styles.resIcon}>{d.sens === 'vente' ? '🏷️' : '🔍'}</span>
+                  <span className={styles.resMain}>{d.objet}</span>
+                  <span className={styles.resMeta}>
+                    {d.prix !== undefined ? `${fmtMoney(d.prix)} ₽` : 'Négociable'}{d.auteurNom ? ` · ${d.auteurNom}` : ''}
+                  </span>
+                  <ArrowRight size={13} className={styles.resArrow} />
+                </Link>
+              ))}
+            </div>
+          )}
 
-        <Link href="/koeki/compta" className={styles.block}>
-          <div className={styles.blockHead}><Users size={16} /><span>Membres</span></div>
-          <div className={styles.blockBig}>{membreStats.count}</div>
-          <div className={styles.blockBreak}>
-            <span className={styles.miniStat}><Wallet size={11} /> {fmtMoney(membreStats.soldes)} ₽ cumulés</span>
-            <span className={styles.miniStat}><Banknote size={11} /> {membreStats.payes}/{membreStats.count} payés</span>
-          </div>
-          <div className={styles.blockGo}>Voir les fiches <ArrowRight size={12} /></div>
-        </Link>
-
-        <div className={`${styles.block} ${styles.blockStatic}`}>
-          <div className={styles.blockHead}><Banknote size={16} /><span>Masse salariale à verser</span></div>
-          <div className={styles.blockBig}>{fmtMoney(membreStats.masse)} ₽</div>
-          <div className={styles.blockBreak}><span className={styles.miniStat}>Paie restante semaine {semaine}</span></div>
-          <div className={styles.blockNote}>{membreStats.masse === 0 ? 'Tous les membres sont payés cette semaine.' : `Coût de la paie des ${membreStats.count - membreStats.payes} membre(s) non encore payé(s).`}</div>
-        </div>
-
-        <div className={`${styles.block} ${styles.blockStatic}`}>
-          <div className={styles.blockHead}><Coins size={16} /><span>Chiffre d'affaires déclaré</span></div>
-          <div className={styles.blockBig}>{fmtMoney(fiscalStats.totalCA)} ₽</div>
-          <div className={styles.blockBreak}><span className={styles.miniStat}>Cumul de toutes les déclarations</span></div>
-          <div className={styles.blockNote}>Taux de prélèvement Trésor : {tresor.prelevementRate}%</div>
-        </div>
-
-        <Link href="/koeki/economie" className={styles.block}>
-          <div className={styles.blockHead}><AlertTriangle size={16} /><span>Relance fiscale</span></div>
-          <div className={styles.blockBig} style={{ color: relanceStats.aRelancer > 0 ? '#fca5a5' : '#86efac' }}>
-            {relanceStats.aRelancer}<span className={styles.bigUnit}> à relancer</span>
-          </div>
-          <div className={styles.blockBreak}>
-            <span className={styles.miniStat}>{relanceStats.aJour}/{relanceStats.total} ont déclaré cette semaine</span>
-          </div>
-          <div className={styles.blockGo}>
-            {relanceStats.aRelancer > 0 ? 'Voir qui relancer' : 'Tout le monde est à jour'} <ArrowRight size={12} />
-          </div>
-        </Link>
-      </div>
-
-      {/* ─── GRAPHIQUES ─── */}
-      <div className={styles.chartsGrid}>
-
-        {/* Camembert sociétés par type */}
-        <div className={styles.chartCard}>
-          <div className={styles.chartHead}><PieChart size={15} /> Sociétés par type</div>
-          {pieData.total === 0 ? (
-            <div className={styles.chartEmpty}>Aucune société active.</div>
-          ) : (
-            <div className={styles.pieWrap}>
-              <Pie entries={pieData.entries} total={pieData.total} />
-              <div className={styles.pieLegend}>
-                {pieData.entries.map((e) => (
-                  <div key={e.type} className={styles.legendRow}>
-                    <span className={styles.legendDot} style={{ background: e.color }} />
-                    <span>{SOCIETE_TYPE_LABEL[e.type]}</span>
-                    <span className={styles.legendVal}>{e.value}</span>
-                  </div>
-                ))}
-              </div>
+          {results.membres.length > 0 && (
+            <div className={styles.resGroup}>
+              <div className={styles.resGroupHead}><Users size={14} /> Membres Kōeki ({results.membres.length})</div>
+              {results.membres.map((m) => (
+                <Link key={m.discordId} href="/koeki/compta" className={styles.resItem}>
+                  <span className={styles.resIcon}>🥷</span>
+                  <span className={styles.resMain}>{m.nom}</span>
+                  <span className={styles.resMeta}>
+                    {m.grade ? gradeLabel(m.grade) : 'Sans grade'}
+                    {typeof m.solde === 'number' ? ` · ${fmtMoney(m.solde)} ₽` : ''}
+                  </span>
+                  <ArrowRight size={13} className={styles.resArrow} />
+                </Link>
+              ))}
             </div>
           )}
         </div>
+      ) : (
+        /* ─── Mode dashboard normal ─── */
+        <>
+          {/* HERO : Trésor */}
+          <div className={styles.hero}>
+            <div className={styles.heroMain}>
+              <div className={styles.heroLbl}>Solde du Trésor Central</div>
+              <div className={styles.heroVal}>{tresorStats.solde >= 0 ? '+' : ''}{fmtMoney(tresorStats.solde)} ₽</div>
+              <div className={styles.heroSubs}>
+                <span className={styles.heroSub}><TrendingUp size={13} className={styles.green} /> +{fmtMoney(tresorStats.recu)} ₽ reçus</span>
+                <span className={styles.heroSub}><TrendingDown size={13} className={styles.red} /> −{fmtMoney(tresorStats.retire)} ₽ retirés</span>
+              </div>
+            </div>
+            <Link href="/tresor" className={styles.heroLink}><Landmark size={14} /> Ouvrir le Trésor <ArrowRight size={14} /></Link>
+          </div>
 
-        {/* Courbe impôts par semaine */}
-        <div className={styles.chartCard}>
-          <div className={styles.chartHead}><LineChart size={15} /> Impôts collectés par semaine</div>
-          {lineData.points.length === 0 ? (
-            <div className={styles.chartEmpty}>Aucune déclaration enregistrée.</div>
-          ) : (
-            <LineChartSvg points={lineData.points} max={lineData.max} />
-          )}
-        </div>
+          {/* GRILLE DE BLOCS */}
+          <div className={styles.grid}>
+            <Link href="/koeki/economie" className={styles.block}>
+              <div className={styles.blockHead}><Building2 size={16} /><span>Sociétés actives</span></div>
+              <div className={styles.blockBig}>{societeStats.total}</div>
+              <div className={styles.blockBreak}>
+                {SOCIETE_TYPES.map((t) => (<span key={t} className={styles.miniStat}>{SOCIETE_TYPE_ICON[t]} {societeStats.parType[t]} {SOCIETE_TYPE_LABEL[t]}</span>))}
+              </div>
+              <div className={styles.blockGo}>Gérer <ArrowRight size={12} /></div>
+            </Link>
 
-        {/* Barres entrées/sorties */}
-        <div className={styles.chartCard}>
-          <div className={styles.chartHead}><BarChart3 size={15} /> Trésor — entrées & sorties</div>
-          {barData.max === 0 ? (
-            <div className={styles.chartEmpty}>Aucun mouvement Trésor.</div>
-          ) : (
-            <BarsSvg bars={barData.bars} max={barData.max} />
-          )}
-        </div>
+            <Link href="/koeki/compta" className={styles.block}>
+              <div className={styles.blockHead}><Receipt size={16} /><span>Impôts collectés</span></div>
+              <div className={styles.blockBig}>{fmtMoney(fiscalStats.semaineImpot)} ₽</div>
+              <div className={styles.blockBreak}>
+                <span className={styles.miniStat}><Coins size={11} /> {fmtMoney(fiscalStats.totalImpot)} ₽ au total</span>
+                <span className={styles.miniStat}>{fiscalStats.count} déclaration(s)</span>
+              </div>
+              <div className={styles.blockGo}>Cette semaine · voir détail <ArrowRight size={12} /></div>
+            </Link>
 
-      </div>
+            <Link href="/koeki/marche" className={styles.block}>
+              <div className={styles.blockHead}><Store size={16} /><span>Marché</span></div>
+              <div className={styles.blockBig}>{marcheStats.ouvertes}<span className={styles.bigUnit}> ouvertes</span></div>
+              <div className={styles.blockBreak}>
+                <span className={styles.miniStat}><Handshake size={11} /> {marcheStats.enCours} en cours</span>
+                <span className={styles.miniStat}><CheckCircle2 size={11} /> {marcheStats.cloturees} clôturées</span>
+              </div>
+              <div className={styles.blockGo}>Voir le marché <ArrowRight size={12} /></div>
+            </Link>
+
+            <Link href="/koeki/compta" className={styles.block}>
+              <div className={styles.blockHead}><Users size={16} /><span>Membres</span></div>
+              <div className={styles.blockBig}>{membreStats.count}</div>
+              <div className={styles.blockBreak}>
+                <span className={styles.miniStat}><Wallet size={11} /> {fmtMoney(membreStats.soldes)} ₽ cumulés</span>
+                <span className={styles.miniStat}><Banknote size={11} /> {membreStats.payes}/{membreStats.count} payés</span>
+              </div>
+              <div className={styles.blockGo}>Voir les fiches <ArrowRight size={12} /></div>
+            </Link>
+
+            <div className={`${styles.block} ${styles.blockStatic}`}>
+              <div className={styles.blockHead}><Banknote size={16} /><span>Masse salariale à verser</span></div>
+              <div className={styles.blockBig}>{fmtMoney(membreStats.masse)} ₽</div>
+              <div className={styles.blockBreak}><span className={styles.miniStat}>Paie restante semaine {semaine}</span></div>
+              <div className={styles.blockNote}>{membreStats.masse === 0 ? 'Tous les membres sont payés cette semaine.' : `Coût de la paie des ${membreStats.count - membreStats.payes} membre(s) non encore payé(s).`}</div>
+            </div>
+
+            <div className={`${styles.block} ${styles.blockStatic}`}>
+              <div className={styles.blockHead}><Coins size={16} /><span>Chiffre d'affaires déclaré</span></div>
+              <div className={styles.blockBig}>{fmtMoney(fiscalStats.totalCA)} ₽</div>
+              <div className={styles.blockBreak}><span className={styles.miniStat}>Cumul de toutes les déclarations</span></div>
+              <div className={styles.blockNote}>Taux de prélèvement Trésor : {tresor.prelevementRate}%</div>
+            </div>
+
+            <Link href="/koeki/economie" className={styles.block}>
+              <div className={styles.blockHead}><AlertTriangle size={16} /><span>Relance fiscale</span></div>
+              <div className={styles.blockBig} style={{ color: relanceStats.aRelancer > 0 ? '#fca5a5' : '#86efac' }}>
+                {relanceStats.aRelancer}<span className={styles.bigUnit}> à relancer</span>
+              </div>
+              <div className={styles.blockBreak}>
+                <span className={styles.miniStat}>{relanceStats.aJour}/{relanceStats.total} ont déclaré cette semaine</span>
+              </div>
+              <div className={styles.blockGo}>
+                {relanceStats.aRelancer > 0 ? 'Voir qui relancer' : 'Tout le monde est à jour'} <ArrowRight size={12} />
+              </div>
+            </Link>
+          </div>
+
+          {/* ─── GRAPHIQUES ─── */}
+          <div className={styles.chartsGrid}>
+            <div className={styles.chartCard}>
+              <div className={styles.chartHead}><PieChart size={15} /> Sociétés par type</div>
+              {pieData.total === 0 ? (
+                <div className={styles.chartEmpty}>Aucune société active.</div>
+              ) : (
+                <div className={styles.pieWrap}>
+                  <Pie entries={pieData.entries} total={pieData.total} />
+                  <div className={styles.pieLegend}>
+                    {pieData.entries.map((e) => (
+                      <div key={e.type} className={styles.legendRow}>
+                        <span className={styles.legendDot} style={{ background: e.color }} />
+                        <span>{SOCIETE_TYPE_LABEL[e.type]}</span>
+                        <span className={styles.legendVal}>{e.value}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className={styles.chartCard}>
+              <div className={styles.chartHead}><LineChart size={15} /> Impôts collectés par semaine</div>
+              {lineData.points.length === 0 ? (
+                <div className={styles.chartEmpty}>Aucune déclaration enregistrée.</div>
+              ) : (
+                <LineChartSvg points={lineData.points} max={lineData.max} />
+              )}
+            </div>
+
+            <div className={styles.chartCard}>
+              <div className={styles.chartHead}><BarChart3 size={15} /> Trésor — entrées & sorties</div>
+              {barData.max === 0 ? (
+                <div className={styles.chartEmpty}>Aucun mouvement Trésor.</div>
+              ) : (
+                <BarsSvg bars={barData.bars} max={barData.max} />
+              )}
+            </div>
+          </div>
+        </>
+      )}
     </Card>
   );
 }
 
 /* ════════════ COMPOSANTS GRAPHIQUES SVG (zéro dépendance) ════════════ */
 
-// Camembert
 function Pie({ entries, total }: { entries: { type: SocieteType; value: number; color: string }[]; total: number }) {
   const R = 60, CX = 70, CY = 70;
-  let angle = -90; // commence en haut
+  let angle = -90;
   const slices = entries.map((e) => {
     const frac = e.value / total;
     const start = angle;
@@ -321,7 +450,6 @@ function Pie({ entries, total }: { entries: { type: SocieteType; value: number; 
     const y1 = CY + R * Math.sin((Math.PI * start) / 180);
     const x2 = CX + R * Math.cos((Math.PI * end) / 180);
     const y2 = CY + R * Math.sin((Math.PI * end) / 180);
-    // cas une seule tranche = cercle complet
     if (frac >= 0.999) {
       return <circle key={e.type} cx={CX} cy={CY} r={R} fill={e.color} />;
     }
@@ -338,7 +466,6 @@ function Pie({ entries, total }: { entries: { type: SocieteType; value: number; 
   );
 }
 
-// Courbe
 function LineChartSvg({ points, max }: { points: { sem: string; montant: number }[]; max: number }) {
   const W = 320, H = 140, padL = 40, padB = 28, padT = 12, padR = 12;
   const innerW = W - padL - padR;
@@ -352,17 +479,13 @@ function LineChartSvg({ points, max }: { points: { sem: string; montant: number 
 
   return (
     <svg width="100%" height={H} viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="xMidYMid meet">
-      {/* grille horizontale */}
       {[0, 0.5, 1].map((f) => (
         <line key={f} x1={padL} y1={padT + innerH * (1 - f)} x2={W - padR} y2={padT + innerH * (1 - f)} stroke="#9a8c6a" strokeOpacity="0.15" strokeWidth="1" />
       ))}
-      {/* labels Y */}
       <text x={padL - 6} y={padT + 4} textAnchor="end" fontSize="8" fill="#9a8c6a" fontFamily="monospace">{fmtMoney(max)}</text>
       <text x={padL - 6} y={padT + innerH + 3} textAnchor="end" fontSize="8" fill="#9a8c6a" fontFamily="monospace">0</text>
-      {/* aire + ligne */}
       <path d={area} fill="#d4b44a" fillOpacity="0.12" />
       <path d={path} fill="none" stroke="#d4b44a" strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" />
-      {/* points + labels X */}
       {points.map((p, i) => (
         <g key={p.sem}>
           <circle cx={x(i)} cy={y(p.montant)} r="3" fill="#d4b44a" stroke="#15110b" strokeWidth="1.5" />
@@ -373,7 +496,6 @@ function LineChartSvg({ points, max }: { points: { sem: string; montant: number 
   );
 }
 
-// Barres
 function BarsSvg({ bars, max }: { bars: { label: string; value: number; color: string }[]; max: number }) {
   const W = 320, H = 140, padB = 30, padT = 16, padL = 10, padR = 10;
   const innerW = W - padL - padR;
