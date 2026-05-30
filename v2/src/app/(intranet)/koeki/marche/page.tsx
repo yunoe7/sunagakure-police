@@ -7,13 +7,17 @@
  *  Workflow : ouverte → acceptée → rdv → cloturée (+ annulée)
  *  RDV : date + heure + lieu RP, modifiable après coup.
  *  Stockage Firebase : koeki/marche → DemandeMarche[]
+ *
+ *  🆕 Deux onglets :
+ *    - Actives  : demandes en cours (ouverte/acceptée/rdv) + gestion
+ *    - Archives : demandes clôturées/annulées + statistiques d'échanges
  * ════════════════════════════════════════════════════════════════
  */
 
 import { useMemo, useState } from 'react';
 import {
   Plus, Trash2, Search, Store, Save, Handshake, CalendarClock,
-  CheckCircle2, XCircle, MapPin, Clock,
+  CheckCircle2, XCircle, MapPin, Clock, Archive, TrendingUp,
 } from 'lucide-react';
 import { useFirebaseValue } from '@/hooks/useFirebaseValue';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
@@ -34,6 +38,7 @@ import styles from './page.module.css';
 
 const FB_MARCHE = 'koeki/marche';
 type FilterStatut = 'actives' | 'all' | DemandeStatut;
+type Tab = 'actives' | 'archives';
 
 // Convertit un timestamp en valeur pour <input type="datetime-local">
 function tsToInputValue(ts?: number): string {
@@ -51,6 +56,7 @@ export default function KoekiMarchePage() {
 
   const { data: marcheData, loading } = useFirebaseValue<DemandeMarche[] | null>(FB_MARCHE);
 
+  const [tab, setTab] = useState<Tab>('actives');
   const [search, setSearch] = useState('');
   const [filterSens, setFilterSens] = useState<'all' | DemandeSens>('all');
   const [filterStatut, setFilterStatut] = useState<FilterStatut>('actives');
@@ -69,22 +75,61 @@ export default function KoekiMarchePage() {
     return list.filter((d): d is DemandeMarche => d !== null && typeof d === 'object' && !!d.id);
   }, [marcheData]);
 
+  // Est-ce une demande archivée ? (clôturée ou annulée)
+  const isArchived = (d: DemandeMarche) => d.statut === 'cloturee' || d.statut === 'annulee';
+
   const visible = useMemo(() => {
     let list = demandes;
-    if (filterStatut === 'actives') list = list.filter((d) => d.statut !== 'cloturee' && d.statut !== 'annulee');
-    else if (filterStatut !== 'all') list = list.filter((d) => d.statut === filterStatut);
+
+    if (tab === 'archives') {
+      // Vue archives : uniquement clôturées + annulées
+      list = list.filter(isArchived);
+      if (filterStatut === 'cloturee' || filterStatut === 'annulee') {
+        list = list.filter((d) => d.statut === filterStatut);
+      }
+    } else {
+      // Vue actives : tout sauf archivées (avec sous-filtres existants)
+      if (filterStatut === 'actives') list = list.filter((d) => !isArchived(d));
+      else if (filterStatut !== 'all') list = list.filter((d) => d.statut === filterStatut);
+      else list = list.filter((d) => !isArchived(d)); // 'all' en mode actives = actives quand même
+    }
+
     if (filterSens !== 'all') list = list.filter((d) => d.sens === filterSens);
     const q = search.trim().toLowerCase();
     if (q) list = list.filter((d) =>
       ((d.objet || '') + ' ' + (d.auteurNom || '') + ' ' + (d.description || '')).toLowerCase().includes(q));
-    return [...list].sort((a, b) => b.dateCreation - a.dateCreation);
-  }, [demandes, filterStatut, filterSens, search]);
 
+    // Archives triées par date de clôture (ou création) décroissante
+    return [...list].sort((a, b) => (b.dateCloture ?? b.dateCreation) - (a.dateCloture ?? a.dateCreation));
+  }, [demandes, tab, filterStatut, filterSens, search]);
+
+  // Stats vue Actives
   const stats = useMemo(() => {
     const ouvertes = demandes.filter((d) => d.statut === 'ouverte').length;
     const enCours = demandes.filter((d) => d.statut === 'acceptee' || d.statut === 'rdv').length;
     const cloturees = demandes.filter((d) => d.statut === 'cloturee').length;
     return { ouvertes, enCours, cloturees };
+  }, [demandes]);
+
+  // 🆕 Stats vue Archives
+  const archiveStats = useMemo(() => {
+    const closed = demandes.filter((d) => d.statut === 'cloturee');
+    const cancelled = demandes.filter((d) => d.statut === 'annulee');
+    let totalVentes = 0;
+    let totalAchats = 0;
+    for (const d of closed) {
+      if (typeof d.prix === 'number') {
+        if (d.sens === 'vente') totalVentes += d.prix;
+        else totalAchats += d.prix;
+      }
+    }
+    return {
+      cloturees: closed.length,
+      annulees: cancelled.length,
+      totalVentes,
+      totalAchats,
+      volume: totalVentes + totalAchats,
+    };
   }, [demandes]);
 
   async function persist(next: DemandeMarche[]) { await dbSet(FB_MARCHE, next); }
@@ -174,31 +219,75 @@ export default function KoekiMarchePage() {
     } catch { toast.error('Erreur'); }
   }
 
+  function switchTab(next: Tab) {
+    setTab(next);
+    // Réinitialise le filtre statut selon l'onglet
+    setFilterStatut(next === 'archives' ? 'all' : 'actives');
+  }
+
   return (
     <>
       <Card title="🏯 Kōeki — Marché" subtitle="Demandes de vente et d'achat (RP)"
         actions={<Button onClick={() => { setForm({ sens: 'vente' }); setShowForm(true); }}><Plus size={14} /> Nouvelle demande</Button>}
       >
-        <div className={styles.statRow}>
-          <div className={`${styles.statCard} ${styles.scGold}`}><Store size={16} /><div className={styles.statVal}>{stats.ouvertes}</div><div className={styles.statLbl}>Ouvertes</div></div>
-          <div className={`${styles.statCard} ${styles.scBlue}`}><Handshake size={16} /><div className={styles.statVal}>{stats.enCours}</div><div className={styles.statLbl}>En cours</div></div>
-          <div className={`${styles.statCard} ${styles.scGold}`}><CheckCircle2 size={16} /><div className={styles.statVal}>{stats.cloturees}</div><div className={styles.statLbl}>Clôturées</div></div>
+        {/* ─── Onglets ─── */}
+        <div className={styles.tabs}>
+          <button
+            className={`${styles.tab} ${tab === 'actives' ? styles.tabActive : ''}`}
+            onClick={() => switchTab('actives')}
+          >
+            <Store size={14} /> Actives
+          </button>
+          <button
+            className={`${styles.tab} ${tab === 'archives' ? styles.tabActive : ''}`}
+            onClick={() => switchTab('archives')}
+          >
+            <Archive size={14} /> Archives
+          </button>
         </div>
+
+        {/* ─── Stats : selon l'onglet ─── */}
+        {tab === 'actives' ? (
+          <div className={styles.statRow}>
+            <div className={`${styles.statCard} ${styles.scGold}`}><Store size={16} /><div className={styles.statVal}>{stats.ouvertes}</div><div className={styles.statLbl}>Ouvertes</div></div>
+            <div className={`${styles.statCard} ${styles.scBlue}`}><Handshake size={16} /><div className={styles.statVal}>{stats.enCours}</div><div className={styles.statLbl}>En cours</div></div>
+            <div className={`${styles.statCard} ${styles.scGold}`}><CheckCircle2 size={16} /><div className={styles.statVal}>{stats.cloturees}</div><div className={styles.statLbl}>Clôturées</div></div>
+          </div>
+        ) : (
+          <div className={styles.statRow}>
+            <div className={`${styles.statCard} ${styles.scGreen}`}><CheckCircle2 size={16} /><div className={styles.statVal}>{archiveStats.cloturees}</div><div className={styles.statLbl}>Clôturées</div></div>
+            <div className={`${styles.statCard} ${styles.scRed}`}><XCircle size={16} /><div className={styles.statVal}>{archiveStats.annulees}</div><div className={styles.statLbl}>Annulées</div></div>
+            <div className={`${styles.statCard} ${styles.scGreen}`}><TrendingUp size={16} /><div className={styles.statVal}>{fmtMoney(archiveStats.totalVentes)} ₽</div><div className={styles.statLbl}>Total ventes</div></div>
+            <div className={`${styles.statCard} ${styles.scBlue}`}><TrendingUp size={16} /><div className={styles.statVal}>{fmtMoney(archiveStats.totalAchats)} ₽</div><div className={styles.statLbl}>Total achats</div></div>
+            <div className={`${styles.statCard} ${styles.scGold}`}><Store size={16} /><div className={styles.statVal}>{fmtMoney(archiveStats.volume)} ₽</div><div className={styles.statLbl}>Volume échangé</div></div>
+          </div>
+        )}
 
         <div className={styles.toolbar}>
           <div className={styles.searchBox}><Search size={14} /><input type="text" placeholder="Objet, auteur…" value={search} onChange={(e) => setSearch(e.target.value)} /></div>
           <select className={styles.filterSelect} value={filterSens} onChange={(e) => setFilterSens(e.target.value as 'all' | DemandeSens)}>
             <option value="all">Vente & Achat</option><option value="vente">Ventes</option><option value="achat">Achats</option>
           </select>
-          <select className={styles.filterSelect} value={filterStatut} onChange={(e) => setFilterStatut(e.target.value as FilterStatut)}>
-            <option value="actives">Actives</option><option value="ouverte">Ouvertes</option><option value="acceptee">Acceptées</option>
-            <option value="rdv">RDV fixé</option><option value="cloturee">Clôturées</option><option value="annulee">Annulées</option><option value="all">Toutes</option>
-          </select>
+          {tab === 'actives' ? (
+            <select className={styles.filterSelect} value={filterStatut} onChange={(e) => setFilterStatut(e.target.value as FilterStatut)}>
+              <option value="actives">Toutes actives</option><option value="ouverte">Ouvertes</option><option value="acceptee">Acceptées</option>
+              <option value="rdv">RDV fixé</option>
+            </select>
+          ) : (
+            <select className={styles.filterSelect} value={filterStatut} onChange={(e) => setFilterStatut(e.target.value as FilterStatut)}>
+              <option value="all">Clôturées & Annulées</option><option value="cloturee">Clôturées</option><option value="annulee">Annulées</option>
+            </select>
+          )}
         </div>
 
         {loading ? <p className={styles.empty}>Chargement…</p>
         : visible.length === 0 ? (
-          <div className={styles.empty}><Store size={32} style={{ opacity: 0.3 }} /><p>{demandes.length === 0 ? 'Aucune demande sur le marché. Publie la première !' : 'Aucune demande pour ces critères.'}</p></div>
+          <div className={styles.empty}>
+            {tab === 'archives' ? <Archive size={32} style={{ opacity: 0.3 }} /> : <Store size={32} style={{ opacity: 0.3 }} />}
+            <p>{tab === 'archives'
+              ? 'Aucune demande archivée pour ces critères.'
+              : (demandes.length === 0 ? 'Aucune demande sur le marché. Publie la première !' : 'Aucune demande active pour ces critères.')}</p>
+          </div>
         ) : (
           <div className={styles.cardsGrid}>
             {visible.map((d) => (
@@ -221,7 +310,11 @@ export default function KoekiMarchePage() {
                   </div>
                 )}
                 <div className={styles.demandeFooter}>
-                  <span className={styles.demandeDate}>{fmtDateFR(d.dateCreation)}</span>
+                  <span className={styles.demandeDate}>
+                    {tab === 'archives' && d.dateCloture
+                      ? `Clôturée le ${fmtDateFR(d.dateCloture)}`
+                      : fmtDateFR(d.dateCreation)}
+                  </span>
                   {canGerer && (
                     <div className={styles.demandeActions}>
                       {d.statut === 'ouverte' && <Button size="sm" onClick={() => changeStatut(d, 'acceptee')}><Handshake size={12} /> Prendre en charge</Button>}
