@@ -101,9 +101,9 @@ export const NAV_SECTIONS: NavSection[] = [
       { label: 'Économie', href: '/koeki/economie', icon: 'Building2' },
       { label: 'Marché', href: '/koeki/marche', icon: 'Store' },
       { label: 'Comptas', href: '/koeki/compta', icon: 'Wallet' },
-      { label: 'Paramètres', href: '/koeki/parametres', icon: 'Settings' },
       { label: 'Impôts', href: '/impots', icon: 'Receipt' },
       { label: 'Trésor Central', href: '/tresor', icon: 'Landmark' },
+      { label: 'Paramètres', href: '/koeki/parametres', icon: 'Settings' },
     ],
   },
   {
