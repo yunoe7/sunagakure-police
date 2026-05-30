@@ -31,6 +31,7 @@ export const NAV_SECTIONS: NavSection[] = [
   {
     title: 'POLICE',
     items: [
+      { label: 'Tableau de bord', href: '/police', icon: 'LayoutDashboard' },
       { label: 'Recensement', href: '/recensement', icon: 'ScrollText' },
       { label: 'Adoptions', href: '/adoptions', icon: 'Baby' },
       { label: 'Recrutement', href: '/recrutement', icon: 'Award' },
