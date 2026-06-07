@@ -3,6 +3,7 @@ import { Topbar } from '@/components/layout/Topbar';
 import { ToastContainer } from '@/components/ui/ToastContainer';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { SidebarProvider } from '@/components/layout/SidebarContext';
+import { BanGuard } from '@/components/auth/BanGuard';
 import styles from './layout.module.css';
 
 /**
@@ -10,6 +11,9 @@ import styles from './layout.module.css';
  * Grâce au "(intranet)" entre parenthèses, ce dossier ne crée pas de segment
  * d'URL — les pages restent à /dashboard, /annonces, etc., MAIS partagent
  * ce layout (sidebar + topbar).
+ *
+ * 🚫 BanGuard : un utilisateur banni voit l'écran « Accès révoqué »
+ *    au lieu de l'intranet, quel que soit son statut Discord.
  *
  * Si tu veux une page sans ce layout (ex: /login, /404), tu la mets
  * hors de ce dossier.
@@ -25,7 +29,9 @@ export default function IntranetLayout({
         <Sidebar />
         <main className={styles.main}>
           <Topbar />
-          <div className={styles.page}>{children}</div>
+          <div className={styles.page}>
+            <BanGuard>{children}</BanGuard>
+          </div>
         </main>
         <ToastContainer />
         <ConfirmDialog />
