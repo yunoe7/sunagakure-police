@@ -12,17 +12,17 @@
  *       - branches (membre), gérant/co-gérant de branche
  *       - rang ninja, admin technique  → overrides/{id}
  *       - grade Kōeki                  → koeki/grades/{id}
- *     Indépendant de Discord (qui propage mal ses rôles via OAuth).
+ *
+ *  🆕 ZONE DE DANGER : Réinitialiser les accès (retour Discord seul)
+ *     et Bannir / Débannir du site → bans/{id}.
  *
  *  Sécurité : RequireAdminStrict (admins techniques uniquement).
- *  ⚠️ Donner l'admin ici accorde Maintenance/Whitelist — à protéger
- *     aussi via les règles Firebase sur overrides/.
  * ════════════════════════════════════════════════════════════════
  */
 
 import { useState, useMemo } from 'react';
 import {
-  Search, Users, ShieldCheck, Activity, Settings2, Save, X,
+  Search, Users, ShieldCheck, Activity, Settings2, Save, X, RotateCcw, Ban,
 } from 'lucide-react';
 
 import { useMembers, type Member } from '@/hooks/useMembers';
@@ -49,6 +49,7 @@ import {
   normalizeOverride,
   type RoleOverride,
 } from '@/types/roleOverrides';
+import { BANS_PATH, isBanned, type Ban as BanType } from '@/types/bans';
 import type { KoekiGrade } from '@/lib/roles';
 
 export default function AdminMembresPage() {
@@ -72,12 +73,14 @@ function MembresManager() {
   const [search, setSearch] = useState('');
   const [editing, setEditing] = useState<Member | null>(null);
 
-  // Overrides + grades Kōeki en base (lecture globale)
   const { data: overridesData } = useFirebaseValue<Record<string, RoleOverride> | null>(
     OVERRIDES_PATH
   );
   const { data: gradesData } = useFirebaseValue<Record<string, KoekiGradeOverride> | null>(
     KOEKI_GRADES_PATH
+  );
+  const { data: bansData } = useFirebaseValue<Record<string, BanType> | null>(
+    BANS_PATH
   );
 
   const sorted = useMemo(() => {
@@ -175,6 +178,7 @@ function MembresManager() {
                 lastLoginText={fmtRelative(m.lastLogin)}
                 koekiGrade={gradesData?.[m.discordId]?.grade ?? null}
                 override={overridesData?.[m.discordId] ?? null}
+                banned={isBanned(bansData?.[m.discordId])}
                 onManage={() => setEditing(m)}
               />
             ))}
@@ -187,6 +191,7 @@ function MembresManager() {
           member={editing}
           override={overridesData?.[editing.discordId] ?? null}
           koekiGrade={gradesData?.[editing.discordId]?.grade ?? null}
+          ban={bansData?.[editing.discordId] ?? null}
           onClose={() => setEditing(null)}
         />
       )}
@@ -197,11 +202,12 @@ function MembresManager() {
 // ─── Modale de gestion des accès ─────────────────────────────────
 
 function ManageAccessModal({
-  member, override, koekiGrade, onClose,
+  member, override, koekiGrade, ban, onClose,
 }: {
   member: Member;
   override: RoleOverride | null;
   koekiGrade: KoekiGrade | null;
+  ban: BanType | null;
   onClose: () => void;
 }) {
   const { displayName, id: myId } = useCurrentUser();
@@ -214,6 +220,9 @@ function ManageAccessModal({
   const [isAdmin, setIsAdmin] = useState<boolean>(init.isAdmin === true);
   const [grade, setGrade] = useState<KoekiGrade | null>(koekiGrade);
   const [saving, setSaving] = useState(false);
+  const [working, setWorking] = useState(false);
+
+  const banned = isBanned(ban);
 
   function toggle(list: string[], setList: (v: string[]) => void, slug: string) {
     setList(list.includes(slug) ? list.filter((s) => s !== slug) : [...list, slug]);
@@ -231,7 +240,6 @@ function ManageAccessModal({
       };
       await dbSet(`${OVERRIDES_PATH}/${member.discordId}`, payload);
 
-      // Grade Kōeki (chemin séparé)
       const gradePayload: KoekiGradeOverride = {
         grade, setBy: displayName, setAt: Date.now(),
       };
@@ -262,6 +270,77 @@ function ManageAccessModal({
     }
   }
 
+  async function handleReset() {
+    if (!confirm(`Réinitialiser tous les accès de ${member.username} ? Il ne gardera que ses rôles Discord.`)) return;
+    setWorking(true);
+    try {
+      // dbSet(path, null) supprime le nœud en Realtime Database
+      await dbSet(`${OVERRIDES_PATH}/${member.discordId}`, null);
+      await dbSet(`${KOEKI_GRADES_PATH}/${member.discordId}`, null);
+      logAction({
+        who: displayName, whoId: myId ?? null,
+        action: 'update', target: 'roles:override', targetId: member.discordId,
+        detail: `Accès de ${member.username} réinitialisés (retour aux rôles Discord seuls)`,
+      });
+      toast.success(`Accès de ${member.username} réinitialisés`);
+      onClose();
+    } catch (err) {
+      console.error(err);
+      toast.error('Erreur lors de la réinitialisation');
+    } finally {
+      setWorking(false);
+    }
+  }
+
+  async function handleToggleBan() {
+    if (banned) {
+      if (!confirm(`Débannir ${member.username} ?`)) return;
+      setWorking(true);
+      try {
+        await dbSet(`${BANS_PATH}/${member.discordId}`, null);
+        logAction({
+          who: displayName, whoId: myId ?? null,
+          action: 'update', target: 'site:ban', targetId: member.discordId,
+          detail: `${member.username} débanni du site`,
+        });
+        toast.success(`${member.username} débanni`);
+        onClose();
+      } catch (err) {
+        console.error(err);
+        toast.error('Erreur lors du débannissement');
+      } finally {
+        setWorking(false);
+      }
+    } else {
+      const reason = prompt(`Bannir ${member.username} du site.\nMotif (optionnel) :`);
+      if (reason === null) return; // annulé
+      if (!confirm(`Confirmer le bannissement de ${member.username} ? Il perdra tout accès à l'intranet.`)) return;
+      setWorking(true);
+      try {
+        const payload: BanType = {
+          banned: true,
+          reason: reason.trim() || null,
+          bannedBy: displayName,
+          bannedById: myId ?? null,
+          bannedAt: Date.now(),
+        };
+        await dbSet(`${BANS_PATH}/${member.discordId}`, payload);
+        logAction({
+          who: displayName, whoId: myId ?? null,
+          action: 'update', target: 'site:ban', targetId: member.discordId,
+          detail: `${member.username} banni du site${reason.trim() ? ` — motif : ${reason.trim()}` : ''}`,
+        });
+        toast.success(`${member.username} banni`);
+        onClose();
+      } catch (err) {
+        console.error(err);
+        toast.error('Erreur lors du bannissement');
+      } finally {
+        setWorking(false);
+      }
+    }
+  }
+
   const labelStyle: React.CSSProperties = {
     fontSize: 10, letterSpacing: 1.5, textTransform: 'uppercase',
     color: 'rgba(212,180,74,0.85)', fontWeight: 700,
@@ -289,7 +368,7 @@ function ManageAccessModal({
           <Button variant="outline" onClick={onClose}>
             <X size={14} /> Annuler
           </Button>
-          <Button onClick={handleSave} disabled={saving}>
+          <Button onClick={handleSave} disabled={saving || working}>
             <Save size={14} /> {saving ? 'Enregistrement…' : 'Enregistrer'}
           </Button>
         </>
@@ -297,7 +376,7 @@ function ManageAccessModal({
     >
       <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
         <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.55)', lineHeight: 1.5, margin: 0 }}>
-          Ces accès <strong>s'ajoutent</strong> à ceux donnés par Discord (ils n'en retirent
+          Ces accès <strong>s&apos;ajoutent</strong> à ceux donnés par Discord (ils n&apos;en retirent
           aucun). Effet immédiat après un rechargement de la page côté membre.
         </p>
 
@@ -400,7 +479,7 @@ function ManageAccessModal({
               Administrateur technique
             </div>
             <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)', marginTop: 2 }}>
-              ⚠️ Donne accès à Maintenance et Whitelist. À n'accorder qu'avec prudence.
+              ⚠️ Donne accès à Maintenance et Whitelist. À n&apos;accorder qu&apos;avec prudence.
             </div>
           </div>
           <button
@@ -423,6 +502,62 @@ function ManageAccessModal({
             />
           </button>
         </div>
+
+        {/* Zone de danger */}
+        <div
+          style={{
+            marginTop: 4, paddingTop: 16,
+            borderTop: '1px solid rgba(248,113,113,0.2)',
+            display: 'flex', flexDirection: 'column', gap: 10,
+          }}
+        >
+          <span style={{ ...labelStyle, color: 'rgba(248,113,113,0.85)' }}>Zone de danger</span>
+
+          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+            <button
+              type="button"
+              onClick={handleReset}
+              disabled={working || saving}
+              style={{
+                display: 'flex', alignItems: 'center', gap: 6,
+                padding: '8px 14px', borderRadius: 6,
+                cursor: working || saving ? 'default' : 'pointer',
+                fontSize: 12, fontWeight: 600, fontFamily: 'Barlow Condensed, sans-serif',
+                background: 'rgba(255,255,255,0.04)',
+                border: '1px solid rgba(255,255,255,0.18)', color: 'rgba(255,255,255,0.8)',
+                opacity: working || saving ? 0.5 : 1,
+              }}
+            >
+              <RotateCcw size={13} /> Réinitialiser les accès
+            </button>
+
+            <button
+              type="button"
+              onClick={handleToggleBan}
+              disabled={working || saving}
+              style={{
+                display: 'flex', alignItems: 'center', gap: 6,
+                padding: '8px 14px', borderRadius: 6,
+                cursor: working || saving ? 'default' : 'pointer',
+                fontSize: 12, fontWeight: 700, fontFamily: 'Barlow Condensed, sans-serif',
+                background: banned ? 'rgba(125,216,125,0.12)' : 'rgba(248,113,113,0.12)',
+                border: banned ? '1px solid rgba(125,216,125,0.5)' : '1px solid rgba(248,113,113,0.5)',
+                color: banned ? '#7dd87d' : '#fca5a5',
+                opacity: working || saving ? 0.5 : 1,
+              }}
+            >
+              <Ban size={13} /> {banned ? 'Débannir du site' : 'Bannir du site'}
+            </button>
+          </div>
+
+          {banned && (
+            <div style={{ fontSize: 11, color: '#fca5a5', opacity: 0.85 }}>
+              ⛔ Actuellement banni
+              {ban?.reason ? ` — motif : ${ban.reason}` : ''}
+              {ban?.bannedBy ? ` (par ${ban.bannedBy})` : ''}
+            </div>
+          )}
+        </div>
       </div>
     </Modal>
   );
@@ -439,13 +574,14 @@ const optStyle: React.CSSProperties = { background: '#1a1410', color: '#e8dcc0' 
 // ─── Ligne membre ────────────────────────────────────────────────
 
 function MemberRow({
-  member, isOnline, lastLoginText, koekiGrade, override, onManage,
+  member, isOnline, lastLoginText, koekiGrade, override, banned, onManage,
 }: {
   member: Member;
   isOnline: boolean;
   lastLoginText: string;
   koekiGrade: KoekiGrade | null;
   override: RoleOverride | null;
+  banned: boolean;
   onManage: () => void;
 }) {
   const m = member;
@@ -463,8 +599,14 @@ function MemberRow({
       style={{
         display: 'grid', gridTemplateColumns: '44px 1fr auto', gap: 12,
         alignItems: 'center', padding: '10px 14px',
-        background: m.isAdmin ? 'rgba(212, 172, 13, 0.05)' : 'rgba(255, 255, 255, 0.02)',
-        border: '1px solid rgba(255, 255, 255, 0.06)', borderRadius: 6,
+        background: banned
+          ? 'rgba(248,113,113,0.06)'
+          : m.isAdmin ? 'rgba(212, 172, 13, 0.05)' : 'rgba(255, 255, 255, 0.02)',
+        border: banned
+          ? '1px solid rgba(248,113,113,0.3)'
+          : '1px solid rgba(255, 255, 255, 0.06)',
+        borderRadius: 6,
+        opacity: banned ? 0.75 : 1,
       }}
     >
       <div style={{ position: 'relative', width: 40, height: 40 }}>
@@ -490,7 +632,7 @@ function MemberRow({
             {m.username[0]?.toUpperCase() ?? '?'}
           </div>
         )}
-        {isOnline && (
+        {isOnline && !banned && (
           <div
             style={{
               position: 'absolute', bottom: 0, right: 0, width: 12, height: 12,
@@ -505,6 +647,7 @@ function MemberRow({
       <div style={{ minWidth: 0 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 2, flexWrap: 'wrap' }}>
           <strong style={{ fontSize: 13, color: '#fff' }}>{m.username}</strong>
+          {banned && <Badge color="#f87171" label="Banni" />}
           {m.isAdmin && <Badge color="#d4ac0d" label="Admin" />}
           {ov.isAdmin && !m.isAdmin && <Badge color="#f87171" label="Admin (base)" />}
           {m.isStaff && <Badge color="#a78bfa" label="Staff" />}
