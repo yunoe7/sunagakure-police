@@ -15,18 +15,13 @@
  *    Discord (ne retirent jamais) :
  *      - overrides/{id}     → branches, gérant/co-gérant, rang, admin
  *      - koeki/grades/{id}  → grade Kōeki (prime sur le rôle Discord)
- *    Permet de gérer les accès sans dépendre de la propagation parfois
- *    lente des rôles Discord via OAuth.
+ *
+ * 🚫 BANNISSEMENT : bans/{id} → un utilisateur banni est neutralisé
+ *    (toutes permissions false, isBanned = true) quel que soit Discord.
  *
  * 🥷 RÈGLE "ALL PERM" : Jonin (niveau 7+) ou Conseil du Vent =
  *    toutes les permissions de branche (membre ET gérant), Kōeki inclus.
  *    Maintenance/Whitelist restent réservés aux admins techniques.
- *
- * Usage permissions :
- *   const { user, can } = useCurrentUser();
- *   if (can.adminBranche('police')) { ... }
- *   if (can.membreBranche('police')) { ... }
- *   if (can.koeki.gererSocietes()) { ... }
  * ════════════════════════════════════════════════════════════════
  */
 
@@ -50,6 +45,7 @@ import {
   normalizeOverride,
   type RoleOverride,
 } from '@/types/roleOverrides';
+import { BANS_PATH, isBanned, type Ban } from '@/types/bans';
 
 const CLIENT_REFRESH_INTERVAL = 5 * 60 * 1000;
 const JONIN_NIVEAU = 7;
@@ -101,7 +97,6 @@ function mergeOverride(base: IntranetUser, ov: RoleOverride): IntranetUser {
   const union = (a: string[], b: string[] | undefined) =>
     Array.from(new Set([...(a ?? []), ...(b ?? [])]));
 
-  // Rang : on prend le max entre Discord et l'override
   let rang = base.rang;
   if (typeof ov.rangNiveau === 'number') {
     const currentNiveau = base.rang?.niveau ?? 0;
@@ -113,10 +108,7 @@ function mergeOverride(base: IntranetUser, ov: RoleOverride): IntranetUser {
   return {
     ...base,
     branches: (() => {
-      // union des slugs, en reconstruisant des objets Branche cohérents
       const slugs = union(base.branches.map((b) => b.slug), ov.branches);
-      // on garde les objets Branche existants, et pour les slugs ajoutés
-      // on crée un objet minimal (id vide, nom = slug capitalisé)
       return slugs.map((slug) => {
         const existing = base.branches.find((b) => b.slug === slug);
         if (existing) return existing;
@@ -153,6 +145,12 @@ export function useCurrentUser() {
   const { data: gradeOverrideData } = useFirebaseValue<KoekiGradeOverride | null>(
     myDiscordId ? `${KOEKI_GRADES_PATH}/${myDiscordId}` : null
   );
+
+  // ─── 🚫 Bannissement depuis Firebase ───────────────────────────
+  const { data: banData } = useFirebaseValue<Ban | null>(
+    myDiscordId ? `${BANS_PATH}/${myDiscordId}` : null
+  );
+  const userIsBanned = isBanned(banData);
 
   // intranetUser fusionné avec les overrides de branches/rang/admin
   const intranetUser = useMemo<IntranetUser | null>(() => {
@@ -192,7 +190,6 @@ export function useCurrentUser() {
 
   const koekiOverride = !!intranetUser && (intranetUser.isAdmin || hasAllPerm);
 
-  // Grade Kōeki effectif : base prime sur Discord
   const baseGrade = gradeOverrideData?.grade ?? null;
   const koekiInfo = baseGrade
     ? gradeToKoekiInfo(baseGrade)
@@ -249,6 +246,39 @@ export function useCurrentUser() {
     },
   };
 
+  // ─── 🚫 Bannissement : on neutralise tout ──────────────────────
+  if (userIsBanned) {
+    const denyAll = () => false;
+    const bannedCan: Permissions = {
+      adminBranche: denyAll,
+      membreBranche: denyAll,
+      adminGeneral: denyAll,
+      rangAuMoins: denyAll,
+      koeki: {
+        acces: denyAll, voirEconomie: denyAll, gererSocietes: denyAll,
+        declarerCA: denyAll, modifierTaux: denyAll, renflouerBDM: denyAll,
+        voirMarche: denyAll, gererMarche: denyAll, voirComptaGlobale: denyAll,
+        pointerCompta: denyAll, voirSaCompta: denyAll, voirParametres: denyAll,
+      },
+    };
+    return {
+      username: user?.discordUsername ?? intranetUser?.username,
+      displayName,
+      avatar: user?.discordAvatar || user?.image || intranetUser?.avatarUrl || null,
+      id: myDiscordId,
+      email: user?.email,
+      initials: getInitials(displayName),
+      isLoading: status === 'loading',
+      isAuthed: status === 'authenticated',
+      user: null as IntranetUser | null,
+      can: bannedCan,
+      isAuthenticated: false,
+      isBanned: true,
+      banReason: banData?.reason ?? null,
+      refreshRoles,
+    };
+  }
+
   return {
     username: user?.discordUsername ?? intranetUser?.username,
     displayName,
@@ -262,6 +292,9 @@ export function useCurrentUser() {
     user: intranetUser,
     can,
     isAuthenticated: status === 'authenticated' && intranetUser !== null,
+
+    isBanned: false,
+    banReason: null as string | null,
 
     refreshRoles,
   };
